@@ -17,9 +17,9 @@ class GetOrderAction
 
     public function execute(GetOrderDTO $dto): Order
     {
-        $order = $this->orderRepository->findById($dto->orderId);
+        $order = $this->orderRepository->findByOrderNumber($dto->orderNumber); // ← use orderNumber
 
-        if (!$order || $order->user_id !== $dto->userId) {
+        if (!$order || (int) $order->user_id !== $dto->userId) {
             throw new AuthorizationException(__('error.unauthorized_order_access'));
         }
 

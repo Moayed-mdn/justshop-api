@@ -30,7 +30,7 @@ class Image extends Model
     public function getFullUrlAttribute(): string
     {
         $path = $this->image_url;
-
+        
         // Already absolute (external URL) → return as-is
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
             return $path;

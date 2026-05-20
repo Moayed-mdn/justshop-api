@@ -41,7 +41,12 @@ class AddToCartAction
 
                 $this->cartItemRepository->updateQuantity($existingItem, $newQty);
             } else {
-                $this->cartItemRepository->create($cart, $dto->productVariantId, $dto->quantity);
+                $this->cartItemRepository->create(
+                    $cart,
+                    $dto->productVariantId,
+                    $dto->quantity,
+                    $variant->price
+                );
             }
 
             return $cart->load(['items.productVariant']);

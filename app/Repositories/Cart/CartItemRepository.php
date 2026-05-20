@@ -19,11 +19,12 @@ class CartItemRepository
             ->first();
     }
 
-    public function create(Cart $cart, int $variantId, int $quantity): CartItem
+    public function create(Cart $cart, int $variantId, int $quantity, float $price): CartItem
     {
         return $cart->items()->create([
             'product_variant_id' => $variantId,
             'quantity' => $quantity,
+            'unit_price' => $price,
         ]);
     }
 

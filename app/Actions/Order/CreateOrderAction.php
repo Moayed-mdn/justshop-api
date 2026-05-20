@@ -53,13 +53,16 @@ class CreateOrderAction
 
             foreach ($cart->items as $cartItem) {
                 $variant = $cartItem->productVariant;
+                $itemSubtotal = $variant->price * $cartItem->quantity;
 
                 $order->items()->create([
+                    'product_id' => $variant->product_id,
                     'product_variant_id' => $variant->id,
                     'product_name' => $variant->product->name,
                     'sku' => $variant->sku,
-                    'price' => $variant->price,
+                    'unit_price' => $variant->price,
                     'quantity' => $cartItem->quantity,
+                    'subtotal' => $itemSubtotal,
                     'attributes' => $variant->attributes->pluck('attribute_value', 'attribute_name')
                 ]);
 

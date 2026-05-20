@@ -1,17 +1,18 @@
 <?php
-// app/Http/Resources/OrderItemResource.php
 
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Resources\MissingValue;
 
 class OrderItemResource extends JsonResource
 {
     public function toArray($request)
     {
-        $variant = $this->whenLoaded('productVariant', function () {
-            return $this->productVariant;
-        });
+        // Safely resolve the variant — null if not loaded
+        $variant = $this->resource->relationLoaded('productVariant')
+            ? $this->resource->productVariant
+            : null;
 
         // Get variant image if loaded
         $imageUrl = null;
@@ -34,21 +35,23 @@ class OrderItemResource extends JsonResource
         }
 
         return [
-            'id'                      => $this->id,
-            'product_id'              => $this->product_id,
-            'product_variant_id'      => $this->product_variant_id,
-            'product_name'            => $this->product_name,
-            'product_slug'            => $slug,
-            'sku'                     => $this->sku,
-            'image'                   => $imageUrl,
-            'unit_price'              => (float) $this->unit_price,
+            'id'                       => $this->id,
+            'product_id'               => $this->product_id,
+            'product_variant_id'       => $this->product_variant_id,
+            'product_name'             => $this->product_name,
+            'product_slug'             => $slug,
+            'sku'                      => $this->sku,
+            'image'                    => $imageUrl,
+            'unit_price'               => (float) $this->unit_price,
             'unit_discount_percentage' => (float) $this->unit_discount_percentage,
-            'quantity'                => $this->quantity,
-            'subtotal'                => round((float) $this->unit_price * $this->quantity, 2),
-            'attributes'              => $this->attributes,
+            'quantity'                 => $this->quantity,
+            'subtotal'                 => round((float) $this->unit_price * $this->quantity, 2),
+            'attributes'               => $this->attributes,
 
-            // For reorder: is the variant still available?
-            'is_available'            => $variant ? ($variant->is_active && $variant->quantity > 0) : false,
+            // Safe availability check
+            'is_available' => $variant !== null
+                && (bool) $variant->is_active
+                && $variant->quantity > 0,
         ];
     }
 }

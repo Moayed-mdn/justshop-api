@@ -29,8 +29,6 @@ return new class extends Migration
             // Shipping address collected by Stripe (JSON snapshot)
             $table->json('shipping_address_data')->nullable()->after('billing_address_id');
 
-            // Currency used for payment
-            $table->string('currency', 3)->default('usd')->after('total');
         });
     }
 

@@ -202,6 +202,8 @@ class CheckoutService
                     'unit_price'              => $item['unit_price'],
                     'unit_discount_percentage' => 0,
                     'quantity'                => $item['quantity'],
+                    'subtotal'                => $item['unit_price'] * $item['quantity'],
+                    'total'                   => $item['unit_price'] * $item['quantity'],
                     'attributes'              => $item['attributes'],
                 ]);
             }

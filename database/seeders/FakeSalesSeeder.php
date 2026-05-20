@@ -62,7 +62,8 @@ class FakeSalesSeeder extends Seeder
 
                 $qty = rand(1, 5);
                 $price = $variant->price;
-                $subtotal += $price * $qty;
+                $itemSubtotal = $price * $qty;
+                $subtotal += $itemSubtotal;
 
                 OrderItem::create([
                     'order_id'          => $order->id,
@@ -74,6 +75,8 @@ class FakeSalesSeeder extends Seeder
                     'unit_price'        => $price,
                     'unit_discount_percentage' => 0,
                     'quantity'          => $qty,
+                    'subtotal'          => $itemSubtotal,
+                    'total'             => $itemSubtotal, // total is same as subtotal because no taxes or discounts are applied
                     'attributes'        => $variant->attributes ?? null,
                 ]);
             }

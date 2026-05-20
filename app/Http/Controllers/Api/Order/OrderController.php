@@ -8,15 +8,18 @@ use App\Actions\Order\CancelOrderAction;
 use App\Actions\Order\CreateOrderAction;
 use App\Actions\Order\GetOrderAction;
 use App\Actions\Order\ListOrdersAction;
+use App\Actions\Order\FilterOrdersAction;
 use App\DTOs\Order\CancelOrderDTO;
 use App\DTOs\Order\CreateOrderDTO;
 use App\DTOs\Order\GetOrderDTO;
 use App\DTOs\Order\ListOrdersDTO;
+use App\DTOs\Order\FilterOrdersDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Order\CancelOrderRequest;
 use App\Http\Requests\Order\GetOrderRequest;
 use App\Http\Requests\Order\ListOrdersRequest;
 use App\Http\Requests\Order\StoreOrderRequest;
+use App\Http\Requests\Order\FilterOrdersRequest;
 use App\Http\Resources\OrderResource;
 use Illuminate\Http\JsonResponse;
 
@@ -27,7 +30,20 @@ class OrderController extends Controller
         private GetOrderAction $getOrderAction,
         private CreateOrderAction $createOrderAction,
         private CancelOrderAction $cancelOrderAction,
+        private FilterOrdersAction $filterOrdersAction,
     ) {}
+
+    public function filters(FilterOrdersRequest $request): JsonResponse
+    {
+        $orders = $this->filterOrdersAction->execute(
+            FilterOrdersDTO::fromRequest($request)
+        );
+
+        return $this->paginated(
+            $orders,
+            OrderResource::collection($orders)
+        );
+    }
 
     public function index(ListOrdersRequest $request): JsonResponse
     {
