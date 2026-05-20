@@ -52,4 +52,7 @@ enum ErrorCode: string
 
     // --- Tag (TAG) ---
     case TAG_001 = 'TAG_001'; // Tag not found
+
+    // --- Lead (LED) ---
+    case LED_001 = 'LED_001'; // Lead not found
 }

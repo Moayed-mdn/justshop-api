@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
 
@@ -10,7 +9,9 @@ require 'api/v1/users/auth.php';
 // Public (no store context)
 require 'api/v1/users/category.php';
 require 'api/v1/public/blog.php';
+require 'api/v1/public/cms.php';
 require 'api/v1/public/documentation.php';
+require 'api/v1/public/leads.php';
 
 // Profile (no store context)
 require 'api/v1/users/profile.php';
@@ -40,7 +41,9 @@ require 'api/v1/stores/store-management.php';
 
 // Admin routes
 require 'api/v1/admin/admin.php';
+require 'api/v1/admin/leads.php';
 require 'api/v1/admin/cms/blog.php';
+require 'api/v1/admin/cms/marketing-pages.php';
 
 
 Route::get('/sanctum/csrf-cookie', [CsrfCookieController::class, 'show'])
