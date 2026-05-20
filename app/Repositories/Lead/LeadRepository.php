@@ -6,12 +6,14 @@ namespace App\Repositories\Lead;
 
 use App\DTOs\Lead\ListLeadsDTO;
 use App\Enums\Lead\LeadStatusEnum;
+use App\Enums\RoleEnum;
 use App\Exceptions\Lead\LeadNotFoundException;
 use App\Models\Lead;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Spatie\Permission\Models\Role;
 
 class LeadRepository
 {
@@ -90,8 +92,12 @@ class LeadRepository
 
     public function listAdminRecipients(): Collection
     {
+        if (!Role::query()->where('name', RoleEnum::SUPER_ADMIN->value)->exists()) {
+            return new Collection();
+        }
+
         return User::query()
-            ->role(\App\Enums\RoleEnum::SUPER_ADMIN->value)
+            ->role(RoleEnum::SUPER_ADMIN->value)
             ->whereNotNull('email')
             ->get(['id', 'name', 'email']);
     }
