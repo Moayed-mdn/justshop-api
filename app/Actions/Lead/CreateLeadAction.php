@@ -66,7 +66,7 @@ class CreateLeadAction
             'company' => $company,
             'phone' => $phone,
             'message' => $message,
-            'metadata' => $metadata,
+            'metadata' => $metadata !== [] ? $metadata : null,
             'ip_address' => $dto->ipAddress,
             'user_agent' => $userAgent,
         ];

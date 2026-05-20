@@ -27,12 +27,13 @@ class UpdateLeadStatusAction
                     ? ($lead->contacted_at ?? now())
                     : $lead->contacted_at,
                 'archived_at' => $dto->status === LeadStatusEnum::ARCHIVED ? now() : null,
-                ...$this->resolveResolutionAttributes($dto->status, $dto->actorUserId),
+                ...$this->resolveResolutionAttributes($lead, $dto->status, $dto->actorUserId),
             ]);
         });
     }
 
     private function resolveResolutionAttributes(
+        Lead $lead,
         LeadStatusEnum $status,
         int $actorUserId,
     ): array {
@@ -40,7 +41,7 @@ class UpdateLeadStatusAction
             LeadStatusEnum::CONTACTED,
             LeadStatusEnum::ARCHIVED,
             LeadStatusEnum::SPAM => [
-                'resolved_at' => now(),
+                'resolved_at' => $lead->resolved_at ?? now(),
                 'resolved_by' => $actorUserId,
             ],
             LeadStatusEnum::NEW,
