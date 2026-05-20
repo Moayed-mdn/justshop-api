@@ -29,4 +29,6 @@ return [
     // Product Messages
     'product_not_found' => 'Product not found.',
     'product_restore_failed' => 'Product restore failed.',
+
+    'tag_not_found' => 'Tag not found.',
 ];

@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class AttributeResource extends JsonResource
+class ProductVariantAttributeResource extends JsonResource
 {
     public function toArray($request)
     {

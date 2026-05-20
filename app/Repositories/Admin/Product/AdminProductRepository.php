@@ -5,33 +5,73 @@ namespace App\Repositories\Admin\Product;
 use App\Enums\Product\ProductStatusEnum;
 use App\Exceptions\Product\ProductNotFoundException;
 use App\Models\Product;
+use App\Models\ProductOption;
 use App\Models\ProductVariant;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class AdminProductRepository
 {
+    // ── Eager-load Definitions ─────────────────────────────────
+
     /**
-     * Relations required by the admin product editor response.
+     * Relations for the admin product editor response.
      *
-     * @return list<string>
+     * ── Media (dual-layer architecture) ───────────────────────
+     * 'images'          → Product-level shared gallery.
+     *                     imageable_type = App\Models\Product.
+     * 'variants.images' → Variant-level specific media.
+     *                     imageable_type = App\Models\ProductVariant.
+     *
+     * ── Option system (new) ────────────────────────────────────
+     * 'productOptions.values'        → Canonical option definitions.
+     * 'variants.optionValues.option' → Per-variant option value assignments
+     *                                  via variant_option_values pivot.
+     *
+     * ── Attribute system (legacy — bridge period) ─────────────
+     * Removed in Phase 8.
+     * Storefront now uses the new option system.
+     *
+     * ── Tags ──────────────────────────────────────────────────
+     * 'tags.translations' → Tag metadata + all locale translations.
+     *                       Required by AdminProductDetailResource::buildTags().
+     *                       name and slug live in tag_translations, NOT tags.
+     *                       Loading translations here prevents N+1 in resource.
+     *
+     * ── Common ────────────────────────────────────────────────
+     * 'category', 'translations'
      */
     private function editorRelations(): array
     {
         return [
-            'category',
-            'variants.attributeValues.attribute.translations',
-            'variants.attributeValues.translations',
+            // ── Product-level media ────────────────────────────
+            'images',
+
+            // ── New option system ──────────────────────────────
+            'productOptions.values',
+            'variants.optionValues.option',
+
+            // ── Variant-level media ────────────────────────────
             'variants.images',
+
+            // ── Common ─────────────────────────────────────────
+            'category',
             'translations',
-            'tags',
+
+            // ── Tags with translations ─────────────────────────
+            // name and slug live in tag_translations, not tags table.
+            // Must load translations here to avoid N+1 in buildTags().
+            'tags.translations',
         ];
     }
 
-    /**
-     * List products for a specific store with pagination
-     */
-    public function listForStore(int $storeId, ?string $search = null, ?string $status = null, int $perPage = 15): LengthAwarePaginator
-    {
+    // ── Read Operations ────────────────────────────────────────
+
+    public function listForStore(
+        int $storeId,
+        ?string $search = null,
+        ?string $status = null,
+        int $perPage = 15,
+    ): LengthAwarePaginator {
         $query = Product::query()
             ->where('store_id', $storeId);
 
@@ -47,14 +87,22 @@ class AdminProductRepository
             $query->where('is_active', false);
         }
 
-        return $query->with(['category', 'variants', 'variants.images', 'translations'])
+        // List view loads a lighter relation set than the editor.
+        // Product-level images included so getPrimaryImageUrlAttribute
+        // resolves without N+1.
+        // Tags not included in list view — not needed for listing UI.
+        return $query
+            ->with([
+                'category',
+                'images',
+                'variants',
+                'variants.images',
+                'translations',
+            ])
             ->latest()
             ->paginate($perPage);
     }
 
-    /**
-     * Find a product in a specific store or throw exception
-     */
     public function findInStore(int $productId, int $storeId): Product
     {
         $product = Product::query()
@@ -69,9 +117,6 @@ class AdminProductRepository
         return $product;
     }
 
-    /**
-     * Find a product in a specific store with admin editor relations loaded.
-     */
     public function findEditorProductInStore(int $productId, int $storeId): Product
     {
         $product = Product::query()
@@ -87,9 +132,6 @@ class AdminProductRepository
         return $product;
     }
 
-    /**
-     * Find a trashed product in a specific store
-     */
     public function findTrashedInStore(int $productId, int $storeId): ?Product
     {
         return Product::withTrashed()
@@ -99,121 +141,258 @@ class AdminProductRepository
     }
 
     /**
-     * Create a new product
+     * Reload a product with all admin editor relations after a write operation.
      */
+    public function refreshEditorProduct(Product $product): Product
+    {
+        return $product->fresh($this->editorRelations())
+            ?? $product->load($this->editorRelations());
+    }
+
+    // ── Product Write Operations ───────────────────────────────
+
     public function create(array $data): Product
     {
         return Product::create($data);
     }
 
-    /**
-     * Update a product
-     */
     public function update(Product $product, array $data): Product
     {
         $product->update($data);
         return $product->fresh();
     }
 
-    /**
-     * Soft delete a product
-     */
     public function softDelete(Product $product): void
     {
         $product->delete();
     }
 
-    /**
-     * Restore a trashed product
-     */
     public function restore(Product $product): Product
     {
         $product->restore();
         return $product->fresh();
     }
 
-    /**
-     * Reload a product with admin editor relations after a write operation.
-     */
-    public function refreshEditorProduct(Product $product): Product
-    {
-        return $product->fresh($this->editorRelations()) ?? $product->load($this->editorRelations());
-    }
+    // ── Translation Operations ─────────────────────────────────
 
-    /**
-     * Create product translation
-     */
     public function createTranslation(Product $product, array $translationData): void
     {
         $product->translations()->create($translationData);
     }
 
-    /**
-     * Update or create product translation
-     */
-    public function upsertTranslation(Product $product, string $locale, array $translationData): void
-    {
+    public function upsertTranslation(
+        Product $product,
+        string $locale,
+        array $translationData,
+    ): void {
         $product->translations()->updateOrCreate(
             ['locale' => $locale],
-            $translationData
+            $translationData,
         );
     }
 
-    /**
-     * Delete all translations for a product
-     */
     public function deleteTranslations(Product $product): void
     {
         $product->translations()->delete();
     }
 
-    public function syncTags(Product $product, array $tags): void
-    {
-        $product->tags()->sync($tags);
-    }
+    // ── Tag Operations ─────────────────────────────────────────
 
     /**
-     * Create a product variant
+     * Sync tag associations for a product.
+     *
+     * Accepts an array of integer tag IDs.
+     * Laravel's sync() detaches removed IDs and attaches new ones atomically.
+     * Passing an empty array detaches all tags from the product.
+     *
+     * Store-scope validation: the caller (Action layer) is responsible for
+     * ensuring all tag IDs belong to the correct store. Request validation
+     * confirms existence in the tags table via exists:tags,id.
+     *
+     * @param  int[]  $tagIds
      */
+    public function syncTags(Product $product, array $tagIds): void
+    {
+        $product->tags()->sync($tagIds);
+    }
+
+    // ── Variant Operations ─────────────────────────────────────
+
     public function createVariant(Product $product, array $variantData): ProductVariant
     {
         return $product->variants()->create($variantData);
     }
 
-    /**
-     * Update a product variant
-     */
     public function updateVariant(ProductVariant $variant, array $data): ProductVariant
     {
         $variant->update($data);
         return $variant->refresh();
     }
 
-    /**
-     * Delete a product variant
-     */
     public function deleteVariant(ProductVariant $variant): void
     {
         $variant->delete();
     }
 
+    // ── Media Operations ───────────────────────────────────────
+
     /**
-     * Sync variant attributes (pivot table)
+     * Create product-level media items.
+     *
+     * Attaches images directly to the Product (imageable = Product).
+     * These represent the shared product gallery.
+     *
+     * Maps API `position` → DB `sort_order`.
+     * First item receives is_primary = true.
+     *
+     * @param  array  $mediaItems  [['url' => '...', 'alt' => '...', 'position' => 0], ...]
      */
-    public function syncVariantAttributes(
-        ProductVariant $variant,
-        array $attributes
-    ): void {
+    public function createProductMedia(Product $product, array $mediaItems): void
+    {
+        foreach ($mediaItems as $index => $mediaData) {
+            $product->images()->create([
+                'image_url'  => $mediaData['url'],
+                'alt_text'   => $mediaData['alt'] ?? null,
+                'sort_order' => $mediaData['position'] ?? $index,
+                'is_primary' => $index === 0,
+            ]);
+        }
+    }
 
-        $syncData = [];
+    /**
+     * Create variant-level media items.
+     *
+     * Attaches images directly to the ProductVariant (imageable = ProductVariant).
+     * These represent variant-specific visuals.
+     *
+     * Maps API `position` → DB `sort_order`.
+     * First item receives is_primary = true.
+     *
+     * @param  array  $mediaItems  [['url' => '...', 'alt' => '...', 'position' => 0], ...]
+     */
+    public function createVariantMedia(ProductVariant $variant, array $mediaItems): void
+    {
+        foreach ($mediaItems as $index => $mediaData) {
+            $variant->images()->create([
+                'image_url'  => $mediaData['url'],
+                'alt_text'   => $mediaData['alt'] ?? null,
+                'sort_order' => $mediaData['position'] ?? $index,
+                'is_primary' => $index === 0,
+            ]);
+        }
+    }
 
-        foreach ($attributes as $attribute) {
+    /**
+     * Replace all product-level media.
+     *
+     * Deletes existing product images then recreates from the given list.
+     * Used by UpdateProductAction for full sync replacement.
+     * Passing an empty array clears all product media.
+     *
+     * @param  array  $mediaItems  [['url' => '...', 'alt' => '...', 'position' => 0], ...]
+     */
+    public function syncProductMedia(Product $product, array $mediaItems): void
+    {
+        $product->images()->delete();
 
-            $syncData[$attribute['attribute_value_id']] = [
-                'attribute_id' => $attribute['attribute_id'],
-            ];
+        if (!empty($mediaItems)) {
+            $this->createProductMedia($product, $mediaItems);
+        }
+    }
+
+    /**
+     * Replace all variant-level media.
+     *
+     * Deletes existing variant images then recreates from the given list.
+     * Used by UpdateProductAction for full sync replacement.
+     * Passing an empty array clears all variant media.
+     *
+     * @param  array  $mediaItems  [['url' => '...', 'alt' => '...', 'position' => 0], ...]
+     */
+    public function syncVariantMedia(ProductVariant $variant, array $mediaItems): void
+    {
+        $variant->images()->delete();
+
+        if (!empty($mediaItems)) {
+            $this->createVariantMedia($variant, $mediaItems);
+        }
+    }
+
+    // ── New Option System ──────────────────────────────────────
+
+    /**
+     * Sync canonical product options (new system).
+     *
+     * Creates or updates each option by name, syncs its allowed values,
+     * and removes options/values that are no longer in the list.
+     *
+     * Returns a map of option name → ProductOption (with values loaded).
+     *
+     * @param  array  $options  [['name' => 'Color', 'position' => 1, 'values' => ['Red', 'Blue']], ...]
+     * @return array<string, ProductOption>
+     */
+    public function syncProductOptions(Product $product, array $options): array
+    {
+        $optionMap     = [];
+        $incomingNames = array_column($options, 'name');
+
+        foreach ($options as $optionData) {
+            $option = $product->productOptions()->updateOrCreate(
+                ['name' => $optionData['name']],
+                ['position' => $optionData['position']],
+            );
+
+            $incomingValues = $optionData['values'] ?? [];
+
+            foreach ($incomingValues as $value) {
+                $option->values()->firstOrCreate(['value' => $value]);
+            }
+
+            $option->values()
+                ->whereNotIn('value', $incomingValues)
+                ->delete();
+
+            $optionMap[$optionData['name']] = $option->load('values');
         }
 
-        $variant->attributeValues()->sync($syncData);
+        $product->productOptions()
+            ->whereNotIn('name', $incomingNames)
+            ->delete();
+
+        return $optionMap;
     }
+
+    /**
+     * Sync variant option value assignments (new system).
+     *
+     * @param  array<string, string>        $optionsMap
+     * @param  array<string, ProductOption> $productOptionMap
+     */
+    public function syncVariantOptionValues(
+        ProductVariant $variant,
+        array $optionsMap,
+        array $productOptionMap,
+    ): void {
+        $syncData = [];
+
+        foreach ($optionsMap as $optionName => $value) {
+            $option = $productOptionMap[$optionName] ?? null;
+
+            if (!$option) {
+                continue;
+            }
+
+            $optionValue = $option->values->firstWhere('value', $value);
+
+            if (!$optionValue) {
+                continue;
+            }
+
+            $syncData[$optionValue->id] = ['option_id' => $option->id];
+        }
+
+        $variant->optionValues()->sync($syncData);
+    }
+
+
 }

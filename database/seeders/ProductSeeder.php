@@ -8,10 +8,10 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Image;
 use App\Models\ProductVariant;
-use App\Models\Attribute;
-use App\Models\AttributeValue;
+use App\Models\ProductOption;
+use App\Models\ProductOptionValue;
 use App\Models\Store;
-use App\Models\VariantAttributeValue;
+use App\Models\Tag;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -39,311 +39,269 @@ class ProductSeeder extends Seeder
         'Bookshelf 5-Tier'       => 'IKEA',
     ];
 
+    /**
+     * Product name → Tags mapping.
+     */
+    private array $productTags = [
+        'iPhone 14'              => ['Electronics', 'Mobile', 'New Arrival'],
+        'Samsung Galaxy S23'     => ['Electronics', 'Mobile', 'Bestseller'],
+        'MacBook Pro'            => ['Electronics', 'Laptop', 'Pro'],
+        'Classic Cotton T-Shirt' => ['Fashion', 'T-Shirt', 'Sale'],
+        'Slim Fit Jeans'         => ['Fashion', 'Jeans', 'Bestseller'],
+        'Flory Summer Dress'     => ['Fashion', 'Dress', 'New Arrival'],
+        'Running Sneakers'       => ['Shoes', 'Sport', 'Bestseller'],
+        'Modern Sofa 3-Seater'   => ['Furniture', 'Home', 'Sale'],
+    ];
+
+    /**
+     * Product name → Tags mapping (Arabic).
+     */
+    private array $productTagsArabic = [
+        'Electronics' => 'إلكترونيات',
+        'Mobile' => 'موبايل',
+        'New Arrival' => 'وصل حديثا',
+        'Bestseller' => 'الأكثر مبيعا',
+        'Laptop' => 'لابتوب',
+        'Pro' => 'برو',
+        'Fashion' => 'موضة',
+        'T-Shirt' => 'تي شيرت',
+        'Sale' => 'تخفيضات',
+        'Jeans' => 'جينز',
+        'Dress' => 'فستان',
+        'Shoes' => 'أحذية',
+        'Sport' => 'رياضة',
+        'Furniture' => 'أثاث',
+        'Home' => 'منزل',
+    ];
+
+    /**
+     * Product configuration with options and their values
+     * This demonstrates the "Option + Values → Generate Combinations" pattern
+     */
+    private array $productsConfig = [
+        'Men Clothing' => [
+            'Classic Cotton T-Shirt' => [
+                'options' => [
+                    'Color' => ['Red', 'Blue', 'Black', 'White'],
+                    'Size' => ['S', 'M', 'L', 'XL'],
+                ],
+                'base_price' => 29.99,
+                'description' => 'Premium cotton t-shirt for everyday comfort',
+            ],
+            'Slim Fit Jeans' => [
+                'options' => [
+                    'Color' => ['Blue', 'Black', 'Light Blue'],
+                    'Size' => ['30', '32', '34', '36'],
+                    'Length' => ['Regular', 'Long'],
+                ],
+                'base_price' => 59.99,
+                'description' => 'Modern slim fit jeans with stretch comfort',
+            ],
+        ],
+        'Women Clothing' => [
+            'Flory Summer Dress' => [
+                'options' => [
+                    'Color' => ['Pink', 'Blue', 'White', 'Yellow'],
+                    'Size' => ['S', 'M', 'L', 'XL'],
+                ],
+                'base_price' => 49.99,
+                'description' => 'Floral summer dress perfect for warm days',
+            ],
+            'Yoga Pants' => [
+                'options' => [
+                    'Color' => ['Black', 'Dark Grey', 'Burgundy', 'Navy'],
+                    'Size' => ['S', 'M', 'L', 'XL'],
+                    'Length' => ['Capri', 'Regular', 'Long'],
+                ],
+                'base_price' => 39.99,
+                'description' => 'High-waist yoga pants with moisture-wicking fabric',
+            ],
+        ],
+        'Shoes' => [
+            'Running Sneakers' => [
+                'options' => [
+                    'Color' => ['White', 'Black', 'Blue', 'Red'],
+                    'Size' => ['38', '39', '40', '41', '42'],
+                ],
+                'base_price' => 89.99,
+                'description' => 'Lightweight running sneakers with cushioned sole',
+            ],
+            'Casual Loafers' => [
+                'options' => [
+                    'Color' => ['Brown', 'Black', 'Navy', 'Tan'],
+                    'Size' => ['38', '39', '40', '41', '42', '43'],
+                ],
+                'base_price' => 69.99,
+                'description' => 'Comfortable casual loafers for everyday wear',
+            ],
+        ],
+        'Phones' => [
+            'iPhone 14' => [
+                'options' => [
+                    'Storage' => ['128GB', '256GB', '512GB'],
+                    'Color' => ['Black', 'Blue', 'Purple', 'Red'],
+                ],
+                'base_price' => 799.99,
+                'description' => 'Apple iPhone 14 with advanced camera system',
+            ],
+            'Samsung Galaxy S23' => [
+                'options' => [
+                    'Storage' => ['128GB', '256GB', '512GB'],
+                    'Color' => ['Black', 'Green', 'Lavender', 'White'],
+                ],
+                'base_price' => 699.99,
+                'description' => 'Samsung Galaxy S23 with dynamic AMOLED display',
+            ],
+        ],
+        'Laptops' => [
+            'MacBook Pro' => [
+                'options' => [
+                    'Storage' => ['256GB', '512GB', '1TB', '2TB'],
+                    'RAM' => ['8GB', '16GB', '32GB', '64GB'],
+                    'Color' => ['Space Gray', 'Silver'],
+                ],
+                'base_price' => 1299.99,
+                'description' => 'MacBook Pro with M2 chip and Retina display',
+            ],
+        ],
+        'Furniture' => [
+            'Modern Sofa 3-Seater' => [
+                'options' => [
+                    'Color' => ['Grey', 'Beige', 'Navy Blue', 'Dark Green'],
+                    'Material' => ['Fabric', 'Leather', 'Velvet'],
+                ],
+                'base_price' => 499.99,
+                'description' => 'Modern 3-seater sofa with comfortable cushions',
+            ],
+        ],
+        'Accessories' => [
+            'Wireless Earbuds' => [
+                'options' => [
+                    'Color' => ['White', 'Black', 'Blue'],
+                    'Battery' => ['6h', '8h', '12h'],
+                ],
+                'base_price' => 79.99,
+                'description' => 'High-quality wireless earbuds with noise cancellation',
+            ],
+        ],
+    ];
+
     public function run()
     {
-        $data = [
-            'Phones' => [
-                'iPhone 14' => [
-                    ['Storage' => '128GB', 'Color' => 'Black'],
-                    ['Storage' => '256GB', 'Color' => 'Blue'],
-                ],
-                'Samsung Galaxy S23' => [
-                    ['Storage' => '128GB', 'Color' => 'Black'],
-                    ['Storage' => '256GB', 'Color' => 'Green'],
-                ],
-                'Xiaomi Redmi Note 12' => [
-                    ['Storage' => '64GB', 'Color' => 'Grey'],
-                    ['Storage' => '128GB', 'Color' => 'Blue'],
-                ],
-            ],
-            'Accessories' => [
-                'Wireless Earbuds' => [
-                    ['Model' => 'AirPods Pro', 'Color' => 'White', 'Battery' => '6h'],
-                    ['Model' => 'Samsung Galaxy Buds', 'Color' => 'Black', 'Battery' => '5h'],
-                    ['Model' => 'Sony WF-1000XM4', 'Color' => 'Black', 'Battery' => '8h'],
-                ],
-                'Smartwatches' => [
-                    ['Model' => 'Apple Watch Series 8', 'Size' => '45mm', 'Color' => 'Midnight'],
-                    ['Model' => 'Samsung Galaxy Watch 5', 'Size' => '44mm', 'Color' => 'Graphite'],
-                    ['Model' => 'Fitbit Versa 4', 'Size' => '40mm', 'Color' => 'Black'],
-                ],
-                'Laptop Bags' => [
-                    ['Size' => '13-14 inch', 'Color' => 'Black', 'Material' => 'Nylon'],
-                    ['Size' => '15-16 inch', 'Color' => 'Gray', 'Material' => 'Leather'],
-                    ['Size' => '17 inch', 'Color' => 'Blue', 'Material' => 'Polyester'],
-                ],
-                'External Monitors' => [
-                    ['Size' => '24 inch', 'Resolution' => '1080p', 'Refresh Rate' => '75Hz'],
-                    ['Size' => '27 inch', 'Resolution' => '4K', 'Refresh Rate' => '60Hz'],
-                    ['Size' => '32 inch', 'Resolution' => '1440p', 'Refresh Rate' => '144Hz'],
-                ],
-                'Mechanical Keyboards' => [
-                    ['Layout' => 'TKL', 'Switches' => 'Blue', 'Backlight' => 'RGB'],
-                    ['Layout' => 'Full Size', 'Switches' => 'Red', 'Backlight' => 'White'],
-                    ['Layout' => '60%', 'Switches' => 'Brown', 'Backlight' => 'RGB'],
-                ],
-                'Wireless Mice' => [
-                    ['DPI' => '16000', 'Buttons' => '6', 'Color' => 'Black'],
-                    ['DPI' => '12000', 'Buttons' => '8', 'Color' => 'White'],
-                    ['DPI' => '25600', 'Buttons' => '11', 'Color' => 'Gray'],
-                ],
-                'USB-C Hubs' => [
-                    ['Ports' => 'HDMI + USB3 x3 + Ethernet', 'Power Delivery' => '100W'],
-                    ['Ports' => '4K HDMI + USB-C + SD Card', 'Power Delivery' => '85W'],
-                    ['Ports' => 'VGA + USB2 x2 + Audio', 'Power Delivery' => '60W'],
-                ],
-                'Portable SSDs' => [
-                    ['Capacity' => '500GB', 'Interface' => 'USB-C', 'Speed' => '1050MB/s'],
-                    ['Capacity' => '1TB', 'Interface' => 'USB 3.2', 'Speed' => '2000MB/s'],
-                    ['Capacity' => '2TB', 'Interface' => 'Thunderbolt', 'Speed' => '2800MB/s'],
-                ],
-            ],
-            'Laptops' => [
-                'MacBook Pro' => [
-                    ['Storage' => '256GB', 'RAM' => '8GB', 'Color' => 'Space Gray'],
-                    ['Storage' => '512GB', 'RAM' => '16GB', 'Color' => 'Silver'],
-                    ['Storage' => '1TB', 'RAM' => '32GB', 'Color' => 'Space Gray'],
-                ],
-                'Dell XPS 13' => [
-                    ['Storage' => '256GB', 'RAM' => '8GB', 'Color' => 'Platinum Silver'],
-                    ['Storage' => '512GB', 'RAM' => '16GB', 'Color' => 'Frost White'],
-                    ['Storage' => '1TB', 'RAM' => '32GB', 'Color' => 'Platinum Silver'],
-                ],
-                'HP Spectre x360' => [
-                    ['Storage' => '512GB', 'RAM' => '16GB', 'Color' => 'Nightfall Black'],
-                    ['Storage' => '1TB', 'RAM' => '32GB', 'Color' => 'Poseidon Blue'],
-                    ['Storage' => '2TB', 'RAM' => '32GB', 'Color' => 'Natural Silver'],
-                ],
-                'Lenovo ThinkPad X1' => [
-                    ['Storage' => '256GB', 'RAM' => '16GB', 'Color' => 'Black'],
-                    ['Storage' => '512GB', 'RAM' => '32GB', 'Color' => 'Black'],
-                    ['Storage' => '1TB', 'RAM' => '32GB', 'Color' => 'Black'],
-                ],
-                'ASUS ROG Zephyrus' => [
-                    ['Storage' => '512GB', 'RAM' => '16GB', 'Color' => 'Eclipse Gray'],
-                    ['Storage' => '1TB', 'RAM' => '32GB', 'Color' => 'Moonlight White'],
-                    ['Storage' => '2TB', 'RAM' => '64GB', 'Color' => 'Eclipse Gray'],
-                ],
-            ],
-            'Men Clothing' => [
-                'Classic Cotton T-Shirt' => [
-                    ['Size' => 'S', 'Color' => 'White'],
-                    ['Size' => 'M', 'Color' => 'White'],
-                    ['Size' => 'L', 'Color' => 'White'],
-                    ['Size' => 'XL', 'Color' => 'Black'],
-                ],
-                'Slim Fit Jeans' => [
-                    ['Size' => '30', 'Color' => 'Blue'],
-                    ['Size' => '32', 'Color' => 'Blue'],
-                    ['Size' => '34', 'Color' => 'Black'],
-                ],
-                'Winter Hoodie' => [
-                    ['Size' => 'M', 'Color' => 'Grey'],
-                    ['Size' => 'L', 'Color' => 'Grey'],
-                    ['Size' => 'XL', 'Color' => 'Black'],
-                ],
-            ],
-            'Women Clothing' => [
-                'Flory Summer Dress' => [
-                    ['Size' => 'S', 'Color' => 'Pink'],
-                    ['Size' => 'M', 'Color' => 'Pink'],
-                    ['Size' => 'L', 'Color' => 'Blue'],
-                    ['Size' => 'XL', 'Color' => 'White'],
-                ],
-                'High-Waist Jeans' => [
-                    ['Size' => '28', 'Color' => 'Light Blue'],
-                    ['Size' => '30', 'Color' => 'Light Blue'],
-                    ['Size' => '32', 'Color' => 'Black'],
-                    ['Size' => '34', 'Color' => 'Dark Blue'],
-                ],
-                'Oversized Sweater' => [
-                    ['Size' => 'S', 'Color' => 'Cream'],
-                    ['Size' => 'M', 'Color' => 'Cream'],
-                    ['Size' => 'L', 'Color' => 'Beige'],
-                    ['Size' => 'XL', 'Color' => 'Grey'],
-                ],
-                'Classic Blazer' => [
-                    ['Size' => 'S', 'Color' => 'Black'],
-                    ['Size' => 'M', 'Color' => 'Black'],
-                    ['Size' => 'L', 'Color' => 'Navy'],
-                    ['Size' => 'XL', 'Color' => 'Camel'],
-                ],
-                'Yoga Pants' => [
-                    ['Size' => 'S', 'Color' => 'Black'],
-                    ['Size' => 'M', 'Color' => 'Black'],
-                    ['Size' => 'L', 'Color' => 'Dark Grey'],
-                    ['Size' => 'XL', 'Color' => 'Burgundy'],
-                ],
-            ],
-            'Shoes' => [
-                'Running Sneakers' => [
-                    ['Size' => '38', 'Color' => 'White'],
-                    ['Size' => '39', 'Color' => 'White'],
-                    ['Size' => '40', 'Color' => 'Black'],
-                    ['Size' => '41', 'Color' => 'Blue'],
-                ],
-                'Leather Boots' => [
-                    ['Size' => '37', 'Color' => 'Brown'],
-                    ['Size' => '38', 'Color' => 'Brown'],
-                    ['Size' => '39', 'Color' => 'Black'],
-                    ['Size' => '40', 'Color' => 'Black'],
-                ],
-                'High Heels' => [
-                    ['Size' => '36', 'Color' => 'Nude'],
-                    ['Size' => '37', 'Color' => 'Nude'],
-                    ['Size' => '38', 'Color' => 'Black'],
-                    ['Size' => '39', 'Color' => 'Red'],
-                ],
-                'Casual Loafers' => [
-                    ['Size' => '38', 'Color' => 'Brown'],
-                    ['Size' => '39', 'Color' => 'Brown'],
-                    ['Size' => '40', 'Color' => 'Black'],
-                    ['Size' => '41', 'Color' => 'Navy'],
-                ],
-                'Sports Sandals' => [
-                    ['Size' => '37', 'Color' => 'Black'],
-                    ['Size' => '38', 'Color' => 'Black'],
-                    ['Size' => '39', 'Color' => 'Blue'],
-                    ['Size' => '40', 'Color' => 'Grey'],
-                ],
-            ],
-            'Appliances' => [
-                'Air Fryer 4L' => [
-                    ['Capacity' => '4L', 'Color' => 'Black'],
-                ],
-                'Electric Kettle 1.7L' => [
-                    ['Capacity' => '1.7L', 'Color' => 'Silver'],
-                ],
-                'Blender 1200W' => [
-                    ['Power' => '1200W', 'Color' => 'Black'],
-                    ['Power' => '1200W', 'Color' => 'White'],
-                ],
-            ],
-            'Furniture' => [
-                'Modern Sofa 3-Seater' => [
-                    ['Dimensions' => '200x90x85cm', 'Color' => 'Grey'],
-                    ['Dimensions' => '200x90x85cm', 'Color' => 'Beige'],
-                    ['Dimensions' => '200x90x85cm', 'Color' => 'Navy Blue'],
-                ],
-                'Wooden Dining Table' => [
-                    ['Dimensions' => '160x90x75cm', 'Material' => 'Oak'],
-                    ['Dimensions' => '180x90x75cm', 'Material' => 'Walnut'],
-                    ['Dimensions' => '200x100x75cm', 'Material' => 'Teak'],
-                ],
-                'Office Ergonomic Chair' => [
-                    ['Color' => 'Black', 'Material' => 'Mesh'],
-                    ['Color' => 'Gray', 'Material' => 'Leather'],
-                ],
-                'Queen Size Bed Frame' => [
-                    ['Dimensions' => '160x200cm', 'Material' => 'Wood'],
-                    ['Dimensions' => '160x200cm', 'Material' => 'Metal'],
-                ],
-                'Bookshelf 5-Tier' => [
-                    ['Dimensions' => '120x30x180cm', 'Color' => 'White'],
-                    ['Dimensions' => '120x30x180cm', 'Color' => 'Brown'],
-                ],
-            ],
-            'Decor' => [
-                'Ceramic Table Vase' => [
-                    ['Height' => '25cm', 'Color' => 'White'],
-                    ['Height' => '30cm', 'Color' => 'Blue'],
-                    ['Height' => '35cm', 'Color' => 'Green'],
-                ],
-                'Wall Clock Modern' => [
-                    ['Diameter' => '40cm', 'Style' => 'Minimalist'],
-                    ['Diameter' => '50cm', 'Style' => 'Vintage'],
-                    ['Diameter' => '60cm', 'Style' => 'Industrial'],
-                ],
-                'LED Floor Lamp' => [
-                    ['Height' => '160cm', 'Color Temperature' => 'Warm White'],
-                    ['Height' => '180cm', 'Color Temperature' => 'Cool White'],
-                ],
-                'Abstract Wall Art' => [
-                    ['Dimensions' => '60x80cm', 'Frame' => 'Black'],
-                    ['Dimensions' => '80x120cm', 'Frame' => 'White'],
-                    ['Dimensions' => '100x150cm', 'Frame' => 'Wood'],
-                ],
-                'Decorative Throw Pillows' => [
-                    ['Size' => '45x45cm', 'Material' => 'Cotton'],
-                    ['Size' => '50x50cm', 'Material' => 'Velvet'],
-                ],
-                'Indoor Plant Set' => [
-                    ['Set' => '3 Succulents', 'Pot Material' => 'Ceramic'],
-                    ['Set' => '5 Mixed Plants', 'Pot Material' => 'Terracotta'],
-                ],
-            ],
-            'Fitness Equipment' => [
-                'Adjustable Dumbbells' => [
-                    ['Weight' => '20kg'],
-                    ['Weight' => '30kg'],
-                ],
-                'Yoga Mat Pro' => [
-                    ['Thickness' => '5mm', 'Color' => 'Blue'],
-                    ['Thickness' => '8mm', 'Color' => 'Purple'],
-                ],
-                'Pull-Up Bar' => [
-                    ['Type' => 'Wall-mounted'],
-                    ['Type' => 'Door-mounted'],
-                ],
-            ],
-        ];
-
         DB::beginTransaction();
 
-        foreach ($data as $categoryName => $products) {
+        foreach ($this->productsConfig as $categoryName => $products) {
+            $categoryName = trim($categoryName);
             $category = Category::whereHas('translations', function ($query) use ($categoryName) {
-                $query->where('locale', 'en')->where('name', $categoryName);
+                $query->where('name', $categoryName);
             })->first();
 
             if (!$category) {
-                $this->command->info("❌ No $categoryName category found!");
+                $this->command->error("❌ Category '{$categoryName}' not found!");
                 continue;
             }
 
-            foreach ($products as $productName => $variants) {
+            foreach ($products as $productName => $config) {
+                $this->command->info("📦 Processing: $productName");
 
                 // ── Resolve brand ──────────────────────────────
                 $brandId = null;
                 if (isset($this->productBrands[$productName])) {
-                    $brand = Brand::where('slug', Str::slug($this->productBrands[$productName]))->first();
-                    $brandId = $brand?->id;
+                    $brand =$brandName = $this->productBrands[$productName];
+                    $brand = Brand::updateOrCreate(
+                        ['name' => $brandName],
+                        ['slug' => Str::slug($brandName)]
+                    );
+                    $brandId = $brand->id;
                 }
 
                 // ── Create product ─────────────────────────────
-                $product = Product::create([
-                    'category_id' => $category->id,
-                    'brand_id'    => $brandId,
-                    'store_id' => Store::first()->id,
-                    'is_active'   => true,
-                ]);
+                $productSlug = Str::slug($productName);
+                $product = Product::whereHas('translations', function ($query) use ($productSlug) {
+                    $query->where('slug', $productSlug)->where('locale', 'en');
+                })->first();
 
-                // ── Translations ───────────────────────────────
-                $product->translations()->create([
-                    'locale'      => 'en',
-                    'name'        => $productName,
-                    'description' => "$productName — premium quality, fast shipping.",
-                    'slug'        => Str::slug($productName),
-                ]);
+                if (!$product) {
+                    $product = Product::create([
+                        'category_id' => $category->id,
+                        'brand_id'    => $brandId,
+                        'store_id'    => Store::first()->id,
+                        'is_active'   => true,
+                    ]);
 
-                $product->translations()->create([
-                    'locale'      => 'ar',
-                    'name'        => $this->getArabicProductName($productName),
-                    'description' => 'وصف ' . $this->getArabicProductName($productName) . ' — جودة ممتازة، شحن سريع.',
-                    'slug'        => Str::slug($this->getArabicProductName($productName)),
-                ]);
+                    // ── Product translations ───────────────────────
+                    $product->translations()->create([
+                        'locale'      => 'en',
+                        'name'        => $productName,
+                        'description' => $config['description'] ?? "$productName — premium quality, fast shipping.",
+                        'slug'        => $productSlug,
+                    ]);
 
-                // ── Variants ───────────────────────────────────
+                    $product->translations()->create([
+                        'locale'      => 'ar',
+                        'name'        => $this->getArabicProductName($productName),
+                        'description' => $this->getArabicDescription($productName),
+                        'slug'        => Str::slug($this->getArabicProductName($productName)),
+                    ]);
+                }
+
+                // ── STEP 1: Create Options and their Values ────
+                $createdOptions = [];
+                $allCombinations = [];
+
+                foreach ($config['options'] as $optionName => $optionValues) {
+                    // Create ProductOption
+                    $option = ProductOption::create([
+                        'product_id' => $product->id,
+                        'name'       => $optionName,
+                        'position'   => count($createdOptions),
+                    ]);
+
+                    // Create ProductOptionValues
+                    $optionValueModels = [];
+                    foreach ($optionValues as $position => $value) {
+                        $optionValue = ProductOptionValue::create([
+                            'option_id' => $option->id,
+                            'value'     => $value,
+                        ]);
+                        $optionValueModels[] = $optionValue;
+                    }
+
+                    $createdOptions[$optionName] = [
+                        'option' => $option,
+                        'values' => $optionValueModels,
+                    ];
+                }
+
+                // ── STEP 2: Generate All Combinations (Cartesian Product) ──
+                $combinations = $this->generateCombinations($createdOptions);
+                $this->command->info("   ✓ Generated " . count($combinations) . " variant combinations");
+
+                // ── STEP 3: Create Product Variants from Combinations ──
                 $firstVariant = null;
+                $variantPrice = $config['base_price'] ?? rand(50, 999);
 
-                foreach ($variants as $attributes) {
+                foreach ($combinations as $index => $combination) {
+                    // Generate SKU from combination values
+                    $skuParts = [$productName];
+                    foreach ($combination['values'] as $value) {
+                        $skuParts[] = $value->value;
+                    }
+                    $sku = strtoupper(Str::slug(implode('-', $skuParts))) . '-' . rand(1000, 9999);
+
+                    // Adjust price slightly for different combinations (optional)
+                    $priceAdjustment = $this->calculatePriceAdjustment($combination['values']);
+                    $finalPrice = max(0.99, $variantPrice + $priceAdjustment);
+
+                    // Create variant
                     $variant = ProductVariant::create([
                         'product_id'       => $product->id,
-                        'sku'              => strtoupper(Str::slug($productName)) . '-' . rand(1000, 9999),
-                        'price'            => rand(50, 999),
-                        'quantity'         => rand(5, 50),
-                        'batch_number'     => 'BATCH-' . rand(10000, 99999),
-                        'manufacture_date' => now()->subMonths(rand(1, 12)),
-                        'expiry_date'      => now()->addMonths(rand(6, 24)),
+                        'sku'              => $sku,
+                        'price'            => round($finalPrice, 2),
+                        'quantity'         => rand(5, 100),
+                        'batch_number'     => 'BATCH-' . date('Ymd') . '-' . str_pad($index + 1, 3, '0', STR_PAD_LEFT),
+                        'manufacture_date' => now()->subMonths(rand(1, 6)),
+                        'expiry_date'      => now()->addMonths(rand(12, 36)),
                         'is_active'        => true,
                     ]);
 
@@ -351,6 +309,7 @@ class ProductSeeder extends Seeder
                         $firstVariant = $variant;
                     }
 
+                    // Add default image
                     Image::create([
                         'imageable_id'   => $variant->id,
                         'imageable_type' => ProductVariant::class,
@@ -358,52 +317,12 @@ class ProductSeeder extends Seeder
                         'is_primary'     => true,
                     ]);
 
-                    foreach ($attributes as $attributeName => $attributeValue) {
-                        $attribute = Attribute::firstOrCreate(
-                            ['code' => Str::slug($attributeName)]
-                        );
-
-                        // Ensure English translation
-                        if (!$attribute->translations()->where('locale', 'en')->exists()) {
-                            $attribute->translations()->create([
-                                'locale' => 'en',
-                                'name'   => $attributeName,
-                            ]);
-                        }
-
-                        // Ensure Arabic translation
-                        if (!$attribute->translations()->where('locale', 'ar')->exists()) {
-                            $attribute->translations()->create([
-                                'locale' => 'ar',
-                                'name'   => $this->getArabicAttributeName($attributeName),
-                            ]);
-                        }
-
-                        $attributeValueModel = AttributeValue::firstOrCreate([
-                            'attribute_id' => $attribute->id,
-                            'code'         => Str::slug($attributeValue),
-                        ]);
-
-                        // Ensure English translation
-                        if (!$attributeValueModel->translations()->where('locale', 'en')->exists()) {
-                            $attributeValueModel->translations()->create([
-                                'locale' => 'en',
-                                'label'  => $attributeValue,
-                            ]);
-                        }
-
-                        // Ensure Arabic translation
-                        if (!$attributeValueModel->translations()->where('locale', 'ar')->exists()) {
-                            $attributeValueModel->translations()->create([
-                                'locale' => 'ar',
-                                'label'  => $this->getArabicAttributeValue($attributeValue),
-                            ]);
-                        }
-
-                        VariantAttributeValue::create([
-                            'variant_id'         => $variant->id,
-                            'attribute_id'       => $attribute->id,
-                            'attribute_value_id' => $attributeValueModel->id,
+                    // Link variant to its option values
+                    foreach ($combination['mapping'] as $optionName => $value) {
+                        DB::table('variant_option_values')->insert([
+                            'variant_id'       => $variant->id,
+                            'option_value_id'  => $value->id,
+                            'option_id'        => $createdOptions[$optionName]['option']->id,
                         ]);
                     }
                 }
@@ -412,11 +331,163 @@ class ProductSeeder extends Seeder
                 if ($firstVariant) {
                     $product->update(['product_variant_id' => $firstVariant->id]);
                 }
+
+                // ── Attach tags ────────────────────────────────
+                if (isset($this->productTags[$productName])) {
+                    $tagIds = [];
+                    foreach ($this->productTags[$productName] as $tagName) {
+                        $tag = Tag::where('store_id', $product->store_id)
+                            ->whereHas('translations', function ($query) use ($tagName) {
+                                $query->where('name', $tagName)->where('locale', 'en');
+                            })->first();
+
+                        if (!$tag) {
+                            $tag = Tag::create([
+                                'store_id' => $product->store_id,
+                                'is_active' => true,
+                            ]);
+
+                            $tag->translations()->create([
+                                'locale' => 'en',
+                                'name' => $tagName,
+                                'slug' => Str::slug($tagName),
+                            ]);
+
+                            if (isset($this->productTagsArabic[$tagName])) {
+                                $arabicTagName = $this->productTagsArabic[$tagName];
+                                $tag->translations()->create([
+                                    'locale' => 'ar',
+                                    'name' => $arabicTagName,
+                                    'slug' => Str::slug($arabicTagName),
+                                ]);
+                            }
+                        }
+
+                        $tagIds[] = $tag->id;
+                    }
+                    $product->tags()->sync($tagIds);
+                    $this->command->info("   ✓ Attached " . count($tagIds) . " tags");
+                }
+
+                $this->command->info("   ✅ Created " . count($combinations) . " variants for $productName");
             }
         }
 
         DB::commit();
-        $this->command->info('✅ Products seeded with brands & default variants (including Arabic attributes)!');
+        $this->command->info("\n✅ Products seeded successfully with Option + Value → Generate Combinations pattern!");
+        $this->command->info("   Each product has options and all possible combinations were generated automatically.");
+    }
+
+    /**
+     * Generate all possible combinations of option values (Cartesian product)
+     * 
+     * @param array $createdOptions Format: ['OptionName' => ['option' => $option, 'values' => [$value1, $value2]]]
+     * @return array List of combinations, each containing 'mapping' and 'values'
+     * 
+     * Example Output:
+     * [
+     *     [
+     *         'mapping' => ['Color' => $redValue, 'Size' => $smallValue],
+     *         'values' => [$redValue, $smallValue]
+     *     ],
+     *     ...
+     * ]
+     */
+    private function generateCombinations(array $createdOptions): array
+    {
+        $combinations = [];
+        $optionNames = array_keys($createdOptions);
+        $optionValuesList = array_map(function ($option) use ($createdOptions) {
+            return $createdOptions[$option]['values'];
+        }, $optionNames);
+
+        // Generate Cartesian product
+        $combinationsData = $this->cartesianProduct($optionValuesList);
+
+        foreach ($combinationsData as $combinationValues) {
+            $mapping = [];
+            foreach ($optionNames as $index => $optionName) {
+                $mapping[$optionName] = $combinationValues[$index];
+            }
+            $combinations[] = [
+                'mapping' => $mapping,
+                'values' => $combinationValues,
+            ];
+        }
+
+        return $combinations;
+    }
+
+    /**
+     * Calculate Cartesian product of multiple arrays
+     * 
+     * @param array $arrays List of arrays to combine
+     * @return array All possible combinations
+     */
+    private function cartesianProduct(array $arrays): array
+    {
+        $result = [[]];
+        foreach ($arrays as $array) {
+            $temp = [];
+            foreach ($result as $combination) {
+                foreach ($array as $item) {
+                    $temp[] = array_merge($combination, [$item]);
+                }
+            }
+            $result = $temp;
+        }
+        return $result;
+    }
+
+    /**
+     * Calculate price adjustment based on option values
+     * Example: Higher storage or RAM increases price
+     */
+    private function calculatePriceAdjustment(array $optionValues): float
+    {
+        $adjustment = 0;
+
+        foreach ($optionValues as $value) {
+            $valueString = $value->value;
+            
+            // Storage adjustments
+            if (str_contains($valueString, 'GB') || str_contains($valueString, 'TB')) {
+                if ($valueString === '256GB') $adjustment += 50;
+                elseif ($valueString === '512GB') $adjustment += 100;
+                elseif ($valueString === '1TB') $adjustment += 200;
+                elseif ($valueString === '2TB') $adjustment += 400;
+            }
+            
+            // RAM adjustments
+            if (str_contains($valueString, 'GB') && !str_contains($valueString, 'Storage')) {
+                if ($valueString === '16GB') $adjustment += 80;
+                elseif ($valueString === '32GB') $adjustment += 160;
+                elseif ($valueString === '64GB') $adjustment += 320;
+            }
+            
+            // Material adjustments
+            if ($valueString === 'Leather') $adjustment += 100;
+            if ($valueString === 'Velvet') $adjustment += 80;
+            
+            // Size doesn't affect price, length might
+            if ($valueString === 'Long') $adjustment += 10;
+        }
+
+        return $adjustment;
+    }
+
+    /**
+     * Display combinations in a readable format (for debugging)
+     */
+    private function displayCombinations(array $combinations): void
+    {
+        foreach ($combinations as $index => $combination) {
+            $values = [];
+            foreach ($combination['mapping'] as $optionName => $value) {
+                $values[] = "$optionName: {$value->value}";
+            }
+            $this->command->info("      Combo " . ($index + 1) . ": " . implode(', ', $values));
+        }
     }
 
     private function getArabicProductName($englishName)
@@ -473,215 +544,22 @@ class ProductSeeder extends Seeder
         return $translations[$englishName] ?? $englishName;
     }
 
-    /**
-     * Get Arabic translation for an attribute name.
-     */
-    private function getArabicAttributeName(string $englishName): string
+    private function getArabicDescription($productName)
     {
-        $translations = [
-            // Common attribute names
-            'Storage'           => 'سعة التخزين',
-            'Color'             => 'اللون',
-            'Model'             => 'الموديل',
-            'Battery'           => 'البطارية',
-            'Size'              => 'المقاس',
-            'Material'          => 'الخامة',
-            'Resolution'        => 'الدقة',
-            'Refresh Rate'      => 'معدل التحديث',
-            'Layout'            => 'ترتيب الأزرار',
-            'Switches'          => 'نوع المفاتيح',
-            'Backlight'         => 'الإضاءة الخلفية',
-            'DPI'               => 'DPI',
-            'Buttons'           => 'الأزرار',
-            'Ports'             => 'المنافذ',
-            'Power Delivery'    => 'شحن سريع',
-            'Capacity'          => 'السعة',
-            'Interface'         => 'الواجهة',
-            'Speed'             => 'السرعة',
-            'RAM'               => 'الذاكرة العشوائية',
-            'Dimensions'        => 'الأبعاد',
-            'Power'             => 'الطاقة',
-            'Height'            => 'الارتفاع',
-            'Style'             => 'الستايل',
-            'Color Temperature' => 'درجة حرارة اللون',
-            'Diameter'          => 'القطر',
-            'Frame'             => 'الإطار',
-            'Set'               => 'المجموعة',
-            'Pot Material'      => 'مادة الأصيص',
-            'Thickness'         => 'السماكة',
-            'Type'              => 'النوع',
-            'Weight'            => 'الوزن',
+        $descriptions = [
+            'Classic Cotton T-Shirt' => 'تي شيرت قطني فاخر مريح للاستخدام اليومي',
+            'Slim Fit Jeans' => 'جينز عصري بقصة ضيقة مع قماش مطاطي مريح',
+            'Flory Summer Dress' => 'فستان صيفي زهري مثالي للأيام الدافئة',
+            'Yoga Pants' => 'بنطلون يوجا عالي الخصر بقماش يمتص الرطوبة',
+            'Running Sneakers' => 'حذاء جري رياضي خفيف الوزن بنعل مبطن',
+            'Casual Loafers' => 'لوففرز كاجوال مريحة للاستخدام اليومي',
+            'iPhone 14' => 'آيفون 14 من أبل مع نظام كاميرا متقدم',
+            'Samsung Galaxy S23' => 'سامسونج جالاكسي S23 بشاشة AMOLED ديناميكية',
+            'MacBook Pro' => 'ماك بوك برو مع شريحة M2 وشاشة ريتينا',
+            'Modern Sofa 3-Seater' => 'كنبة عصرية بثلاثة مقاعد مع وسائد مريحة',
+            'Wireless Earbuds' => 'سماعات لاسلكية عالية الجودة مع إلغاء الضوضاء',
         ];
 
-        return $translations[$englishName] ?? $englishName;
-    }
-
-    /**
-     * Get Arabic translation for an attribute value.
-     */
-    private function getArabicAttributeValue(string $englishValue): string
-    {
-        $translations = [
-            // Storage capacities
-            '64GB'   => '٦٤ جيجابايت',
-            '128GB'  => '١٢٨ جيجابايت',
-            '256GB'  => '٢٥٦ جيجابايت',
-            '512GB'  => '٥١٢ جيجابايت',
-            '1TB'    => '١ تيرابايت',
-            '2TB'    => '٢ تيرابايت',
-            '500GB'  => '٥٠٠ جيجابايت',
-
-            // RAM
-            '8GB'    => '٨ جيجابايت',
-            '16GB'   => '١٦ جيجابايت',
-            '32GB'   => '٣٢ جيجابايت',
-            '64GB RAM' => '٦٤ جيجابايت',
-
-            // Colors (basic)
-            'Black'         => 'أسود',
-            'White'         => 'أبيض',
-            'Blue'          => 'أزرق',
-            'Green'         => 'أخضر',
-            'Grey'          => 'رمادي',
-            'Gray'          => 'رمادي',
-            'Red'           => 'أحمر',
-            'Pink'          => 'وردي',
-            'Brown'         => 'بني',
-            'Beige'         => 'بيج',
-            'Cream'         => 'كريمي',
-            'Navy'          => 'كحلي',
-            'Navy Blue'     => 'أزرق كحلي',
-            'Camel'         => 'كاميل',
-            'Burgundy'      => 'بورجوندي',
-            'Purple'        => 'بنفسجي',
-            'Silver'        => 'فضي',
-            'Gold'          => 'ذهبي',
-            'Space Gray'    => 'رمادي فلكي',
-            'Platinum Silver' => 'بلاتيني فضي',
-            'Frost White'   => 'أبيض ثلجي',
-            'Nightfall Black' => 'أسود الغسق',
-            'Poseidon Blue' => 'أزرق بوسيدون',
-            'Natural Silver' => 'فضي طبيعي',
-            'Eclipse Gray'  => 'رمادي إكليبس',
-            'Moonlight White' => 'أبيض ضوء القمر',
-            'Midnight'      => 'منتصف الليل',
-            'Graphite'      => 'جرافيت',
-            'Light Blue'    => 'أزرق فاتح',
-            'Dark Blue'     => 'أزرق غامق',
-            'Dark Grey'     => 'رمادي غامق',
-            'Nude'          => 'عاري',
-            'Beige'         => 'بيج',
-
-            // Sizes / dimensions
-            'S'     => 'صغير',
-            'M'     => 'متوسط',
-            'L'     => 'كبير',
-            'XL'    => 'كبير جداً',
-            '28'    => '٢٨',
-            '30'    => '٣٠',
-            '32'    => '٣٢',
-            '34'    => '٣٤',
-            '36'    => '٣٦',
-            '37'    => '٣٧',
-            '38'    => '٣٨',
-            '39'    => '٣٩',
-            '40'    => '٤٠',
-            '41'    => '٤١',
-            '44mm'  => '٤٤ مم',
-            '45mm'  => '٤٥ مم',
-            '40mm'  => '٤٠ مم',
-
-            // Materials
-            'Nylon'     => 'نايلون',
-            'Leather'   => 'جلد',
-            'Polyester' => 'بوليستر',
-            'Mesh'      => 'شبكي',
-            'Wood'      => 'خشب',
-            'Metal'     => 'معدن',
-            'Oak'       => 'بلوط',
-            'Walnut'    => 'جوز',
-            'Teak'      => 'تيك',
-            'Cotton'    => 'قطن',
-            'Velvet'    => 'مخمل',
-            'Ceramic'   => 'سيراميك',
-            'Terracotta'=> 'تيراكوتا',
-
-            // Electronics specifics
-            '1080p'     => '١٠٨٠ بكسل',
-            '4K'        => '٤ كيه',
-            '1440p'     => '١٤٤٠ بكسل',
-            '75Hz'      => '٧٥ هرتز',
-            '60Hz'      => '٦٠ هرتز',
-            '144Hz'     => '١٤٤ هرتز',
-            'RGB'       => 'أر جي بي',
-            'TKL'       => 'بدون لوحة أرقام',
-            'Full Size' => 'حجم كامل',
-            '60%'       => '٦٠٪',
-            'Blue'      => 'أزرق (مفاتيح)',
-            'Red'       => 'أحمر (مفاتيح)',
-            'Brown'     => 'بني (مفاتيح)',
-            'USB-C'     => 'يو إس بي سي',
-            'USB 3.2'   => 'يو إس بي ٣.٢',
-            'Thunderbolt'=> 'ثاندر بولت',
-            '1050MB/s'  => '١٠٥٠ ميجابايت/ث',
-            '2000MB/s'  => '٢٠٠٠ ميجابايت/ث',
-            '2800MB/s'  => '٢٨٠٠ ميجابايت/ث',
-            '6h'        => '٦ ساعات',
-            '5h'        => '٥ ساعات',
-            '8h'        => '٨ ساعات',
-            'AirPods Pro'       => 'آيربودز برو',
-            'Samsung Galaxy Buds' => 'سامسونج جالاكسي بودز',
-            'Sony WF-1000XM4'   => 'سوني WF-1000XM4',
-            'Apple Watch Series 8' => 'آبل ووتش سيريس ٨',
-            'Samsung Galaxy Watch 5' => 'سامسونج جالاكسي ووتش ٥',
-            'Fitbit Versa 4'    => 'فيت بيت فيرسا ٤',
-            'HDMI + USB3 x3 + Ethernet' => 'إتش دي إم آي + يو إس بي ٣ ×٣ + إيثرنت',
-            '4K HDMI + USB-C + SD Card' => 'إتش دي إم آي ٤ كيه + يو إس بي سي + بطاقة إس دي',
-            'VGA + USB2 x2 + Audio' => 'في جي إيه + يو إس بي ٢ ×٢ + صوت',
-            '100W'      => '١٠٠ واط',
-            '85W'       => '٨٥ واط',
-            '60W'       => '٦٠ واط',
-
-            // Furniture / dimensions
-            '200x90x85cm'   => '٢٠٠×٩٠×٨٥ سم',
-            '160x90x75cm'   => '١٦٠×٩٠×٧٥ سم',
-            '180x90x75cm'   => '١٨٠×٩٠×٧٥ سم',
-            '200x100x75cm'  => '٢٠٠×١٠٠×٧٥ سم',
-            '160x200cm'     => '١٦٠×٢٠٠ سم',
-            '120x30x180cm'  => '١٢٠×٣٠×١٨٠ سم',
-            '60x80cm'       => '٦٠×٨٠ سم',
-            '80x120cm'      => '٨٠×١٢٠ سم',
-            '100x150cm'     => '١٠٠×١٥٠ سم',
-            '45x45cm'       => '٤٥×٤٥ سم',
-            '50x50cm'       => '٥٠×٥٠ سم',
-            '25cm'          => '٢٥ سم',
-            '30cm'          => '٣٠ سم',
-            '35cm'          => '٣٥ سم',
-            '40cm'          => '٤٠ سم',
-            '50cm'          => '٥٠ سم',
-            '60cm'          => '٦٠ سم',
-            '160cm'         => '١٦٠ سم',
-            '180cm'         => '١٨٠ سم',
-
-            // Styles and others
-            'Minimalist'    => 'بسيط',
-            'Vintage'       => 'كلاسيكي قديم',
-            'Industrial'    => 'صناعي',
-            'Wall-mounted'  => 'مثبت على الحائط',
-            'Door-mounted'  => 'مثبت على الباب',
-            'Warm White'    => 'أبيض دافئ',
-            'Cool White'    => 'أبيض بارد',
-            '5mm'           => '٥ مم',
-            '8mm'           => '٨ مم',
-            '20kg'          => '٢٠ كجم',
-            '30kg'          => '٣٠ كجم',
-            '4L'            => '٤ لتر',
-            '1.7L'          => '١.٧ لتر',
-            '1200W'         => '١٢٠٠ واط',
-            '3 Succulents'  => '٣ نباتات صبارية',
-            '5 Mixed Plants'=> '٥ نباتات متنوعة',
-        ];
-
-        return $translations[$englishValue] ?? $englishValue;
+        return $descriptions[$productName] ?? 'وصف ' . $this->getArabicProductName($productName) . ' — جودة ممتازة، شحن سريع.';
     }
 }

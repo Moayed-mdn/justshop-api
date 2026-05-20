@@ -4,6 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProductVariant extends Model
@@ -13,57 +16,64 @@ class ProductVariant extends Model
     protected $fillable = [
         'product_id',
         'sku',
+        'barcode',
         'price',
+        'compare_at_price',
+        'cost_price',
         'quantity',
+        'low_stock_threshold',
+        'track_inventory',
         'manufacture_date',
         'expiry_date',
         'batch_number',
+        'weight',
+        'weight_unit',
+        'position',
         'is_active',
     ];
 
-    public function casts(): array
-    {
-        return [
-            'price' => 'float',
-        ];
-    }
+    protected $casts = [
+        'price'            => 'float',
+        'compare_at_price' => 'float',
+        'cost_price'       => 'float',
+        'weight'           => 'float',
+        'quantity'         => 'integer',
+        'low_stock_threshold' => 'integer',
+        'track_inventory'  => 'boolean',
+        'is_active'        => 'boolean',
+        'position'         => 'integer',
+    ];
 
-    public function product()
+    // ── Relationships ──────────────────────────────────────────
+
+    public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'product_id');
     }
 
     /**
-     * Existing relationship — now includes pivot data.
-     * Used by: ProductController@show, CartController, etc.
-     * Adding withPivot does NOT break existing code that ignores the pivot.
+     * New system: option values from product_option_values
+     * via variant_option_values pivot.
      */
-    public function attributes()
-    {
-        return $this->belongsToMany(Attribute::class, 'variant_attribute_values', 'variant_id')
-            ->withPivot('attribute_value_id');   // ← ADDED
-    }
-
-    /**
-     * NEW: Direct access to AttributeValue models through the pivot.
-     * Used by: CartItemResource for translated attribute display.
-     */
-    public function attributeValues()
+    public function optionValues(): BelongsToMany
     {
         return $this->belongsToMany(
-            AttributeValue::class,
-            'variant_attribute_values',
+            ProductOptionValue::class,
+            'variant_option_values',
             'variant_id',
-            'attribute_value_id'
-        )->withPivot('attribute_id');
+            'option_value_id',
+        )->withPivot('option_id');
     }
 
-    public function images()
+
+    public function images(): MorphMany
     {
         return $this->morphMany(Image::class, 'imageable');
     }
 
-    public function getPrimaryImageAttribute()
+    // ── Accessors ──────────────────────────────────────────────
+
+    public function getPrimaryImageAttribute(): ?Image
     {
         return $this->images()->where('is_primary', true)->first();
     }

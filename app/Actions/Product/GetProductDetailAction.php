@@ -22,8 +22,7 @@ class GetProductDetailAction
             'translations',
             'category.translations',
             'brand',
-            'activeVariants.attributeValues.translations',
-            'activeVariants.attributeValues.attribute.translations',
+            'activeVariants.optionValues.option',
             'activeVariants.images',
         ]);
 

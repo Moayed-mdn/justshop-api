@@ -5,72 +5,251 @@ declare(strict_types=1);
 namespace App\Repositories\Category;
 
 use App\Models\Category;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 class CategoryRepository
 {
-    public function getRootCategories(int $storeId, ?string $type = null): Collection
-    {
+    // ── Queries ────────────────────────────────────────────────
+
+    public function getRootCategories(
+        int $storeId,
+        ?string $type = null,
+    ): Collection {
         $query = Category::query()
             ->where('store_id', $storeId)
-            ->with(['children', 'parent'])
-            ->withCount(['products' => function ($q) use ($storeId) {
-                $q->where('is_active', true)
-                    ->where('store_id', $storeId);
-            }])
-            ->whereNull('parent_id');
+            ->whereNull('parent_id')
+            ->with(['translations', 'children.translations'])
+            ->withCount(['products' => fn(Builder $q) => $q
+                ->where('is_active', true)
+                ->where('store_id', $storeId),
+            ])
+            ->orderBy('sort_order');
 
-        if ($type) {
+        if ($type !== null) {
             $query->where('type', $type);
         }
 
         return $query->get();
     }
 
-    public function getChildCategories(int $parentId, int $storeId): Collection
-    {
+    public function getChildCategories(
+        int $parentId,
+        int $storeId,
+    ): Collection {
         return Category::query()
             ->where('store_id', $storeId)
             ->where('parent_id', $parentId)
-            ->with(['children', 'parent'])
-            ->withCount(['products' => function ($q) use ($storeId) {
-                $q->where('is_active', true)
-                    ->where('store_id', $storeId);
-            }])
+            ->with(['translations', 'children.translations'])
+            ->withCount(['products' => fn(Builder $q) => $q
+                ->where('is_active', true)
+                ->where('store_id', $storeId),
+            ])
+            ->orderBy('sort_order')
             ->get();
     }
 
-    public function findById(int $id, int $storeId): ?Category
+    public function paginate(
+        int $storeId,
+        ?int $parentId,
+        ?bool $isActive,
+        int $perPage,
+    ): LengthAwarePaginator {
+        $query = Category::query()
+            ->where('store_id', $storeId)
+            ->with(['translations', 'parent.translations'])
+            ->withCount(['products' => fn(Builder $q) => $q
+                ->where('store_id', $storeId),
+            ])
+            ->orderBy('sort_order');
+
+        if ($parentId !== null) {
+            $query->where('parent_id', $parentId);
+        }
+
+        if ($isActive !== null) {
+            $query->where('is_active', $isActive);
+        }
+
+        return $query->paginate($perPage);
+    }
+
+    public function findById(
+        int $id,
+        int $storeId,
+    ): ?Category {
+        return Category::query()
+            ->where('store_id', $storeId)
+            ->where('id', $id)
+            ->with([
+                'translations',
+                'parent.translations',
+                'children.translations',
+            ])
+            ->withCount(['products' => fn(Builder $q) => $q
+                ->where('store_id', $storeId),
+            ])
+            ->first();
+    }
+
+    public function findByIdOrFail(
+        int $id,
+        int $storeId,
+    ): Category {
+        $category = $this->findById($id, $storeId);
+
+        if ($category === null) {
+            throw new \App\Exceptions\Category\CategoryNotFoundException();
+        }
+
+        return $category;
+    }
+
+    public function findTrashedById(
+        int $id,
+        int $storeId,
+    ): ?Category {
+        return Category::withTrashed()
+            ->where('store_id', $storeId)
+            ->where('id', $id)
+            ->with('translations')
+            ->first();
+    }
+
+    public function findBySlug(
+        string $slug,
+        int $storeId,
+    ): ?Category {
+        return Category::findByLocalizedSlug($slug, $storeId);
+    }
+
+    public function findBySlugOrFail(
+        string $slug,
+        int $storeId,
+    ): Category {
+        return Category::findByLocalizedSlugOrFail($slug, $storeId);
+    }
+
+    public function slugExistsForStore(
+        string $slug,
+        int $storeId,
+        ?int $excludeId = null,
+    ): bool {
+        $query = Category::query()
+            ->where('store_id', $storeId)
+            ->where('slug', $slug);
+
+        if ($excludeId !== null) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        return $query->exists();
+    }
+
+    public function hasActiveChildren(int $id, int $storeId): bool
     {
         return Category::query()
             ->where('store_id', $storeId)
-            ->with(['children', 'parent'])
-            ->withCount(['products' => function ($q) use ($storeId) {
-                $q->where('is_active', true)
-                    ->where('store_id', $storeId);
-            }])
-            ->find($id);
+            ->where('parent_id', $id)
+            ->exists();
     }
 
-    public function findBySlugOrFail(string $slug, int $storeId): Category
+    public function hasProducts(int $id, int $storeId): bool
     {
-        return Category::where('store_id', $storeId)->findByLocalizedSlugOrFail($slug);
+        return Category::query()
+            ->where('store_id', $storeId)
+            ->where('id', $id)
+            ->whereHas('products', fn(Builder $q) => $q
+                ->where('store_id', $storeId)
+            )
+            ->exists();
     }
 
-    public function findBySlug(string $slug, int $storeId): ?Category
-    {
-        return Category::where('store_id', $storeId)->findByLocalizedSlug($slug);
+    // ── Mutations ──────────────────────────────────────────────
+
+    public function create(
+        int $storeId,
+        string $slug,
+        ?int $parentId,
+        int $sortOrder,
+        bool $isActive,
+        array $translations,
+    ): Category {
+        $category = Category::create([
+            'store_id'   => $storeId,
+            'slug'       => $slug,
+            'parent_id'  => $parentId,
+            'sort_order' => $sortOrder,
+            'is_active'  => $isActive,
+        ]);
+
+        foreach ($translations as $translation) {
+            $category->translations()->create($translation);
+        }
+
+        $category->load(['translations', 'parent.translations']);
+
+        return $category;
     }
 
-    public function flattenDescendantsWithTranslations(Category $category, string $locale): array
+    public function update(
+        Category $category,
+        string $slug,
+        ?int $parentId,
+        int $sortOrder,
+        bool $isActive,
+        array $translations,
+    ): Category {
+        $category->update([
+            'slug'       => $slug,
+            'parent_id'  => $parentId,
+            'sort_order' => $sortOrder,
+            'is_active'  => $isActive,
+        ]);
+
+        foreach ($translations as $translation) {
+            $category->translations()->updateOrCreate(
+                ['locale' => $translation['locale']],
+                [
+                    'name' => $translation['name'],
+                    'slug' => $translation['slug'],
+                ],
+            );
+        }
+
+        $category->load(['translations', 'parent.translations']);
+
+        return $category;
+    }
+
+    public function delete(Category $category): void
     {
+        $category->delete();
+    }
+
+    public function restore(Category $category): void
+    {
+        $category->restore();
+    }
+
+    // ── Flatten helpers ────────────────────────────────────────
+
+    public function flattenDescendantsWithTranslations(
+        Category $category,
+        string $locale,
+    ): array {
         $result = collect();
         $this->flattenDescendantsRecursive($category, $result, $locale);
+
         return $result->toArray();
     }
 
-    private function flattenDescendantsRecursive(Category $category, &$result, string $locale): void
-    {
+    private function flattenDescendantsRecursive(
+        Category $category,
+        mixed &$result,
+        string $locale,
+    ): void {
         foreach ($category->children as $child) {
             $translation = $child->translation($locale);
 
@@ -80,23 +259,25 @@ class CategoryRepository
                 'slug' => $translation?->slug ?? $child->slug,
             ]);
 
-            if ($child->relationLoaded('descendants') || $child->relationLoaded('children')) {
-                $this->flattenDescendantsRecursive($child, $result, $locale);
-            }
+            $this->flattenDescendantsRecursive($child, $result, $locale);
         }
     }
 
     public function getBreadcrumb(Category $category): array
     {
+        $locale    = app()->getLocale();
         $breadcrumb = [];
-        $current = $category;
+        $current   = $category;
 
         while ($current) {
+            $translation = $current->translation($locale);
+
             array_unshift($breadcrumb, [
-                'id' => $current->id,
-                'name' => $current->name,
-                'slug' => $current->slug,
+                'id'   => $current->id,
+                'name' => $translation?->name ?? $current->slug,
+                'slug' => $translation?->slug ?? $current->slug,
             ]);
+
             $current = $current->parent;
         }
 

@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('stores', function (Blueprint $table) {
-            $table->string('domain')->nullable()->after('slug');
+            $table->string('domain')->nullable()->after('name');
             $table->string('currency', 3)->default('USD')->after('domain');
             $table->string('timezone')->default('UTC')->after('currency');
         });

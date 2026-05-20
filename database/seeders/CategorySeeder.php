@@ -63,7 +63,8 @@ class CategorySeeder extends Seeder
             // Create parent category
             $parentCategory = Category::create([
                 'parent_id' => null,
-                'slug' => str::slug($parentData['en'])
+                'slug' => str::slug($parentData['en']),
+                'store_id' => 1
             ]);
 
             // Add translations for parent category

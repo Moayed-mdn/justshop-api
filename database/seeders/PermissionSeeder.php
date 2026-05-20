@@ -31,6 +31,20 @@ class PermissionSeeder extends Seeder
             PermissionEnum::STORE_DELETE,
             PermissionEnum::STORE_VIEW,
             PermissionEnum::DASHBOARD_VIEW,
+            PermissionEnum::CATEGORY_VIEW,
+            PermissionEnum::CATEGORY_CREATE,
+            PermissionEnum::CATEGORY_UPDATE,
+            PermissionEnum::CATEGORY_DELETE,
+            PermissionEnum::CATEGORY_RESTORE,
+            PermissionEnum::BRAND_VIEW,
+            PermissionEnum::BRAND_CREATE,
+            PermissionEnum::BRAND_UPDATE,
+            PermissionEnum::BRAND_DELETE,
+            PermissionEnum::BRAND_RESTORE,
+            PermissionEnum::TAG_VIEW,
+            PermissionEnum::TAG_CREATE,
+            PermissionEnum::TAG_UPDATE,
+            PermissionEnum::TAG_DELETE,
         ];
 
         foreach ($permissions as $permission) {
@@ -62,6 +76,20 @@ class PermissionSeeder extends Seeder
             PermissionEnum::STORE_DELETE,
             PermissionEnum::STORE_VIEW,
             PermissionEnum::DASHBOARD_VIEW,
+            PermissionEnum::CATEGORY_VIEW,
+            PermissionEnum::CATEGORY_CREATE,
+            PermissionEnum::CATEGORY_UPDATE,
+            PermissionEnum::CATEGORY_DELETE,
+            PermissionEnum::CATEGORY_RESTORE,
+            PermissionEnum::BRAND_VIEW,
+            PermissionEnum::BRAND_CREATE,
+            PermissionEnum::BRAND_UPDATE,
+            PermissionEnum::BRAND_DELETE,
+            PermissionEnum::BRAND_RESTORE,
+            PermissionEnum::TAG_VIEW,
+            PermissionEnum::TAG_CREATE,
+            PermissionEnum::TAG_UPDATE,
+            PermissionEnum::TAG_DELETE,
         ]);
 
         // Assign permissions to store_admin
@@ -82,6 +110,20 @@ class PermissionSeeder extends Seeder
             PermissionEnum::STORE_UPDATE,
             PermissionEnum::STORE_VIEW,
             PermissionEnum::DASHBOARD_VIEW,
+            PermissionEnum::CATEGORY_VIEW,
+            PermissionEnum::CATEGORY_CREATE,
+            PermissionEnum::CATEGORY_UPDATE,
+            PermissionEnum::CATEGORY_DELETE,
+            PermissionEnum::CATEGORY_RESTORE,
+            PermissionEnum::BRAND_VIEW,
+            PermissionEnum::BRAND_CREATE,
+            PermissionEnum::BRAND_UPDATE,
+            PermissionEnum::BRAND_DELETE,
+            PermissionEnum::BRAND_RESTORE,
+            PermissionEnum::TAG_VIEW,
+            PermissionEnum::TAG_CREATE,
+            PermissionEnum::TAG_UPDATE,
+            PermissionEnum::TAG_DELETE,
         ]);
 
         // Assign permissions to staff
@@ -90,6 +132,9 @@ class PermissionSeeder extends Seeder
             PermissionEnum::PRODUCT_VIEW,
             PermissionEnum::ORDER_VIEW,
             PermissionEnum::DASHBOARD_VIEW,
+            PermissionEnum::CATEGORY_VIEW,
+            PermissionEnum::BRAND_VIEW,
+            PermissionEnum::TAG_VIEW,
         ]);
 
         // customer gets no permissions (role exists but no permissions assigned)

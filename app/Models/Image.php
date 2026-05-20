@@ -1,4 +1,5 @@
 <?php
+
 // app/Models/Image.php
 
 namespace App\Models;
@@ -18,6 +19,7 @@ class Image extends Model
         'image_url',
         'alt_text',
         'is_primary',
+        'sort_order',
     ];
 
     protected $appends = ['full_url'];

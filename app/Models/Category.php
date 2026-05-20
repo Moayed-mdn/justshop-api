@@ -1,5 +1,6 @@
 <?php
-// app/Models/Category.php
+
+declare(strict_types=1);
 
 namespace App\Models;
 
@@ -7,6 +8,8 @@ use App\Exceptions\NotFoundException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Category extends Model
@@ -14,47 +17,57 @@ class Category extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'store_id',
         'slug',
         'parent_id',
+        'sort_order',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active'  => 'boolean',
+        'sort_order' => 'integer',
     ];
 
     // ── Relationships ──────────────────────────────────────────
 
-    public function translations()
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class);
+    }
+
+    public function translations(): HasMany
     {
         return $this->hasMany(CategoryTranslation::class);
     }
 
-    public function parent()
+    public function parent(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'parent_id');
     }
 
-    public function children()
+    public function children(): HasMany
     {
         return $this->hasMany(Category::class, 'parent_id');
     }
 
-    public function parents()
+    public function parents(): BelongsTo
     {
         return $this->parent()->with('parents');
     }
 
-    public function descendants()
+    public function descendants(): HasMany
     {
         return $this->children()->with('descendants');
     }
 
-    public function products()
+    public function products(): HasMany
     {
         return $this->hasMany(Product::class, 'category_id');
     }
 
     // ── Translation Helpers ────────────────────────────────────
 
-    /**
-     * Get the translation for a given locale, with fallback.
-     */
     public function translation(?string $locale = null): ?CategoryTranslation
     {
         $locale = $locale ?? app()->getLocale();
@@ -63,9 +76,6 @@ class Category extends Model
             ?? $this->translations->first();
     }
 
-    /**
-     * Get a translated attribute value.
-     */
     public function translated(string $key, ?string $locale = null): ?string
     {
         return $this->translation($locale)?->{$key};
@@ -73,37 +83,37 @@ class Category extends Model
 
     // ── Static Finders ─────────────────────────────────────────
 
-    /**
-     * Find a category by its localized slug.
-     */
-    public static function findByLocalizedSlug(string $slug, ?string $locale = null): ?self
-    {
+    public static function findByLocalizedSlug(
+        string $slug,
+        int $storeId,
+        ?string $locale = null,
+    ): ?self {
         $locale = $locale ?? app()->getLocale();
 
-        // Try exact locale match first
         $translation = CategoryTranslation::where('slug', $slug)
             ->where('locale', $locale)
             ->first();
 
-        // Fallback: any locale
         if (!$translation) {
             $translation = CategoryTranslation::where('slug', $slug)->first();
         }
 
-        // Fallback: main table slug
         if (!$translation) {
-            return static::where('slug', $slug)->first();
+            return static::where('store_id', $storeId)
+                ->where('slug', $slug)
+                ->first();
         }
 
-        return static::find($translation->category_id);
+        return static::where('store_id', $storeId)
+            ->find($translation->category_id);
     }
 
-    /**
-     * Find by localized slug or fail with 404.
-     */
-    public static function findByLocalizedSlugOrFail(string $slug, ?string $locale = null): self
-    {
-        $category = static::findByLocalizedSlug($slug, $locale);
+    public static function findByLocalizedSlugOrFail(
+        string $slug,
+        int $storeId,
+        ?string $locale = null,
+    ): self {
+        $category = static::findByLocalizedSlug($slug, $storeId, $locale);
 
         if (!$category) {
             throw new NotFoundException('Category not found.');
@@ -112,14 +122,12 @@ class Category extends Model
         return $category;
     }
 
-    /**
-     * Collect all descendant IDs (flat array including self).
-     */
+    // ── Descendant Helpers ─────────────────────────────────────
+
     public function allDescendantIds(): array
     {
         $ids = [$this->id];
         $this->loadMissing('descendants');
-
         $this->collectDescendantIds($this, $ids);
 
         return $ids;
@@ -133,13 +141,14 @@ class Category extends Model
         }
     }
 
-    // ── Breadcrumb (fixed: uses translations) ──────────────────
+    // ── Breadcrumb ─────────────────────────────────────────────
 
     public function getBreadcrumbAttribute(): \Illuminate\Support\Collection
     {
-        $locale = app()->getLocale();
+        $locale     = app()->getLocale();
         $breadcrumb = collect();
-        $current = $this;
+        $current    = $this;
+
         $current->loadMissing('parents.translations');
 
         while ($current) {
@@ -164,13 +173,8 @@ class Category extends Model
         return $query->whereNull('parent_id');
     }
 
-    // ── Display Helper ─────────────────────────────────────────
-
-    public function rootParent()
+    public function scopeActive(Builder $query): Builder
     {
-        if ($this->parent) {
-            return $this->parent->rootParent();
-        }
-        return $this;
+        return $query->where('is_active', true);
     }
 }

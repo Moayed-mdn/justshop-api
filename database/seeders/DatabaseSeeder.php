@@ -12,11 +12,11 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PermissionSeeder::class,
             StoreSeeder::class,
-            BrandSeeder::class,       // ← NEW (must be before products)
             CategorySeeder::class,
+            BrandSeeder::class,
             ProductSeeder::class,
             FakeSalesSeeder::class,
-            ReviewSeeder::class,      // ← NEW (must be after products & users)
+            ReviewSeeder::class,
             HeroBannerSeeder::class,
         ]);
     }

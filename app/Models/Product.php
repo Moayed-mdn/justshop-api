@@ -1,10 +1,13 @@
 <?php
-// app/Models/Product.php
 
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
@@ -13,39 +16,94 @@ class Product extends Model
 
     protected $fillable = [
         'store_id',
-        // 'slug' ← REMOVED
         'category_id',
         'brand_id',
         'product_variant_id',
         'is_active',
+        'is_featured',
+        'sort_order',
+    ];
+
+    protected $casts = [
+        'is_active'   => 'boolean',
+        'is_featured' => 'boolean',
+        'sort_order'  => 'integer',
     ];
 
     // ── Relationships ──────────────────────────────────────────
 
-    public function translations()
+    public function translations(): HasMany
     {
         return $this->hasMany(ProductTranslation::class);
     }
 
-    public function category()
+    public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class, 'category_id');
     }
 
-    public function variants()
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class);
+    }
+
+    public function store(): BelongsTo
+    {
+        return $this->belongsTo(Store::class);
+    }
+
+    public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class, 'product_id');
     }
 
-    public function activeVariants()
+    public function activeVariants(): HasMany
     {
         return $this->variants()->where('is_active', true);
     }
 
-    public function defaultVariant()
+    public function defaultVariant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
+
+    /**
+     * Canonical product options (new system).
+     * Ordered by position ascending.
+     */
+    public function productOptions(): HasMany
+    {
+        return $this->hasMany(ProductOption::class, 'product_id')
+            ->orderBy('position');
+    }
+
+    /**
+     * Product-level shared media gallery.
+     * Ordered by sort_order ascending.
+     * Owned directly by the Product (imageable_type = App\Models\Product).
+     */
+    public function images(): MorphMany
+    {
+        return $this->morphMany(Image::class, 'imageable')
+            ->orderBy('sort_order');
+    }
+
+    public function tags(): BelongsToMany
+    {
+        return $this->morphToMany(Tag::class, 'taggable');
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function approvedReviews(): HasMany
+    {
+        return $this->reviews()->where('is_approved', true);
+    }
+
+    // ── Primary Variant Resolution ─────────────────────────────
 
     /**
      * Get the primary/default variant for this product.
@@ -53,166 +111,93 @@ class Product extends Model
      */
     public function primaryVariant(): ?ProductVariant
     {
-        // Try explicitly set default first
-        if ($this->product_variant_id && $this->defaultVariant) {
+        if ($this->product_variant_id
+            && $this->relationLoaded('defaultVariant')
+            && $this->defaultVariant
+        ) {
             return $this->defaultVariant;
         }
 
-        // Fall back to first active variant
-        $active = $this->activeVariants->first();
-        if ($active) {
-            return $active;
+        if ($this->relationLoaded('activeVariants')) {
+            $active = $this->activeVariants->first();
+            if ($active) {
+                return $active;
+            }
         }
 
-        // Last resort: any variant
-        return $this->variants->first();
+        if ($this->relationLoaded('variants')) {
+            return $this->variants->first();
+        }
+
+        return null;
     }
 
+    // ── Accessors ──────────────────────────────────────────────
+
     /**
-     * Get SKU from primary variant (backward compatibility).
-     * @deprecated Access via primaryVariant()->sku instead.
+     * @deprecated Use primaryVariant()->sku instead.
      */
     public function getSkuAttribute(): ?string
     {
         return $this->primaryVariant()?->sku;
     }
 
-    public function brand()
-    {
-        return $this->belongsTo(Brand::class);
-    }
-
-    public function store(): \Illuminate\Database\Eloquent\Relations\BelongsTo
-    {
-        return $this->belongsTo(Store::class);
-    }
-
-    public function tags()
-    {
-        return $this->morphToMany(Tag::class, 'taggable');
-
-    }
-
-    public function reviews()
-    {
-        return $this->hasMany(\App\Models\Review::class);
-    }
-
-    public function approvedReviews()
-    {
-        return $this->reviews()->where('is_approved', true);
-    }
-
-    // ── Translation Helpers ────────────────────────────────────
-
-    /**
-     * Get the translation for a given locale, with fallback.
-     */
-    public function translation(?string $locale = null): ?ProductTranslation
-    {
-        $locale = $locale ?? app()->getLocale();
-        
-        return $this->translations->where('locale', $locale)->first()
-            ?? $this->translations->first();
-    }
-
-    /**
-     * Get a translated attribute value.
-     */
-    public function translated(string $key, ?string $locale = null): ?string
-    {
-        return $this->translation($locale)?->{$key};
-    }
-
-    // ── Static Finders ─────────────────────────────────────────
-
-    /**
-     * Find a product by its localized slug.
-     */
-    // ── Scopes ─────────────────────────────────────────────────
-
-    public function scopeActive($q)
-    {
-        return $q->where('is_active', true);
-    }
-
-    // ── Static Finders ─────────────────────────────────────────
-
-    /**
-     * Find a product by its localized slug.
-     */
-    public function scopeFindBySlug(\Illuminate\Database\Eloquent\Builder $query, string $slug, ?string $locale = null): \Illuminate\Database\Eloquent\Builder
-    {
-        $locale = $locale ?? app()->getLocale();
-
-        return $query->where(function ($q) use ($slug, $locale) {
-            $q->whereHas('translations', function ($t) use ($slug, $locale) {
-                $t->where('slug', $slug)
-                    ->where('locale', $locale);
-            })->orWhereHas('translations', function ($t) use ($slug) {
-                $t->where('slug', $slug);
-            });
-        });
-    }
-
-    /**
-     * Find by slug or fail with 404.
-     */
-    public static function findBySlugOrFail(string $slug, ?string $locale = null): self
-    {
-        $product = static::findBySlug($slug, $locale);
-
-        if (!$product) {
-            abort(404, 'Product not found.');
-        }
-
-        return $product;
-    }
-
-    // ── Display Helpers ────────────────────────────────────────
-
     public function getDisplayVariantAttribute(): ?ProductVariant
     {
         return $this->primaryVariant();
     }
 
-      // ── Search Helpers ─────────────────────────────────────────
-
     /**
-     * Get the primary image URL from the display variant.
+     * Resolve the primary image URL for this product.
+     *
+     * Priority order (dual-layer media architecture):
+     *   1. Product-level images (imageable = Product) — correct owner post-refactor.
+     *   2. Default variant images — backward-compatible fallback for products
+     *      that were created before the dual-layer media refactor, where all
+     *      images were assigned to the first variant.
+     *
+     * Both branches guard against N+1 by checking relationLoaded() first.
+     * If neither relation is loaded, returns null rather than firing a query.
      */
     public function getPrimaryImageUrlAttribute(): ?string
     {
-        $variant = $this->display_variant;
+        // ── 1. Product-level images (correct owner) ────────────
+        if ($this->relationLoaded('images') && $this->images->isNotEmpty()) {
+            $primary = $this->images->where('is_primary', true)->first()
+                ?? $this->images->first();
+
+            return $primary?->image_url;
+        }
+
+        // ── 2. Variant-level fallback (bridge period) ──────────
+        // Covers products created before the media refactor where images
+        // were attached to the first variant instead of the product.
+        $variant = $this->primaryVariant();
 
         if (!$variant) {
             return null;
         }
 
-        // Use eager-loaded images if available
-        $primaryImage = $variant->relationLoaded('images')
-            ? $variant->images->where('is_primary', true)->first()
-            : $variant->primary_image;
+        if ($variant->relationLoaded('images')) {
+            $primary = $variant->images->where('is_primary', true)->first()
+                ?? $variant->images->first();
 
-        return $primaryImage?->image_url;
+            return $primary?->image_url;
+        }
+
+        return null;
     }
 
-    /**
-     * Computed average rating (from eager-loaded reviews).
-     */
     public function getAvgRatingAttribute(): ?float
     {
         if ($this->relationLoaded('approvedReviews')) {
             $avg = $this->approvedReviews->avg('rating');
-            return $avg ? round($avg, 1) : null;
+            return $avg ? round((float) $avg, 1) : null;
         }
 
-        return round($this->approvedReviews()->avg('rating'), 1) ?: null;
+        return round((float) $this->approvedReviews()->avg('rating'), 1) ?: null;
     }
 
-    /**
-     * Computed review count.
-     */
     public function getReviewsCountAttribute(): int
     {
         if ($this->relationLoaded('approvedReviews')) {
@@ -222,4 +207,54 @@ class Product extends Model
         return $this->approvedReviews()->count();
     }
 
+    // ── Translation Helpers ────────────────────────────────────
+
+    public function translation(?string $locale = null): ?ProductTranslation
+    {
+        $locale = $locale ?? app()->getLocale();
+
+        return $this->translations->where('locale', $locale)->first()
+            ?? $this->translations->first();
+    }
+
+    public function translated(string $key, ?string $locale = null): ?string
+    {
+        return $this->translation($locale)?->{$key};
+    }
+
+    // ── Scopes ─────────────────────────────────────────────────
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeFindBySlug(
+        \Illuminate\Database\Eloquent\Builder $query,
+        string $slug,
+        ?string $locale = null,
+    ): \Illuminate\Database\Eloquent\Builder {
+        $locale = $locale ?? app()->getLocale();
+
+        return $query->where(function ($q) use ($slug, $locale) {
+            $q->whereHas('translations', function ($t) use ($slug, $locale) {
+                $t->where('slug', $slug)->where('locale', $locale);
+            })->orWhereHas('translations', function ($t) use ($slug) {
+                $t->where('slug', $slug);
+            });
+        });
+    }
+
+    public static function findBySlugOrFail(
+        string $slug,
+        ?string $locale = null,
+    ): self {
+        $product = static::query()->findBySlug($slug, $locale)->first();
+
+        if (!$product) {
+            throw new \App\Exceptions\Product\ProductNotFoundException();
+        }
+
+        return $product;
+    }
 }

@@ -5,13 +5,14 @@ namespace App\Models;
 use App\Enums\Attribute\AttributeTypeEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Attribute extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $table = "attributes";
+    protected $table = 'attributes';
 
     protected $fillable = [
         'code',
@@ -22,26 +23,41 @@ class Attribute extends Model
     ];
 
     protected $casts = [
-        'type'                 => AttributeTypeEnum::class,
-        'is_filterable'        => 'boolean',
+        'type'                  => AttributeTypeEnum::class,
+        'is_filterable'         => 'boolean',
         'is_visible_on_product' => 'boolean',
-        'sort_order'           => 'integer',
+        'sort_order'            => 'integer',
     ];
 
-    public function translations()
+    // ── Relationships ──────────────────────────────────────────
+
+    public function translations(): HasMany
     {
         return $this->hasMany(AttributeTranslation::class);
     }
 
-    public function variatns()
-    {
-        return $this->belongsToMany(ProductVariant::class, 'variant_id');
-    }
-
-    public function values()
+    public function values(): HasMany
     {
         return $this->hasMany(AttributeValue::class);
     }
+
+    /**
+     * Legacy: variants linked via variant_attribute_values pivot.
+     * Fixed from the original typo `variatns()`.
+     *
+     * @deprecated Will be removed when old attribute system is cut.
+     */
+    public function variants()
+    {
+        return $this->belongsToMany(
+            ProductVariant::class,
+            'variant_attribute_values',
+            'attribute_id',
+            'variant_id',
+        )->withPivot('attribute_value_id');
+    }
+
+    // ── Helpers ────────────────────────────────────────────────
 
     public function translation(?string $locale = null): ?AttributeTranslation
     {

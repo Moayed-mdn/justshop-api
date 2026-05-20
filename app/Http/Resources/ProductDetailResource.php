@@ -60,20 +60,13 @@ class ProductDetailResource extends JsonResource
         }
 
         return $this->activeVariants
-            ->flatMap->attributeValues
-            ->map(function ($attrValue) use ($locale) {
-                $name = $attrValue->attribute->translations
-                    ->where('locale', $locale)->first()?->name
-                    ?? $attrValue->attribute->code;
-
-                $value = $attrValue->translations
-                    ->where('locale', $locale)->first()?->label
-                    ?? $attrValue->code;
-
-                return ['name' => $name, 'value' => $value];
-            })
+            ->flatMap->optionValues
+            ->map(fn ($ov) => [
+                'name' => $ov->option?->name,
+                'value' => $ov->value,
+            ])
             ->groupBy('name')
-            ->map(fn($items) => $items->pluck('value')->unique()->values())
+            ->map(fn ($items) => $items->pluck('value')->unique()->values())
             ->toArray();
     }
 
@@ -83,17 +76,10 @@ class ProductDetailResource extends JsonResource
     private function formatVariant($variant, string $locale): array
     {
         // Attributes as array: [{ name: "Color", value: "Red" }]
-        $attributes = $variant->attributeValues->map(function ($attrValue) use ($locale) {
-            $name = $attrValue->attribute->translations
-                ->where('locale', $locale)->first()?->name
-                ?? $attrValue->attribute->code;
-
-            $value = $attrValue->translations
-                ->where('locale', $locale)->first()?->label
-                ?? $attrValue->code;
-
-            return ['name' => $name, 'value' => $value];
-        })->values()->toArray();
+        $attributes = $variant->optionValues->map(fn ($ov) => [
+            'name' => $ov->option?->name,
+            'value' => $ov->value,
+        ])->values()->toArray();
 
         // Attribute map for variant matching: { "Color": "Red", "Size": "500g" }
         $attributeMap = collect($attributes)->pluck('value', 'name')->toArray();

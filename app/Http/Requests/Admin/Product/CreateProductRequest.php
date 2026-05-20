@@ -5,14 +5,15 @@ namespace App\Http\Requests\Admin\Product;
 use App\Enums\Product\ProductStatusEnum;
 use App\Enums\RoleEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 class CreateProductRequest extends FormRequest
 {
     public function authorize(): bool
-    {
-        return $this->user()->hasRole(RoleEnum::SUPER_ADMIN->value)
+    {Log::info('create product requset', $this->all());
+               return $this->user()->hasRole(RoleEnum::SUPER_ADMIN->value)
             || $this->user()->hasPermissionTo(
                 'product.create',
                 $this->route('store'),
@@ -24,9 +25,9 @@ class CreateProductRequest extends FormRequest
         return [
 
             /*
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             | Product
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             */
 
             'category_id' => [
@@ -52,9 +53,9 @@ class CreateProductRequest extends FormRequest
             ],
 
             /*
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             | Translations
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             */
 
             'translations' => [
@@ -105,9 +106,9 @@ class CreateProductRequest extends FormRequest
             ],
 
             /*
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             | Canonical Product Options
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             |
             | Source of truth for variant composition.
             | Example:
@@ -119,7 +120,7 @@ class CreateProductRequest extends FormRequest
             |     "values": ["Red", "Blue"]
             |   }
             | ]
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             */
 
             'options' => [
@@ -153,13 +154,9 @@ class CreateProductRequest extends FormRequest
             ],
 
             /*
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             | Variants
-            |--------------------------------------------------------------------------
-            |
-            | Variants are purchasable entities.
-            | They are derived from canonical product options.
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             */
 
             'variants' => [
@@ -169,9 +166,9 @@ class CreateProductRequest extends FormRequest
             ],
 
             /*
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             | Variant Core
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             */
 
             'variants.*.sku' => [
@@ -228,9 +225,9 @@ class CreateProductRequest extends FormRequest
             ],
 
             /*
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             | Physical / Shipping
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             */
 
             'variants.*.weight' => [
@@ -246,9 +243,9 @@ class CreateProductRequest extends FormRequest
             ],
 
             /*
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             | Batch / Expiry
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             */
 
             'variants.*.manufacture_date' => [
@@ -269,12 +266,11 @@ class CreateProductRequest extends FormRequest
             ],
 
             /*
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             | Variant Option Mapping
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             |
-            | Semantic ownership.
-            | No DB IDs exposed.
+            | Semantic ownership. No DB IDs exposed.
             |
             | Example:
             |
@@ -282,7 +278,7 @@ class CreateProductRequest extends FormRequest
             |   "Color": "Red",
             |   "Size": "XL"
             | }
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             */
 
             'variants.*.options' => [
@@ -297,36 +293,83 @@ class CreateProductRequest extends FormRequest
             ],
 
             /*
-            |--------------------------------------------------------------------------
-            | Media
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
+            | Variant Media
+            |------------------------------------------------------------------
             */
 
-            'images' => [
+            'variants.*.media' => [
                 'nullable',
                 'array',
             ],
 
-            'images.*.id' => [
-                'nullable',
-                'integer',
-            ],
-
-            'images.*.url' => [
+            'variants.*.media.*.url' => [
                 'required',
                 'string',
             ],
 
-            'images.*.alt' => [
+            'variants.*.media.*.alt' => [
                 'nullable',
                 'string',
                 'max:255',
             ],
 
-            'images.*.position' => [
+            'variants.*.media.*.position' => [
                 'nullable',
                 'integer',
                 'min:0',
+            ],
+
+            /*
+            |------------------------------------------------------------------
+            | Product-Level Media
+            |------------------------------------------------------------------
+            */
+
+            'media' => [
+                'nullable',
+                'array',
+            ],
+
+            'media.*.url' => [
+                'required',
+                'string',
+            ],
+
+            'media.*.alt' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+
+            'media.*.position' => [
+                'nullable',
+                'integer',
+                'min:0',
+            ],
+
+            /*
+            |------------------------------------------------------------------
+            | Tags
+            |------------------------------------------------------------------
+            |
+            | Products reference tags by integer ID only.
+            | Tag creation and translation management are handled by the
+            | dedicated tag management API, not by product endpoints.
+            | The tag must exist in the tags table (store-scoped validation
+            | is enforced at the Action layer via store membership checks).
+            |------------------------------------------------------------------
+            */
+
+            'tags' => [
+                'sometimes',
+                'nullable',
+                'array',
+            ],
+
+            'tags.*' => [
+                'integer',
+                'exists:tags,id',
             ],
         ];
     }
@@ -336,12 +379,12 @@ class CreateProductRequest extends FormRequest
         $validator->after(function ($validator) {
 
             $variants = $this->input('variants', []);
-            $options = $this->input('options', []);
+            $options  = $this->input('options', []);
 
             /*
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             | Canonical Option Map
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             */
 
             $canonicalOptions = [];
@@ -360,9 +403,9 @@ class CreateProductRequest extends FormRequest
             }
 
             /*
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             | Duplicate Variant Combination Check
-            |--------------------------------------------------------------------------
+            |------------------------------------------------------------------
             */
 
             $seenCombinations = [];
@@ -386,17 +429,14 @@ class CreateProductRequest extends FormRequest
                 $seenCombinations[] = $signature;
 
                 /*
-                |--------------------------------------------------------------------------
+                |--------------------------------------------------------------
                 | Validate Option Keys
-                |--------------------------------------------------------------------------
+                |--------------------------------------------------------------
                 */
 
                 foreach ($variantOptions as $optionName => $value) {
 
-                    if (!array_key_exists(
-                        $optionName,
-                        $canonicalOptions
-                    )) {
+                    if (!array_key_exists($optionName, $canonicalOptions)) {
 
                         $validator->errors()->add(
                             "variants.$index.options.$optionName",
@@ -406,17 +446,7 @@ class CreateProductRequest extends FormRequest
                         continue;
                     }
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Validate Option Value
-                    |--------------------------------------------------------------------------
-                    */
-
-                    if (!in_array(
-                        $value,
-                        $canonicalOptions[$optionName],
-                        true
-                    )) {
+                    if (!in_array($value, $canonicalOptions[$optionName], true)) {
 
                         $validator->errors()->add(
                             "variants.$index.options.$optionName",
@@ -426,20 +456,14 @@ class CreateProductRequest extends FormRequest
                 }
 
                 /*
-                |--------------------------------------------------------------------------
+                |--------------------------------------------------------------
                 | Validate Missing Dimensions
-                |--------------------------------------------------------------------------
+                |--------------------------------------------------------------
                 */
 
-                foreach (
-                    array_keys($canonicalOptions)
-                    as $requiredOption
-                ) {
+                foreach (array_keys($canonicalOptions) as $requiredOption) {
 
-                    if (!array_key_exists(
-                        $requiredOption,
-                        $variantOptions
-                    )) {
+                    if (!array_key_exists($requiredOption, $variantOptions)) {
 
                         $validator->errors()->add(
                             "variants.$index.options",

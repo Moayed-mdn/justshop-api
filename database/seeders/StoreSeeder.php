@@ -52,11 +52,9 @@ class StoreSeeder extends Seeder
 
         // Create the test store
         $store = Store::firstOrCreate(
-            ['slug' => 'test-store'],
+            ['name' => 'Test Store'],
             [
-                'name' => 'Test Store',
-                'owner_id' => $storeAdminUser->id,
-                'is_active' => true,
+                'user_id' => $storeAdminUser->id,
             ]
         );
 

@@ -1,0 +1,833 @@
+.
+├── app
+│   ├── Actions
+│   │   ├── Address
+│   │   │   ├── DeleteAddressAction.php
+│   │   │   ├── ListAddressesAction.php
+│   │   │   ├── SetDefaultAddressAction.php
+│   │   │   ├── StoreAddressAction.php
+│   │   │   └── UpdateAddressAction.php
+│   │   ├── Admin
+│   │   │   ├── Brand
+│   │   │   │   ├── CreateBrandAction.php
+│   │   │   │   ├── DeleteBrandAction.php
+│   │   │   │   ├── ListBrandsAction.php
+│   │   │   │   ├── RestoreBrandAction.php
+│   │   │   │   ├── ShowBrandAction.php
+│   │   │   │   └── UpdateBrandAction.php
+│   │   │   ├── Category
+│   │   │   │   ├── CreateCategoryAction.php
+│   │   │   │   ├── DeleteCategoryAction.php
+│   │   │   │   ├── ListCategoriesAction.php
+│   │   │   │   ├── RestoreCategoryAction.php
+│   │   │   │   ├── ShowCategoryAction.php
+│   │   │   │   └── UpdateCategoryAction.php
+│   │   │   ├── Dashboard
+│   │   │   │   ├── GetRecentOrdersAction.php
+│   │   │   │   ├── GetStatsAction.php
+│   │   │   │   └── GetTopProductsAction.php
+│   │   │   ├── Order
+│   │   │   │   ├── CancelOrderAction.php
+│   │   │   │   ├── GetOrderAction.php
+│   │   │   │   ├── ListOrdersAction.php
+│   │   │   │   ├── RefundOrderAction.php
+│   │   │   │   └── UpdateOrderStatusAction.php
+│   │   │   ├── Product
+│   │   │   │   ├── CreateProductAction.php
+│   │   │   │   ├── DeleteProductAction.php
+│   │   │   │   ├── GetProductAction.php
+│   │   │   │   ├── ListProductsAction.php
+│   │   │   │   ├── RestoreProductAction.php
+│   │   │   │   └── UpdateProductAction.php
+│   │   │   ├── Tag
+│   │   │   │   ├── CreateTagAction.php
+│   │   │   │   ├── DeleteTagAction.php
+│   │   │   │   ├── ListTagsAction.php
+│   │   │   │   └── UpdateTagAction.php
+│   │   │   └── User
+│   │   │       ├── BlockUserAction.php
+│   │   │       ├── DeleteUserAction.php
+│   │   │       ├── GetUserAction.php
+│   │   │       ├── ListUsersAction.php
+│   │   │       ├── RestoreUserAction.php
+│   │   │       └── UnblockUserAction.php
+│   │   ├── Auth
+│   │   │   ├── ChangePasswordAction.php
+│   │   │   ├── DeleteAccountAction.php
+│   │   │   ├── GetMeAction.php
+│   │   │   ├── GetProfileAction.php
+│   │   │   ├── GetUserAction.php
+│   │   │   ├── LoginUserAction.php
+│   │   │   ├── LogoutUserAction.php
+│   │   │   ├── RegisterUserAction.php
+│   │   │   ├── ResendVerificationEmailAction.php
+│   │   │   ├── ResetPasswordAction.php
+│   │   │   ├── SendResetLinkAction.php
+│   │   │   ├── SocialAuthCallbackAction.php
+│   │   │   ├── SocialAuthRedirectAction.php
+│   │   │   ├── UpdateProfileAvatarAction.php
+│   │   │   ├── UpdateProfileInfoAction.php
+│   │   │   ├── UpdateProfilePasswordAction.php
+│   │   │   ├── UpdateUserAction.php
+│   │   │   └── VerifyEmailAction.php
+│   │   ├── Cart
+│   │   │   ├── AddToCartAction.php
+│   │   │   ├── ClearCartAction.php
+│   │   │   ├── GetCartAction.php
+│   │   │   ├── RemoveCartItemAction.php
+│   │   │   └── UpdateCartItemAction.php
+│   │   ├── Category
+│   │   │   ├── GetCategoriesAction.php
+│   │   │   ├── GetCategoryAction.php
+│   │   │   ├── GetCategoryBreadcrumbAction.php
+│   │   │   └── GetProductsByCategoryAction.php
+│   │   ├── Homepage
+│   │   │   └── GetHeroBannersAction.php
+│   │   ├── Order
+│   │   │   ├── CancelOrderAction.php
+│   │   │   ├── CreateOrderAction.php
+│   │   │   ├── GetOrderAction.php
+│   │   │   └── ListOrdersAction.php
+│   │   ├── Payment
+│   │   │   ├── CreateCheckoutSessionAction.php
+│   │   │   ├── GetCheckoutStatusAction.php
+│   │   │   └── HandleStripeWebhookAction.php
+│   │   ├── PaymentMethod
+│   │   │   ├── DeletePaymentMethodAction.php
+│   │   │   ├── ListPaymentMethodsAction.php
+│   │   │   ├── SetDefaultPaymentMethodAction.php
+│   │   │   └── StorePaymentMethodAction.php
+│   │   ├── Product
+│   │   │   ├── FilterProductsAction.php
+│   │   │   ├── FilterProductsByCategoryAction.php
+│   │   │   ├── GetBestSellersAction.php
+│   │   │   ├── GetProductDetailAction.php
+│   │   │   ├── GetRelatedProductsAction.php
+│   │   │   └── ListProductsAction.php
+│   │   └── Store
+│   │       ├── CreateStoreAction.php
+│   │       ├── UpdateStoreAction.php
+│   │       └── ValidateStoreMembershipAction.php
+│   ├── DTOs
+│   │   ├── Address
+│   │   │   ├── DeleteAddressDTO.php
+│   │   │   ├── ListAddressesDTO.php
+│   │   │   ├── SetDefaultAddressDTO.php
+│   │   │   ├── StoreAddressDTO.php
+│   │   │   └── UpdateAddressDTO.php
+│   │   ├── Admin
+│   │   │   ├── Brand
+│   │   │   │   ├── CreateBrandDTO.php
+│   │   │   │   ├── DeleteBrandDTO.php
+│   │   │   │   ├── ListBrandsDTO.php
+│   │   │   │   ├── RestoreBrandDTO.php
+│   │   │   │   ├── ShowBrandDTO.php
+│   │   │   │   └── UpdateBrandDTO.php
+│   │   │   ├── Category
+│   │   │   │   ├── CreateCategoryDTO.php
+│   │   │   │   ├── DeleteCategoryDTO.php
+│   │   │   │   ├── ListCategoriesDTO.php
+│   │   │   │   ├── RestoreCategoryDTO.php
+│   │   │   │   ├── ShowCategoryDTO.php
+│   │   │   │   └── UpdateCategoryDTO.php
+│   │   │   ├── Dashboard
+│   │   │   │   ├── GetRecentOrdersDTO.php
+│   │   │   │   ├── GetStatsDTO.php
+│   │   │   │   └── GetTopProductsDTO.php
+│   │   │   ├── Order
+│   │   │   │   ├── CancelOrderDTO.php
+│   │   │   │   ├── GetOrderDTO.php
+│   │   │   │   ├── ListOrdersDTO.php
+│   │   │   │   ├── RefundOrderDTO.php
+│   │   │   │   └── UpdateOrderStatusDTO.php
+│   │   │   ├── Product
+│   │   │   │   ├── CreateProductDTO.php
+│   │   │   │   ├── DeleteProductDTO.php
+│   │   │   │   ├── GetProductDTO.php
+│   │   │   │   ├── ListProductsDTO.php
+│   │   │   │   ├── RestoreProductDTO.php
+│   │   │   │   └── UpdateProductDTO.php
+│   │   │   ├── Tag
+│   │   │   │   ├── CreateTagDTO.php
+│   │   │   │   ├── ListTagsDTO.php
+│   │   │   │   └── UpdateTagDTO.php
+│   │   │   └── User
+│   │   │       ├── BlockUserDTO.php
+│   │   │       ├── DeleteUserDTO.php
+│   │   │       ├── GetUserDTO.php
+│   │   │       ├── ListUsersDTO.php
+│   │   │       ├── RestoreUserDTO.php
+│   │   │       └── UnblockUserDTO.php
+│   │   ├── Auth
+│   │   │   ├── ChangePasswordDTO.php
+│   │   │   ├── DeleteAccountDTO.php
+│   │   │   ├── GetMeDTO.php
+│   │   │   ├── GetProfileDTO.php
+│   │   │   ├── GetUserDTO.php
+│   │   │   ├── LoginResultDTO.php
+│   │   │   ├── LoginUserDTO.php
+│   │   │   ├── LogoutDTO.php
+│   │   │   ├── RegisterUserDTO.php
+│   │   │   ├── ResendVerificationEmailDTO.php
+│   │   │   ├── ResetPasswordDTO.php
+│   │   │   ├── SendResetLinkDTO.php
+│   │   │   ├── SocialAuthCallbackDTO.php
+│   │   │   ├── SocialAuthRedirectDTO.php
+│   │   │   ├── UpdateProfileAvatarDTO.php
+│   │   │   ├── UpdateProfileInfoDTO.php
+│   │   │   ├── UpdateProfilePasswordDTO.php
+│   │   │   ├── UpdateUserDTO.php
+│   │   │   └── VerifyEmailDTO.php
+│   │   ├── Cart
+│   │   │   ├── AddToCartDTO.php
+│   │   │   ├── ClearCartDTO.php
+│   │   │   ├── GetCartDTO.php
+│   │   │   ├── RemoveCartItemDTO.php
+│   │   │   └── UpdateCartItemDTO.php
+│   │   ├── Category
+│   │   │   ├── GetCategoriesDTO.php
+│   │   │   ├── GetCategoryDTO.php
+│   │   │   └── GetProductsByCategoryDTO.php
+│   │   ├── Homepage
+│   │   │   ├── GetHeroBannersDTO.php
+│   │   │   └── HeroBannerDTO.php
+│   │   ├── Order
+│   │   │   ├── CancelOrderDTO.php
+│   │   │   ├── CreateOrderDTO.php
+│   │   │   ├── GetOrderDTO.php
+│   │   │   └── ListOrdersDTO.php
+│   │   ├── Payment
+│   │   │   ├── CreateCheckoutDTO.php
+│   │   │   ├── GetCheckoutStatusDTO.php
+│   │   │   └── StripeWebhookDTO.php
+│   │   ├── PaymentMethod
+│   │   │   ├── DeletePaymentMethodDTO.php
+│   │   │   ├── ListPaymentMethodsDTO.php
+│   │   │   ├── SetDefaultPaymentMethodDTO.php
+│   │   │   └── StorePaymentMethodDTO.php
+│   │   ├── Product
+│   │   │   ├── BestSellerDTO.php
+│   │   │   ├── CategoryFilterResult.php
+│   │   │   ├── FilterProductsByCategoryDTO.php
+│   │   │   ├── FilterProductsDTO.php
+│   │   │   ├── FilterResult.php
+│   │   │   ├── GetBestSellersDTO.php
+│   │   │   ├── GetProductDetailDTO.php
+│   │   │   ├── GetRelatedProductsDTO.php
+│   │   │   ├── ListProductsDTO.php
+│   │   │   └── ProductCardDTO.php
+│   │   ├── Search
+│   │   │   └── SearchDTO.php
+│   │   └── Store
+│   │       ├── CreateStoreDTO.php
+│   │       └── UpdateStoreDTO.php
+│   ├── Enums
+│   │   ├── Address
+│   │   │   └── AddressTypeEnum.php
+│   │   ├── Attribute
+│   │   │   └── AttributeTypeEnum.php
+│   │   ├── ErrorCode.php
+│   │   ├── HeroBanner
+│   │   │   ├── HeroLinkTargetEnum.php
+│   │   │   └── HeroVisualTypeEnum.php
+│   │   ├── Order
+│   │   │   ├── OrderStatusEnum.php
+│   │   │   └── PaymentStatusEnum.php
+│   │   ├── PermissionEnum.php
+│   │   ├── Product
+│   │   │   └── ProductStatusEnum.php
+│   │   ├── RoleEnum.php
+│   │   ├── Store
+│   │   │   └── StoreRoleEnum.php
+│   │   └── User
+│   │       └── UserStatusEnum.php
+│   ├── Exceptions
+│   │   ├── Auth
+│   │   │   ├── EmailVerificationException.php
+│   │   │   ├── InvalidCredentialsException.php
+│   │   │   ├── PasswordResetException.php
+│   │   │   ├── SocialAuthException.php
+│   │   │   ├── TooManyRequestsException.php
+│   │   │   └── UnauthorizedException.php
+│   │   ├── BaseApiException.php
+│   │   ├── Brand
+│   │   │   ├── BrandHasProductsException.php
+│   │   │   └── BrandNotFoundException.php
+│   │   ├── Category
+│   │   │   ├── CategoryHasChildrenException.php
+│   │   │   ├── CategoryHasProductsException.php
+│   │   │   └── CategoryNotFoundException.php
+│   │   ├── ExceptionRegistrar.php
+│   │   ├── NotFoundException.php
+│   │   ├── Order
+│   │   │   ├── OrderCancellationException.php
+│   │   │   ├── OrderNotFoundException.php
+│   │   │   ├── OutOfStockException.php
+│   │   │   ├── ReorderException.php
+│   │   │   └── ReorderFailedException.php
+│   │   ├── Payment
+│   │   │   ├── PaymentFailedException.php
+│   │   │   ├── StripeServiceException.php
+│   │   │   └── StripeWebhookException.php
+│   │   ├── Product
+│   │   │   └── ProductNotFoundException.php
+│   │   ├── Store
+│   │   │   ├── StoreNotFoundException.php
+│   │   │   └── UnauthorizedStoreAccessException.php
+│   │   ├── System
+│   │   │   └── UnprocessableContentException.php
+│   │   ├── Tag
+│   │   │   └── TagNotFoundException.php
+│   │   └── User
+│   │       └── UserNotFoundException.php
+│   ├── GraphQL
+│   │   └── Queries
+│   │       ├── Autocomplete.php
+│   │       └── Search.php
+│   ├── Http
+│   │   ├── Controllers
+│   │   │   ├── Api
+│   │   │   │   ├── Address
+│   │   │   │   │   └── AddressController.php
+│   │   │   │   ├── Admin
+│   │   │   │   │   ├── Brand
+│   │   │   │   │   │   └── AdminBrandController.php
+│   │   │   │   │   ├── Category
+│   │   │   │   │   │   └── AdminCategoryController.php
+│   │   │   │   │   ├── Dashboard
+│   │   │   │   │   │   └── AdminDashboardController.php
+│   │   │   │   │   ├── Order
+│   │   │   │   │   │   └── AdminOrderController.php
+│   │   │   │   │   ├── Product
+│   │   │   │   │   │   └── AdminProductController.php
+│   │   │   │   │   ├── Tag
+│   │   │   │   │   │   └── AdminTagController.php
+│   │   │   │   │   └── User
+│   │   │   │   │       └── AdminUserController.php
+│   │   │   │   ├── Auth
+│   │   │   │   │   ├── AuthController.php
+│   │   │   │   │   ├── PasswordResetController.php
+│   │   │   │   │   ├── ProfileController.php
+│   │   │   │   │   ├── SocialAuthController.php
+│   │   │   │   │   └── UserController.php
+│   │   │   │   ├── Cart
+│   │   │   │   │   └── CartController.php
+│   │   │   │   ├── Category
+│   │   │   │   │   └── CategoryController.php
+│   │   │   │   ├── Homepage
+│   │   │   │   │   └── HomePageController.php
+│   │   │   │   ├── Order
+│   │   │   │   │   └── OrderController.php
+│   │   │   │   ├── Payment
+│   │   │   │   │   ├── CheckoutController.php
+│   │   │   │   │   └── StripeWebhookController.php
+│   │   │   │   ├── PaymentMethod
+│   │   │   │   │   └── PaymentMethodController.php
+│   │   │   │   ├── Product
+│   │   │   │   │   └── ProductController.php
+│   │   │   │   ├── Search
+│   │   │   │   │   └── SearchController.php
+│   │   │   │   └── Store
+│   │   │   │       └── StoreController.php
+│   │   │   └── Controller.php
+│   │   ├── Middleware
+│   │   │   ├── SetLocale.php
+│   │   │   └── StoreContext.php
+│   │   ├── Requests
+│   │   │   ├── Address
+│   │   │   │   ├── ListAddressesRequest.php
+│   │   │   │   ├── SetDefaultAddressRequest.php
+│   │   │   │   ├── StoreAddressRequest.php
+│   │   │   │   └── UpdateAddressRequest.php
+│   │   │   ├── Admin
+│   │   │   │   ├── Brand
+│   │   │   │   │   ├── CreateBrandRequest.php
+│   │   │   │   │   ├── ListBrandsRequest.php
+│   │   │   │   │   └── UpdateBrandRequest.php
+│   │   │   │   ├── Category
+│   │   │   │   │   ├── CreateCategoryRequest.php
+│   │   │   │   │   ├── ListCategoriesRequest.php
+│   │   │   │   │   └── UpdateCategoryRequest.php
+│   │   │   │   ├── Dashboard
+│   │   │   │   │   ├── GetRecentOrdersRequest.php
+│   │   │   │   │   ├── GetStatsRequest.php
+│   │   │   │   │   └── GetTopProductsRequest.php
+│   │   │   │   ├── Order
+│   │   │   │   │   ├── CancelOrderRequest.php
+│   │   │   │   │   ├── GetOrderRequest.php
+│   │   │   │   │   ├── ListOrdersRequest.php
+│   │   │   │   │   ├── RefundOrderRequest.php
+│   │   │   │   │   └── UpdateOrderStatusRequest.php
+│   │   │   │   ├── Product
+│   │   │   │   │   ├── CreateProductRequest.php
+│   │   │   │   │   ├── DeleteProductRequest.php
+│   │   │   │   │   ├── GetProductRequest.php
+│   │   │   │   │   ├── ListProductsRequest.php
+│   │   │   │   │   ├── RestoreProductRequest.php
+│   │   │   │   │   └── UpdateProductRequest.php
+│   │   │   │   ├── Tag
+│   │   │   │   │   ├── CreateTagRequest.php
+│   │   │   │   │   ├── ListTagsRequest.php
+│   │   │   │   │   └── UpdateTagRequest.php
+│   │   │   │   └── User
+│   │   │   │       └── ListUsersRequest.php
+│   │   │   ├── Auth
+│   │   │   │   ├── LoginUserRequest.php
+│   │   │   │   ├── LogoutRequest.php
+│   │   │   │   ├── MeRequest.php
+│   │   │   │   ├── RegistgerUserRequest.php
+│   │   │   │   ├── ResendVerificationEmailRequest.php
+│   │   │   │   ├── SocialAuthCallbackRequest.php
+│   │   │   │   ├── SocialAuthRedirectRequest.php
+│   │   │   │   ├── SocialAuthRequest.php
+│   │   │   │   └── VerifyEmailRequest.php
+│   │   │   ├── Cart
+│   │   │   │   ├── AddItemRequest.php
+│   │   │   │   ├── ClearRequest.php
+│   │   │   │   ├── RemoveItemRequest.php
+│   │   │   │   └── UpdateItemRequest.php
+│   │   │   ├── Category
+│   │   │   │   ├── GetCategoriesRequest.php
+│   │   │   │   └── GetCategoryRequest.php
+│   │   │   ├── Checkout
+│   │   │   │   ├── CreateCheckoutRequest.php
+│   │   │   │   └── GetCheckoutStatusRequest.php
+│   │   │   ├── HomePage
+│   │   │   │   ├── GetBestSellersRequest.php
+│   │   │   │   └── GetHeroBannersRequest.php
+│   │   │   ├── Order
+│   │   │   │   ├── CancelOrderRequest.php
+│   │   │   │   ├── FilterOrdersRequest.php
+│   │   │   │   ├── GetOrderRequest.php
+│   │   │   │   ├── GuestOrderLookupRequest.php
+│   │   │   │   ├── ListOrdersRequest.php
+│   │   │   │   └── StoreOrderRequest.php
+│   │   │   ├── Password
+│   │   │   │   ├── ResetPasswordRequest.php
+│   │   │   │   └── SendResetLinkRequest.php
+│   │   │   ├── PaymentMethod
+│   │   │   │   ├── DeletePaymentMethodRequest.php
+│   │   │   │   ├── ListPaymentMethodsRequest.php
+│   │   │   │   ├── SetDefaultPaymentMethodRequest.php
+│   │   │   │   └── StorePaymentMethodRequest.php
+│   │   │   ├── Product
+│   │   │   │   ├── FilterProductsByCategoryRequest.php
+│   │   │   │   ├── FilterProductsRequest.php
+│   │   │   │   ├── GetProductDetailRequest.php
+│   │   │   │   ├── GetProductsByCategoryRequest.php
+│   │   │   │   └── GetRelatedProductsRequest.php
+│   │   │   ├── Profile
+│   │   │   │   ├── DeleteAccountRequest.php
+│   │   │   │   ├── GetProfileRequest.php
+│   │   │   │   ├── UpdateAvatarRequest.php
+│   │   │   │   ├── UpdateInfoRequest.php
+│   │   │   │   └── UpdatePasswordRequest.php
+│   │   │   ├── Search
+│   │   │   │   └── SearchRequest.php
+│   │   │   ├── Store
+│   │   │   │   ├── CreateStoreRequest.php
+│   │   │   │   └── UpdateStoreRequest.php
+│   │   │   └── User
+│   │   │       ├── ChangePasswordRequest.php
+│   │   │       ├── GetProfileRequest.php
+│   │   │       └── UpdateProfileRequest.php
+│   │   └── Resources
+│   │       ├── AddressResource.php
+│   │       ├── Admin
+│   │       │   ├── Brand
+│   │       │   │   └── AdminBrandResource.php
+│   │       │   ├── Category
+│   │       │   │   └── AdminCategoryResource.php
+│   │       │   ├── Dashboard
+│   │       │   │   ├── RecentOrderResource.php
+│   │       │   │   ├── StoreStatsResource.php
+│   │       │   │   └── TopProductResource.php
+│   │       │   ├── Order
+│   │       │   │   ├── AdminOrderDetailResource.php
+│   │       │   │   └── AdminOrderResource.php
+│   │       │   ├── Product
+│   │       │   │   ├── AdminProductDetailResource.php
+│   │       │   │   ├── AdminProductResource.php
+│   │       │   │   ├── AdminProductTranslationResource.php
+│   │       │   │   ├── ProductOptionResource.php
+│   │       │   │   ├── ProductOptionValueResource.php
+│   │       │   │   └── VariantAttributeResource.php
+│   │       │   ├── Tag
+│   │       │   │   └── AdminTagResource.php
+│   │       │   └── User
+│   │       │       ├── AdminUserDetailResource.php
+│   │       │       └── AdminUserResource.php
+│   │       ├── BestSellerResource.php
+│   │       ├── CartItemResource.php
+│   │       ├── CartResource.php
+│   │       ├── CategoryCollection.php
+│   │       ├── CategoryResource.php
+│   │       ├── HeroBannerResource.php
+│   │       ├── ImageResource.php
+│   │       ├── OrderCollection.php
+│   │       ├── OrderItemResource.php
+│   │       ├── OrderResource.php
+│   │       ├── PaymentMethodResource.php
+│   │       ├── ProductCardResource.php
+│   │       ├── ProductCollection.php
+│   │       ├── ProductDetailResource.php
+│   │       ├── ProductResource.php
+│   │       ├── ProductVariantAttributeResource.php
+│   │       ├── ProductVariantResource.php
+│   │       ├── ProfileResource.php
+│   │       ├── RelatedProductResource.php
+│   │       ├── Store
+│   │       │   └── StoreResource.php
+│   │       └── UserResource.php
+│   ├── Models
+│   │   ├── Address.php
+│   │   ├── Attribute.php
+│   │   ├── AttributeTranslation.php
+│   │   ├── AttributeValue.php
+│   │   ├── AttributeValueTranslation.php
+│   │   ├── Brand.php
+│   │   ├── CartItem.php
+│   │   ├── Cart.php
+│   │   ├── Category.php
+│   │   ├── CategoryTranslation.php
+│   │   ├── HeroBanner.php
+│   │   ├── HeroBannerTranslation.php
+│   │   ├── Image.php
+│   │   ├── OrderItem.php
+│   │   ├── Order.php
+│   │   ├── PaymentMethod.php
+│   │   ├── ProductOption.php
+│   │   ├── ProductOptionValue.php
+│   │   ├── Product.php
+│   │   ├── ProductTranslation.php
+│   │   ├── ProductVariant.php
+│   │   ├── Review.php
+│   │   ├── Store.php
+│   │   ├── Tag.php
+│   │   ├── TagTranslation.php
+│   │   └── User.php
+│   ├── Notifications
+│   │   ├── CustomResetPassword.php
+│   │   └── VerifyEmail.php
+│   ├── Policies
+│   │   ├── AddressPolicy.php
+│   │   ├── OrderPolicy.php
+│   │   └── PaymentMethodPolicy.php
+│   ├── Providers
+│   │   ├── AppServiceProvider.php
+│   │   └── AuthServiceProvider.php
+│   ├── Repositories
+│   │   ├── Address
+│   │   │   └── AddressRepository.php
+│   │   ├── Admin
+│   │   │   ├── Dashboard
+│   │   │   │   └── AdminDashboardRepository.php
+│   │   │   ├── Order
+│   │   │   │   └── AdminOrderRepository.php
+│   │   │   ├── Product
+│   │   │   │   └── AdminProductRepository.php
+│   │   │   ├── Tag
+│   │   │   │   └── AdminTagRepository.php
+│   │   │   └── User
+│   │   │       └── AdminUserRepository.php
+│   │   ├── Brand
+│   │   │   └── BrandRepository.php
+│   │   ├── Cart
+│   │   │   ├── CartItemRepository.php
+│   │   │   └── CartRepository.php
+│   │   ├── Category
+│   │   │   └── CategoryRepository.php
+│   │   ├── Order
+│   │   │   └── OrderRepository.php
+│   │   ├── PaymentMethod
+│   │   │   └── PaymentMethodRepository.php
+│   │   ├── Product
+│   │   │   ├── ProductRepository.php
+│   │   │   └── ProductVariantRepository.php
+│   │   ├── Search
+│   │   │   └── SearchRepository.php
+│   │   └── Store
+│   │       └── StoreRepository.php
+│   ├── Services
+│   │   ├── AddressService.php
+│   │   ├── AuthService.php
+│   │   ├── BestSellerService.php
+│   │   ├── CartService.php
+│   │   ├── CategoryService.php
+│   │   ├── CheckoutService.php
+│   │   ├── HomePageService.php
+│   │   ├── OrderService.php
+│   │   ├── PaymentMethodService.php
+│   │   ├── ProductService.php
+│   │   ├── ProfileService.php
+│   │   ├── SearchService.php
+│   │   └── SocialAuthService.php
+│   ├── Support
+│   │   ├── ApiResponse.php
+│   │   └── ProductTranslationCompleteness.php
+│   └── Traits
+│       └── ApiResponserTrait.php
+├── artisan
+├── bootstrap
+│   ├── app.php
+│   ├── cache
+│   │   ├── packages.php
+│   │   └── services.php
+│   └── providers.php
+├── composer.json
+├── composer.lock
+├── config
+│   ├── app.php
+│   ├── auth.php
+│   ├── cache.php
+│   ├── content.php
+│   ├── cors.php
+│   ├── database.php
+│   ├── filesystems.php
+│   ├── lighthouse.php
+│   ├── logging.php
+│   ├── mail.php
+│   ├── permission.php
+│   ├── queue.php
+│   ├── sanctum.php
+│   ├── scalar.php
+│   ├── scramble.php
+│   ├── services.php
+│   ├── session.php
+│   └── typescript-transformer.php
+├── database
+│   ├── factories
+│   │   ├── AddressFactory.php
+│   │   ├── AttributeFactory.php
+│   │   ├── BrandFactory.php
+│   │   ├── CartFactory.php
+│   │   ├── CartItemFactory.php
+│   │   ├── CategoryFactory.php
+│   │   ├── ImageFactory.php
+│   │   ├── OrderFactory.php
+│   │   ├── OrderItemFactory.php
+│   │   ├── PaymentMethodFactory.php
+│   │   ├── ProductFactory.php
+│   │   ├── ProductVariantAttributeFactory.php
+│   │   ├── ProductVariantFactory.php
+│   │   ├── TagFactory.php
+│   │   └── UserFactory.php
+│   ├── migrations
+│   │   ├── 0001_01_01_000000_create_users_table.php
+│   │   ├── 0001_01_01_000001_create_cache_table.php
+│   │   ├── 0001_01_01_000002_create_jobs_table.php
+│   │   ├── 2025_10_09_040005_create_personal_access_tokens_table.php
+│   │   ├── 2025_10_09_140024_create_categories_table.php
+│   │   ├── 2025_10_09_140025_create_category_translations_table.php
+│   │   ├── 2025_10_09_140027_create_brands_table.php
+│   │   ├── 2025_10_09_140029_create_products_table.php
+│   │   ├── 2025_10_09_140030_create_product_translations_table.php
+│   │   ├── 2025_10_09_140107_create_product_variants_table.php
+│   │   ├── 2025_10_09_140113_create_attributes_table.php
+│   │   ├── 2025_10_09_140114_create_attribute_translations_table.php
+│   │   ├── 2025_10_09_140115_create_attribute_values_table.php
+│   │   ├── 2025_10_09_140116_create_attribute_value_translations_table.php
+│   │   ├── 2025_10_09_140117_create_variant_attribute_values_table.php
+│   │   ├── 2025_10_09_140119_create_images_table.php
+│   │   ├── 2025_10_18_173631_create_carts_table.php
+│   │   ├── 2025_10_18_173643_create_cart_items_table.php
+│   │   ├── 2025_10_18_173740_create_addresses_table.php
+│   │   ├── 2025_10_18_173813_create_payment_methods_table.php
+│   │   ├── 2025_10_18_173850_create_orders_table.php
+│   │   ├── 2025_10_18_173934_create_order_items_table.php
+│   │   ├── 2025_10_20_140338_create_stores_table.php
+│   │   ├── 2025_10_20_140339_create_tags_table.php
+│   │   ├── 2026_01_20_184758_create_hero_banners_table.php
+│   │   ├── 2026_02_14_162414_create_hero_banner_translations_table.php
+│   │   ├── 2026_02_24_050638_add_product_variant_id_to_products.php
+│   │   ├── 2026_03_22_110304_add_google_id_to_users_table.php
+│   │   ├── 2026_03_23_084549_alter_orders_table_for_stripe_checkout.php
+│   │   ├── 2026_03_25_055340_create_reviews_table.php
+│   │   ├── 2026_04_01_000002_create_store_user_table.php
+│   │   ├── 2026_04_01_000003_add_store_id_to_products_table.php
+│   │   ├── 2026_04_01_000004_add_store_id_to_orders_table.php
+│   │   ├── 2026_04_01_000005_add_store_id_to_carts_table.php
+│   │   ├── 2026_04_01_000006_add_store_id_to_cart_items_table.php
+│   │   ├── 2026_04_01_000007_add_store_id_to_addresses_table.php
+│   │   ├── 2026_04_01_000008_add_store_id_to_reviews_table.php
+│   │   ├── 2026_04_01_000009_add_store_id_to_categories_table.php
+│   │   ├── 2026_04_02_000001_add_store_id_to_brands_table.php
+│   │   ├── 2026_04_29_150355_create_permission_tables.php
+│   │   ├── 2026_04_30_000001_add_store_id_to_hero_banners_table.php
+│   │   ├── 2026_05_03_000001_add_domain_currency_timezone_to_stores_table.php
+│   │   ├── 2026_05_04_000001_add_is_active_to_users_table.php
+│   │   ├── 2026_05_08_120000_add_seo_fields_to_product_translations_table.php
+│   │   ├── 2026_05_13_162825_create_tag_translations_table.php
+│   │   ├── 2026_05_13_162826_add_fulltext_indexes_for_search.php
+│   │   ├── 2026_06_01_000001_create_product_options_table.php
+│   │   ├── 2026_06_01_000002_create_product_option_values_table.php
+│   │   ├── 2026_06_01_000003_create_variant_option_values_table.php
+│   │   ├── 2026_06_01_000004_add_missing_columns_to_product_variants.php
+│   │   └── 2026_06_01_000005_fix_product_translations_description_column.php
+│   ├── seeders
+│   │   ├── BrandSeeder.php
+│   │   ├── CategorySeeder.php
+│   │   ├── DatabaseSeeder.php
+│   │   ├── FakeSalesSeeder.php
+│   │   ├── HeroBannerSeeder.php
+│   │   ├── HomepageHeroSeeder.php
+│   │   ├── ImageSeeder.php
+│   │   ├── PermissionSeeder.php
+│   │   ├── ProductSeeder.php
+│   │   ├── ProductVariantAttributeSeeder.php
+│   │   ├── ProductVariantSeeder.php
+│   │   ├── RealDataSeeder.php
+│   │   ├── ReviewSeeder.php
+│   │   └── StoreSeeder.php
+│   └── testinge.sqlite
+├── docker
+│   ├── nginx
+│   │   ├── default.conf
+│   │   └── railway.conf
+│   ├── php
+│   │   └── local.ini
+│   ├── start.sh
+│   ├── start-vps.sh
+│   ├── supervisord.conf
+│   └── supervisord-railway.conf
+├── docker-compose.yml
+├── Dockerfile
+├── docs
+│   ├── admin-api.md
+│   ├── ARCHITECTURE.md
+│   ├── audit_log.md
+│   ├── cookie-auth-log.md
+│   ├── exception-system.md
+│   ├── refactor-log.md
+│   ├── SKU_REFACTOR_AUDIT.md
+│   ├── SKU_REFACTOR_IMPLEMENTATION_SUMMARY.md
+│   └── verify_log.md
+├── graphql
+│   └── schema.graphql
+├── lang
+│   ├── ar
+│   │   ├── admin.php
+│   │   ├── auth.php
+│   │   ├── brand.php
+│   │   ├── cart.php
+│   │   ├── category.php
+│   │   ├── error.php
+│   │   ├── general.php
+│   │   ├── order.php
+│   │   ├── payment.php
+│   │   ├── services.php
+│   │   └── tag.php
+│   └── en
+│       ├── admin.php
+│       ├── auth.php
+│       ├── brand.php
+│       ├── cart.php
+│       ├── category.php
+│       ├── error.php
+│       ├── general.php
+│       ├── order.php
+│       ├── payment.php
+│       ├── services.php
+│       └── tag.php
+├── package.json
+├── phpunit.xml
+├── project-tree.text
+├── public
+│   ├── favicon.ico
+│   ├── index.php
+│   ├── robots.txt
+│   └── storage -> /home/leader/projects/laravel/e-commerce-backend/storage/app/public
+├── railway.json
+├── README.md
+├── refactor_phase1.php
+├── refactor_phase2.php
+├── resources
+│   ├── css
+│   │   └── app.css
+│   ├── js
+│   │   ├── app.js
+│   │   └── bootstrap.js
+│   ├── types
+│   └── views
+│       ├── emails
+│       │   └── verify-email.blade.php
+│       └── welcome.blade.php
+├── routes
+│   ├── api
+│   │   └── v1
+│   │       ├── admin
+│   │       │   └── admin.php
+│   │       ├── stores
+│   │       │   ├── addresses.php
+│   │       │   ├── cart.php
+│   │       │   ├── checkout.php
+│   │       │   ├── homepage.php
+│   │       │   ├── orders.php
+│   │       │   ├── products.php
+│   │       │   ├── search.php
+│   │       │   └── store-management.php
+│   │       ├── stripe
+│   │       │   └── webhook.php
+│   │       └── users
+│   │           ├── auth.php
+│   │           ├── cart.php
+│   │           ├── category.php
+│   │           ├── checkout.php
+│   │           ├── order.php
+│   │           ├── product.php
+│   │           └── profile.php
+│   ├── api.php
+│   ├── console.php
+│   └── web.php
+├── search_and_print.sh
+├── src
+│   ├── app
+│   └── features
+├── storage
+│   ├── app
+│   │   ├── private
+│   │   └── public
+│   │       ├── avatars
+│   │       │   ├── CgALhuCml1ElpbRSHq2bj0JlnePcue2FvTeyrGp6.png
+│   │       │   └── tAS2QZFypWq4VQawclpgEScGwQ5fvjsGmon36IlM.png
+│   │       ├── hero
+│   │       │   ├── hero-banner.jpg
+│   │       │   └── smartphones.jpg
+│   │       ├── products
+│   │       │   ├── default2.png
+│   │       │   ├── default33.png
+│   │       │   └── default.png
+│   │       └── variants
+│   │           ├── default.png
+│   │           ├── iPhone_15_pro_black_2.jpeg
+│   │           ├── iPhone_15_pro_black.jpeg
+│   │           ├── iphone_15_pro.jpeg
+│   │           ├── iPhone_15_pro_white_2.jpeg
+│   │           └── iPhone_15_pro_white.jpeg
+│   ├── framework
+│   │   ├── cache
+│   │   │   └── data
+│   │   ├── sessions
+│   │   ├── testing
+│   │   │   └── disks
+│   │   │       └── local
+│   │   └── views
+│   │       ├── 81826f452a2a8e2a57c0ded064bf33a2.php
+│   │       ├── c389252db193e29ea23e2b919bee7d5a.php
+│   │       └── c7aae94bbf1bca529a2f2fa42222a128.php
+│   └── logs
+│       └── laravel.log
+├── test
+│   └── testfile
+├── TEST
+├── tests
+│   ├── Feature
+│   │   ├── Admin
+│   │   │   ├── AdminProductDetailResourceTest.php
+│   │   │   └── AdminProductDtoTest.php
+│   │   ├── ExceptionRenderingTest.php
+│   │   └── ProductSlugStoreScopingTest.php
+│   └── TestCase.php
+└── vite.config.js
+
+195 directories, 636 files

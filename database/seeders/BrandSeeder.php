@@ -32,6 +32,7 @@ class BrandSeeder extends Seeder
                     'name'        => $brand['name'],
                     'description' => $brand['description'],
                     'is_active'   => true,
+                    'store_id'    => 1,
                 ]
             );
         }

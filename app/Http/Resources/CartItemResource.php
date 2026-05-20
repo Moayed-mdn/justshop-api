@@ -25,20 +25,10 @@ class CartItemResource extends JsonResource
         $imageUrl = $primaryImage ? $primaryImage->full_url : null;
 
         // ── Translated attributes ──
-        $attributes = $variant->attributeValues->map(function ($attrValue) use ($locale) {
-            // Attribute name: "Color" / "اللون"
-            $attrName = $attrValue->attribute->translations
-                ->where('locale', $locale)->first()?->name
-                ?? $attrValue->attribute->code;
-
-            // Attribute value: "Red" / "أحمر"
-            $valueLabel = $attrValue->translations
-                ->where('locale', $locale)->first()?->label
-                ?? $attrValue->code;
-
+        $attributes = $variant->optionValues->map(function ($ov) {
             return [
-                'name'  => $attrName,
-                'value' => $valueLabel,
+                'name'  => $ov->option?->name,
+                'value' => $ov->value,
             ];
         });
 

@@ -43,8 +43,7 @@ class CheckoutService
 
         $cart->load([
             'items.productVariant.product.translations',
-            'items.productVariant.attributeValues.translations',
-            'items.productVariant.attributeValues.attribute.translations',
+            'items.productVariant.optionValues.option',
             'items.productVariant.images',
         ]);
 
@@ -90,8 +89,7 @@ class CheckoutService
         foreach ($rawItems as $item) {
             $variant = ProductVariant::with([
                 'product.translations',
-                'attributeValues.translations',
-                'attributeValues.attribute.translations',
+                'optionValues.option',
                 'images',
             ])->findOrFail($item['product_variant_id']);
 
@@ -121,16 +119,8 @@ class CheckoutService
             $productName = $translation?->name ?? 'Product';
 
             // Build attribute string: "Color: Red, Size: 500g"
-            $attrParts = $variant->attributeValues->map(function ($attrValue) use ($locale) {
-                $name = $attrValue->attribute->translations
-                    ->where('locale', $locale)->first()?->name
-                    ?? $attrValue->attribute->code;
-
-                $value = $attrValue->translations
-                    ->where('locale', $locale)->first()?->label
-                    ?? $attrValue->code;
-
-                return "{$name}: {$value}";
+            $attrParts = $variant->optionValues->map(function ($ov) {
+                return "{$ov->option->name}: {$ov->value}";
             })->toArray();
 
             $attrString = implode(', ', $attrParts);
@@ -149,16 +139,8 @@ class CheckoutService
                 'unit_price'     => $variant->price,
                 'quantity'       => $item['quantity'],
                 'image_url'      => $imageUrl,
-                'attributes'     => $variant->attributeValues->map(function ($attrValue) use ($locale) {
-                    $name = $attrValue->attribute->translations
-                        ->where('locale', $locale)->first()?->name
-                        ?? $attrValue->attribute->code;
-
-                    $value = $attrValue->translations
-                        ->where('locale', $locale)->first()?->label
-                        ?? $attrValue->code;
-
-                    return ['name' => $name, 'value' => $value];
+                'attributes'     => $variant->optionValues->map(function ($ov) {
+                    return ['name' => $ov->option->name, 'value' => $ov->value];
                 })->toArray(),
             ];
         }

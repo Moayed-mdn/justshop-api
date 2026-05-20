@@ -13,10 +13,14 @@ return new class extends Migration
     {
         Schema::create('tags', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('slug')->unique();
-            $table->string('type')->default('general'); // general, feature, category
-            $table->string('color')->nullable(); // For tag display color
+        
+            $table->foreignId('store_id')
+                ->nullable()
+                ->constrained()
+                ->cascadeOnDelete();
+
+            $table->string('type')->default('general');
+            $table->string('color')->nullable();
             $table->boolean('is_active')->default(true);
             $table->softDeletes();
             $table->timestamps();

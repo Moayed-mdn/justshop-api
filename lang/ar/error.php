@@ -29,4 +29,6 @@ return [
     // Product Messages
     'product_not_found' => 'المنتج غير موجود.',
     'product_restore_failed' => 'فشلت استعادة المنتج.',
+
+    'tag_not_found' => 'الوسم غير موجود.',
 ];
