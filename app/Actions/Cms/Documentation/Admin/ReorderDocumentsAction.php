@@ -13,10 +13,10 @@ class ReorderDocumentsAction
         private CmsDocumentRepository $repository
     ) {}
 
-    public function execute(int $storeId, array $orders): void
+    public function execute(array $orders): void
     {
-        DB::transaction(function () use ($storeId, $orders) {
-            $this->repository->reorder($storeId, $orders);
+        DB::transaction(function () use ($orders) {
+            $this->repository->reorder($orders);
         });
     }
 }

@@ -8,9 +8,7 @@ require 'api/v1/users/auth.php';
 
 // Public (no store context)
 require 'api/v1/users/category.php';
-require 'api/v1/public/blog.php';
 require 'api/v1/public/cms.php';
-require 'api/v1/public/documentation.php';
 require 'api/v1/public/leads.php';
 
 // Profile (no store context)
@@ -44,6 +42,7 @@ require 'api/v1/admin/admin.php';
 require 'api/v1/admin/leads.php';
 require 'api/v1/admin/cms/blog.php';
 require 'api/v1/admin/cms/marketing-pages.php';
+require 'api/v1/admin/cms/documentation.php';
 
 
 Route::get('/sanctum/csrf-cookie', [CsrfCookieController::class, 'show'])

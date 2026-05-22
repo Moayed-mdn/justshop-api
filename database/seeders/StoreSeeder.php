@@ -54,7 +54,8 @@ class StoreSeeder extends Seeder
         $store = Store::firstOrCreate(
             ['name' => 'Test Store'],
             [
-                'user_id' => $storeAdminUser->id,
+                'slug' => 'test-store',
+                'owner_id' => $storeAdminUser->id,
             ]
         );
 

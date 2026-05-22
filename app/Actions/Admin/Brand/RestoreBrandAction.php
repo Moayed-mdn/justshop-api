@@ -19,14 +19,7 @@ class RestoreBrandAction
 
     public function execute(
         RestoreBrandDTO $dto,
-        User $user,
     ): Brand {
-        if (!$user->hasRole('super_admin')
-            && !$user->stores()->where('store_id', $dto->storeId)->exists()
-        ) {
-            throw new UnauthorizedStoreAccessException();
-        }
-
         $brand = $this->brandRepository->findTrashedById(
             id:      $dto->brandId,
             storeId: $dto->storeId,

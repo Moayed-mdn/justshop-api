@@ -19,14 +19,7 @@ class DeleteCategoryAction
 
     public function execute(
         DeleteCategoryDTO $dto,
-        User $user,
     ): void {
-        if (!$user->hasRole('super_admin')
-            && !$user->stores()->where('store_id', $dto->storeId)->exists()
-        ) {
-            throw new UnauthorizedStoreAccessException();
-        }
-
         $category = $this->categoryRepository->findByIdOrFail(
             id:      $dto->categoryId,
             storeId: $dto->storeId,

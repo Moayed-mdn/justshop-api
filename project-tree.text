@@ -81,8 +81,44 @@
 │   │   │   ├── GetCategoryAction.php
 │   │   │   ├── GetCategoryBreadcrumbAction.php
 │   │   │   └── GetProductsByCategoryAction.php
+│   │   ├── Cms
+│   │   │   ├── Blog
+│   │   │   │   ├── Admin
+│   │   │   │   │   ├── CreateBlogPostAction.php
+│   │   │   │   │   ├── DeleteBlogPostAction.php
+│   │   │   │   │   ├── GetBlogPostAction.php
+│   │   │   │   │   ├── ListBlogPostsAction.php
+│   │   │   │   │   ├── PublishBlogPostAction.php
+│   │   │   │   │   ├── ScheduleBlogPostAction.php
+│   │   │   │   │   ├── UnpublishBlogPostAction.php
+│   │   │   │   │   └── UpdateBlogPostAction.php
+│   │   │   │   ├── GetPublicBlogPostAction.php
+│   │   │   │   └── ListPublicBlogPostsAction.php
+│   │   │   ├── Documentation
+│   │   │   │   ├── Admin
+│   │   │   │   │   ├── CreateDocumentAction.php
+│   │   │   │   │   ├── CreateDocumentSectionAction.php
+│   │   │   │   │   ├── PublishDocumentAction.php
+│   │   │   │   │   ├── ReorderDocumentsAction.php
+│   │   │   │   │   └── UpdateDocumentAction.php
+│   │   │   │   └── ResolveDocumentBySlugAction.php
+│   │   │   └── MarketingPage
+│   │   │       ├── Admin
+│   │   │       │   ├── CreateMarketingPageAction.php
+│   │   │       │   ├── DeleteMarketingPageAction.php
+│   │   │       │   ├── GetMarketingPageAction.php
+│   │   │       │   ├── ListMarketingPagesAction.php
+│   │   │       │   ├── PublishMarketingPageAction.php
+│   │   │       │   └── UpdateMarketingPageAction.php
+│   │   │       └── ResolveMarketingPageBySlugAction.php
 │   │   ├── Homepage
 │   │   │   └── GetHeroBannersAction.php
+│   │   ├── Lead
+│   │   │   ├── CreateLeadAction.php
+│   │   │   ├── DeleteLeadAction.php
+│   │   │   ├── GetLeadAction.php
+│   │   │   ├── ListLeadsAction.php
+│   │   │   └── UpdateLeadStatusAction.php
 │   │   ├── Order
 │   │   │   ├── CancelOrderAction.php
 │   │   │   ├── CreateOrderAction.php
@@ -188,9 +224,47 @@
 │   │   │   ├── GetCategoriesDTO.php
 │   │   │   ├── GetCategoryDTO.php
 │   │   │   └── GetProductsByCategoryDTO.php
+│   │   ├── Cms
+│   │   │   ├── Blog
+│   │   │   │   ├── Admin
+│   │   │   │   │   ├── CreateBlogPostDTO.php
+│   │   │   │   │   ├── GetBlogPostDTO.php
+│   │   │   │   │   ├── ListBlogPostsDTO.php
+│   │   │   │   │   ├── PublishBlogPostDTO.php
+│   │   │   │   │   ├── ScheduleBlogPostDTO.php
+│   │   │   │   │   ├── UnpublishBlogPostDTO.php
+│   │   │   │   │   └── UpdateBlogPostDTO.php
+│   │   │   │   ├── GetPublicBlogPostDTO.php
+│   │   │   │   └── ListPublicBlogPostsDTO.php
+│   │   │   ├── Documentation
+│   │   │   │   └── Admin
+│   │   │   │       ├── CreateDocumentDTO.php
+│   │   │   │       ├── CreateDocumentSectionDTO.php
+│   │   │   │       ├── PublishDocumentDTO.php
+│   │   │   │       └── UpdateDocumentDTO.php
+│   │   │   ├── MarketingPage
+│   │   │   │   ├── Admin
+│   │   │   │   │   ├── CreateMarketingPageDTO.php
+│   │   │   │   │   ├── DeleteMarketingPageDTO.php
+│   │   │   │   │   ├── GetMarketingPageDTO.php
+│   │   │   │   │   ├── ListMarketingPagesDTO.php
+│   │   │   │   │   ├── PublishMarketingPageDTO.php
+│   │   │   │   │   └── UpdateMarketingPageDTO.php
+│   │   │   │   └── ResolveMarketingPageBySlugDTO.php
+│   │   │   ├── Seo
+│   │   │   │   ├── ResolvedSeoDTO.php
+│   │   │   │   └── SeoMetaDTO.php
+│   │   │   └── Sitemap
+│   │   │       └── SitemapEntryDTO.php
 │   │   ├── Homepage
 │   │   │   ├── GetHeroBannersDTO.php
 │   │   │   └── HeroBannerDTO.php
+│   │   ├── Lead
+│   │   │   ├── CreateLeadDTO.php
+│   │   │   ├── DeleteLeadDTO.php
+│   │   │   ├── GetLeadDTO.php
+│   │   │   ├── ListLeadsDTO.php
+│   │   │   └── UpdateLeadStatusDTO.php
 │   │   ├── Order
 │   │   │   ├── CancelOrderDTO.php
 │   │   │   ├── CreateOrderDTO.php
@@ -226,10 +300,22 @@
 │   │   │   └── AddressTypeEnum.php
 │   │   ├── Attribute
 │   │   │   └── AttributeTypeEnum.php
+│   │   ├── Cms
+│   │   │   ├── Blog
+│   │   │   │   └── BlogPostPublishStateEnum.php
+│   │   │   ├── MarketingPage
+│   │   │   │   ├── MarketingPageStatusEnum.php
+│   │   │   │   └── MarketingPageTypeEnum.php
+│   │   │   └── Seo
+│   │   │       ├── RobotsDirectiveEnum.php
+│   │   │       └── SitemapChangefreqEnum.php
 │   │   ├── ErrorCode.php
 │   │   ├── HeroBanner
 │   │   │   ├── HeroLinkTargetEnum.php
 │   │   │   └── HeroVisualTypeEnum.php
+│   │   ├── Lead
+│   │   │   ├── LeadStatusEnum.php
+│   │   │   └── LeadTypeEnum.php
 │   │   ├── Order
 │   │   │   ├── OrderStatusEnum.php
 │   │   │   └── PaymentStatusEnum.php
@@ -241,6 +327,9 @@
 │   │   │   └── StoreRoleEnum.php
 │   │   └── User
 │   │       └── UserStatusEnum.php
+│   ├── Events
+│   │   └── Lead
+│   │       └── LeadSubmitted.php
 │   ├── Exceptions
 │   │   ├── Auth
 │   │   │   ├── EmailVerificationException.php
@@ -258,6 +347,8 @@
 │   │   │   ├── CategoryHasProductsException.php
 │   │   │   └── CategoryNotFoundException.php
 │   │   ├── ExceptionRegistrar.php
+│   │   ├── Lead
+│   │   │   └── LeadNotFoundException.php
 │   │   ├── NotFoundException.php
 │   │   ├── Order
 │   │   │   ├── OrderCancellationException.php
@@ -294,8 +385,16 @@
 │   │   │   │   │   │   └── AdminBrandController.php
 │   │   │   │   │   ├── Category
 │   │   │   │   │   │   └── AdminCategoryController.php
+│   │   │   │   │   ├── Cms
+│   │   │   │   │   │   ├── Documentation
+│   │   │   │   │   │   │   ├── AdminDocumentController.php
+│   │   │   │   │   │   │   └── AdminDocumentSectionController.php
+│   │   │   │   │   │   └── MarketingPage
+│   │   │   │   │   │       └── AdminMarketingPageController.php
 │   │   │   │   │   ├── Dashboard
 │   │   │   │   │   │   └── AdminDashboardController.php
+│   │   │   │   │   ├── Lead
+│   │   │   │   │   │   └── AdminLeadController.php
 │   │   │   │   │   ├── Order
 │   │   │   │   │   │   └── AdminOrderController.php
 │   │   │   │   │   ├── Product
@@ -314,8 +413,18 @@
 │   │   │   │   │   └── CartController.php
 │   │   │   │   ├── Category
 │   │   │   │   │   └── CategoryController.php
+│   │   │   │   ├── Cms
+│   │   │   │   │   ├── Blog
+│   │   │   │   │   │   ├── AdminBlogController.php
+│   │   │   │   │   │   └── BlogController.php
+│   │   │   │   │   ├── Documentation
+│   │   │   │   │   │   └── PublicDocumentController.php
+│   │   │   │   │   ├── MarketingPageController.php
+│   │   │   │   │   └── SitemapController.php
 │   │   │   │   ├── Homepage
 │   │   │   │   │   └── HomePageController.php
+│   │   │   │   ├── Lead
+│   │   │   │   │   └── LeadController.php
 │   │   │   │   ├── Order
 │   │   │   │   │   └── OrderController.php
 │   │   │   │   ├── Payment
@@ -352,6 +461,11 @@
 │   │   │   │   │   ├── GetRecentOrdersRequest.php
 │   │   │   │   │   ├── GetStatsRequest.php
 │   │   │   │   │   └── GetTopProductsRequest.php
+│   │   │   │   ├── Lead
+│   │   │   │   │   ├── DeleteLeadRequest.php
+│   │   │   │   │   ├── GetLeadRequest.php
+│   │   │   │   │   ├── ListLeadsRequest.php
+│   │   │   │   │   └── UpdateLeadStatusRequest.php
 │   │   │   │   ├── Order
 │   │   │   │   │   ├── CancelOrderRequest.php
 │   │   │   │   │   ├── GetOrderRequest.php
@@ -392,9 +506,40 @@
 │   │   │   ├── Checkout
 │   │   │   │   ├── CreateCheckoutRequest.php
 │   │   │   │   └── GetCheckoutStatusRequest.php
+│   │   │   ├── Cms
+│   │   │   │   ├── Blog
+│   │   │   │   │   ├── CreateBlogPostRequest.php
+│   │   │   │   │   ├── DeleteBlogPostRequest.php
+│   │   │   │   │   ├── GetPublicBlogPostRequest.php
+│   │   │   │   │   ├── ListBlogPostsRequest.php
+│   │   │   │   │   ├── ListPublicBlogPostsRequest.php
+│   │   │   │   │   ├── PublishBlogPostRequest.php
+│   │   │   │   │   ├── ScheduleBlogPostRequest.php
+│   │   │   │   │   ├── ShowBlogPostRequest.php
+│   │   │   │   │   ├── UnpublishBlogPostRequest.php
+│   │   │   │   │   └── UpdateBlogPostRequest.php
+│   │   │   │   ├── Documentation
+│   │   │   │   │   └── Admin
+│   │   │   │   │       ├── CreateDocumentRequest.php
+│   │   │   │   │       ├── CreateDocumentSectionRequest.php
+│   │   │   │   │       ├── PublishDocumentRequest.php
+│   │   │   │   │       └── UpdateDocumentRequest.php
+│   │   │   │   └── MarketingPage
+│   │   │   │       ├── Admin
+│   │   │   │       │   ├── CreateMarketingPageRequest.php
+│   │   │   │       │   ├── ListMarketingPagesRequest.php
+│   │   │   │       │   ├── MarketingPagePayloadRequest.php
+│   │   │   │       │   ├── PublishMarketingPageRequest.php
+│   │   │   │       │   └── UpdateMarketingPageRequest.php
+│   │   │   │       └── GetMarketingPageRequest.php
 │   │   │   ├── HomePage
 │   │   │   │   ├── GetBestSellersRequest.php
 │   │   │   │   └── GetHeroBannersRequest.php
+│   │   │   ├── Lead
+│   │   │   │   ├── ContactLeadRequest.php
+│   │   │   │   ├── DemoLeadRequest.php
+│   │   │   │   ├── EnterpriseLeadRequest.php
+│   │   │   │   └── LeadSubmissionRequest.php
 │   │   │   ├── Order
 │   │   │   │   ├── CancelOrderRequest.php
 │   │   │   │   ├── FilterOrdersRequest.php
@@ -438,10 +583,18 @@
 │   │       │   │   └── AdminBrandResource.php
 │   │       │   ├── Category
 │   │       │   │   └── AdminCategoryResource.php
+│   │       │   ├── Cms
+│   │       │   │   ├── Documentation
+│   │       │   │   │   ├── AdminDocumentResource.php
+│   │       │   │   │   └── AdminDocumentSectionResource.php
+│   │       │   │   └── MarketingPage
+│   │       │   │       └── AdminMarketingPageResource.php
 │   │       │   ├── Dashboard
 │   │       │   │   ├── RecentOrderResource.php
 │   │       │   │   ├── StoreStatsResource.php
 │   │       │   │   └── TopProductResource.php
+│   │       │   ├── Lead
+│   │       │   │   └── AdminLeadResource.php
 │   │       │   ├── Order
 │   │       │   │   ├── AdminOrderDetailResource.php
 │   │       │   │   └── AdminOrderResource.php
@@ -462,6 +615,26 @@
 │   │       ├── CartResource.php
 │   │       ├── CategoryCollection.php
 │   │       ├── CategoryResource.php
+│   │       ├── Cms
+│   │       │   ├── Blog
+│   │       │   │   ├── Admin
+│   │       │   │   │   ├── AdminBlogCategoryResource.php
+│   │       │   │   │   ├── AdminBlogPostResource.php
+│   │       │   │   │   └── AdminBlogTagResource.php
+│   │       │   │   ├── BlogAuthorResource.php
+│   │       │   │   ├── PublicBlogCategoryResource.php
+│   │       │   │   ├── PublicBlogPostCollection.php
+│   │       │   │   ├── PublicBlogPostResource.php
+│   │       │   │   └── PublicBlogTagResource.php
+│   │       │   ├── Documentation
+│   │       │   │   ├── PublicDocumentResource.php
+│   │       │   │   └── PublicSidebarResource.php
+│   │       │   ├── MarketingPage
+│   │       │   │   └── MarketingPageResource.php
+│   │       │   ├── Seo
+│   │       │   │   └── SeoResource.php
+│   │       │   └── Sitemap
+│   │       │       └── SitemapResource.php
 │   │       ├── HeroBannerResource.php
 │   │       ├── ImageResource.php
 │   │       ├── OrderCollection.php
@@ -479,20 +652,34 @@
 │   │       ├── Store
 │   │       │   └── StoreResource.php
 │   │       └── UserResource.php
+│   ├── Listeners
+│   │   └── Lead
+│   │       └── SendLeadSubmittedNotificationListener.php
 │   ├── Models
 │   │   ├── Address.php
 │   │   ├── Attribute.php
 │   │   ├── AttributeTranslation.php
 │   │   ├── AttributeValue.php
 │   │   ├── AttributeValueTranslation.php
+│   │   ├── BlogCategory.php
+│   │   ├── BlogCategoryTranslation.php
+│   │   ├── BlogPost.php
+│   │   ├── BlogPostTranslation.php
+│   │   ├── BlogTag.php
+│   │   ├── BlogTagTranslation.php
 │   │   ├── Brand.php
 │   │   ├── CartItem.php
 │   │   ├── Cart.php
 │   │   ├── Category.php
 │   │   ├── CategoryTranslation.php
+│   │   ├── Cms
+│   │   │   ├── CmsDocument.php
+│   │   │   ├── CmsDocumentSection.php
+│   │   │   └── MarketingPage.php
 │   │   ├── HeroBanner.php
 │   │   ├── HeroBannerTranslation.php
 │   │   ├── Image.php
+│   │   ├── Lead.php
 │   │   ├── OrderItem.php
 │   │   ├── Order.php
 │   │   ├── PaymentMethod.php
@@ -508,9 +695,11 @@
 │   │   └── User.php
 │   ├── Notifications
 │   │   ├── CustomResetPassword.php
+│   │   ├── LeadSubmittedNotification.php
 │   │   └── VerifyEmail.php
 │   ├── Policies
 │   │   ├── AddressPolicy.php
+│   │   ├── BlogPostPolicy.php
 │   │   ├── OrderPolicy.php
 │   │   └── PaymentMethodPolicy.php
 │   ├── Providers
@@ -537,6 +726,18 @@
 │   │   │   └── CartRepository.php
 │   │   ├── Category
 │   │   │   └── CategoryRepository.php
+│   │   ├── Cms
+│   │   │   ├── Blog
+│   │   │   │   └── BlogPostRepository.php
+│   │   │   ├── Documentation
+│   │   │   │   ├── CmsDocumentRepository.php
+│   │   │   │   └── CmsDocumentSectionRepository.php
+│   │   │   ├── MarketingPage
+│   │   │   │   └── MarketingPageRepository.php
+│   │   │   └── Sitemap
+│   │   │       └── SitemapRepository.php
+│   │   ├── Lead
+│   │   │   └── LeadRepository.php
 │   │   ├── Order
 │   │   │   └── OrderRepository.php
 │   │   ├── PaymentMethod
@@ -555,7 +756,20 @@
 │   │   ├── CartService.php
 │   │   ├── CategoryService.php
 │   │   ├── CheckoutService.php
+│   │   ├── Cms
+│   │   │   ├── LocalizedContentResolver.php
+│   │   │   ├── MarketingPageCacheService.php
+│   │   │   ├── Seo
+│   │   │   │   ├── CanonicalUrlService.php
+│   │   │   │   ├── IsrRevalidationService.php
+│   │   │   │   ├── SeoResolutionService.php
+│   │   │   │   └── StructuredDataService.php
+│   │   │   └── Sitemap
+│   │   │       └── MarketingSitemapService.php
 │   │   ├── HomePageService.php
+│   │   ├── Lead
+│   │   │   ├── LeadNotificationService.php
+│   │   │   └── LeadSanitizerService.php
 │   │   ├── OrderService.php
 │   │   ├── PaymentMethodService.php
 │   │   ├── ProductService.php
@@ -564,6 +778,7 @@
 │   │   └── SocialAuthService.php
 │   ├── Support
 │   │   ├── ApiResponse.php
+│   │   ├── BlogReadingTimeCalculator.php
 │   │   └── ProductTranslationCompleteness.php
 │   └── Traits
 │       └── ApiResponserTrait.php
@@ -584,6 +799,7 @@
 │   ├── cors.php
 │   ├── database.php
 │   ├── filesystems.php
+│   ├── lead.php
 │   ├── lighthouse.php
 │   ├── logging.php
 │   ├── mail.php
@@ -608,7 +824,6 @@
 │   │   ├── OrderItemFactory.php
 │   │   ├── PaymentMethodFactory.php
 │   │   ├── ProductFactory.php
-│   │   ├── ProductVariantAttributeFactory.php
 │   │   ├── ProductVariantFactory.php
 │   │   ├── TagFactory.php
 │   │   └── UserFactory.php
@@ -659,6 +874,19 @@
 │   │   ├── 2026_05_08_120000_add_seo_fields_to_product_translations_table.php
 │   │   ├── 2026_05_13_162825_create_tag_translations_table.php
 │   │   ├── 2026_05_13_162826_add_fulltext_indexes_for_search.php
+│   │   ├── 2026_05_19_000001_create_blog_categories_table.php
+│   │   ├── 2026_05_19_000002_create_blog_category_translations_table.php
+│   │   ├── 2026_05_19_000003_create_blog_tags_table.php
+│   │   ├── 2026_05_19_000004_create_blog_tag_translations_table.php
+│   │   ├── 2026_05_19_000005_create_blog_posts_table.php
+│   │   ├── 2026_05_19_000006_create_blog_post_translations_table.php
+│   │   ├── 2026_05_19_000007_create_blog_post_tag_table.php
+│   │   ├── 2026_05_20_110038_create_cms_document_sections_table.php
+│   │   ├── 2026_05_20_110038_create_cms_documents_table.php
+│   │   ├── 2026_05_20_120000_create_marketing_pages_table.php
+│   │   ├── 2026_05_20_160000_create_leads_table.php
+│   │   ├── 2026_05_20_170000_alter_leads_add_resolution_tracking.php
+│   │   ├── 2026_05_21_073005_normalize_marketing_pages_seo_schema.php
 │   │   ├── 2026_06_01_000001_create_product_options_table.php
 │   │   ├── 2026_06_01_000002_create_product_option_values_table.php
 │   │   ├── 2026_06_01_000003_create_variant_option_values_table.php
@@ -670,7 +898,6 @@
 │   │   ├── DatabaseSeeder.php
 │   │   ├── FakeSalesSeeder.php
 │   │   ├── HeroBannerSeeder.php
-│   │   ├── HomepageHeroSeeder.php
 │   │   ├── ImageSeeder.php
 │   │   ├── PermissionSeeder.php
 │   │   ├── ProductSeeder.php
@@ -696,6 +923,7 @@
 │   ├── admin-api.md
 │   ├── ARCHITECTURE.md
 │   ├── audit_log.md
+│   ├── CMS_MARKETING_ARCHITECTURE.md
 │   ├── cookie-auth-log.md
 │   ├── exception-system.md
 │   ├── refactor-log.md
@@ -708,11 +936,14 @@
 │   ├── ar
 │   │   ├── admin.php
 │   │   ├── auth.php
+│   │   ├── blog.php
 │   │   ├── brand.php
 │   │   ├── cart.php
 │   │   ├── category.php
+│   │   ├── cms.php
 │   │   ├── error.php
 │   │   ├── general.php
+│   │   ├── lead.php
 │   │   ├── order.php
 │   │   ├── payment.php
 │   │   ├── services.php
@@ -720,11 +951,14 @@
 │   └── en
 │       ├── admin.php
 │       ├── auth.php
+│       ├── blog.php
 │       ├── brand.php
 │       ├── cart.php
 │       ├── category.php
+│       ├── cms.php
 │       ├── error.php
 │       ├── general.php
+│       ├── lead.php
 │       ├── order.php
 │       ├── payment.php
 │       ├── services.php
@@ -756,7 +990,18 @@
 │   ├── api
 │   │   └── v1
 │   │       ├── admin
-│   │       │   └── admin.php
+│   │       │   ├── admin.php
+│   │       │   ├── cms
+│   │       │   │   ├── blog.php
+│   │       │   │   ├── documentation.php
+│   │       │   │   └── marketing-pages.php
+│   │       │   └── leads.php
+│   │       ├── public
+│   │       │   ├── blog.php
+│   │       │   ├── cms.php
+│   │       │   ├── documentation.php
+│   │       │   ├── leads.php
+│   │       │   └── sitemap.php
 │   │       ├── stores
 │   │       │   ├── addresses.php
 │   │       │   ├── cart.php
@@ -780,6 +1025,7 @@
 │   ├── console.php
 │   └── web.php
 ├── search_and_print.sh
+├── setup_seo_infrastructure.sh
 ├── src
 │   ├── app
 │   └── features
@@ -812,9 +1058,15 @@
 │   │   │   └── disks
 │   │   │       └── local
 │   │   └── views
-│   │       ├── 81826f452a2a8e2a57c0ded064bf33a2.php
-│   │       ├── c389252db193e29ea23e2b919bee7d5a.php
-│   │       └── c7aae94bbf1bca529a2f2fa42222a128.php
+│   │       ├── 04ab58859142c21b268bb1024d71f4fa.php
+│   │       ├── 25a95ac7a17cbd895ca9b651d8504971.php
+│   │       ├── 42e041d385fd698c4cf0d74a5eeb92db.php
+│   │       ├── 6fa039c3babca7e6a7f6aa2b95f9df33.php
+│   │       ├── 759d30c4fa6d6aa992fbf5923a43a528.php
+│   │       ├── 95226d008712c5185ec799bdccc832e7.php
+│   │       ├── 95df4241fe26cb48ddde04828a61febc.php
+│   │       ├── 97b956abcd2084adf4c37eb3f45a37d8.php
+│   │       └── bee8942afa6e5e5f9c7c261f37c8e76b.php
 │   └── logs
 │       └── laravel.log
 ├── test
@@ -825,9 +1077,14 @@
 │   │   ├── Admin
 │   │   │   ├── AdminProductDetailResourceTest.php
 │   │   │   └── AdminProductDtoTest.php
+│   │   ├── BlogModuleTest.php
 │   │   ├── ExceptionRenderingTest.php
+│   │   ├── Lead
+│   │   │   ├── AdminLeadManagementTest.php
+│   │   │   └── PublicLeadSubmissionTest.php
 │   │   └── ProductSlugStoreScopingTest.php
-│   └── TestCase.php
+│   ├── TestCase.php
+│   └── Unit
 └── vite.config.js
 
-195 directories, 636 files
+264 directories, 824 files

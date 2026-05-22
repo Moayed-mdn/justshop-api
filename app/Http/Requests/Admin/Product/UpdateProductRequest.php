@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Admin\Product;
 
-use App\Enums\RoleEnum;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -10,11 +9,7 @@ class UpdateProductRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->hasRole(RoleEnum::SUPER_ADMIN->value)
-            || $this->user()->hasPermissionTo(
-                'product.update',
-                $this->route('store'),
-            );
+        return true;
     }
 
     public function rules(): array

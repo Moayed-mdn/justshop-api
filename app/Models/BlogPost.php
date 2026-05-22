@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BlogPost extends Model
@@ -20,6 +19,11 @@ class BlogPost extends Model
     protected $fillable = [
         'author_id',
         'blog_category_id',
+        'title',
+        'slug',
+        'excerpt',
+        'content',
+        'seo',
         'featured',
         'is_published',
         'published_at',
@@ -32,16 +36,16 @@ class BlogPost extends Model
     protected function casts(): array
     {
         return [
+            'title' => 'array',
+            'slug' => 'array',
+            'excerpt' => 'array',
+            'content' => 'array',
+            'seo' => 'array',
             'featured' => 'boolean',
             'is_published' => 'boolean',
             'published_at' => 'datetime',
             'reading_time' => 'integer',
         ];
-    }
-
-    public function translations(): HasMany
-    {
-        return $this->hasMany(BlogPostTranslation::class);
     }
 
     public function category(): BelongsTo
@@ -69,21 +73,10 @@ class BlogPost extends Model
         return $this->belongsTo(User::class, 'updated_by');
     }
 
-    public function translation(?string $locale = null): ?BlogPostTranslation
-    {
-        if (!$this->relationLoaded('translations')) {
-            return null;
-        }
-
-        $locale = $locale ?? app()->getLocale();
-
-        return $this->translations->firstWhere('locale', $locale)
-            ?? $this->translations->first();
-    }
-
     public function translated(string $key, ?string $locale = null): mixed
     {
-        return $this->translation($locale)?->{$key};
+        $locale = $locale ?? app()->getLocale();
+        return $this->{$key}[$locale] ?? $this->{$key}[config('content.default_locale', 'en')] ?? null;
     }
 
     public function getPublishStateAttribute(): BlogPostPublishStateEnum

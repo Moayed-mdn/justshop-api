@@ -10,13 +10,13 @@ class PublicBlogTagResource extends JsonResource
 {
     public function toArray($request): array
     {
-        $locale = $request->query('locale', config('content.default_locale', 'en'));
-        $translation = $this->translation($locale);
+        $locale = app()->getLocale();
+        $fallback = config('content.default_locale', 'en');
 
         return [
             'id' => $this->id,
-            'name' => $translation?->name,
-            'slug' => $translation?->slug,
+            'name' => $this->name[$locale] ?? $this->name[$fallback] ?? '',
+            'slug' => $this->slug[$locale] ?? $this->slug[$fallback] ?? '',
         ];
     }
 }

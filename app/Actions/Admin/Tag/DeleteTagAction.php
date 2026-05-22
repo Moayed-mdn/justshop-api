@@ -21,15 +21,6 @@ class DeleteTagAction
      */
     public function execute(int $storeId, int $tagId): void
     {
-        /** @var \App\Models\User $authUser */
-        $authUser = Auth::user();
-
-        if (!$authUser->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            if (!$authUser->stores()->where('store_id', $storeId)->exists()) {
-                throw new UnauthorizedStoreAccessException();
-            }
-        }
-
         // findStoreOwnedTag throws TagNotFoundException if not found
         // or if the tag is global (not owned by this store).
         $tag = $this->repository->findStoreOwnedTag($tagId, $storeId);

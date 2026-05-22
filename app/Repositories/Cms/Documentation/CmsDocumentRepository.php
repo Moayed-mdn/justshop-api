@@ -9,65 +9,57 @@ use Illuminate\Database\Eloquent\Collection;
 
 class CmsDocumentRepository
 {
-    public function findById(int $id, int $storeId): ?CmsDocument
-    {
-        return CmsDocument::where('store_id', $storeId)->find($id);
+    public function findById(int $id): ?CmsDocument
+    {        return CmsDocument::find($id);
     }
 
-    public function findBySlugPath(array $slugs, int $storeId): ?CmsDocument
-    {
-        // This is complex because slugs are JSON.
+    public function findBySlugPath(array $slugs): ?CmsDocument
+    {        // This is complex because slugs are JSON.
         // For now, let's assume we search for the last slug in the path and verify parentage.
         // In a real scenario, we might need a more optimized way to resolve slug paths.
         
         $lastSlug = end($slugs);
         $locale = app()->getLocale();
 
-        return CmsDocument::where('store_id', $storeId)
-            ->where("slug->$locale", $lastSlug)
+        return CmsDocument::where("slug->$locale", $lastSlug)
             ->published()
             ->first();
     }
 
-    public function getPublishedDocuments(int $storeId): Collection
+    public function getPublishedDocuments(): Collection
     {
-        return CmsDocument::where('store_id', $storeId)
-            ->published()
+        return CmsDocument::published()
             ->orderBy('sort_order')
+            ->orderBy('id')
             ->get();
     }
 
-    public function getSidebarTree(int $storeId): Collection
+    public function getSidebarTree(): Collection
     {
         // Get all published documents and sections to build a tree
-        return CmsDocument::where('store_id', $storeId)
-            ->whereNull('parent_id')
+        return CmsDocument::whereNull('parent_id')
             ->published()
-            ->with(['children' => fn($q) => $q->published()])
+            ->with(['children' => fn($q) => $q->published()->orderBy('sort_order')->orderBy('id')])
             ->orderBy('sort_order')
+            ->orderBy('id')
             ->get();
     }
 
     public function create(array $data): CmsDocument
-    {
-        return CmsDocument::create($data);
+    {        return CmsDocument::create($data);
     }
 
     public function update(CmsDocument $document, array $data): bool
-    {
-        return $document->update($data);
+    {        return $document->update($data);
     }
 
     public function delete(CmsDocument $document): bool
-    {
-        return $document->delete();
+    {        return $document->delete();
     }
 
-    public function reorder(int $storeId, array $orders): void
-    {
-        foreach ($orders as $order) {
-            CmsDocument::where('store_id', $storeId)
-                ->where('id', $order['id'])
+    public function reorder(array $orders): void
+    {        foreach ($orders as $order) {
+            CmsDocument::where('id', $order['id'])
                 ->update(['sort_order' => $order['sort_order'], 'parent_id' => $order['parent_id'] ?? null]);
         }
     }
@@ -91,34 +83,23 @@ class CmsDocumentRepository
 
     public function getPreviousNext(CmsDocument $document): array
     {
-        $storeId = $document->store_id;
         $sectionId = $document->section_id;
 
-        $previous = CmsDocument::where('store_id', $storeId)
-            ->where('section_id', $sectionId)
+        $previous = CmsDocument::where('section_id', $sectionId)
             ->where('sort_order', '<', $document->sort_order)
             ->published()
-            ->orderBy('sort_order', 'desc')
+            ->orderByDesc('sort_order')
             ->first();
 
-        $next = CmsDocument::where('store_id', $storeId)
-            ->where('section_id', $sectionId)
+        $next = CmsDocument::where('section_id', $sectionId)
             ->where('sort_order', '>', $document->sort_order)
             ->published()
-            ->orderBy('sort_order', 'asc')
+            ->orderBy('sort_order')
             ->first();
 
-        $locale = app()->getLocale();
-
         return [
-            'previous' => $previous ? [
-                'title' => $previous->title[$locale] ?? $previous->title['en'] ?? '',
-                'slug' => $previous->slug[$locale] ?? $previous->slug['en'] ?? '',
-            ] : null,
-            'next' => $next ? [
-                'title' => $next->title[$locale] ?? $next->title['en'] ?? '',
-                'slug' => $next->slug[$locale] ?? $next->slug['en'] ?? '',
-            ] : null,
+            'previous' => $previous,
+            'next' => $next,
         ];
     }
 }

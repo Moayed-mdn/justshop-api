@@ -5,11 +5,8 @@ namespace Tests\Feature;
 use App\Enums\Cms\Blog\BlogPostPublishStateEnum;
 use App\Enums\RoleEnum;
 use App\Models\BlogCategory;
-use App\Models\BlogCategoryTranslation;
 use App\Models\BlogPost;
-use App\Models\BlogPostTranslation;
 use App\Models\BlogTag;
-use App\Models\BlogTagTranslation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -33,21 +30,15 @@ class BlogModuleTest extends TestCase
         $this->admin->assignRole($role);
 
         // Setup Category
-        $this->category = BlogCategory::create();
-        BlogCategoryTranslation::create([
-            'blog_category_id' => $this->category->id,
-            'locale' => 'en',
-            'name' => 'Technology',
-            'slug' => 'technology',
+        $this->category = BlogCategory::create([
+            'name' => ['en' => 'Technology'],
+            'slug' => ['en' => 'technology'],
         ]);
 
         // Setup Tag
-        $this->tag = BlogTag::create();
-        BlogTagTranslation::create([
-            'blog_tag_id' => $this->tag->id,
-            'locale' => 'en',
-            'name' => 'Laravel',
-            'slug' => 'laravel',
+        $this->tag = BlogTag::create([
+            'name' => ['en' => 'Laravel'],
+            'slug' => ['en' => 'laravel'],
         ]);
     }
 
@@ -57,26 +48,25 @@ class BlogModuleTest extends TestCase
         $post = BlogPost::create([
             'is_published' => true,
             'published_at' => now()->subDay(),
-        ]);
-        BlogPostTranslation::create([
-            'blog_post_id' => $post->id,
-            'locale' => 'en',
-            'title' => 'Published Post',
-            'slug' => 'published-post',
-            'content' => 'Content',
+            'title' => ['en' => 'Published Post'],
+            'slug' => ['en' => 'published-post'],
+            'content' => ['en' => 'Content'],
+            'seo' => [
+                'title' => ['en' => 'Published Post'],
+                'description' => ['en' => 'Description'],
+                'robots' => ['en' => 'index,follow'],
+            ],
         ]);
 
         // Create a draft post
-        $draft = BlogPost::create(['is_published' => false]);
-        BlogPostTranslation::create([
-            'blog_post_id' => $draft->id,
-            'locale' => 'en',
-            'title' => 'Draft Post',
-            'slug' => 'draft-post',
-            'content' => 'Content',
+        $draft = BlogPost::create([
+            'is_published' => false,
+            'title' => ['en' => 'Draft Post'],
+            'slug' => ['en' => 'draft-post'],
+            'content' => ['en' => 'Content'],
         ]);
 
-        $response = $this->getJson('/api/v1/public/blog?locale=en');
+        $response = $this->getJson('/api/v1/public/cms/blog?locale=en');
 
         $response->assertStatus(200)
             ->assertJsonCount(1, 'data.data')
@@ -88,16 +78,17 @@ class BlogModuleTest extends TestCase
         $post = BlogPost::create([
             'is_published' => true,
             'published_at' => now()->subDay(),
-        ]);
-        BlogPostTranslation::create([
-            'blog_post_id' => $post->id,
-            'locale' => 'en',
-            'title' => 'Test Post',
-            'slug' => 'test-post',
-            'content' => 'Detailed content',
+            'title' => ['en' => 'Test Post'],
+            'slug' => ['en' => 'test-post'],
+            'content' => ['en' => 'Detailed content'],
+            'seo' => [
+                'title' => ['en' => 'Test Post'],
+                'description' => ['en' => 'Description'],
+                'robots' => ['en' => 'index,follow'],
+            ],
         ]);
 
-        $response = $this->getJson('/api/v1/public/blog/test-post?locale=en');
+        $response = $this->getJson('/api/v1/public/cms/blog/test-post?locale=en');
 
         $response->assertStatus(200)
             ->assertJsonPath('data.title', 'Test Post')
@@ -128,26 +119,20 @@ class BlogModuleTest extends TestCase
             ->postJson('/api/v1/admin/cms/blog', $payload);
 
         $response->assertStatus(201);
-        $this->assertDatabaseHas('blog_post_translations', ['title' => 'New Admin Post']);
+        $this->assertDatabaseHas('blog_posts', [
+            'title->en' => 'New Admin Post',
+            'title->ar' => 'مقال جديد',
+        ]);
         $this->assertDatabaseHas('blog_post_tag', ['blog_tag_id' => $this->tag->id]);
     }
 
     public function test_admin_can_update_blog_post(): void
     {
-        $post = BlogPost::create(['is_published' => false]);
-        BlogPostTranslation::create([
-            'blog_post_id' => $post->id,
-            'locale' => 'en',
-            'title' => 'Old Title',
-            'slug' => 'old-slug',
-            'content' => 'Old content',
-        ]);
-        BlogPostTranslation::create([
-            'blog_post_id' => $post->id,
-            'locale' => 'ar',
-            'title' => 'عنوان قديم',
-            'slug' => 'old-slug-ar',
-            'content' => 'محتوى قديم',
+        $post = BlogPost::create([
+            'is_published' => false,
+            'title' => ['en' => 'Old Title', 'ar' => 'عنوان قديم'],
+            'slug' => ['en' => 'old-slug', 'ar' => 'old-slug-ar'],
+            'content' => ['en' => 'Old content', 'ar' => 'محتوى قديم'],
         ]);
 
         $payload = [
@@ -170,12 +155,21 @@ class BlogModuleTest extends TestCase
             ->putJson("/api/v1/admin/cms/blog/{$post->id}", $payload);
 
         $response->assertStatus(200);
-        $this->assertDatabaseHas('blog_post_translations', ['title' => 'Updated Title', 'blog_post_id' => $post->id]);
+        $this->assertDatabaseHas('blog_posts', [
+            'id' => $post->id,
+            'title->en' => 'Updated Title',
+            'title->ar' => 'عنوان محدث',
+        ]);
     }
 
     public function test_admin_can_publish_draft_post(): void
     {
-        $post = BlogPost::create(['is_published' => false]);
+        $post = BlogPost::create([
+            'is_published' => false,
+            'title' => ['en' => 'Draft'],
+            'slug' => ['en' => 'draft'],
+            'content' => ['en' => 'Content'],
+        ]);
         
         $response = $this->actingAs($this->admin)
             ->postJson("/api/v1/admin/cms/blog/{$post->id}/publish");

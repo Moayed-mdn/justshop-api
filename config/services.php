@@ -47,4 +47,18 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Next.js ISR Revalidation
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for on-demand ISR revalidation webhook.
+    | Set FRONTEND_REVALIDATION_URL and FRONTEND_REVALIDATION_SECRET in .env
+    |
+    */
+    'nextjs' => [
+        'revalidation_url'    => env('FRONTEND_REVALIDATION_URL'),
+        'revalidation_secret' => env('FRONTEND_REVALIDATION_SECRET'),
+    ],
 ];

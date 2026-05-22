@@ -16,14 +16,6 @@ class DeleteProductAction
 
     public function execute(DeleteProductDTO $dto): void
     {
-        /** @var \App\Models\User $authUser */
-        $authUser = Auth::user();
-        if (!$authUser->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            if (!$authUser->stores()->where('store_id', $dto->storeId)->exists()) {
-                throw new UnauthorizedStoreAccessException();
-            }
-        }
-
         $product = $this->repository->findInStore($dto->productId, $dto->storeId);
         $this->repository->softDelete($product);
     }

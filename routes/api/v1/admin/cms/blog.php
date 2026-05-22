@@ -4,7 +4,7 @@ use App\Http\Controllers\Api\Cms\Blog\AdminBlogController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/admin/cms/blog')
-    ->middleware(['auth:sanctum'])
+    ->middleware(['auth:sanctum', 'verified', 'role:super_admin'])
     ->controller(AdminBlogController::class)
     ->group(function (): void {
         Route::get('/', 'index');

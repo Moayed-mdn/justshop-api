@@ -6,11 +6,25 @@ use App\DTOs\Store\CreateStoreDTO;
 use App\DTOs\Store\UpdateStoreDTO;
 use App\Enums\Store\StoreRoleEnum;
 use App\Models\Store;
+use App\Models\User;
 use App\Exceptions\Store\StoreNotFoundException;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class StoreRepository
 {
+    /**
+     * Get all stores accessible by the user.
+     */
+    public function getAccessibleStores(User $user): Collection
+    {
+        if ($user->hasRole(\App\Enums\RoleEnum::SUPER_ADMIN->value)) {
+            return Store::where('is_active', true)->get();
+        }
+
+        return $user->stores;
+    }
+
     public function create(CreateStoreDTO $dto): Store
     {
         return DB::transaction(function () use ($dto) {

@@ -12,6 +12,10 @@ enum MarketingPageTypeEnum: string
     case FEATURES = 'features';
     case ENTERPRISE = 'enterprise';
     case PRICING = 'pricing';
+    case BLOG = 'blog';
+    case DOCUMENTATION = 'documentation';
+    case DEMO = 'demo';
+    case TEMPLATES = 'templates';
 
     public static function values(): array
     {

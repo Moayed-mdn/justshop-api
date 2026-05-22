@@ -18,6 +18,9 @@ class DatabaseSeeder extends Seeder
             FakeSalesSeeder::class,
             ReviewSeeder::class,
             HeroBannerSeeder::class,
+            CmsBlogSeeder::class,
+            CmsDocumentationSeeder::class,
+            CmsMarketingSeeder::class,
         ]);
     }
 }

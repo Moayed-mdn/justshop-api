@@ -11,7 +11,7 @@ use App\Http\Controllers\Api\Admin\User\AdminUserController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/admin/stores/{store}')
-    ->middleware(['auth:sanctum', 'store.context'])
+    ->middleware(['auth:sanctum', 'verified', 'onboarding.completed', 'store.context'])
     ->group(function () {
 
         // ── User Management ────────────────────────────────────
@@ -127,9 +127,6 @@ Route::prefix('v1/admin/stores/{store}')
             Route::patch('/{brand}/restore', [AdminBrandController::class, 'restore'])
                 ->middleware('permission:' . PermissionEnum::BRAND_RESTORE);
         });
-
-        // ── CMS Documentation ─────────────────────────────────
-        require __DIR__ . '/cms/documentation.php';
 
         // ── Tag Management ───────────────────────────────────
         Route::apiResource('tags', AdminTagController::class);

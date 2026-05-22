@@ -37,7 +37,7 @@ class CreateLeadAction
         });
 
         if ($lead->status !== LeadStatusEnum::SPAM) {
-            LeadSubmitted::dispatch($lead);
+            LeadSubmitted::dispatch($lead->id);
         }
 
         return $lead;

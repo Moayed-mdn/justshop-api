@@ -19,24 +19,24 @@ class AdminDocumentSectionController extends Controller
         private CreateDocumentSectionAction $createAction,
     ) {}
 
-    public function index(int $store): JsonResponse
+    public function index(): JsonResponse
     {
-        $sections = $this->repository->getAll($store);
+        $sections = $this->repository->getAll();
         return $this->success(AdminDocumentSectionResource::collection($sections));
     }
 
-    public function store(CreateDocumentSectionRequest $request, int $store): JsonResponse
+    public function store(CreateDocumentSectionRequest $request): JsonResponse
     {
         $section = $this->createAction->execute(
-            CreateDocumentSectionDTO::fromRequest($request, $store)
+            CreateDocumentSectionDTO::fromRequest($request)
         );
 
         return $this->success(new AdminDocumentSectionResource($section));
     }
 
-    public function show(int $store, int $id): JsonResponse
+    public function show(int $id): JsonResponse
     {
-        $section = $this->repository->findById($id, $store);
+        $section = $this->repository->findById($id);
 
         if (!$section) {
             return $this->error('Section not found', 404);
@@ -45,9 +45,9 @@ class AdminDocumentSectionController extends Controller
         return $this->success(new AdminDocumentSectionResource($section));
     }
 
-    public function destroy(int $store, int $id): JsonResponse
+    public function destroy(int $id): JsonResponse
     {
-        $section = $this->repository->findById($id, $store);
+        $section = $this->repository->findById($id);
 
         if (!$section) {
             return $this->error('Section not found', 404);

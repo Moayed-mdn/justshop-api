@@ -30,24 +30,24 @@ class AdminDocumentController extends Controller
         private ReorderDocumentsAction $reorderAction,
     ) {}
 
-    public function index(int $store): JsonResponse
+    public function index(): JsonResponse
     {
-        $documents = $this->repository->getPublishedDocuments($store);
+        $documents = $this->repository->getPublishedDocuments();
         return $this->success(AdminDocumentResource::collection($documents));
     }
 
-    public function store(CreateDocumentRequest $request, int $store): JsonResponse
+    public function store(CreateDocumentRequest $request): JsonResponse
     {
         $document = $this->createAction->execute(
-            CreateDocumentDTO::fromRequest($request, $store)
+            CreateDocumentDTO::fromRequest($request)
         );
 
         return $this->success(new AdminDocumentResource($document));
     }
 
-    public function show(int $store, int $id): JsonResponse
+    public function show(int $id): JsonResponse
     {
-        $document = $this->repository->findById($id, $store);
+        $document = $this->repository->findById($id);
 
         if (!$document) {
             return $this->error('Document not found', 404);
@@ -56,9 +56,9 @@ class AdminDocumentController extends Controller
         return $this->success(new AdminDocumentResource($document));
     }
 
-    public function update(UpdateDocumentRequest $request, int $store, int $id): JsonResponse
+    public function update(UpdateDocumentRequest $request, int $id): JsonResponse
     {
-        $document = $this->repository->findById($id, $store);
+        $document = $this->repository->findById($id);
 
         if (!$document) {
             return $this->error('Document not found', 404);
@@ -66,15 +66,15 @@ class AdminDocumentController extends Controller
 
         $document = $this->updateAction->execute(
             $document,
-            UpdateDocumentDTO::fromRequest($request, $store)
+            UpdateDocumentDTO::fromRequest($request)
         );
 
         return $this->success(new AdminDocumentResource($document));
     }
 
-    public function destroy(int $store, int $id): JsonResponse
+    public function destroy(int $id): JsonResponse
     {
-        $document = $this->repository->findById($id, $store);
+        $document = $this->repository->findById($id);
 
         if (!$document) {
             return $this->error('Document not found', 404);
@@ -85,9 +85,9 @@ class AdminDocumentController extends Controller
         return $this->success(null, 'Document deleted successfully');
     }
 
-    public function publish(PublishDocumentRequest $request, int $store, int $id): JsonResponse
+    public function publish(PublishDocumentRequest $request, int $id): JsonResponse
     {
-        $document = $this->repository->findById($id, $store);
+        $document = $this->repository->findById($id);
 
         if (!$document) {
             return $this->error('Document not found', 404);
@@ -95,15 +95,15 @@ class AdminDocumentController extends Controller
 
         $document = $this->publishAction->execute(
             $document,
-            PublishDocumentDTO::fromRequest($request, $store)
+            PublishDocumentDTO::fromRequest($request)
         );
 
         return $this->success(new AdminDocumentResource($document));
     }
 
-    public function reorder(Request $request, int $store): JsonResponse
+    public function reorder(Request $request): JsonResponse
     {
-        $this->reorderAction->execute($store, $request->input('orders'));
+        $this->reorderAction->execute($request->input('orders'));
         return $this->success(null, 'Documents reordered successfully');
     }
 }

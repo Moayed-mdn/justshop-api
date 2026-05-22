@@ -18,14 +18,7 @@ class ListBrandsAction
 
     public function execute(
         ListBrandsDTO $dto,
-        User $user,
     ): LengthAwarePaginator {
-        if (!$user->hasRole('super_admin')
-            && !$user->stores()->where('store_id', $dto->storeId)->exists()
-        ) {
-            throw new UnauthorizedStoreAccessException();
-        }
-
         return $this->brandRepository->paginate(
             storeId:  $dto->storeId,
             isActive: $dto->isActive,

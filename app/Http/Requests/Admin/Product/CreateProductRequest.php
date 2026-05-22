@@ -3,21 +3,15 @@
 namespace App\Http\Requests\Admin\Product;
 
 use App\Enums\Product\ProductStatusEnum;
-use App\Enums\RoleEnum;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 class CreateProductRequest extends FormRequest
 {
     public function authorize(): bool
-    {Log::info('create product requset', $this->all());
-               return $this->user()->hasRole(RoleEnum::SUPER_ADMIN->value)
-            || $this->user()->hasPermissionTo(
-                'product.create',
-                $this->route('store'),
-            );
+    {
+        return true;
     }
 
     public function rules(): array

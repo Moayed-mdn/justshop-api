@@ -18,6 +18,8 @@ Route::name('v1.users.auth.')
         Route::get('/google/redirect', [SocialAuthController::class, 'redirect']);
         Route::get('/google/callback', [SocialAuthController::class, 'callback']);
         Route::get('/me', [AuthController::class, 'me'])->middleware('auth:sanctum')->name('me');
+        Route::get('/bootstrap', [AuthController::class, 'bootstrap'])->middleware('auth:sanctum')->name('bootstrap');
+        Route::patch('/active-store', [AuthController::class, 'updateActiveStore'])->middleware(['auth:sanctum', 'verified'])->name('active-store.update');
     });
 
 // Authenticated user endpoint (for Next.js SPA)

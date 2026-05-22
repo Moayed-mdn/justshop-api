@@ -4,7 +4,7 @@ use App\Http\Controllers\Api\Admin\Cms\MarketingPage\AdminMarketingPageControlle
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/admin/cms/pages')
-    ->middleware(['auth:sanctum'])
+    ->middleware(['auth:sanctum', 'verified', 'role:super_admin'])
     ->controller(AdminMarketingPageController::class)
     ->group(function (): void {
         Route::get('/', 'index');

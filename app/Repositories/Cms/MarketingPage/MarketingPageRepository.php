@@ -63,13 +63,14 @@ class MarketingPageRepository
         string $fallbackLocale,
         string $slug,
     ): MarketingPage {
+
         $page = MarketingPage::query()
-            ->published()
-            ->where(function (Builder $builder) use ($locale, $fallbackLocale, $slug): void {
-                $builder->where("slug->{$locale}", $slug)
-                    ->orWhere("slug->{$fallbackLocale}", $slug);
-            })
-            ->first();
+        ->published()
+        ->where(function (Builder $builder) use ($locale, $fallbackLocale, $slug): void {
+            $builder->where("slug->{$locale}", $slug)
+                ->orWhere("slug->{$fallbackLocale}", $slug);
+        })
+        ->first();
 
         if ($page === null) {
             throw new NotFoundException(__('cms.page_not_found'));

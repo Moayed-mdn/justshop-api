@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\BlogPost;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,11 +13,19 @@ class BlogCategory extends Model
 {
     use HasFactory;
 
-    protected $fillable = [];
+    protected $fillable = [
+        'name',
+        'slug',
+        'description',
+    ];
 
-    public function translations(): HasMany
+    protected function casts(): array
     {
-        return $this->hasMany(BlogCategoryTranslation::class);
+        return [
+            'name' => 'array',
+            'slug' => 'array',
+            'description' => 'array',
+        ];
     }
 
     public function posts(): HasMany
@@ -24,15 +33,9 @@ class BlogCategory extends Model
         return $this->hasMany(BlogPost::class);
     }
 
-    public function translation(?string $locale = null): ?BlogCategoryTranslation
+    public function translated(string $key, ?string $locale = null): mixed
     {
-        if (!$this->relationLoaded('translations')) {
-            return null;
-        }
-
         $locale = $locale ?? app()->getLocale();
-
-        return $this->translations->firstWhere('locale', $locale)
-            ?? $this->translations->first();
+        return $this->{$key}[$locale] ?? $this->{$key}[config('content.default_locale', 'en')] ?? null;
     }
 }

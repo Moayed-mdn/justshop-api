@@ -18,14 +18,7 @@ class CreateBrandAction
 
     public function execute(
         CreateBrandDTO $dto,
-        User $user,
     ): Brand {
-        if (!$user->hasRole('super_admin')
-            && !$user->stores()->where('store_id', $dto->storeId)->exists()
-        ) {
-            throw new UnauthorizedStoreAccessException();
-        }
-
         return $this->brandRepository->create(
             storeId:     $dto->storeId,
             name:        $dto->name,

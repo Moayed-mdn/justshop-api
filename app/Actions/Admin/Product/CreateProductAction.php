@@ -3,12 +3,9 @@
 namespace App\Actions\Admin\Product;
 
 use App\DTOs\Admin\Product\CreateProductDTO;
-use App\Enums\RoleEnum;
-use App\Exceptions\Store\UnauthorizedStoreAccessException;
 use App\Models\Product;
 use App\Repositories\Admin\Product\AdminProductRepository;
 use App\Repositories\Admin\Tag\AdminTagRepository;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -22,15 +19,6 @@ class CreateProductAction
 
     public function execute(CreateProductDTO $dto): Product
     {
-        /** @var \App\Models\User $authUser */
-        $authUser = Auth::user();
-
-        if (!$authUser->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            if (!$authUser->stores()->where('store_id', $dto->storeId)->exists()) {
-                throw new UnauthorizedStoreAccessException();
-            }
-        }
-
         // ── Phase C: Store-scope tag validation ────────────────
         // Runs before the transaction. Ensures every provided tag ID is
         // accessible to this store (owned by store OR global/null store_id).

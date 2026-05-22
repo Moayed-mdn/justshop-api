@@ -17,7 +17,6 @@ class CmsDocument extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'store_id',
         'section_id',
         'parent_id',
         'version',
@@ -25,15 +24,10 @@ class CmsDocument extends Model
         'slug',
         'excerpt',
         'content',
+        'seo',
         'sort_order',
         'is_published',
         'published_at',
-        'meta_title',
-        'meta_description',
-        'canonical_url',
-        'og_image',
-        'robots',
-        'index_controls',
     ];
 
     protected function casts(): array
@@ -43,12 +37,7 @@ class CmsDocument extends Model
             'slug' => 'array',
             'excerpt' => 'array',
             'content' => 'array',
-            'meta_title' => 'array',
-            'meta_description' => 'array',
-            'canonical_url' => 'array',
-            'og_image' => 'array',
-            'robots' => 'array',
-            'index_controls' => 'array',
+            'seo' => 'array',
             'sort_order' => 'integer',
             'is_published' => 'boolean',
             'published_at' => 'datetime',
@@ -56,11 +45,6 @@ class CmsDocument extends Model
     }
 
     // Relationships
-    public function store(): BelongsTo
-    {
-        return $this->belongsTo(Store::class);
-    }
-
     public function section(): BelongsTo
     {
         return $this->belongsTo(CmsDocumentSection::class, 'section_id');
@@ -84,10 +68,5 @@ class CmsDocument extends Model
                 $q->whereNull('published_at')
                     ->orWhere('published_at', '<=', now());
             });
-    }
-
-    public function scopeByStore(Builder $query, int $storeId): void
-    {
-        $query->where('store_id', $storeId);
     }
 }

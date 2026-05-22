@@ -17,14 +17,6 @@ class UpdateOrderStatusAction
 
     public function execute(UpdateOrderStatusDTO $dto): Order
     {
-        /** @var \App\Models\User $authUser */
-        $authUser = Auth::user();
-        if (!$authUser->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            if (!$authUser->stores()->where('store_id', $dto->storeId)->exists()) {
-                throw new UnauthorizedStoreAccessException();
-            }
-        }
-
         $order = $this->repository->findInStore($dto->orderId, $dto->storeId);
         return $this->repository->updateStatus($order, $dto->status);
     }

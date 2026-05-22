@@ -23,6 +23,7 @@ class AdminDashboardController extends Controller
 {
     public function stats(GetStatsRequest $request, GetStatsAction $action, int $store): JsonResponse
     {
+        $this->authorize('view', app('currentStore'));
         $dto = GetStatsDTO::fromRequest($request, $store);
         $stats = $action->execute($dto);
 
@@ -34,6 +35,7 @@ class AdminDashboardController extends Controller
 
     public function recentOrders(GetRecentOrdersRequest $request, GetRecentOrdersAction $action, int $store): JsonResponse
     {
+        $this->authorize('view', app('currentStore'));
         $dto = GetRecentOrdersDTO::fromRequest($request, $store);
         $orders = $action->execute($dto);
 
@@ -45,6 +47,7 @@ class AdminDashboardController extends Controller
 
     public function topProducts(GetTopProductsRequest $request, GetTopProductsAction $action, int $store): JsonResponse
     {
+        $this->authorize('view', app('currentStore'));
         $dto = GetTopProductsDTO::fromRequest($request, $store);
         $products = $action->execute($dto);
 

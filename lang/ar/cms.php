@@ -9,4 +9,8 @@ return [
     'page_updated' => 'تم تحديث صفحة التسويق بنجاح.',
     'page_deleted' => 'تم حذف صفحة التسويق بنجاح.',
     'page_published' => 'تم نشر صفحة التسويق بنجاح.',
+
+    // SEO / Sitemap
+    'sitemap_generated' => 'تم توليد بيانات الخريطة بنجاح.',
+    'seo_resolved'      => 'تم حل بيانات SEO.',
 ];

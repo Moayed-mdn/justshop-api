@@ -18,15 +18,6 @@ class UpdateTagAction
 
     public function execute(UpdateTagDTO $dto): Tag
     {
-        /** @var \App\Models\User $authUser */
-        $authUser = Auth::user();
-
-        if (!$authUser->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            if (!$authUser->stores()->where('store_id', $dto->storeId)->exists()) {
-                throw new UnauthorizedStoreAccessException();
-            }
-        }
-
         // Only store-owned tags can be updated via this endpoint.
         // Global tags (store_id = null) cannot be mutated by store admins.
         $tag = $this->repository->findStoreOwnedTag($dto->tagId, $dto->storeId);

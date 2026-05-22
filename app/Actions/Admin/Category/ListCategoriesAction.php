@@ -18,14 +18,7 @@ class ListCategoriesAction
 
     public function execute(
         ListCategoriesDTO $dto,
-        User $user,
     ): LengthAwarePaginator {
-        if (!$user->hasRole('super_admin')
-            && !$user->stores()->where('store_id', $dto->storeId)->exists()
-        ) {
-            throw new UnauthorizedStoreAccessException();
-        }
-
         return $this->categoryRepository->paginate(
             storeId:  $dto->storeId,
             parentId: $dto->parentId,

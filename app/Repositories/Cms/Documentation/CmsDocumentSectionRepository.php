@@ -9,15 +9,14 @@ use Illuminate\Database\Eloquent\Collection;
 
 class CmsDocumentSectionRepository
 {
-    public function findById(int $id, int $storeId): ?CmsDocumentSection
+    public function findById(int $id): ?CmsDocumentSection
     {
-        return CmsDocumentSection::where('store_id', $storeId)->find($id);
+        return CmsDocumentSection::find($id);
     }
 
-    public function getAll(int $storeId): Collection
+    public function getAll(): Collection
     {
-        return CmsDocumentSection::where('store_id', $storeId)
-            ->orderBy('sort_order')
+        return CmsDocumentSection::orderBy('sort_order')
             ->get();
     }
 

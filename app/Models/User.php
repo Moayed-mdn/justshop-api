@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Enums\Auth\OnboardingStepEnum;
+use App\Enums\Auth\ActorContextEnum;
+use App\Support\Auth\ActorResolver;
+use App\Enums\RoleEnum;
 use App\Enums\Address\AddressTypeEnum;
 use App\Notifications\CustomResetPassword;
 use App\Notifications\VerifyEmail;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -33,6 +36,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'google_id',
         'avatar',
         'is_active',
+        'onboarding_step',
+        'onboarding_completed_at',
+        'last_active_store_id',
     ];
 
     /**
@@ -56,7 +62,35 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'onboarding_step' => OnboardingStepEnum::class,
+            'onboarding_completed_at' => 'datetime',
         ];
+    }
+
+
+    public function isOnboardingCompleted(): bool
+    {
+        // Customers are considered completed by default as they don't have onboarding
+        if ($this->getActorContext() === ActorContextEnum::CUSTOMER) {
+            return true;
+        }
+
+        return $this->onboarding_step === OnboardingStepEnum::COMPLETED;
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->hasRole(RoleEnum::SUPER_ADMIN->value);
+    }
+
+    public function getActorContext(): ActorContextEnum
+    {
+        return app(ActorResolver::class)->resolve($this);
+    }
+
+    public function activeStore()
+    {
+        return $this->belongsTo(Store::class, 'last_active_store_id');
     }
 
 
@@ -122,13 +156,16 @@ class User extends Authenticatable implements MustVerifyEmail
             return $this->avatar;
         }
 
-        return Storage::disk('public')->url($this->avatar);
+        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+
+        return $disk->url($this->avatar);
     }
 
     public function stores(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(Store::class, 'store_user')
-            ->withPivot('role')
+            ->withPivot('id', 'role')
             ->withTimestamps();
     }
 

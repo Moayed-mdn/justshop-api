@@ -19,14 +19,6 @@ class RestoreProductAction
 
     public function execute(RestoreProductDTO $dto): Product
     {
-        /** @var \App\Models\User $authUser */
-        $authUser = Auth::user();
-        if (!$authUser->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            if (!$authUser->stores()->where('store_id', $dto->storeId)->exists()) {
-                throw new UnauthorizedStoreAccessException();
-            }
-        }
-
         $product = $this->repository->findTrashedInStore($dto->productId, $dto->storeId);
 
         if (!$product) {

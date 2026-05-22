@@ -29,36 +29,42 @@ class AdminProductController extends Controller
 {
     public function index(ListProductsRequest $request, ListProductsAction $action, int $store): JsonResponse
     {
+        $this->authorize('view', app('currentStore'));
         $products = $action->execute(ListProductsDTO::fromRequest($request, $store));
         return $this->paginated($products, AdminProductResource::collection($products));
     }
 
     public function show(GetProductRequest $request, GetProductAction $action, int $store, int $product): JsonResponse
     {
+        $this->authorize('view', app('currentStore'));
         $productModel = $action->execute(GetProductDTO::fromRequest($request, $store, $product));
         return $this->success(new AdminProductDetailResource($productModel));
     }
 
     public function store(CreateProductRequest $request, CreateProductAction $action, int $store): JsonResponse
     {
+        $this->authorize('update', app('currentStore'));
         $product = $action->execute(CreateProductDTO::fromRequest($request, $store));
         return $this->success(new AdminProductDetailResource($product), __('admin.product_created'));
     }
 
     public function update(UpdateProductRequest $request, UpdateProductAction $action, int $store, int $product): JsonResponse
     {
+        $this->authorize('update', app('currentStore'));
         $productModel = $action->execute(UpdateProductDTO::fromRequest($request, $store, $product));
         return $this->success(new AdminProductDetailResource($productModel), __('admin.product_updated'));
     }
 
     public function destroy(DeleteProductRequest $request, DeleteProductAction $action, int $store, int $product): JsonResponse
     {
+        $this->authorize('update', app('currentStore'));
         $action->execute(DeleteProductDTO::fromRequest($request, $store, $product));
         return $this->success(null, __('admin.product_deleted'));
     }
 
     public function restore(RestoreProductRequest $request, RestoreProductAction $action, int $store, int $product): JsonResponse
     {
+        $this->authorize('update', app('currentStore'));
         $productModel = $action->execute(RestoreProductDTO::fromRequest($request, $store, $product));
         return $this->success(new AdminProductDetailResource($productModel), __('admin.product_restored'));
     }

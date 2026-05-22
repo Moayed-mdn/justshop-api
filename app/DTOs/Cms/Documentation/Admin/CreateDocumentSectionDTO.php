@@ -9,7 +9,6 @@ use App\Http\Requests\Cms\Documentation\Admin\CreateDocumentSectionRequest;
 class CreateDocumentSectionDTO
 {
     public function __construct(
-        public int $storeId,
         public array $title,
         public array $slug,
         public ?int $parentId = null,
@@ -20,10 +19,9 @@ class CreateDocumentSectionDTO
         public ?string $publishedAt = null,
     ) {}
 
-    public static function fromRequest(CreateDocumentSectionRequest $request, int $storeId): self
+    public static function fromRequest(CreateDocumentSectionRequest $request): self
     {
         return new self(
-            storeId: $storeId,
             title: $request->input('title'),
             slug: $request->input('slug'),
             parentId: $request->integer('parent_id') ?: null,

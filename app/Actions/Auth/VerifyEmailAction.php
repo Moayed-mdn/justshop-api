@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Auth;
 
+use App\Enums\Auth\OnboardingStepEnum;
 use App\DTOs\Auth\VerifyEmailDTO;
 use App\Exceptions\Auth\EmailVerificationException;
 use App\Models\User;
@@ -25,6 +26,12 @@ class VerifyEmailAction
         }
 
         $user->markEmailAsVerified();
+
+        // Advance onboarding step if it was pending verification
+        if ($user->onboarding_step === OnboardingStepEnum::PENDING_VERIFICATION) {
+            $user->update(['onboarding_step' => OnboardingStepEnum::CREATE_STORE]);
+        }
+
         event(new Verified($user));
 
         return ['already_verified' => false];

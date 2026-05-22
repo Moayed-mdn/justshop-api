@@ -30,9 +30,10 @@ class AdminBrandController extends Controller
         int $store,
         ListBrandsAction $action,
     ): JsonResponse {
+        $this->authorize('view', app('currentStore'));
+
         $brands = $action->execute(
             dto:  ListBrandsDTO::fromRequest($request, $store),
-            user: $request->user(),
         );
 
         return $this->paginated(
@@ -46,12 +47,13 @@ class AdminBrandController extends Controller
         int $brand,
         ShowBrandAction $action,
     ): JsonResponse {
+        $this->authorize('view', app('currentStore'));
+
         $result = $action->execute(
             dto: new ShowBrandDTO(
                 storeId: $store,
                 brandId: $brand,
             ),
-            user: request()->user(),
         );
 
         return $this->success(new AdminBrandResource($result));
@@ -62,9 +64,10 @@ class AdminBrandController extends Controller
         int $store,
         CreateBrandAction $action,
     ): JsonResponse {
+        $this->authorize('update', app('currentStore'));
+
         $result = $action->execute(
             dto:  CreateBrandDTO::fromRequest($request, $store),
-            user: $request->user(),
         );
 
         return $this->success(
@@ -80,9 +83,10 @@ class AdminBrandController extends Controller
         int $brand,
         UpdateBrandAction $action,
     ): JsonResponse {
+        $this->authorize('update', app('currentStore'));
+
         $result = $action->execute(
             dto:  UpdateBrandDTO::fromRequest($request, $store, $brand),
-            user: $request->user(),
         );
 
         return $this->success(
@@ -96,16 +100,16 @@ class AdminBrandController extends Controller
         int $brand,
         DeleteBrandAction $action,
     ): JsonResponse {
+        $this->authorize('update', app('currentStore'));
+
         $action->execute(
             dto: new DeleteBrandDTO(
                 storeId: $store,
                 brandId: $brand,
             ),
-            user: request()->user(),
         );
 
         return $this->success(
-            data:    null,
             message: __( 'brand.deleted'),
         );
     }
@@ -115,12 +119,13 @@ class AdminBrandController extends Controller
         int $brand,
         RestoreBrandAction $action,
     ): JsonResponse {
+        $this->authorize('update', app('currentStore'));
+
         $result = $action->execute(
             dto: new RestoreBrandDTO(
                 storeId: $store,
                 brandId: $brand,
             ),
-            user: request()->user(),
         );
 
         return $this->success(

@@ -26,30 +26,35 @@ class AdminOrderController extends Controller
 {
     public function index(ListOrdersRequest $request, ListOrdersAction $action, int $store): JsonResponse
     {
+        $this->authorize('view', app('currentStore'));
         $orders = $action->execute(ListOrdersDTO::fromRequest($request, $store));
         return $this->paginated($orders, AdminOrderResource::collection($orders));
     }
 
     public function show(GetOrderRequest $request, GetOrderAction $action, int $store, int $order): JsonResponse
     {
+        $this->authorize('view', app('currentStore'));
         $orderModel = $action->execute(GetOrderDTO::fromRequest($request, $store, $order));
         return $this->success(new AdminOrderDetailResource($orderModel));
     }
 
     public function updateStatus(UpdateOrderStatusRequest $request, UpdateOrderStatusAction $action, int $store, int $order): JsonResponse
     {
+        $this->authorize('update', app('currentStore'));
         $orderModel = $action->execute(UpdateOrderStatusDTO::fromRequest($request, $store, $order));
         return $this->success(new AdminOrderResource($orderModel), __('admin.order_status_updated'));
     }
 
     public function cancel(CancelOrderRequest $request, CancelOrderAction $action, int $store, int $order): JsonResponse
     {
+        $this->authorize('update', app('currentStore'));
         $orderModel = $action->execute(CancelOrderDTO::fromRequest($request, $store, $order));
         return $this->success(new AdminOrderResource($orderModel), __('admin.order_cancelled'));
     }
 
     public function refund(RefundOrderRequest $request, RefundOrderAction $action, int $store, int $order): JsonResponse
     {
+        $this->authorize('update', app('currentStore'));
         $orderModel = $action->execute(RefundOrderDTO::fromRequest($request, $store, $order));
         return $this->success(new AdminOrderResource($orderModel), __('admin.order_refunded'));
     }

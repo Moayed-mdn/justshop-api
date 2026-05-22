@@ -7,6 +7,7 @@ namespace App\Actions\Cms\Documentation\Admin;
 use App\DTOs\Cms\Documentation\Admin\PublishDocumentDTO;
 use App\Models\Cms\CmsDocument;
 use App\Repositories\Cms\Documentation\CmsDocumentRepository;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class PublishDocumentAction
@@ -22,6 +23,8 @@ class PublishDocumentAction
                 'is_published' => $dto->isPublished,
                 'published_at' => $dto->publishedAt,
             ]);
+
+            Cache::tags(['cms:docs'])->flush();
         });
 
         return $document->fresh();

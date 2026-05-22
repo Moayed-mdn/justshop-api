@@ -17,7 +17,6 @@ class CmsDocumentSection extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
-        'store_id',
         'parent_id',
         'version',
         'title',
@@ -41,11 +40,6 @@ class CmsDocumentSection extends Model
     }
 
     // Relationships
-    public function store(): BelongsTo
-    {
-        return $this->belongsTo(Store::class);
-    }
-
     public function parent(): BelongsTo
     {
         return $this->belongsTo(self::class, 'parent_id');
@@ -69,10 +63,5 @@ class CmsDocumentSection extends Model
                 $q->whereNull('published_at')
                     ->orWhere('published_at', '<=', now());
             });
-    }
-
-    public function scopeByStore(Builder $query, int $storeId): void
-    {
-        $query->where('store_id', $storeId);
     }
 }

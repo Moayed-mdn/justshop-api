@@ -17,16 +17,16 @@ class SetLocale
      */
     public function handle(Request $request, Closure $next): Response
     {
+        $supported = config('app.supported_locales', ['en', 'ar']);
+        
+        // Priority: 1. Query Param (?locale=) 2. Header (locale:) 3. Accept-Language header
+        $locale = $request->query('locale') ?: $request->header('locale');
 
-
-        $supported = config('app.supported_locales',['en']);
-        $locale = $request->header('locale');   
-
-        if(!$locale || !in_array($locale,$supported)){
+        if (!$locale || !in_array($locale, $supported)) {
             $locale = $request->getPreferredLanguage($supported);
         }
 
-        App::setLocale($locale ?: config('app.locale','en'));
+        App::setLocale($locale ?: config('app.locale', 'en'));
 
         return $next($request);
     }

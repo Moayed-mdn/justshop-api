@@ -78,7 +78,7 @@ the default locale.
 
 ### Endpoints
 
-- `GET /api/v1/cms/pages/{slug}`
+- `GET /api/v1/public/cms/pages/{slug}`
 
 Example response shape:
 
@@ -95,9 +95,20 @@ Example response shape:
   "seo": {
     "meta_title": "About Us",
     "meta_description": "Learn more about our platform",
-    "canonical": "https://example.com/about",
-    "robots": "index,follow",
-    "og_image": "https://example.com/og/about.jpg"
+    "canonical_url": "https://example.com/about",
+    "alternates": {
+      "ar": "https://example.com/ar/about"
+    },
+    "robots": {
+      "index": true,
+      "follow": true,
+      "all": "index,follow"
+    },
+    "og": {
+      "title": "About Us",
+      "description": "Learn more...",
+      "image": "..."
+    }
   }
 }
 ```
@@ -115,3 +126,18 @@ It is intentionally not store-scoped for this CMS domain.
 - `PUT /api/v1/admin/cms/pages/{id}`
 - `DELETE /api/v1/admin/cms/pages/{id}`
 - `POST /api/v1/admin/cms/pages/{id}/publish`
+
+## Unified SEO Contract
+
+All CMS modules (Blog, Docs, Marketing) share the same SEO response contract via `SeoResource`. This ensures the frontend `generateMetadata()` remains generic.
+
+| Key | Description |
+| :--- | :--- |
+| `meta_title` | Localized meta title |
+| `meta_description` | Localized meta description |
+| `canonical_url` | Full absolute URL |
+| `robots` | Object containing `index`, `follow`, and `all` string |
+| `og` | Object containing `title`, `description`, and `image` |
+| `twitter` | Object containing `card` type |
+| `alternates` | Map of other locales and their URLs |
+| `structured_data` | Optional JSON-LD payload |

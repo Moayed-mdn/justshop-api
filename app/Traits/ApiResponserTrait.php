@@ -40,4 +40,13 @@ trait ApiResponserTrait
 
         return response()->json($response, $code);
     }
+
+    public static function error(string $message = 'error', int $statusCode = 400, $data = null): JsonResponse
+    {
+        return response()->json([
+            'status' => false,
+            'message' => __($message),
+            'data' => $data,
+        ], $statusCode);
+    }
 }

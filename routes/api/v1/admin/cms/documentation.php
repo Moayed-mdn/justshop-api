@@ -5,7 +5,7 @@ use App\Http\Controllers\Api\Admin\Cms\Documentation\AdminDocumentController;
 use App\Http\Controllers\Api\Admin\Cms\Documentation\AdminDocumentSectionController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('cms')->group(function () {
+Route::prefix('v1/admin/cms')->middleware(['auth:sanctum', 'verified', 'role:super_admin'])->group(function () {
     // Documents
     Route::prefix('docs')->group(function () {
         Route::get('/', [AdminDocumentController::class, 'index'])

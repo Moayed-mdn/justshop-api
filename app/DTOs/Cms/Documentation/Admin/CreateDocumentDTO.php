@@ -9,7 +9,6 @@ use App\Http\Requests\Cms\Documentation\Admin\CreateDocumentRequest;
 class CreateDocumentDTO
 {
     public function __construct(
-        public int $storeId,
         public array $title,
         public array $slug,
         public array $content,
@@ -28,10 +27,9 @@ class CreateDocumentDTO
         public ?array $indexControls = null,
     ) {}
 
-    public static function fromRequest(CreateDocumentRequest $request, int $storeId): self
+    public static function fromRequest(CreateDocumentRequest $request): self
     {
         return new self(
-            storeId: $storeId,
             title: $request->input('title'),
             slug: $request->input('slug'),
             content: $request->input('content'),

@@ -17,14 +17,6 @@ class ListOrdersAction
 
     public function execute(ListOrdersDTO $dto): LengthAwarePaginator
     {
-        /** @var \App\Models\User $authUser */
-        $authUser = Auth::user();
-        if (!$authUser->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            if (!$authUser->stores()->where('store_id', $dto->storeId)->exists()) {
-                throw new UnauthorizedStoreAccessException();
-            }
-        }
-
         return $this->repository->listForStore(
             storeId: $dto->storeId,
             search: $dto->search,

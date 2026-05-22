@@ -18,15 +18,15 @@ class PublicDocumentController extends Controller
         private ResolveDocumentBySlugAction $resolveAction,
     ) {}
 
-    public function sidebar(int $store): JsonResponse
+    public function sidebar(): JsonResponse
     {
-        $tree = $this->repository->getSidebarTree($store);
+        $tree = $this->repository->getSidebarTree();
         return $this->success(['items' => PublicSidebarResource::collection($tree)]);
     }
 
-    public function show(int $store, string $slugPath): JsonResponse
+    public function show(string $slugPath): JsonResponse
     {
-        $document = $this->resolveAction->execute($slugPath, $store);
+        $document = $this->resolveAction->execute($slugPath);
 
         if (!$document) {
             return $this->error('Document not found', 404);
@@ -35,9 +35,9 @@ class PublicDocumentController extends Controller
         return $this->success(new PublicDocumentResource($document));
     }
 
-    public function navigation(int $store, string $slugPath): JsonResponse
+    public function navigation(string $slugPath): JsonResponse
     {
-        $document = $this->resolveAction->execute($slugPath, $store);
+        $document = $this->resolveAction->execute($slugPath);
 
         if (!$document) {
             return $this->error('Document not found', 404);

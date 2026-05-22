@@ -2,9 +2,20 @@
 namespace App\Exceptions;
 
 use App\Enums\ErrorCode;
+use App\Exceptions\Auth\InvalidCredentialsException;
 use App\Exceptions\BaseApiException;
+use App\Exceptions\Domain\DomainException;
+use App\Exceptions\Domain\InvalidStoreContextException;
+use App\Exceptions\Domain\OnboardingIncompleteException;
+use App\Exceptions\Store\UnauthorizedStoreAccessException;
+use App\Support\Observability\RequestTraceContextManager;
+use App\Support\Security\SecurityEventLoggerInterface;
+use App\Support\Security\SecurityEventType;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
@@ -15,45 +26,100 @@ class ExceptionRegistrar
     public function handle(Exceptions $exceptions): void
     {
         $exceptions->render(function (Throwable $e) {
+            $this->recordSecurityEvent($e);
+
             if ($e instanceof BaseApiException) {
-                return $e->render(request());
+                return $this->attachTraceHeaders($e->render(request()));
+            }
+
+            if ($e instanceof DomainException) {
+                return $this->attachTraceHeaders(response()->json([
+                    'status' => false,
+                    'message' => $e->getMessage(),
+                    'error_code' => $e->getErrorCode(),
+                    'errors' => [],
+                ], $e->getStatus()));
             }
 
             if ($e instanceof ValidationException) {
-                return response()->json([
+                return $this->attachTraceHeaders(response()->json([
                     'status' => false,
                     'message' => __('error.validation_failed'),
                     'error_code' => ErrorCode::VAL_001->value,
                     'errors' => $e->errors(),
-                ], 422);
+                ], 422));
             }
 
             if ($e instanceof AuthenticationException) {
-                return response()->json([
+                return $this->attachTraceHeaders(response()->json([
                     'status' => false,
                     'message' => $e->getMessage(),
                     'error_code' => ErrorCode::AUTH_002->value,
                     'errors' => null,
-                ], 401);
+                ], 401));
             }
 
             if ($e instanceof HttpExceptionInterface) {
-                return response()->json([
+                return $this->attachTraceHeaders(response()->json([
                     'status' => false,
                     'message' => $e->getMessage(),
                     'error_code' => "HTTP_{$e->getStatusCode()}",
                     'errors' => null,
-                ], $e->getStatusCode());
+                ], $e->getStatusCode()));
             }
 
             Log::error($e);
 
-            return response()->json([
+            return $this->attachTraceHeaders(response()->json([
                 'status' => false,
-                'message' => config('app.env') === 'local' ? $e->getMessage() : __('error.internal_server_error'),
+                'message' => in_array(config('app.env'), ['local', 'testing']) ? $e->getMessage() : __('error.internal_server_error'),
                 'error_code' => ErrorCode::SYS_001->value,
                 'errors' => null,
-            ], 500);
+            ], 500));
         });
+    }
+
+    private function attachTraceHeaders(JsonResponse $response): JsonResponse
+    {
+        $response->headers->set(
+            (string) config('observability.correlation_header'),
+            app(RequestTraceContextManager::class)->correlationId(),
+        );
+
+        return $response;
+    }
+
+    private function recordSecurityEvent(Throwable $exception): void
+    {
+        try {
+            $securityEventLogger = app(SecurityEventLoggerInterface::class);
+
+            match (true) {
+                $exception instanceof InvalidCredentialsException => $securityEventLogger->record(
+                    SecurityEventType::AUTH_LOGIN_FAILED,
+                    ['path' => request()->path()],
+                    'notice',
+                ),
+                $exception instanceof OnboardingIncompleteException => $securityEventLogger->record(
+                    SecurityEventType::AUTH_ONBOARDING_DENIED,
+                    ['path' => request()->path()],
+                    'notice',
+                ),
+                $exception instanceof InvalidStoreContextException,
+                $exception instanceof UnauthorizedStoreAccessException => $securityEventLogger->record(
+                    SecurityEventType::TENANT_STORE_MISMATCH,
+                    ['path' => request()->path()],
+                    'warning',
+                ),
+                $exception instanceof AuthorizationException => $securityEventLogger->record(
+                    SecurityEventType::AUTHORIZATION_DENIED,
+                    ['path' => request()->path()],
+                    'warning',
+                ),
+                default => null,
+            };
+        } catch (Throwable) {
+            // Observability failures must never change exception handling behavior.
+        }
     }
 }

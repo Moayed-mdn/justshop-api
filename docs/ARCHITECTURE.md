@@ -189,20 +189,49 @@ Consistency is mandatory.
 This project follows a strict API-first architecture with clear 
 separation of concerns.
 
-### Rules:
+---
 
-* The application is a **pure REST API** (no Blade, no mixed 
-  rendering logic)
-* Controllers must remain **thin and declarative**
-* Business logic MUST NOT exist in Controllers or Models
-* Code must be **predictable, testable, and scalable**
-* Use **strict typing (PHP 8+) everywhere**
-* All responses must follow a **unified API format**
+# 1.5. Authorization Doctrine (ABSOLUTE LAW)
 
-### Goal:
+### Policies as Single Source of Truth
+Policies are the **ONLY** authorization enforcement layer. 
 
-Maintain a clean, scalable, and consistent codebase across teams 
-and AI tools.
+### Enforcement Rules:
+* Controllers MUST invoke `$this->authorize()` or `Gate::authorize()` ONLY.
+* Actions MUST NEVER:
+    * check roles or permissions
+    * call `Auth::user()` or `auth()`
+    * call `Gate`
+    * contain inline authorization logic
+    * validate tenant/store membership manually
+    * validate actor capabilities
+* Middleware MUST NOT contain business authorization logic.
+* Actions assume authorization has already passed.
+* Actions MUST receive `actorId`, `actorDTO`, `storeId`, and operational context EXPLICITLY.
+
+### Authorization Boundary Map
+
+| Domain Boundary | Responsible Policy | Description |
+| :--- | :--- | :--- |
+| **Store Lifecycle** | `StorePolicy` | Ownership, creation, and global store settings. |
+| **Product & Inventory** | `ProductPolicy` | Catalog management, stock updates, pricing. |
+| **Orders & Fulfillment** | `OrderPolicy` | Order viewing, processing, refunds, and customer access. |
+| **Store Memberships** | `MembershipPolicy` | Staff invites, role assignments, access levels. |
+| **CMS & Marketing** | `CmsPolicy` | Blog posts, marketing pages, documentation. |
+| **Platform Admin** | `PlatformPolicy` | Global settings, super-admin only operations. |
+| **Customer Profile** | `AddressPolicy` | Personal data, addresses, payment methods. |
+
+### Capability Taxonomy (Naming Strategy)
+
+Capabilities MUST follow the `{domain}.{action}` pattern to ensure stability and auditability.
+
+*   **products**: `products.view`, `products.create`, `products.update`, `products.delete`, `products.inventory.manage`
+*   **orders**: `orders.view`, `orders.create`, `orders.update`, `orders.refund`, `orders.cancel`
+*   **stores**: `stores.view`, `stores.update`, `stores.delete`, `stores.settings.manage`
+*   **memberships**: `memberships.view`, `memberships.invite`, `memberships.update`, `memberships.revoke`
+*   **cms**: `cms.view`, `cms.create`, `cms.update`, `cms.delete`, `cms.publish`
+*   **users**: `users.view`, `users.block`, `users.delete`
+*   **platform**: `platform.settings.manage`, `platform.stores.view`
 
 ---
 
@@ -425,29 +454,8 @@ public int $storeId;
 * `store_id` MUST be injected from the route parameter `{store}`
 * `storeId` MUST be the **first constructor parameter**
 
-#### Example:
-
-```php
-class CreateProductDTO
-{
-    public function __construct(
-        public int $storeId,
-        public string $name,
-        public float $price,
-    ) {}
-
-    public static function fromRequest(
-        CreateProductRequest $request, 
-        int $storeId,
-    ): self {
-        return new self(
-            storeId: $storeId,
-            name: $request->string('name'),
-            price: $request->float('price'),
-        );
-    }
-}
-```
+#### Exception:
+* **Platform-level CMS DTOs** (Documentation, Marketing Pages) do NOT require `storeId` as they are shared globally across the platform.
 
 ---
 
@@ -463,7 +471,7 @@ Repositories are the **only DB access layer**.
 
 ### 🔥 HARD RULE — Store Scoping (CRITICAL)
 
-ALL queries MUST be scoped by `store_id`.
+ALL commerce domain queries MUST be scoped by `store_id`.
 
 #### ❌ Forbidden:
 ```php
@@ -477,13 +485,50 @@ Product::where('store_id', $storeId)->get();
 Product::where('store_id', $storeId)->findOrFail($id);
 ```
 
+#### Exception:
+* **CMS Platform Content**: Queries for `CmsDocument`, `CmsDocumentSection`, and `MarketingPage` are platform-level and MUST NOT include store scoping.
+
 #### Rule:
 Repositories MUST NEVER return cross-store data under any 
 circumstance.
 
 ---
 
-# 7. API Responses
+# 7. Localization Strategy (Unified CMS)
+
+This project uses a unified localization strategy for all CMS domains (Blog, Documentation, Marketing).
+
+### JSON Localized Maps (MANDATORY for CMS)
+
+All translatable CMS fields MUST use JSON columns. Relational translation tables are FORBIDDEN for CMS content.
+
+#### Model Casting:
+```php
+protected $casts = [
+    'title'   => 'array',
+    'slug'    => 'array',
+    'content' => 'array',
+];
+```
+
+#### Payload Shape:
+```json
+{
+  "title": {
+    "en": "English Title",
+    "ar": "العنوان العربي"
+  }
+}
+```
+
+#### Benefits:
+* Single row updates (no multi-table JOINs)
+* Simplified Admin CMS Editor
+* Perfect alignment with Next.js App Router metadata generation
+
+---
+
+# 8. API Responses
 
 All responses are **centralized and standardized**.
 
@@ -2004,11 +2049,259 @@ To maintain search rankings during migration:
 ## 23.5 API Versioning & Compatibility
 *   **Stable Versioning**: Introduce CMS endpoints under the current API version (`/api/v1/...`).
 *   **Feature Detection**: The frontend should check for the presence of CMS data before attempting to render CMS components.
-*   **Graceful Fallbacks**: If a CMS API call fails or returns empty, the frontend MUST have a fallback state (e.g., rendering a default static message or hiding the block).
+* **Graceful Fallbacks**: If a CMS API call fails or returns empty, the frontend MUST have a fallback state (e.g., rendering a default static message or hiding the block).
+
+# 24. Authentication & Onboarding Architecture
+
+## 24.1 Actor Types & Contexts
+The system distinguishes between actors to ensure proper lifecycle handling.
+
+*   **SUPER_ADMIN**: Platform-level global access. Bypasses all store restrictions.
+*   **STORE_OWNER**: The creator/legal owner of a store.
+*   **STORE_ADMIN**: Managed user with high-level access to a specific store.
+*   **STORE_STAFF**: Managed user with limited access (e.g., Order processing).
+*   **CUSTOMER**: Public user who browses and purchases. No dashboard access.
+
+### Actor Separation Rules
+1.  **Merchant Auth != Customer Auth**: Merchant dashboard sessions are operational; customer sessions are storefront sessions.
+2.  **Identity Boundaries**: Store context MUST NEVER leak into a customer's global identity. Customers belong to storefronts; Merchants belong to organizations/stores.
+3.  **Session Lifecycle**: Merchant sessions are strictly stateful (Sanctum) and bound to the administrative domain.
+
+## 24.2 Merchant vs. Customer Lifecycles
+Authentication is separated by "Actor Context" even if sharing the same database table.
+
+### Merchant Lifecycle (Dashboard)
+1.  **Register**: `POST /v1/users/auth/register`
+2.  **Verify**: Email verification wall.
+3.  **Onboard**: Create first store.
+4.  **Manage**: Access `/api/v1/admin/stores/{store}/...`
+
+### Customer Lifecycle (Storefront)
+1.  **Browse**: Public access to products.
+2.  **Auth**: `POST /v1/account/auth/login` (Context-aware).
+3.  **Purchase**: Checkout and order management.
+4.  **Profile**: Access `/api/v1/account/...`
+
+## 24.3 Merchant Onboarding State Machine
+All merchant users MUST pass through the onboarding state machine.
+
+1.  **PENDING_VERIFICATION**: Registered but email not verified. Restricted to verification screen.
+2.  **CREATE_STORE**: Email verified but no store exists. Restricted to store creation screen.
+3.  **COMPLETED**: Store created. Full access to dashboard.
+
+### Onboarding Gating Rules
+*   **Rule**: NO merchant dashboard access without `onboarding_step = COMPLETED` (except for `super_admin`).
+*   **Rule**: `CUSTOMER` users bypass onboarding entirely (onboarding is for merchants only).
+
+## 24.4 Bootstrap API Philosophy
+To ensure a high-performance SPA experience, the backend provides a "Bootstrap Payload".
+
+*   **Endpoint**: `GET /api/v1/users/bootstrap`
+*   **Purpose**: Single call to initialize the frontend state.
+*   **Contract Stability**: The bootstrap payload is a typed DTO contract. Frontend MUST treat it as the single source of truth.
+*   **Typed Contents**: User, Stores, Active Store, Permissions, Onboarding status, and App Config.
+
+## 24.5 Store Context & Active Selection
+The system must always know which store the merchant is currently managing.
+
+*   **Resolution**: Resolved via `{store}` route parameter OR `last_active_store_id`.
+*   **Active Store Resolution Rules**:
+    1.  Explicit `{store}` parameter takes precedence.
+    2.  `last_active_store_id` is the session fallback.
+    3.  If both missing, fallback to the first available store.
+    4.  If no stores exist, the user is forced into the `CREATE_STORE` onboarding step.
+*   **Switching**: Updating `last_active_store_id` via `PATCH /v1/users/active-store`.
+*   **Validation**: Every request MUST validate that the authenticated user is a member of the resolved store.
+
+## 24.6 Store Ownership & Membership
+*   **Ownership**: One user is the `owner_id` of the `Store`.
+*   **Membership**: Managed via `store_user` pivot table with `role` and `status`.
+*   **Guarantees**: A store MUST have exactly one owner.
+
+## 24.7 Store Slug Hardening
+Store slugs are sensitive as they define the tenant's identity.
+
+*   **Reserved Keywords**: Slugs like `admin`, `api`, `support`, `billing` are forbidden.
+*   **Normalization**: Slugs are lowercase, URL-safe strings.
+*   **Validation**: Real-time validation via `POST /api/v1/stores/validate-slug`.
+
+## 24.8 Policy Architecture
+To ensure clean authorization, all store-scoped actions MUST be authorized via `StorePolicy`.
+
+*   **Rule**: Controllers MUST use `$this->authorize('view|update|delete', $storeModel)`.
+*   **Rule**: Actions MUST NOT perform authorization checks; they assume the controller has already verified access.
+*   **Rule**: The `StorePolicy` is responsible for checking `store_user` membership and role-based access.
+
+## 24.9 Permission Resolution Rules
+Permissions are resolved dynamically based on the active context.
+
+*   **Layer**: `PermissionResolver` service centralizes logic.
+*   **Merchant Permissions**: Resolved via `store_user` role in the active store.
+*   **Super Admin Permissions**: Global bypass (all permissions).
+*   **Customer Permissions**: Limited to storefront-specific actions (orders, profile).
+
+## 24.10 Frontend vs Backend Responsibilities
+*   **Backend**: Enforces onboarding state, validates slugs, provides the bootstrap payload, and secures all admin routes via `onboarding.completed` and `StorePolicy`.
+*   **Frontend**: Uses the `bootstrap` payload as the single source of truth for UI state (e.g., redirecting to verification, store creation, or dashboard).
+
+## 24.11 Customer Architecture (Future)
+The platform is designed to support a dedicated customer identity domain.
+
+*   **Identity**: Customers register and login from the storefront context.
+*   **Scoping**: Customers can belong to multiple stores but maintain a unified identity.
+*   **Separation**: Customer APIs (`/api/v1/storefront/*`) are intentionally separated from Merchant Admin APIs.
+*   **No Onboarding**: Customers do not undergo merchant onboarding or store creation lifecycles.
+
+## 24.12 Future Multi-Guard Strategy
+While currently using a shared `users` table, the architecture is prepared for Guard separation (e.g., `merchants` vs `customers`) if scaling requirements dictate.
+
+### Customer Guard Preparation
+To prevent session contamination, the platform will transition to a dedicated `customer` guard.
+*   **Isolation**: Merchant and customer sessions MUST become isolated systems.
+*   **Tokens/Cookies**: Future separation of `merchant_session` and `customer_session` cookies.
+*   **Social Auth**: Social login (Google, Apple) for customers will be scoped strictly to the `customer` context.
+
+# 25. API Domain Architecture
+The platform is organized into operational domains to ensure clear boundaries and prevent contamination.
+
+## 25.1 Merchant Authentication Domain
+*   **Purpose**: Operational identity, onboarding, store switching, and dashboard access.
+*   **Routes**: `/api/v1/users/*`, `/api/v1/auth/*`.
+*   **Characteristics**: Requires onboarding completion (for merchants), store-aware, and operational permissions.
+
+## 25.2 Merchant Admin Domain
+*   **Purpose**: Managing store resources (products, orders, staff).
+*   **Routes**: `/api/v1/admin/*`.
+*   **Characteristics**: Strictly tenant-aware, requires operational roles, and follows the `StorePolicy` enforcement.
+
+## 25.3 Storefront Domain
+*   **Purpose**: Public commerce APIs for browsing and checkout.
+*   **Routes**: `/api/v1/storefront/*`.
+*   **Characteristics**: Public-first, store-context-driven, and customer-safe. NO merchant onboarding logic.
+
+## 25.4 Customer Identity Domain
+*   **Purpose**: Customer registration, login, profile, and order history.
+*   **Routes**: `/api/v1/storefront/account/*`.
+*   **Characteristics**: Customer identity only. NEVER accesses merchant admin APIs. No onboarding.
+
+## 25.5 Platform Administration Domain
+*   **Purpose**: Super admin operations, platform analytics, and global governance.
+*   **Routes**: `/api/v1/platform/*`.
+*   **Characteristics**: Platform-wide scope. Not tenant or storefront scoped.
+
+## 25.6 Feature Domains (Future)
+*   **Billing Domain**: Subscription and payment processing.
+*   **Notification Domain**: Multi-channel alerts (email, SMS, push).
+*   **Audit Domain**: Tracking operational changes across the platform.
+*   **Analytics Domain**: Global and tenant-specific data insights.
+
+# 26. Authorization & RBAC Evolution
+The platform uses a dynamic RBAC system where permissions are the source of truth.
+
+*   **Roles**: Organizational abstractions (e.g., `STORE_ADMIN`).
+*   **Permissions**: Operational capabilities (e.g., `product.create`).
+*   **Resolution**: `PermissionResolver` dynamically generates capabilities based on actor and store context.
+*   **Enforcement**: Policies consume permissions; controllers consume policies. Actions MUST NOT contain authorization logic.
+
+# 27. API Response & Layering Philosophy
+To maintain stability, the platform follows a strict layering doctrine.
+
+*   **DTOs**: Mandatory for all data movement. Carry typed structure only.
+*   **Actions**: Mandatory for all business logic. Atomic and testable.
+*   **Services**: Contain reusable domain logic (e.g., Slug normalization).
+*   **API Resources**: Responsible for transformation only. No business logic.
+*   **Policies**: The single source of authorization enforcement.
+*   **Middleware**: Responsible for request gating and context resolution only.
+
+## 27.1 API Error Standards
+All API errors MUST follow a predictable, machine-readable structure.
+
+```json
+{
+  "message": "Human readable error message",
+  "code": "DOMAIN_ERROR_001",
+  "status": 403,
+  "errors": []
+}
+```
+
+*   **Rule**: Use explicit domain exceptions (e.g., `OnboardingIncompleteException`) to trigger these responses.
+*   **Rule**: Codes MUST be stable and documented for frontend consumption.
+
+# 28. Testing & Reliability Architecture
+The platform enforces a multi-layered testing strategy to ensure operational integrity.
+
+## 28.1 Testing Layers
+*   **Unit Tests**: Isolated testing of Services, Resolvers (Actor/Permission/Domain), and Slug logic.
+*   **Feature Tests**: End-to-end lifecycle testing (Auth, Onboarding, Store Switching, Policy Enforcement).
+*   **Integration Tests**: Testing interactions between Middleware, Store Context, and RBAC resolution.
+
+## 28.2 Reliability Rules
+*   **Rule**: ALL critical business flows (e.g., Registration, Store Creation, Checkout) MUST have feature tests.
+*   **Rule**: No silent failures. Use explicit Domain Exceptions for business logic violations.
+*   **Rule**: Regression testing is mandatory for all architectural hardening fixes.
+
+# 29. Observability & Security Events
+The platform is designed for deep observability and proactive security monitoring.
+
+## 29.1 Security Event Philosophy
+Critical security events MUST be identifiable for future logging/alerting:
+*   Failed merchant access attempts.
+*   Onboarding bypass attempts.
+*   Suspicious store switching patterns.
+*   Permission denial spikes.
+
+## 29.2 Observability Foundations
+*   **Actor Tracing**: Every request is bound to an `ActorContext`.
+*   **Domain Tracing**: Every request is bound to an `ApiDomain`.
+*   **Audit Logging**: Actions should fire events for sensitive operational changes.
+
+# 30. Event-Driven Architecture (Future)
+To maintain decoupling, the platform will transition to an event-driven side-effect model.
+
+*   **Pattern**: Actions execute business logic -> Fire Event (e.g., `StoreCreated`) -> Listeners handle side effects (e.g., Email, Analytics).
+
+# 31. Platform Stabilization & Scale Readiness
+This section documents the architectural hardening and scale-readiness audit findings and enforcement rules.
+
+## 31.1 Audit Findings & Technical Debt
+*   **Transactional Integrity**: Some actions (e.g., `RegisterUserAction`) currently lack explicit database transactions, risking partial persistence if events or post-creation logic fails.
+*   **Event Gaps**: Core business facts (e.g., Store created, Email verified) are currently handled as procedural side-effects rather than formal domain events.
+*   **Auditability**: The platform lacks a centralized audit trail for sensitive merchant and platform-level operations.
+*   **N+1 Risks**: The `GetBootstrapAction` currently performs multiple individual queries for stores and permissions; this must be monitored as user complexity grows.
+
+## 31.2 Domain Event Architecture
+To ensure scalability and async readiness, business facts are dispatched as Domain Events.
+*   **Rule**: Actions MAY dispatch events; Controllers NEVER dispatch events.
+*   **Rule**: Events MUST represent completed business facts (past tense, e.g., `StoreCreated`).
+*   **Rule**: Events MUST NOT expose Eloquent models; they must carry primitive types or DTOs for safe serialization.
+*   **Location**: `app/Domain/Shared/Events`.
+
+## 31.3 Audit & Activity Trail Philosophy
+*   **Requirement**: Sensitive operations (auth, store creation, plan changes, user blocking) MUST be audited.
+*   **Context**: Audit trails must include `actor_id`, `actor_context`, `store_id` (if applicable), `ip_address`, and `user_agent`.
+*   **Security**: PII (passwords, specific personal details) MUST NEVER be logged in audit trails.
+
+## 31.4 Transactional Doctrine
+To prevent data corruption, all state-changing actions follow the transactional doctrine:
+1.  **Open Transaction**: Ensure atomicity.
+2.  **Validate**: Perform final state checks (e.g., slug availability).
+3.  **Persist**: Write to database first.
+4.  **Commit**: Ensure persistence before side effects.
+5.  **Dispatch Events**: Side effects (emails, analytics) happen AFTER successful commit.
+
+## 31.5 RBAC & Permission Scaling
+*   **Convention**: Use dot-notation for permissions (`domain.action`, e.g., `product.create`).
+*   **Resolution**: `PermissionResolver` is the single source of truth for dynamic capability generation.
+*   **Hard Rule**: Policies are the ONLY enforcement layer. Middleware is for coarse gating (onboarding, domain separation).
+
+## 31.6 Storefront & Customer Readiness
+*   **Isolation**: Customer architecture MUST NEVER inherit merchant onboarding assumptions.
+*   **Identity**: Multi-store customer accounts are unified by identity but scoped by storefront session.
 
 ---
 
-## 🚨 FINAL HARD RULES
+## 🚨 FINAL HARD RULES (UPDATED)
 
 ```
 NO QUERY MAY EXECUTE WITHOUT store_id CONSTRAINT.
@@ -2019,6 +2312,15 @@ EXCEPTION: super_admin role check ONLY.
 
 NO ADMIN ROUTE MAY EXIST WITHOUT {store} IN THE PATH.
 EXCEPTION: super_admin global routes ONLY.
+
+NO MERCHANT DASHBOARD ACCESS WITHOUT onboarding_step = COMPLETED.
+EXCEPTION: super_admin access ONLY.
+
+ALL STORE-SCOPED ADMIN ACTIONS MUST USE StorePolicy.
+
+NO AUTHORIZATION LOGIC INSIDE ACTIONS.
+
+NO BUSINESS LOGIC INSIDE CONTROLLERS, RESOURCES, OR MIDDLEWARE.
 
 NO DEBUG OR TEST ROUTES IN api.php.
 ```

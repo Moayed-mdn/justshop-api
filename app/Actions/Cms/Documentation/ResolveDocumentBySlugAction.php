@@ -13,9 +13,9 @@ class ResolveDocumentBySlugAction
         private CmsDocumentRepository $repository
     ) {}
 
-    public function execute(string $slugPath, int $storeId): ?CmsDocument
+    public function execute(string $slugPath): ?CmsDocument
     {
         $slugs = explode('/', $slugPath);
-        return $this->repository->findBySlugPath($slugs, $storeId);
+        return $this->repository->findBySlugPath($slugs);
     }
 }

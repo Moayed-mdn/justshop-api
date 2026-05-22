@@ -4,8 +4,6 @@ use App\Exceptions\ExceptionRegistrar;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -19,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->api(prepend: [
             \Illuminate\Session\Middleware\StartSession::class,
+            \App\Http\Middleware\InitializeRequestTraceContext::class,
         ]);
 
         $middleware->api(append: [
@@ -27,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'store.context' => \App\Http\Middleware\StoreContext::class,
+            'onboarding.completed' => \App\Http\Middleware\EnsureOnboardingIsCompleted::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,

@@ -11,9 +11,9 @@ use Illuminate\Queue\SerializesModels;
 
 class LeadSubmitted implements ShouldDispatchAfterCommit
 {
-    use Dispatchable, SerializesModels;
+    use Dispatchable;
 
     public function __construct(
-        public readonly Lead $lead,
+        public readonly int $leadId,
     ) {}
 }

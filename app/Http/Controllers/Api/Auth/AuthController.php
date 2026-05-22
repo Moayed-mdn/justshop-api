@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\Auth;
 
+use App\Actions\Auth\GetBootstrapAction;
+use App\Actions\Auth\UpdateActiveStoreAction;
 use App\Actions\Auth\GetMeAction;
 use App\Actions\Auth\LoginUserAction;
 use App\Actions\Auth\LogoutUserAction;
 use App\Actions\Auth\RegisterUserAction;
 use App\Actions\Auth\ResendVerificationEmailAction;
 use App\Actions\Auth\VerifyEmailAction;
+use App\DTOs\Auth\GetBootstrapDTO;
+use App\DTOs\Auth\UpdateActiveStoreDTO;
 use App\DTOs\Auth\GetMeDTO;
 use App\DTOs\Auth\LoginUserDTO;
 use App\DTOs\Auth\RegisterUserDTO;
@@ -21,9 +25,12 @@ use App\Http\Requests\Auth\MeRequest;
 use App\Http\Requests\Auth\RegistgerUserRequest;
 use App\Http\Requests\Auth\ResendVerificationEmailRequest;
 use App\Http\Requests\Auth\VerifyEmailRequest;
+use App\Http\Requests\Auth\UpdateActiveStoreRequest;
+use App\Http\Resources\Auth\BootstrapResource;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
@@ -34,13 +41,42 @@ class AuthController extends Controller
         private VerifyEmailAction $verifyEmailAction,
         private ResendVerificationEmailAction $resendVerificationEmailAction,
         private GetMeAction $getMeAction,
+        private GetBootstrapAction $getBootstrapAction,
+        private UpdateActiveStoreAction $updateActiveStoreAction,
     ) {}
+
+    public function bootstrap(Request $request): JsonResponse
+    {
+        $data = $this->getBootstrapAction->execute(
+            GetBootstrapDTO::fromRequest($request)
+        );
+
+        return $this->success(
+            new BootstrapResource($data),
+            __('auth.bootstrap_successful')
+        );
+    }
+
+    public function updateActiveStore(UpdateActiveStoreRequest $request): JsonResponse
+    {
+        $data = $this->updateActiveStoreAction->execute(
+            UpdateActiveStoreDTO::fromRequest($request)
+        );
+
+        return $this->success(
+            new BootstrapResource($data),
+            __('auth.active_store_updated')
+        );
+    }
 
     public function register(RegistgerUserRequest $request): JsonResponse
     {
         $user = $this->registerUserAction->execute(
             RegisterUserDTO::fromRequest($request)
         );
+
+        Auth::login($user);
+        $request->session()->regenerate();
 
         return $this->success(
             new UserResource($user),
@@ -54,6 +90,9 @@ class AuthController extends Controller
         $user = $this->loginUserAction->execute(
             LoginUserDTO::fromRequest($request)
         );
+
+        Auth::login($user);
+        $request->session()->regenerate();
 
         return $this->success(
             [

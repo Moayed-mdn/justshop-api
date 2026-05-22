@@ -36,6 +36,7 @@ enum ErrorCode: string
 
     // --- Product (PRD) ---
     case PRD_001 = 'PRD_001';
+    case PRD_002 = 'PRD_002';
 
     // --- Store (STR) ---
     case STR_001 = 'STR_001';

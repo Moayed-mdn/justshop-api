@@ -17,14 +17,6 @@ class GetOrderAction
 
     public function execute(GetOrderDTO $dto): Order
     {
-        /** @var \App\Models\User $authUser */
-        $authUser = Auth::user();
-        if (!$authUser->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            if (!$authUser->stores()->where('store_id', $dto->storeId)->exists()) {
-                throw new UnauthorizedStoreAccessException();
-            }
-        }
-
         return $this->repository->findInStore($dto->orderId, $dto->storeId)
             ->load(['user', 'items.product', 'shippingAddress', 'billingAddress']);
     }

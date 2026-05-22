@@ -5,10 +5,6 @@ namespace App\Actions\Admin\Dashboard;
 use App\DTOs\Admin\Dashboard\GetStatsDTO;
 use App\Repositories\Admin\Dashboard\AdminDashboardRepository;
 
-use Illuminate\Support\Facades\Auth;
-use App\Enums\RoleEnum;
-use App\Exceptions\Store\UnauthorizedStoreAccessException;
-
 class GetStatsAction
 {
     public function __construct(
@@ -17,14 +13,6 @@ class GetStatsAction
 
     public function execute(GetStatsDTO $dto): array
     {
-        /** @var \App\Models\User $authUser */
-        $authUser = Auth::user();
-        if (!$authUser->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            if (!$authUser->stores()->where('store_id', $dto->storeId)->exists()) {
-                throw new UnauthorizedStoreAccessException();
-            }
-        }
-
         return [
             'total_revenue'      => (float) $this->repository->getTotalRevenue($dto->storeId),
             'total_orders'       => (int)   $this->repository->getTotalOrders($dto->storeId),

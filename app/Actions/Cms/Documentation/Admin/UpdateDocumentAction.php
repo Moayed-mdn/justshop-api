@@ -7,13 +7,15 @@ namespace App\Actions\Cms\Documentation\Admin;
 use App\DTOs\Cms\Documentation\Admin\UpdateDocumentDTO;
 use App\Models\Cms\CmsDocument;
 use App\Repositories\Cms\Documentation\CmsDocumentRepository;
+use App\Services\Cms\Seo\SitemapService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class UpdateDocumentAction
 {
     public function __construct(
-        private CmsDocumentRepository $repository
+        private CmsDocumentRepository $repository,
+        private SitemapService $sitemapService,
     ) {}
 
     public function execute(CmsDocument $document, UpdateDocumentDTO $dto): CmsDocument
@@ -31,16 +33,18 @@ class UpdateDocumentAction
                 'sort_order' => $dto->sortOrder,
                 'is_published' => $dto->isPublished,
                 'published_at' => $dto->publishedAt,
-                'meta_title' => $dto->metaTitle,
-                'meta_description' => $dto->metaDescription,
-                'canonical_url' => $dto->canonicalUrl,
-                'og_image' => $dto->ogImage,
-                'robots' => $dto->robots,
-                'index_controls' => $dto->indexControls,
+                'seo' => [
+                    'title' => $dto->metaTitle,
+                    'description' => $dto->metaDescription,
+                    'canonical_url' => $dto->canonicalUrl,
+                    'og_image' => $dto->ogImage,
+                    'robots' => $dto->robots,
+                ],
             ]);
 
             // Invalidate cache
-            Cache::tags(['store:' . $dto->storeId, 'cms:docs'])->flush();
+            Cache::tags(['cms:docs'])->flush();
+            $this->sitemapService->invalidateDocs();
         });
 
         return $document->fresh();

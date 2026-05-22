@@ -30,9 +30,10 @@ class AdminCategoryController extends Controller
         int $store,
         ListCategoriesAction $action,
     ): JsonResponse {
+        $this->authorize('view', app('currentStore'));
+
         $categories = $action->execute(
             dto:  ListCategoriesDTO::fromRequest($request, $store),
-            user: $request->user(),
         );
 
         return $this->paginated(
@@ -46,12 +47,13 @@ class AdminCategoryController extends Controller
         int $category,
         ShowCategoryAction $action,
     ): JsonResponse {
+        $this->authorize('view', app('currentStore'));
+
         $result = $action->execute(
             dto: new ShowCategoryDTO(
                 storeId:    $store,
                 categoryId: $category,
             ),
-            user: request()->user(),
         );
 
         return $this->success(new AdminCategoryResource($result));
@@ -62,9 +64,10 @@ class AdminCategoryController extends Controller
         int $store,
         CreateCategoryAction $action,
     ): JsonResponse {
+        $this->authorize('update', app('currentStore'));
+
         $result = $action->execute(
             dto:  CreateCategoryDTO::fromRequest($request, $store),
-            user: $request->user(),
         );
 
         return $this->success(
@@ -80,9 +83,10 @@ class AdminCategoryController extends Controller
         int $category,
         UpdateCategoryAction $action,
     ): JsonResponse {
+        $this->authorize('update', app('currentStore'));
+
         $result = $action->execute(
             dto:  UpdateCategoryDTO::fromRequest($request, $store, $category),
-            user: $request->user(),
         );
 
         return $this->success(
@@ -96,16 +100,16 @@ class AdminCategoryController extends Controller
         int $category,
         DeleteCategoryAction $action,
     ): JsonResponse {
+        $this->authorize('update', app('currentStore'));
+
         $action->execute(
             dto: new DeleteCategoryDTO(
                 storeId:    $store,
                 categoryId: $category,
             ),
-            user: request()->user(),
         );
 
         return $this->success(
-            data:    null,
             message: __( 'category.deleted'),
         );
     }
@@ -115,12 +119,13 @@ class AdminCategoryController extends Controller
         int $category,
         RestoreCategoryAction $action,
     ): JsonResponse {
+        $this->authorize('update', app('currentStore'));
+
         $result = $action->execute(
             dto: new RestoreCategoryDTO(
                 storeId:    $store,
                 categoryId: $category,
             ),
-            user: request()->user(),
         );
 
         return $this->success(

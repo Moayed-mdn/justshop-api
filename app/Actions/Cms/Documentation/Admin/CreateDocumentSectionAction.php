@@ -19,7 +19,6 @@ class CreateDocumentSectionAction
     {
         return DB::transaction(function () use ($dto) {
             return $this->repository->create([
-                'store_id' => $dto->storeId,
                 'parent_id' => $dto->parentId,
                 'version' => $dto->version,
                 'title' => $dto->title,

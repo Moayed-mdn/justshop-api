@@ -8,6 +8,10 @@ Route::post('/v1/stores', [StoreController::class, 'create'])
     ->middleware(['auth:sanctum'])
     ->name('stores.create');
 
+Route::post('/v1/stores/validate-slug', [StoreController::class, 'validateSlug'])
+    ->middleware(['auth:sanctum'])
+    ->name('stores.validate-slug');
+
 // GET /api/v1/stores/{store} and PUT /api/v1/stores/{store} - with store.context
 Route::middleware(['auth:sanctum', 'store.context'])
     ->prefix('/v1/stores/{store}')

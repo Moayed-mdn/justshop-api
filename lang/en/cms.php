@@ -9,4 +9,8 @@ return [
     'page_updated' => 'Marketing page updated successfully.',
     'page_deleted' => 'Marketing page deleted successfully.',
     'page_published' => 'Marketing page published successfully.',
+
+    // SEO / Sitemap
+    'sitemap_generated' => 'Sitemap data generated successfully.',
+    'seo_resolved'      => 'SEO metadata resolved.',
 ];

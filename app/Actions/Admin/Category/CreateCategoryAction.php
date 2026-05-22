@@ -20,14 +20,7 @@ class CreateCategoryAction
 
     public function execute(
         CreateCategoryDTO $dto,
-        User $user,
     ): Category {
-        if (!$user->hasRole('super_admin')
-            && !$user->stores()->where('store_id', $dto->storeId)->exists()
-        ) {
-            throw new UnauthorizedStoreAccessException();
-        }
-
         if ($dto->parentId !== null) {
             $parent = $this->categoryRepository->findById(
                 id:      $dto->parentId,
