@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace App\Support\Observability;
 
+use App\DTOs\Auth\Identity\IdentityContext;
+use App\DTOs\Auth\Identity\RouteDomainContext;
+use App\DTOs\Auth\Identity\SessionBoundaryMetadata;
+use App\DTOs\Auth\Session\GuardShadowSummary;
+use App\DTOs\Auth\Session\SessionOwnershipContext;
 use App\Support\System\ApiDomainResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -57,10 +62,45 @@ class RequestTraceContextManager
         );
     }
 
+    public function enrichIdentityContext(IdentityContext $identityContext): RequestTraceContext
+    {
+        return $this->replace(
+            $this->current()->withIdentityContext($identityContext)
+        );
+    }
+
     public function enrichStore(?int $storeId, ?int $membershipId = null): RequestTraceContext
     {
         return $this->replace(
             $this->current()->withStore($storeId, $membershipId)
+        );
+    }
+
+    public function enrichRouteDomain(RouteDomainContext $routeDomainContext): RequestTraceContext
+    {
+        return $this->replace(
+            $this->current()->withRouteDomain($routeDomainContext)
+        );
+    }
+
+    public function enrichSessionBoundary(SessionBoundaryMetadata $sessionBoundary): RequestTraceContext
+    {
+        return $this->replace(
+            $this->current()->withSessionBoundary($sessionBoundary)
+        );
+    }
+
+    public function enrichSessionOwnership(SessionOwnershipContext $sessionOwnership): RequestTraceContext
+    {
+        return $this->replace(
+            $this->current()->withSessionOwnership($sessionOwnership)
+        );
+    }
+
+    public function enrichGuardShadow(GuardShadowSummary $guardShadow): RequestTraceContext
+    {
+        return $this->replace(
+            $this->current()->withGuardShadow($guardShadow)
         );
     }
 

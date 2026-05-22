@@ -1,5 +1,22 @@
 # Admin API Documentation
 
+## Wave 3A Route-Domain Ownership Addendum
+
+All `/api/v1/admin/*` routes are now explicitly marked as **merchant-owned admin routes** through route-domain metadata.
+
+Operational impact:
+
+- merchant admin routes remain authoritative
+- customer actors are denied from merchant admin domains before deeper admin handling proceeds
+- cross-context misuse is telemetried
+- no guard or session topology changes are introduced
+
+Updated middleware ownership layer:
+
+```text
+identity.route:merchant_admin,merchant,enforce
+```
+
 ## Phase 3.1 — Admin Users API
 
 ### Endpoints

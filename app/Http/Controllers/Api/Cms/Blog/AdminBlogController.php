@@ -38,6 +38,8 @@ class AdminBlogController extends Controller
         ListBlogPostsRequest $request,
         ListBlogPostsAction $action,
     ): JsonResponse {
+        $this->authorize('viewAny', BlogPost::class);
+
         $posts = $action->execute(ListBlogPostsDTO::fromRequest($request));
 
         return $this->paginated(
@@ -50,6 +52,8 @@ class AdminBlogController extends Controller
         CreateBlogPostRequest $request,
         CreateBlogPostAction $action,
     ): JsonResponse {
+        $this->authorize('create', BlogPost::class);
+
         $post = $action->execute(CreateBlogPostDTO::fromRequest($request));
 
         return $this->success(new AdminBlogPostResource($post), 'blog.created', 201);
@@ -60,6 +64,8 @@ class AdminBlogController extends Controller
         BlogPost $blogPost,
         GetBlogPostAction $action,
     ): JsonResponse {
+        $this->authorize('view', $blogPost);
+
         $post = $action->execute(
             GetBlogPostDTO::fromRequest($request, $blogPost->id),
             $blogPost
@@ -73,6 +79,8 @@ class AdminBlogController extends Controller
         BlogPost $blogPost,
         UpdateBlogPostAction $action,
     ): JsonResponse {
+        $this->authorize('update', $blogPost);
+
         $post = $action->execute(
             UpdateBlogPostDTO::fromRequest($request, $blogPost->id),
             $blogPost
@@ -86,6 +94,8 @@ class AdminBlogController extends Controller
         BlogPost $blogPost,
         DeleteBlogPostAction $action,
     ): JsonResponse {
+        $this->authorize('delete', $blogPost);
+
         $action->execute($blogPost->id, $blogPost);
 
         return $this->success(null, 'blog.deleted');
@@ -96,6 +106,8 @@ class AdminBlogController extends Controller
         BlogPost $blogPost,
         PublishBlogPostAction $action,
     ): JsonResponse {
+        $this->authorize('publish', $blogPost);
+
         $post = $action->execute(
             PublishBlogPostDTO::fromRequest($request, $blogPost->id),
             $blogPost
@@ -109,6 +121,8 @@ class AdminBlogController extends Controller
         BlogPost $blogPost,
         UnpublishBlogPostAction $action,
     ): JsonResponse {
+        $this->authorize('unpublish', $blogPost);
+
         $post = $action->execute(
             UnpublishBlogPostDTO::fromRequest($request, $blogPost->id),
             $blogPost
@@ -122,6 +136,8 @@ class AdminBlogController extends Controller
         BlogPost $blogPost,
         ScheduleBlogPostAction $action,
     ): JsonResponse {
+        $this->authorize('schedule', $blogPost);
+
         $post = $action->execute(
             ScheduleBlogPostDTO::fromRequest($request, $blogPost->id),
             $blogPost

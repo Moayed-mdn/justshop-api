@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Events\Lead\LeadSubmitted;
 use App\Exceptions\Auth\TooManyRequestsException;
 use App\Listeners\Lead\SendLeadSubmittedNotificationListener;
+use App\Services\Auth\Membership\MembershipResolver;
+use App\Services\Auth\Membership\PivotMembershipResolver;
 use App\Support\Audit\AuditLoggerInterface;
 use App\Support\Audit\DatabaseAuditLogger;
 use App\Support\Observability\RequestTraceContextManager;
@@ -26,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(RequestTraceContextManager::class, RequestTraceContextManager::class);
         $this->app->scoped(AuditLoggerInterface::class, DatabaseAuditLogger::class);
         $this->app->scoped(SecurityEventLoggerInterface::class, LogSecurityEventLogger::class);
+        $this->app->bind(MembershipResolver::class, PivotMembershipResolver::class);
     }
 
     /**

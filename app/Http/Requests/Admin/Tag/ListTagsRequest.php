@@ -2,20 +2,13 @@
 
 namespace App\Http\Requests\Admin\Tag;
 
-use App\Enums\RoleEnum;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Log;
 
 class ListTagsRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        Log::info('Locale from header Tag', ['locale' => $this->header('locale')]);
-        return $this->user()->hasRole(RoleEnum::SUPER_ADMIN->value)
-            || $this->user()->hasPermissionTo(
-                'tag.view',
-                $this->route('store'),
-            );
+        return true;
     }
 
     public function rules(): array

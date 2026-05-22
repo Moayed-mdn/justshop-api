@@ -4,17 +4,19 @@ namespace App\Policies;
 
 use App\Models\PaymentMethod;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
+use App\Policies\Concerns\InteractsWithPolicyTelemetry;
 
 class PaymentMethodPolicy
 {
-    public function update(User $user, PaymentMethod $paymentMethod)
+    use InteractsWithPolicyTelemetry;
+
+    public function update(User $user, PaymentMethod $paymentMethod): bool
     {
-        return $user->id === $paymentMethod->user_id;
+        return $this->decision($user, 'update', $user->id === $paymentMethod->user_id, $paymentMethod);
     }
 
-    public function delete(User $user, PaymentMethod $paymentMethod)
+    public function delete(User $user, PaymentMethod $paymentMethod): bool
     {
-        return $user->id === $paymentMethod->user_id;
+        return $this->decision($user, 'delete', $user->id === $paymentMethod->user_id, $paymentMethod);
     }
 }

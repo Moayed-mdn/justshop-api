@@ -5,38 +5,31 @@ namespace App\Policies;
 use App\Models\Order;
 use App\Models\User;
 use App\Policies\Concerns\HasStoreMembership;
-use Illuminate\Auth\Access\Response;
 
 class OrderPolicy
 {
     use HasStoreMembership;
 
-    public function view(User $user, Order $order)
+    public function view(User $user, Order $order): bool
     {
-        // Owner of the order can view it
         if ($user->id === $order->user_id) {
-            return true;
+            return $this->decision($user, 'view', true, $order);
         }
 
-        // Store staff can view orders in their store
-        return $this->isMember($user, $order->store);
+        return $this->decision($user, 'view', $this->isMember($user, $order->store), $order);
     }
 
-    public function update(User $user, Order $order)
+    public function update(User $user, Order $order): bool
     {
-        // Customers cannot update their own orders (except maybe cancellation, but that's usually a separate action)
-        // Store admins can update orders
-        return $this->isAdmin($user, $order->store);
+        return $this->decision($user, 'update', $this->isAdmin($user, $order->store), $order);
     }
 
-    public function cancel(User $user, Order $order)
+    public function cancel(User $user, Order $order): bool
     {
-        // Owner can cancel if it's still pending
         if ($user->id === $order->user_id) {
-            return true; // Business logic for cancellation state should be in the Action
+            return $this->decision($user, 'cancel', true, $order);
         }
 
-        // Store staff can cancel
-        return $this->isMember($user, $order->store);
+        return $this->decision($user, 'cancel', $this->isMember($user, $order->store), $order);
     }
 }

@@ -1,5 +1,176 @@
 ## ✅ Updated Rules File
 
+### Wave 3A Identity Context Normalization Addendum
+
+Wave 3A is **boundary clarification only**.
+
+It explicitly allows:
+
+- identity-context normalization
+- route-domain ownership metadata
+- merchant-only onboarding applicability isolation
+- additive customer auth namespace foundations
+- session-boundary preparation metadata
+- additive storefront bootstrap foundations
+
+It explicitly forbids:
+
+- guard split
+- cookie split
+- session split
+- customer-only or merchant-only auth persistence
+- account-table split
+- checkout auth rewrite
+- bootstrap authority cutover
+
+### Identity Context Doctrine
+
+All actor classification must now be available through an explicit identity-context model.
+
+Required structure:
+
+- `actorType`
+- `actorId`
+- `onboardingRequired`
+- `operationalContext`
+- `authDomain`
+
+Supported explicit actor classes:
+
+- `merchant`
+- `customer`
+- `super_admin`
+
+Inference by indirect store presence alone is no longer sufficient as a doctrine.
+
+### Route-Domain Ownership Doctrine
+
+Route ownership must be explicit and observable.
+
+Normalized ownership domains:
+
+- merchant ownership: `/api/v1/users/*`
+- merchant ownership: `/api/v1/admin/*`
+- customer ownership: `/api/v1/storefront/account/*`
+
+Route-domain metadata is allowed to assert and log ownership mismatches.
+
+### Onboarding Isolation Doctrine
+
+Onboarding is a merchant-only concern.
+
+Rules:
+
+- customer actors explicitly bypass onboarding
+- super-admin actors explicitly bypass onboarding
+- merchant actors explicitly evaluate onboarding
+- onboarding behavior must not be inferred through hidden global coupling
+
+### Storefront Identity Doctrine
+
+Customer auth surface must remain additive and isolated by namespace only until a later authority cutover.
+
+Wave 3A storefront identity rules:
+
+- shared `users` table remains authoritative
+- shared session model remains authoritative
+- same guard remains authoritative
+- storefront bootstrap must remain customer-safe and minimal
+- no merchant operational state may leak into storefront identity payloads
+
+### Wave 3B Session & Guard Preparation Addendum
+
+Wave 3B is still preparation only.
+
+It explicitly allows:
+
+- session ownership normalization
+- observe-only guard shadow infrastructure
+- contamination detection telemetry
+- logout ownership tracing
+- CSRF ownership preparation metadata
+- additive frontend session metadata
+- guard readiness reporting
+
+It explicitly forbids:
+
+- active guard split
+- cookie split
+- separate auth providers
+- session isolation enforcement
+- account-table split
+- checkout auth rewrite
+
+### Session Ownership Doctrine
+
+Request-scoped session ownership must be modeled explicitly for telemetry and readiness purposes.
+
+Required fields:
+
+- `authDomain`
+- `actorType`
+- `routeDomain`
+- `sessionOrigin`
+- `intendedGuardFuture`
+- `onboardingApplicable`
+
+This model is observability-only and must not become the runtime auth authority.
+
+### Guard Shadow Doctrine
+
+Future guard semantics may be computed in shadow mode only.
+
+Rules:
+
+- shadow guards must never authenticate requests
+- shadow guards must never change session or cookie behavior
+- shadow guards may only report which guard would own the request in a future split topology
+- ambiguity and mismatch findings must remain telemetry-only in Wave 3B
+
+### Wave 3C Guard Split Readiness Validation Addendum
+
+Wave 3C is validation only.
+
+It explicitly allows:
+
+- guard split simulation
+- concurrent-session readiness validation
+- csrf and logout readiness validation
+- contamination stress analysis
+- operational risk scoring
+- machine-readable readiness artifacts
+
+It explicitly forbids:
+
+- active dual guards
+- cookie split
+- provider split
+- session isolation enforcement
+- auth authority migration
+- checkout auth rewrite
+
+### Concurrent Session Doctrine
+
+Concurrent merchant and storefront activity may be simulated for readiness purposes only.
+
+Rules:
+
+- multi-tab and mixed-context behavior may be analyzed
+- current shared-session behavior remains authoritative
+- simulation output may guide future cutover sequencing only
+
+### Readiness Scoring Doctrine
+
+Readiness scoring must classify future guard split state explicitly.
+
+Allowed classifications:
+
+- `READY`
+- `PARTIALLY_READY`
+- `BLOCKED`
+
+Scoring must include explicit blockers and must never be treated as authority activation by itself.
+
 ```markdown
 # Laravel API Architecture Rules (Project Contract)
 
@@ -1698,6 +1869,8 @@ The CMS domain is split into two distinct API surfaces:
     *   Endpoints live under `/api/v1/admin/stores/{store}/cms/...`.
     *   Returns detailed management metadata (author, timestamps, version history).
 
+
+
 ### 2. Storefront CMS (Public Delivery)
 *   **Purpose**: High-performance, read-only content delivery for Next.js.
 *   **Rules**:
@@ -2631,3 +2804,221 @@ $variant->attributeValues(): BelongsToMany;
 // Primary image helper
 $variant->primary_image: ?Image;
 ```
+
+---
+
+# 24. Wave 2 Boundary Normalization Foundations
+
+## 24.1 Scope Guardrails
+
+Wave 2 is **boundary normalization only**.
+
+Mandatory rules:
+
+- additive only
+- compatibility-first
+- no public bootstrap contract change
+- no session change
+- no guard split
+- no merchant/customer table split
+- no checkout rewrite
+- no async adoption
+- no legacy permission-path deletion yet
+- no `store_user` removal yet
+
+## 24.2 Bootstrap Decomposition Topology
+
+`GetBootstrapAction` remains the public facade/orchestrator.
+
+Internal decomposition for Wave 2 is:
+
+```plaintext
+GetBootstrapAction
+ ├── BootstrapIdentityResolver
+ ├── BootstrapStoreResolver
+ │    └── MembershipResolver
+ ├── BootstrapPermissionResolver
+ │    └── PermissionResolver
+ ├── BootstrapOnboardingResolver
+ ├── BootstrapConfigResolver
+ ├── BootstrapCompatibilityAdapter
+ ├── LegacyBootstrapCompatibilityAdapter
+ ├── BootstrapShadowParityService
+ └── BootstrapTelemetry
+```
+
+Rules:
+
+- `BootstrapResource` remains the response serializer boundary.
+- `GetBootstrapResponseDTO` remains the compatibility DTO returned to clients.
+- legacy bootstrap assembly remains available for shadow-read and rollback.
+- resolver timing, parity logging, and version metadata are internal-only in Wave 2.
+
+## 24.3 Membership Abstraction Doctrine
+
+Wave 2 introduces a compatibility-first membership abstraction.
+
+Authoritative source remains:
+
+- `store_user`
+
+Wave 2 membership structures:
+
+- `MembershipContext` value object
+- `MembershipResolver` interface
+- `PivotMembershipResolver` implementation
+
+Mandatory usage in Wave 2:
+
+- bootstrap store enrichment
+- bootstrap permission resolution
+- `store.context` trace enrichment
+- new observability integrations
+
+Not allowed in Wave 2:
+
+- memberships table
+- dual-write
+- authority cutover away from `store_user`
+- broad refactors of existing policy/controller code only for style
+
+## 24.4 Policy Ownership Map
+
+Wave 2 does **not** rewrite policy ownership aggressively, but it makes ownership explicit and observable.
+
+| Domain Boundary | Policy Owner | Primary Subject | Wave 2 Notes |
+|---|---|---|---|
+| Store lifecycle | `StorePolicy` | `Store` | remains authoritative for store creation/view/update/delete |
+| Product & inventory | `ProductPolicy` | `Store` context | still store-context based during normalization |
+| Orders & fulfillment | `OrderPolicy` | `Order` | customer ownership + store membership remain compatible |
+| Store memberships / staff admin | `MembershipPolicy` | `Store` context | still fronts staff/user-management paths during compatibility window |
+| Customer profile | `AddressPolicy` | `Address` | unchanged, now telemetry-enabled |
+| Customer payment methods | `PaymentMethodPolicy` | `PaymentMethod` | unchanged, now telemetry-enabled |
+| CMS publishing | `BlogPostPolicy` | `BlogPost` | unchanged, now telemetry-enabled |
+
+Transitional note:
+
+- admin user-management endpoints still authorize through `MembershipPolicy`; this is a known compatibility bridge, not the final ownership split.
+- hidden `StorePolicy`-style authorization paths outside store lifecycle remain drift findings until explicitly normalized.
+
+## 24.5 Capability Resolution Flow
+
+Wave 2 permission resolution is normalized structurally before authority changes.
+
+Ordered flow:
+
+1. super-admin bypass check
+2. active store requirement evaluation
+3. membership lookup through `MembershipResolver`
+4. role lookup from authoritative pivot semantics
+5. capability/permission expansion from role permissions
+6. `CapabilityResolutionResult` creation
+7. optional parity comparison between legacy and normalized paths
+8. legacy middleware and policies remain behaviorally unchanged
+
+Wave 2 output rules:
+
+- bootstrap still exposes `permissions` exactly as before
+- `CapabilityResolutionResult` is internal in Wave 2
+- middleware behavior is preserved
+- policies remain preserved
+
+## 24.6 Bootstrap Compatibility Rules
+
+Wave 2 bootstrap compatibility is absolute:
+
+- `GetBootstrapAction` remains the only public bootstrap action
+- no field removals
+- no field renames
+- no payload slimming
+- no new public bootstrap endpoint
+- no pagination of stores
+- no frontend routing changes
+
+Shadow-read rules:
+
+- shadow path must be side-effect free
+- legacy path stays authoritative until parity evidence is healthy
+- payload diffs are telemetry only in Wave 2
+
+## 24.7 Wave 2 Drift Detection Doctrine
+
+Wave 2 adds warning-mode drift detection for:
+
+- `auth()` or `Auth::user()` usage inside `Actions`
+- `hasPermissionTo()` outside policies/resolvers
+- `StorePolicy`-style authorization leakage through generic `currentStore` authorization paths
+- admin routes missing explicit permission middleware
+
+These checks are:
+
+- CI-safe
+- non-breaking initially
+- intended to surface normalization backlog without forcing premature cutover
+
+## 24.8 Wave 2 Non-Goals
+
+Explicitly out of scope:
+
+- customer guard
+- guard split activation
+- customer/merchant identity separation
+- memberships table migration
+- RBAC snapshots as authority
+- bootstrap payload removal
+- checkout refactor
+- async workflows
+
+## 24.9 Wave 2 Stabilization Edge-Case Guarantees
+
+Wave 2 stabilization hardening guarantees parity validation for the following bootstrap edges:
+
+- super-admin actor with store enumeration and permission expansion
+- verified merchant with zero stores
+- customer actor with zero stores
+- onboarding-incomplete merchant
+- onboarding-completed merchant
+- missing `last_active_store_id`
+- deleted/invalid historical active-store references via null-on-delete fallback
+- inactive store references under current compatibility behavior
+
+These guarantees are validation guarantees, not authority changes.
+
+## 24.10 Wave 2 Reporting Surfaces
+
+Wave 2 stabilization hardening introduces the following report surfaces:
+
+- authorization drift triage report
+- policy ownership visibility report
+- Wave 2 operational readiness artifact
+
+These report surfaces are observational only.
+They do not rewrite policies, middleware, sessions, or guards.
+
+## 24.11 Wave 2.5 Targeted Authorization Normalization
+
+Wave 2.5 performs only safe-domain authorization ownership normalization before Wave 3.
+
+Normalized domains in this cycle:
+
+- `Brand`
+- `Tag`
+- `Category`
+- `CMS Blog`
+- `Dashboard` read paths
+
+Wave 2.5 rules:
+
+- controllers in normalized domains authorize explicit domain policies
+- generic `currentStore` controller authorization is removed from normalized domains
+- permission middleware remains as a coarse gate where already present
+- `CMS Blog` keeps `role:super_admin` middleware as a compatibility bridge while controller ownership becomes explicit through `BlogPostPolicy`
+- hidden request-level authorization in normalized domains must move into policies or explicit controller policy calls
+- Wave 2.5 does not normalize `Orders`, `Checkout`, membership evolution, auth topology, or guard/session separation
+
+Wave 2.5 exit doctrine:
+
+- safe domains must report stable explicit policy ownership
+- hidden authorization findings targeted in the cycle must be eliminated
+- tenant isolation tests must exist for normalized domains
+- Wave 3 remains blocked while generic `currentStore` leakage persists in higher-risk domains (`order`, `product`, `membership_admin`)

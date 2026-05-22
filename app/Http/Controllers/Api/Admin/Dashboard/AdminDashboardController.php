@@ -15,15 +15,14 @@ use App\Http\Requests\Admin\Dashboard\GetTopProductsRequest;
 use App\Http\Resources\Admin\Dashboard\StoreStatsResource;
 use App\Http\Resources\Admin\Dashboard\RecentOrderResource;
 use App\Http\Resources\Admin\Dashboard\TopProductResource;
-use Illuminate\Http\Request;
-
+use App\Support\Auth\DashboardAuthorization;
 use Illuminate\Http\JsonResponse;
 
 class AdminDashboardController extends Controller
 {
     public function stats(GetStatsRequest $request, GetStatsAction $action, int $store): JsonResponse
     {
-        $this->authorize('view', app('currentStore'));
+        $this->authorize('viewStats', [DashboardAuthorization::class, $this->currentStore()]);
         $dto = GetStatsDTO::fromRequest($request, $store);
         $stats = $action->execute($dto);
 
@@ -35,7 +34,7 @@ class AdminDashboardController extends Controller
 
     public function recentOrders(GetRecentOrdersRequest $request, GetRecentOrdersAction $action, int $store): JsonResponse
     {
-        $this->authorize('view', app('currentStore'));
+        $this->authorize('viewRecentOrders', [DashboardAuthorization::class, $this->currentStore()]);
         $dto = GetRecentOrdersDTO::fromRequest($request, $store);
         $orders = $action->execute($dto);
 
@@ -47,7 +46,7 @@ class AdminDashboardController extends Controller
 
     public function topProducts(GetTopProductsRequest $request, GetTopProductsAction $action, int $store): JsonResponse
     {
-        $this->authorize('view', app('currentStore'));
+        $this->authorize('viewTopProducts', [DashboardAuthorization::class, $this->currentStore()]);
         $dto = GetTopProductsDTO::fromRequest($request, $store);
         $products = $action->execute($dto);
 

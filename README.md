@@ -65,9 +65,55 @@ Run the full test suite:
 php artisan test
 ```
 
+Wave 3A readiness artifact:
+```bash
+php artisan architecture:wave3a-readiness-report --output=storage/app/testing/wave3a-readiness-report.json
+```
+
+Wave 3B readiness artifact:
+```bash
+php artisan architecture:wave3b-guard-readiness-report --output=storage/app/testing/wave3b-guard-readiness-report.json
+```
+
+Wave 3C validation artifact:
+```bash
+php artisan architecture:wave3c-guard-split-validation-report --output=storage/app/testing/wave3c-guard-split-validation-report.json
+```
+
+## 🔐 Wave 3A / 3B Identity & Guard Preparation
+
+The backend now includes additive identity and session/guard preparation layers that make actor and future guard boundaries explicit without changing auth authority.
+
+Implemented through Wave 3A / 3B / 3C:
+
+- explicit `IdentityContext` resolution for `merchant`, `customer`, and `super_admin`
+- merchant/customer route-domain ownership metadata
+- additive customer namespace at `/api/v1/storefront/account/*`
+- merchant-only onboarding applicability isolation
+- identity telemetry and session-boundary preparation metadata
+- explicit session ownership modeling
+- observe-only merchant/customer guard shadow resolvers
+- contamination detection telemetry
+- logout ownership tracing and CSRF preparation headers
+- additive frontend session metadata
+- minimal customer-safe storefront bootstrap
+- non-authoritative guard split simulation engine
+- concurrent-session, csrf, and logout readiness validation
+- split-readiness scoring and operational risk analysis
+
+Still intentionally unchanged:
+
+- shared `users` table
+- shared Sanctum session authority
+- shared session cookie authority
+- merchant auth route authority
+- checkout auth model
+- active guard/session/cookie split
+
 ## 📄 Documentation
 
 Detailed architectural documentation is available in the `docs/` directory:
 - [ARCHITECTURE.md](./docs/ARCHITECTURE.md) - Core project rules.
+- [AUTH_ROUTING.md](./docs/AUTH_ROUTING.md) - Wave 3A identity-context and route-ownership doctrine.
 - [CMS_MARKETING_ARCHITECTURE.md](./docs/CMS_MARKETING_ARCHITECTURE.md) - CMS-specific logic.
 - [exception-system.md](./docs/exception-system.md) - Error handling standards.

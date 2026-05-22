@@ -4,22 +4,24 @@ namespace App\Policies;
 
 use App\Models\Address;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
+use App\Policies\Concerns\InteractsWithPolicyTelemetry;
 
 class AddressPolicy
 {
-    public function view(User $user, Address $address)
+    use InteractsWithPolicyTelemetry;
+
+    public function view(User $user, Address $address): bool
     {
-        return $user->id === $address->user_id;
+        return $this->decision($user, 'view', $user->id === $address->user_id, $address);
     }
 
-    public function update(User $user, Address $address)
+    public function update(User $user, Address $address): bool
     {
-        return $user->id === $address->user_id;
+        return $this->decision($user, 'update', $user->id === $address->user_id, $address);
     }
 
-    public function delete(User $user, Address $address)
+    public function delete(User $user, Address $address): bool
     {
-        return $user->id === $address->user_id;
+        return $this->decision($user, 'delete', $user->id === $address->user_id, $address);
     }
 }

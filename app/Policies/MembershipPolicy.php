@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use App\Models\User;
 use App\Models\Store;
+use App\Models\User;
 use App\Policies\Concerns\HasStoreMembership;
 
 class MembershipPolicy
@@ -17,7 +17,7 @@ class MembershipPolicy
      */
     public function viewAny(User $user, Store $store): bool
     {
-        return $this->isAdmin($user, $store);
+        return $this->decision($user, 'viewAny', $this->isAdmin($user, $store), $store);
     }
 
     /**
@@ -25,7 +25,7 @@ class MembershipPolicy
      */
     public function view(User $user, Store $store): bool
     {
-        return $this->isAdmin($user, $store);
+        return $this->decision($user, 'view', $this->isAdmin($user, $store), $store);
     }
 
     /**
@@ -33,7 +33,7 @@ class MembershipPolicy
      */
     public function create(User $user, Store $store): bool
     {
-        return $this->isAdmin($user, $store);
+        return $this->decision($user, 'create', $this->isAdmin($user, $store), $store);
     }
 
     /**
@@ -41,7 +41,7 @@ class MembershipPolicy
      */
     public function update(User $user, Store $store): bool
     {
-        return $this->isAdmin($user, $store);
+        return $this->decision($user, 'update', $this->isAdmin($user, $store), $store);
     }
 
     /**
@@ -49,6 +49,6 @@ class MembershipPolicy
      */
     public function delete(User $user, Store $store): bool
     {
-        return $this->isAdmin($user, $store);
+        return $this->decision($user, 'delete', $this->isAdmin($user, $store), $store);
     }
 }

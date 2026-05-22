@@ -2,21 +2,23 @@
 
 namespace App\Policies;
 
-use App\Models\Store;
-use App\Models\User;
 use App\Enums\RoleEnum;
 use App\Enums\Store\StoreRoleEnum;
-use Illuminate\Auth\Access\Response;
+use App\Models\Store;
+use App\Models\User;
+use App\Policies\Concerns\InteractsWithPolicyTelemetry;
 
 class StorePolicy
 {
+    use InteractsWithPolicyTelemetry;
+
     /**
      * Perform pre-authorization checks.
      */
-    public function before(User $user, string $ability): ?bool
+    public function before(User $user, string $ability, mixed $store = null): ?bool
     {
         if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
+            return $this->decision($user, $ability, true, $store);
         }
 
         return null;
@@ -27,7 +29,7 @@ class StorePolicy
      */
     public function viewAny(User $user): bool
     {
-        return true; // Any authenticated user can potentially view their own stores
+        return $this->decision($user, 'viewAny', true);
     }
 
     /**
@@ -35,7 +37,12 @@ class StorePolicy
      */
     public function view(User $user, Store $store): bool
     {
-        return $user->stores()->where('store_id', $store->id)->exists();
+        return $this->decision(
+            $user,
+            'view',
+            $user->stores()->where('store_id', $store->id)->exists(),
+            $store,
+        );
     }
 
     /**
@@ -43,7 +50,7 @@ class StorePolicy
      */
     public function create(User $user): bool
     {
-        return true; // Any authenticated user can create a store (for onboarding)
+        return $this->decision($user, 'create', true);
     }
 
     /**
@@ -51,12 +58,17 @@ class StorePolicy
      */
     public function update(User $user, Store $store): bool
     {
-        return $user->stores()
-            ->where('store_id', $store->id)
-            ->wherePivotIn('role', [
-                StoreRoleEnum::STORE_ADMIN->value,
-            ])
-            ->exists();
+        return $this->decision(
+            $user,
+            'update',
+            $user->stores()
+                ->where('store_id', $store->id)
+                ->wherePivotIn('role', [
+                    StoreRoleEnum::STORE_ADMIN->value,
+                ])
+                ->exists(),
+            $store,
+        );
     }
 
     /**
@@ -64,7 +76,7 @@ class StorePolicy
      */
     public function delete(User $user, Store $store): bool
     {
-        return $user->id === $store->owner_id;
+        return $this->decision($user, 'delete', $user->id === $store->owner_id, $store);
     }
 
     /**
@@ -72,7 +84,7 @@ class StorePolicy
      */
     public function restore(User $user, Store $store): bool
     {
-        return false;
+        return $this->decision($user, 'restore', false, $store);
     }
 
     /**
@@ -80,6 +92,6 @@ class StorePolicy
      */
     public function forceDelete(User $user, Store $store): bool
     {
-        return false;
+        return $this->decision($user, 'forceDelete', false, $store);
     }
 }

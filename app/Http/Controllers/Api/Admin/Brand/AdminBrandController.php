@@ -21,6 +21,7 @@ use App\Http\Requests\Admin\Brand\CreateBrandRequest;
 use App\Http\Requests\Admin\Brand\ListBrandsRequest;
 use App\Http\Requests\Admin\Brand\UpdateBrandRequest;
 use App\Http\Resources\Admin\Brand\AdminBrandResource;
+use App\Models\Brand;
 use Illuminate\Http\JsonResponse;
 
 class AdminBrandController extends Controller
@@ -30,7 +31,7 @@ class AdminBrandController extends Controller
         int $store,
         ListBrandsAction $action,
     ): JsonResponse {
-        $this->authorize('view', app('currentStore'));
+        $this->authorize('viewAny', [Brand::class, $this->currentStore()]);
 
         $brands = $action->execute(
             dto:  ListBrandsDTO::fromRequest($request, $store),
@@ -47,7 +48,7 @@ class AdminBrandController extends Controller
         int $brand,
         ShowBrandAction $action,
     ): JsonResponse {
-        $this->authorize('view', app('currentStore'));
+        $this->authorize('view', [Brand::class, $this->currentStore()]);
 
         $result = $action->execute(
             dto: new ShowBrandDTO(
@@ -64,7 +65,7 @@ class AdminBrandController extends Controller
         int $store,
         CreateBrandAction $action,
     ): JsonResponse {
-        $this->authorize('update', app('currentStore'));
+        $this->authorize('create', [Brand::class, $this->currentStore()]);
 
         $result = $action->execute(
             dto:  CreateBrandDTO::fromRequest($request, $store),
@@ -83,7 +84,7 @@ class AdminBrandController extends Controller
         int $brand,
         UpdateBrandAction $action,
     ): JsonResponse {
-        $this->authorize('update', app('currentStore'));
+        $this->authorize('update', [Brand::class, $this->currentStore()]);
 
         $result = $action->execute(
             dto:  UpdateBrandDTO::fromRequest($request, $store, $brand),
@@ -100,7 +101,7 @@ class AdminBrandController extends Controller
         int $brand,
         DeleteBrandAction $action,
     ): JsonResponse {
-        $this->authorize('update', app('currentStore'));
+        $this->authorize('delete', [Brand::class, $this->currentStore()]);
 
         $action->execute(
             dto: new DeleteBrandDTO(
@@ -119,7 +120,7 @@ class AdminBrandController extends Controller
         int $brand,
         RestoreBrandAction $action,
     ): JsonResponse {
-        $this->authorize('update', app('currentStore'));
+        $this->authorize('restore', [Brand::class, $this->currentStore()]);
 
         $result = $action->execute(
             dto: new RestoreBrandDTO(

@@ -1,26 +1,28 @@
 <?php
 
+use App\Http\Controllers\Api\Auth\Preparation\CsrfOwnershipPreparationController;
 use Illuminate\Support\Facades\Route;
-use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
 
-// Auth (no store context)
-require 'api/v1/users/auth.php';
+Route::middleware('identity.route:merchant_users,merchant,observe')->group(function (): void {
+    // Auth (merchant-authoritative; no store context)
+    require 'api/v1/users/auth.php';
+
+    // Merchant-owned legacy /users surface (no store context)
+    require 'api/v1/users/category.php';
+    require 'api/v1/users/profile.php';
+
+    // Guest checkout status (no auth, no store context)
+    Route::prefix('/v1/users/checkout')
+        ->controller(\App\Http\Controllers\Api\Payment\CheckoutController::class)
+        ->withoutMiddleware(['auth:sanctum'])
+        ->group(function (): void {
+            Route::get('/status/{sessionId}', 'status');
+        });
+});
 
 // Public (no store context)
-require 'api/v1/users/category.php';
 require 'api/v1/public/cms.php';
 require 'api/v1/public/leads.php';
-
-// Profile (no store context)
-require 'api/v1/users/profile.php';
-
-// Guest checkout status (no auth, no store context)
-Route::prefix('/v1/users/checkout')
-    ->controller(\App\Http\Controllers\Api\Payment\CheckoutController::class)
-    ->withoutMiddleware(['auth:sanctum'])
-    ->group(function () {
-        Route::get('/status/{sessionId}', 'status');
-    });
 
 // Stripe webhook (no store context)
 require 'api/v1/stripe/webhook.php';
@@ -37,13 +39,18 @@ require 'api/v1/stores/homepage.php';
 // Store management routes (outside {store} group - POST has no store context yet)
 require 'api/v1/stores/store-management.php';
 
-// Admin routes
-require 'api/v1/admin/admin.php';
-require 'api/v1/admin/leads.php';
-require 'api/v1/admin/cms/blog.php';
-require 'api/v1/admin/cms/marketing-pages.php';
-require 'api/v1/admin/cms/documentation.php';
+Route::middleware('identity.route:merchant_admin,merchant,enforce')->group(function (): void {
+    // Admin routes
+    require 'api/v1/admin/admin.php';
+    require 'api/v1/admin/leads.php';
+    require 'api/v1/admin/cms/blog.php';
+    require 'api/v1/admin/cms/marketing-pages.php';
+    require 'api/v1/admin/cms/documentation.php';
+});
+
+// Additive customer account namespace
+require 'api/v1/storefront/account.php';
 
 
-Route::get('/sanctum/csrf-cookie', [CsrfCookieController::class, 'show'])
+Route::get('/sanctum/csrf-cookie', [CsrfOwnershipPreparationController::class, 'show'])
     ->middleware('web');

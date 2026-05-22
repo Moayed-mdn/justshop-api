@@ -14,6 +14,7 @@ use App\Http\Requests\Admin\Tag\CreateTagRequest;
 use App\Http\Requests\Admin\Tag\ListTagsRequest;
 use App\Http\Requests\Admin\Tag\UpdateTagRequest;
 use App\Http\Resources\Admin\Tag\AdminTagResource;
+use App\Models\Tag;
 use App\Repositories\Admin\Tag\AdminTagRepository;
 use Illuminate\Http\JsonResponse;
 
@@ -27,7 +28,7 @@ class AdminTagController extends Controller
         int $store,
         ListTagsAction $action,
     ): JsonResponse {
-        $this->authorize('view', app('currentStore'));
+        $this->authorize('viewAny', [Tag::class, $this->currentStore()]);
 
         $tags = $action->execute(
             ListTagsDTO::fromRequest($request, $store)
@@ -47,7 +48,7 @@ class AdminTagController extends Controller
         int $store,
         CreateTagAction $action,
     ): JsonResponse {
-        $this->authorize('update', app('currentStore'));
+        $this->authorize('create', [Tag::class, $this->currentStore()]);
 
         $tag = $action->execute(
             CreateTagDTO::fromRequest($request, $store)
@@ -68,7 +69,7 @@ class AdminTagController extends Controller
         int $tag,
         AdminTagRepository $repository,
     ): JsonResponse {
-        $this->authorize('view', app('currentStore'));
+        $this->authorize('view', [Tag::class, $this->currentStore()]);
 
         $tagModel = $repository->findInStore($tag, $store);
 
@@ -84,7 +85,7 @@ class AdminTagController extends Controller
         int $tag,
         UpdateTagAction $action,
     ): JsonResponse {
-        $this->authorize('update', app('currentStore'));
+        $this->authorize('update', [Tag::class, $this->currentStore()]);
 
         $tagModel = $action->execute(
             UpdateTagDTO::fromRequest($request, $store, $tag)
@@ -104,7 +105,7 @@ class AdminTagController extends Controller
         int $tag,
         DeleteTagAction $action,
     ): JsonResponse {
-        $this->authorize('update', app('currentStore'));
+        $this->authorize('delete', [Tag::class, $this->currentStore()]);
 
         $action->execute($store, $tag);
 

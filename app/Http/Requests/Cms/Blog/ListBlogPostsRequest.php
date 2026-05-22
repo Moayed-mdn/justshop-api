@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Cms\Blog;
 
-use App\Models\BlogPost;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -12,7 +11,7 @@ class ListBlogPostsRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return (bool) $this->user()?->can('viewAny', BlogPost::class);
+        return true;
     }
 
     public function rules(): array

@@ -4,15 +4,17 @@ namespace App\Http\Middleware;
 
 use App\Exceptions\Store\StoreNotFoundException;
 use App\Models\Store;
-use App\Models\User;
 use App\Support\Observability\RequestTraceContextManager;
+use App\Services\Auth\Membership\MembershipResolver;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class StoreContext
 {
     public function __construct(
         private readonly RequestTraceContextManager $traceContext,
+        private readonly MembershipResolver $membershipResolver,
     ) {}
 
     public function handle(Request $request, Closure $next): mixed
@@ -25,34 +27,29 @@ class StoreContext
             ->first();
 
         if (!$store) {
-            // Auto-heal: If the user's last_active_store_id points to a non-existent or inactive store
             if ($user && $user->last_active_store_id == $storeId) {
                 $user->update(['last_active_store_id' => null]);
             }
             throw new StoreNotFoundException();
         }
 
-        // Store context is request-scoped
         app()->instance('storeId', $store->id);
         app()->instance('currentStore', $store);
+
+        $membership = $user ? $this->membershipResolver->resolveForStore($user, $store) : null;
+
         $this->traceContext->enrichStore(
             storeId: $store->id,
-            membershipId: $this->resolveMembershipId($user, $store->id),
+            membershipId: $membership?->membershipId,
         );
 
+        Log::info('store.context.enriched', [
+            'store_id' => (int) $store->id,
+            'membership_id' => $membership?->membershipId,
+            'membership_role' => $membership?->role,
+            'membership_source' => $membership?->source,
+        ]);
+
         return $next($request);
-    }
-
-    private function resolveMembershipId(?User $user, int $storeId): ?int
-    {
-        if (!$user) {
-            return null;
-        }
-
-        $storeMembership = $user->stores()
-            ->where('store_id', $storeId)
-            ->first();
-
-        return $storeMembership?->pivot?->id;
     }
 }

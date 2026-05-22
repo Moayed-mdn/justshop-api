@@ -12,6 +12,9 @@ use App\Actions\Auth\LogoutUserAction;
 use App\Actions\Auth\RegisterUserAction;
 use App\Actions\Auth\ResendVerificationEmailAction;
 use App\Actions\Auth\VerifyEmailAction;
+use App\Models\User;
+use App\Services\Auth\FrontendSessionMetadataResolver;
+use App\Services\Auth\IdentityContextResolver;
 use App\DTOs\Auth\GetBootstrapDTO;
 use App\DTOs\Auth\UpdateActiveStoreDTO;
 use App\DTOs\Auth\GetMeDTO;
@@ -43,6 +46,8 @@ class AuthController extends Controller
         private GetMeAction $getMeAction,
         private GetBootstrapAction $getBootstrapAction,
         private UpdateActiveStoreAction $updateActiveStoreAction,
+        private FrontendSessionMetadataResolver $frontendSessionMetadataResolver,
+        private IdentityContextResolver $identityContextResolver,
     ) {}
 
     public function bootstrap(Request $request): JsonResponse
@@ -51,8 +56,12 @@ class AuthController extends Controller
             GetBootstrapDTO::fromRequest($request)
         );
 
-        return $this->success(
+        /** @var User $user */
+        $user = $request->user();
+
+        return $this->successWithMeta(
             new BootstrapResource($data),
+            ['session' => $this->frontendSessionMetadataResolver->resolve($request, $this->identityContextResolver->resolve($user))],
             __('auth.bootstrap_successful')
         );
     }
@@ -63,8 +72,12 @@ class AuthController extends Controller
             UpdateActiveStoreDTO::fromRequest($request)
         );
 
-        return $this->success(
+        /** @var User $user */
+        $user = $request->user();
+
+        return $this->successWithMeta(
             new BootstrapResource($data),
+            ['session' => $this->frontendSessionMetadataResolver->resolve($request, $this->identityContextResolver->resolve($user))],
             __('auth.active_store_updated')
         );
     }
@@ -78,8 +91,9 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return $this->success(
+        return $this->successWithMeta(
             new UserResource($user),
+            ['session' => $this->frontendSessionMetadataResolver->resolve($request, $this->identityContextResolver->resolve($user))],
             __('auth.register_success'),
             201
         );
@@ -94,19 +108,27 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return $this->success(
+        return $this->successWithMeta(
             [
                 'user' => new UserResource($user),
             ],
+            ['session' => $this->frontendSessionMetadataResolver->resolve($request, $this->identityContextResolver->resolve($user))],
             __('auth.login_successful')
         );
     }
 
     public function logout(Request $request): JsonResponse
     {
+        /** @var User|null $user */
+        $user = $request->user();
+        $meta = ['session' => $this->frontendSessionMetadataResolver->resolve(
+            $request,
+            $user ? $this->identityContextResolver->resolve($user) : null,
+        )];
+
         $this->logoutUserAction->execute($request);
 
-        return $this->success(null, __('auth.logout_successful'));
+        return $this->successWithMeta(null, $meta, __('auth.logout_successful'));
     }
 
     public function verifyEmail(VerifyEmailRequest $request): JsonResponse
@@ -141,8 +163,9 @@ class AuthController extends Controller
             GetMeDTO::fromRequest($request)
         );
 
-        return $this->success(
-            new UserResource($user)
+        return $this->successWithMeta(
+            new UserResource($user),
+            ['session' => $this->frontendSessionMetadataResolver->resolve($request, $this->identityContextResolver->resolve($user))]
         );
     }
 }

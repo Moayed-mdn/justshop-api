@@ -129,5 +129,25 @@ Route::prefix('v1/admin/stores/{store}')
         });
 
         // ── Tag Management ───────────────────────────────────
-        Route::apiResource('tags', AdminTagController::class);
+        Route::prefix('tags')->group(function () {
+            Route::get('/', [AdminTagController::class, 'index'])
+                ->middleware('permission:' . PermissionEnum::TAG_VIEW)
+                ->name('tags.index');
+
+            Route::post('/', [AdminTagController::class, 'store'])
+                ->middleware('permission:' . PermissionEnum::TAG_CREATE)
+                ->name('tags.store');
+
+            Route::get('/{tag}', [AdminTagController::class, 'show'])
+                ->middleware('permission:' . PermissionEnum::TAG_VIEW)
+                ->name('tags.show');
+
+            Route::match(['put', 'patch'], '/{tag}', [AdminTagController::class, 'update'])
+                ->middleware('permission:' . PermissionEnum::TAG_UPDATE)
+                ->name('tags.update');
+
+            Route::delete('/{tag}', [AdminTagController::class, 'destroy'])
+                ->middleware('permission:' . PermissionEnum::TAG_DELETE)
+                ->name('tags.destroy');
+        });
     });

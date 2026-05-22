@@ -170,12 +170,38 @@ class BlogModuleTest extends TestCase
             'slug' => ['en' => 'draft'],
             'content' => ['en' => 'Content'],
         ]);
-        
+
         $response = $this->actingAs($this->admin)
             ->postJson("/api/v1/admin/cms/blog/{$post->id}/publish");
 
         $response->assertStatus(200);
         $this->assertTrue($post->fresh()->is_published);
         $this->assertNotNull($post->fresh()->published_at);
+    }
+
+    public function test_non_super_admin_cannot_create_blog_post(): void
+    {
+        $user = User::factory()->create();
+
+        $payload = [
+            'status' => 'published',
+            'blog_category_id' => $this->category->id,
+            'translations' => [
+                'en' => [
+                    'title' => 'Unauthorized Post',
+                    'slug' => 'unauthorized-post',
+                    'content' => 'Denied content',
+                ],
+                'ar' => [
+                    'title' => 'ممنوع',
+                    'slug' => 'unauthorized-post-ar',
+                    'content' => 'محتوى مرفوض',
+                ],
+            ],
+        ];
+
+        $this->actingAs($user)
+            ->postJson('/api/v1/admin/cms/blog', $payload)
+            ->assertForbidden();
     }
 }

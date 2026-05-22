@@ -21,6 +21,7 @@ use App\Http\Requests\Admin\Category\CreateCategoryRequest;
 use App\Http\Requests\Admin\Category\ListCategoriesRequest;
 use App\Http\Requests\Admin\Category\UpdateCategoryRequest;
 use App\Http\Resources\Admin\Category\AdminCategoryResource;
+use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 
 class AdminCategoryController extends Controller
@@ -30,7 +31,7 @@ class AdminCategoryController extends Controller
         int $store,
         ListCategoriesAction $action,
     ): JsonResponse {
-        $this->authorize('view', app('currentStore'));
+        $this->authorize('viewAny', [Category::class, $this->currentStore()]);
 
         $categories = $action->execute(
             dto:  ListCategoriesDTO::fromRequest($request, $store),
@@ -47,7 +48,7 @@ class AdminCategoryController extends Controller
         int $category,
         ShowCategoryAction $action,
     ): JsonResponse {
-        $this->authorize('view', app('currentStore'));
+        $this->authorize('view', [Category::class, $this->currentStore()]);
 
         $result = $action->execute(
             dto: new ShowCategoryDTO(
@@ -64,7 +65,7 @@ class AdminCategoryController extends Controller
         int $store,
         CreateCategoryAction $action,
     ): JsonResponse {
-        $this->authorize('update', app('currentStore'));
+        $this->authorize('create', [Category::class, $this->currentStore()]);
 
         $result = $action->execute(
             dto:  CreateCategoryDTO::fromRequest($request, $store),
@@ -83,7 +84,7 @@ class AdminCategoryController extends Controller
         int $category,
         UpdateCategoryAction $action,
     ): JsonResponse {
-        $this->authorize('update', app('currentStore'));
+        $this->authorize('update', [Category::class, $this->currentStore()]);
 
         $result = $action->execute(
             dto:  UpdateCategoryDTO::fromRequest($request, $store, $category),
@@ -100,7 +101,7 @@ class AdminCategoryController extends Controller
         int $category,
         DeleteCategoryAction $action,
     ): JsonResponse {
-        $this->authorize('update', app('currentStore'));
+        $this->authorize('delete', [Category::class, $this->currentStore()]);
 
         $action->execute(
             dto: new DeleteCategoryDTO(
@@ -119,7 +120,7 @@ class AdminCategoryController extends Controller
         int $category,
         RestoreCategoryAction $action,
     ): JsonResponse {
-        $this->authorize('update', app('currentStore'));
+        $this->authorize('restore', [Category::class, $this->currentStore()]);
 
         $result = $action->execute(
             dto: new RestoreCategoryDTO(

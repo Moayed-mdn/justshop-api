@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\DTOs\Auth\Identity\IdentityContext;
 use App\Enums\Auth\OnboardingStepEnum;
 use App\Enums\Auth\ActorContextEnum;
 use App\Support\Auth\ActorResolver;
+use App\Services\Auth\IdentityContextResolver;
 use App\Enums\RoleEnum;
 use App\Enums\Address\AddressTypeEnum;
 use App\Notifications\CustomResetPassword;
@@ -70,8 +72,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isOnboardingCompleted(): bool
     {
-        // Customers are considered completed by default as they don't have onboarding
-        if ($this->getActorContext() === ActorContextEnum::CUSTOMER) {
+        if (!$this->resolveIdentityContext()->onboardingRequired) {
             return true;
         }
 
@@ -86,6 +87,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getActorContext(): ActorContextEnum
     {
         return app(ActorResolver::class)->resolve($this);
+    }
+
+    public function resolveIdentityContext(): IdentityContext
+    {
+        return app(IdentityContextResolver::class)->resolve($this);
     }
 
     public function activeStore()

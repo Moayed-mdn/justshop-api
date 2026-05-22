@@ -16,6 +16,16 @@ trait ApiResponserTrait
         ], $statusCode);
     }
 
+    public static function successWithMeta($data = null, array $meta = [], string $message = 'success', int $statusCode = 200): JsonResponse
+    {
+        return response()->json([
+            'status' => true,
+            'message' => __($message),
+            'data' => $data,
+            'meta' => $meta,
+        ], $statusCode);
+    }
+
     public static function paginated(LengthAwarePaginator $paginator, $data, array $additionalMeta = [], string $message = 'success', int $code = 200): JsonResponse
     {
         $response = [

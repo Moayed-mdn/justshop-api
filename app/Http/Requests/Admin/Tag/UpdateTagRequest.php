@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Admin\Tag;
 
-use App\Enums\RoleEnum;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -10,11 +9,7 @@ class UpdateTagRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->hasRole(RoleEnum::SUPER_ADMIN->value)
-            || $this->user()->hasPermissionTo(
-                'tag.update',
-                $this->route('store'),
-            );
+        return true;
     }
 
     public function rules(): array

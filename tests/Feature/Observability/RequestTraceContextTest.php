@@ -84,6 +84,32 @@ class RequestTraceContextTest extends TestCase
         $this->assertNotNull($response->json('membership_id'));
     }
 
+    public function test_identity_route_context_enriches_trace_with_route_and_session_annotations(): void
+    {
+        $user = User::factory()->customer()->create();
+
+        Route::middleware(['api', 'auth:sanctum', 'identity.route:customer_account,customer,enforce'])
+            ->get('/api/v1/storefront/account/test-observability/trace', function (
+                RequestTraceContextManager $traceContext
+            ) {
+                return response()->json($traceContext->current()->toLogContext());
+            });
+
+        $response = $this->actingAs($user)->getJson('/api/v1/storefront/account/test-observability/trace');
+
+        $response->assertOk()
+            ->assertJsonPath('actor_id', $user->id)
+            ->assertJsonPath('actor_type', 'customer')
+            ->assertJsonPath('auth_domain', 'customer')
+            ->assertJsonPath('route_domain', 'customer_account')
+            ->assertJsonPath('route_owner_auth_domain', 'customer')
+            ->assertJsonPath('session_auth_domain', 'customer')
+            ->assertJsonPath('session_actor_type', 'customer')
+            ->assertJsonPath('session_actor_id', $user->id)
+            ->assertJsonPath('session_authority_model', 'shared_sanctum_session')
+            ->assertJsonPath('session_isolation_state', 'shared_until_guard_split');
+    }
+
     public function test_exception_responses_keep_existing_shape_and_gain_correlation_header(): void
     {
         Route::middleware('api')->get('/api/v1/test-observability/error', function () {

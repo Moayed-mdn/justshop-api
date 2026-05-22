@@ -11,13 +11,15 @@ use App\Enums\Store\StoreRoleEnum;
 
 trait HasStoreMembership
 {
+    use InteractsWithPolicyTelemetry;
+
     /**
      * Pre-authorization check for Super Admins.
      */
-    public function before(User $user, string $ability): ?bool
+    public function before(User $user, string $ability, mixed $store = null): ?bool
     {
         if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
+            return $this->decision($user, $ability, true, $store);
         }
 
         return null;

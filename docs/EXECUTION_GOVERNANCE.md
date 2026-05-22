@@ -104,6 +104,120 @@ artifacts are attached to the release record.
 - Rule: each phase must include CI gates, forbidden-pattern checks, and ADR updates before it is considered done.
 - Why: the architecture only survives execution if governance closes the loop in code review and CI.
 
+## Wave 3A Execution Addendum — Identity Context Normalization
+
+Wave 3A is approved only as a **limited normalization phase** before any future guard work.
+
+### Wave 3A Allowed Scope
+
+- explicit identity-context resolution
+- route-domain ownership metadata and assertions
+- merchant-only onboarding applicability isolation
+- additive customer namespace under `/api/v1/storefront/account/*`
+- identity telemetry expansion
+- session-boundary preparation metadata
+- additive customer bootstrap foundation
+- identity isolation testing
+- readiness evidence generation
+
+### Wave 3A Forbidden Scope
+
+- guard split
+- cookie split
+- session split
+- customer-only session storage
+- merchant-only session storage
+- table split for customer/merchant accounts
+- checkout auth rewrite
+- RBAC authority cutover
+- async auth flow redesign
+
+### Wave 3A Exit Evidence
+
+Wave 3A must not be considered complete without:
+
+- actor classification tests for `merchant`, `customer`, and `super_admin`
+- route isolation tests for merchant/admin and storefront/account domains
+- onboarding bypass telemetry for customer actors
+- onboarding evaluation telemetry for merchant actors
+- session annotation verification
+- machine-readable readiness artifact for post-Wave-3A review
+
+## Wave 3B Execution Addendum — Session & Guard Preparation
+
+Wave 3B is approved only as a **preparation and telemetry phase** for future session and guard separation.
+
+### Wave 3B Allowed Scope
+
+- explicit session ownership metadata
+- guard shadow resolvers in observe-only mode
+- session-domain and contamination telemetry
+- logout ownership tracing
+- CSRF ownership preparation metadata
+- additive frontend session metadata
+- machine-readable guard readiness reporting
+
+### Wave 3B Forbidden Scope
+
+- active guard split
+- cookie split
+- separate auth providers
+- customer-only sessions
+- merchant-only sessions
+- session isolation enforcement
+- account-table split
+- checkout auth rewrite
+
+### Wave 3B Exit Evidence
+
+Wave 3B must not be considered complete without:
+
+- session ownership resolution tests
+- guard shadow resolution tests
+- cross-domain contamination telemetry tests
+- logout tracing tests
+- CSRF preparation metadata tests
+- storefront/merchant isolation telemetry tests
+- machine-readable guard readiness artifact
+
+## Wave 3C Execution Addendum — Guard Split Readiness Validation
+
+Wave 3C is approved only as a **simulation, validation, and readiness-analysis phase**.
+
+### Wave 3C Allowed Scope
+
+- non-authoritative guard split simulation
+- browser and session lifecycle validation
+- concurrent-session readiness validation
+- csrf ownership validation
+- logout ownership validation
+- frontend compatibility readiness analysis
+- contamination stress detection and scoring
+- machine-readable guard split validation artifacts
+
+### Wave 3C Forbidden Scope
+
+- active dual guards
+- cookie split
+- separate auth providers
+- session isolation enforcement
+- auth authority migration
+- account-table split
+- checkout auth rewrite
+
+### Wave 3C Exit Evidence
+
+Wave 3C must not be considered complete without:
+
+- simulated guard ownership tests
+- concurrent-session simulation coverage
+- csrf ownership simulation coverage
+- logout semantics simulation coverage
+- contamination stress telemetry coverage
+- frontend readiness analysis output
+- machine-readable readiness scoring with explicit blockers
+- operational risk analysis attached to the artifact
+
 ## 2. Phase Gate Matrix
 
 ### 2.1 Observability Rollout
@@ -157,6 +271,30 @@ artifacts are attached to the release record.
 - Feature Flags Required: `policy.normalized_readiness`, `policy.enforcement_mode`.
 - Parallel Runtime Requirements: legacy checks may log-only during transition, but policy result is non-authoritative until parity is proven.
 - Migration Freeze Requirements: no new routes in affected domains without policy coverage.
+
+#### 2.4.1 Wave 2.5 Safe-Domain Addendum
+
+Wave 2.5 authorizes only a targeted safe-domain normalization slice before Wave 3.
+
+Allowed domains in this addendum:
+
+- `Brand`
+- `Tag`
+- `Category`
+- `CMS Blog`
+- `Dashboard` read paths
+
+Mandatory Wave 2.5 execution rules:
+
+- normalized controllers must call explicit domain policies
+- generic `currentStore` controller authorization must be removed from normalized domains
+- permission middleware may remain as a coarse compatibility gate
+- hidden request/action authorization in normalized domains must be removed or replaced with explicit policy ownership
+- normalized domains require tenant isolation coverage and parity telemetry before the slice is considered complete
+- `Orders`, `Checkout`, membership evolution, auth topology, and guard/session changes remain blocked from this slice
+
+Wave 2.5 completion does not unblock Wave 3 automatically.
+Wave 3 remains blocked until remaining high-risk ownership drift, permission middleware drift, and fallback-path ambiguity are re-evaluated from generated artifacts.
 
 ### 2.5 RBAC Normalization
 
@@ -682,6 +820,153 @@ Emergency response is: stop rollout, disable new authority flags, freeze related
 - Expected Duration: 2 releases
 - Operational Impact: high; auth-sensitive releases only
 - Success Metrics: zero cross-context leakage, stable login/logout SLOs
+
+## 13. Wave 2 Boundary Normalization Execution Notes
+
+### 13.1 Authority Posture
+
+Wave 2 authority posture is:
+
+- legacy bootstrap response remains authoritative by default
+- decomposed bootstrap path may run in shadow mode only
+- `store_user` remains the only membership source of truth
+- legacy permission outcomes remain authoritative unless explicitly flagged otherwise
+- policy telemetry is observational, not authoritative
+
+### 13.2 Required Wave 2 Runtime Flags
+
+Wave 2 implementation uses the following runtime controls:
+
+- `bootstrap.v2.enabled`
+- `bootstrap.shadow_read`
+- `bootstrap.response_version`
+- `membership.dual_read`
+- `policy.normalized_readiness`
+- `rbac.resolver.v2`
+- `rbac.dual_resolve`
+
+Wave 2 rule:
+
+- authority flags default to legacy-compatible behavior
+- parity flags may be enabled only when side-effect free
+
+### 13.3 Required Wave 2 Evidence
+
+Before any Wave 3 preparation begins, the release record must include:
+
+- bootstrap contract snapshot test evidence
+- bootstrap shadow parity evidence
+- membership resolver consistency test evidence
+- permission resolver parity evidence
+- policy decision telemetry evidence
+- tenant isolation verification for bootstrap/store context paths
+- drift detection output from warning-mode checks
+
+### 13.4 Warning-Mode Drift Detection
+
+Wave 2 drift detection is intentionally non-breaking.
+
+Initial warning surfaces:
+
+- hidden auth access inside `Actions`
+- direct `hasPermissionTo()` usage outside policies/resolvers
+- controller paths still relying on generic `currentStore` authorization
+- admin routes without explicit `permission:` middleware
+
+Governance rule:
+
+- findings must be recorded and triaged
+- findings do not authorize big-bang rewrites
+- findings become migration backlog for later policy normalization work
+
+### 13.5 Wave 2 Exit Readiness
+
+Wave 2 is considered stable only when:
+
+- bootstrap parity is healthy
+- decomposed resolver timings are stable
+- no bootstrap contract regressions are detected
+- membership resolver output matches pivot authority
+- permission resolver drift is zero or explicitly explained
+- policy telemetry is present on targeted paths
+- no tenant isolation regression is found in Wave 2 test coverage
+
+### 13.6 Blockers Before Wave 3
+
+Wave 3 MUST NOT begin until all of the following are true:
+
+- bootstrap decomposition is stable in production-like traffic
+- bootstrap shadow parity is healthy
+- membership abstraction is stable and trusted
+- warning-mode drift findings are understood
+- frontend bootstrap dependency assumptions remain unchanged or documented
+- no unresolved tenant-boundary anomaly remains in Wave 2 telemetry
+
+### 13.7 Wave 2 Stabilization Hardening Evidence
+
+Wave 2 stabilization hardening adds the following required evidence streams:
+
+- super-admin bootstrap parity validation
+- zero-store merchant/bootstrap parity validation
+- zero-store customer/bootstrap parity validation
+- onboarding-state bootstrap parity validation
+- invalid or missing active-store bootstrap parity validation
+- drift triage report with severity and category breakdown
+- policy ownership visibility report
+- machine-readable Wave 2 readiness artifact
+
+These are still:
+
+- additive
+- compatibility-first
+- non-authoritative
+- insufficient on their own to authorize Wave 3
+
+### 13.8 Drift Triage Doctrine
+
+Wave 2 drift reporting must now support triage, not just raw warnings.
+
+Required drift report characteristics:
+
+- category per finding
+- severity per finding
+- stable fingerprint per finding
+- allowlist support
+- baseline snapshot comparison
+- regression visibility for newly introduced drift
+- machine-readable JSON output
+
+Required categories:
+
+- hidden authorization
+- policy ownership drift
+- permission middleware drift
+- bootstrap coupling
+- request/session coupling
+- repository leakage
+
+Governance rule:
+
+- allowlists are temporary governance tools, not architecture absolution
+- baseline snapshots exist to expose regression, not to normalize permanent debt
+- warning-mode remains non-blocking in CI until explicit policy hard-fail approval exists
+
+### 13.9 Wave 2 Readiness Artifact
+
+Wave 2 readiness evidence must be exportable as a machine-readable artifact.
+
+Required readiness sections:
+
+- bootstrap parity health
+- resolver stability
+- drift counts and trend
+- tenant isolation status
+- policy instrumentation coverage
+- observability health
+- Wave 3 gate status
+
+The readiness artifact is a gate input only.
+It does not authorize Wave 3 automatically.
 
 ### Wave 4 - Authorization Maturity
 
