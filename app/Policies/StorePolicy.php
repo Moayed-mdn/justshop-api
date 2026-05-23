@@ -94,4 +94,35 @@ class StorePolicy
     {
         return $this->decision($user, 'forceDelete', false, $store);
     }
+
+    /**
+     * Determine whether the user can switch to (access) the store.
+     * 
+     * Wave 2 Remediation: Authorization moved from UpdateActiveStoreAction to explicit policy.
+     * 
+     * Authorization Rules:
+     * - Super Admin: always allowed (handled in before())
+     * - Merchant actors: must be a member of the store
+     * - Customer actors: explicitly denied (merchant-only operation)
+     * - Store must be active
+     */
+    public function switchStore(User $user, Store $store): bool
+    {
+        // Rule 1: Merchant-only operation (customer actors denied)
+        if ($user->getActorContext() === \App\Enums\Auth\ActorContextEnum::CUSTOMER) {
+            return $this->decision($user, 'switchStore', false, $store);
+        }
+
+        // Rule 2: Store must be active
+        if (!$store->is_active) {
+            return $this->decision($user, 'switchStore', false, $store);
+        }
+
+        // Rule 3: User must be a member of the store (super_admin bypassed in before())
+        $isMember = $user->stores()
+            ->where('store_id', $store->id)
+            ->exists();
+
+        return $this->decision($user, 'switchStore', $isMember, $store);
+    }
 }

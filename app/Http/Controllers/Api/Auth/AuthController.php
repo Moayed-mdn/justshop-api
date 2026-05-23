@@ -12,6 +12,7 @@ use App\Actions\Auth\LogoutUserAction;
 use App\Actions\Auth\RegisterUserAction;
 use App\Actions\Auth\ResendVerificationEmailAction;
 use App\Actions\Auth\VerifyEmailAction;
+use App\Models\Store;
 use App\Models\User;
 use App\Services\Auth\FrontendSessionMetadataResolver;
 use App\Services\Auth\IdentityContextResolver;
@@ -68,6 +69,11 @@ class AuthController extends Controller
 
     public function updateActiveStore(UpdateActiveStoreRequest $request): JsonResponse
     {
+        // Wave 2 Remediation: Explicit policy authorization moved from Action to Controller
+        // Authorization now owned by StorePolicy::switchStore()
+        $store = Store::findOrFail($request->integer('store_id'));
+        $this->authorize('switchStore', $store);
+
         $data = $this->updateActiveStoreAction->execute(
             UpdateActiveStoreDTO::fromRequest($request)
         );

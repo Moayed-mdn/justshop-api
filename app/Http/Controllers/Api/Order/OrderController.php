@@ -52,15 +52,29 @@ class OrderController extends Controller
 
     public function show(Request $request, int $store, string $orderNumber): JsonResponse
     {
+        // Wave 2 Remediation: Fetch order first to enable explicit policy authorization
         $order = $this->getOrderAction->execute(
             GetOrderDTO::fromRequest($request, $store, $orderNumber)
         );
+
+        // Wave 2 Remediation: Explicit policy authorization moved from Action to Controller
+        // Authorization now owned by OrderPolicy::view()
+        $this->authorize('view', $order);
 
         return $this->success(new OrderResource($order));
     }
 
     public function cancel(CancelOrderRequest $request, int $store, string $orderNumber): JsonResponse
     {
+        // Wave 2 Remediation: Fetch order first to enable explicit policy authorization
+        $order = $this->getOrderAction->execute(
+            GetOrderDTO::fromRequest($request, $store, $orderNumber)
+        );
+
+        // Wave 2 Remediation: Explicit policy authorization moved from Action to Controller
+        // Authorization now owned by OrderPolicy::cancel()
+        $this->authorize('cancel', $order);
+
         $order = $this->cancelOrderAction->execute(
             CancelOrderDTO::fromRequest($request, $store, $orderNumber)
         );

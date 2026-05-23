@@ -7,7 +7,6 @@ namespace App\Actions\Order;
 use App\DTOs\Order\GetOrderDTO;
 use App\Models\Order;
 use App\Repositories\Order\OrderRepository;
-use Illuminate\Auth\Access\AuthorizationException;
 
 class GetOrderAction
 {
@@ -17,10 +16,14 @@ class GetOrderAction
 
     public function execute(GetOrderDTO $dto): Order
     {
+        // Wave 2 Remediation: Authorization removed from Action
+        // Authorization now explicitly owned by OrderPolicy::view() in controller
+        // This action is now orchestration-focused only
+        
         $order = $this->orderRepository->findById($dto->orderId, $dto->storeId);
 
-        if (!$order || $order->user_id !== $dto->userId) {
-            throw new AuthorizationException(__('error.unauthorized_order_access'));
+        if (!$order) {
+            throw new \Illuminate\Database\Eloquent\ModelNotFoundException(__('error.order_not_found'));
         }
 
         return $order;

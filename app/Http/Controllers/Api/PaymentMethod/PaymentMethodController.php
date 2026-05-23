@@ -56,6 +56,13 @@ class PaymentMethodController extends Controller
 
     public function destroy(DeletePaymentMethodRequest $request): JsonResponse
     {
+        // Wave 2 Remediation: Fetch payment method first to enable explicit policy authorization
+        $paymentMethod = \App\Models\PaymentMethod::findOrFail($request->integer('payment_method_id'));
+
+        // Wave 2 Remediation: Explicit policy authorization moved from Action to Controller
+        // Authorization now owned by PaymentMethodPolicy::delete()
+        $this->authorize('delete', $paymentMethod);
+
         $this->deletePaymentMethodAction->execute(
             DeletePaymentMethodDTO::fromRequest($request)
         );
@@ -65,6 +72,13 @@ class PaymentMethodController extends Controller
 
     public function setDefault(SetDefaultPaymentMethodRequest $request): JsonResponse
     {
+        // Wave 2 Remediation: Fetch payment method first to enable explicit policy authorization
+        $paymentMethod = \App\Models\PaymentMethod::findOrFail($request->integer('payment_method_id'));
+
+        // Wave 2 Remediation: Explicit policy authorization moved from Action to Controller
+        // Authorization now owned by PaymentMethodPolicy::update()
+        $this->authorize('update', $paymentMethod);
+
         $this->setDefaultPaymentMethodAction->execute(
             SetDefaultPaymentMethodDTO::fromRequest($request)
         );

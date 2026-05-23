@@ -18,6 +18,7 @@ use App\Http\Requests\Admin\Lead\GetLeadRequest;
 use App\Http\Requests\Admin\Lead\ListLeadsRequest;
 use App\Http\Requests\Admin\Lead\UpdateLeadStatusRequest;
 use App\Http\Resources\Admin\Lead\AdminLeadResource;
+use App\Models\Lead;
 use Illuminate\Http\JsonResponse;
 
 class AdminLeadController extends Controller
@@ -26,6 +27,9 @@ class AdminLeadController extends Controller
         ListLeadsRequest $request,
         ListLeadsAction $action,
     ): JsonResponse {
+        // Wave 2 Remediation: Add explicit policy authorization for platform-level admin resource
+        $this->authorize('viewAny', Lead::class);
+        
         $leads = $action->execute(ListLeadsDTO::fromRequest($request));
 
         return $this->paginated(
@@ -39,6 +43,10 @@ class AdminLeadController extends Controller
         GetLeadAction $action,
         int $lead,
     ): JsonResponse {
+        // Wave 2 Remediation: Add explicit policy authorization for platform-level admin resource
+        $leadModel = Lead::findOrFail($lead);
+        $this->authorize('view', $leadModel);
+        
         $leadModel = $action->execute(
             GetLeadDTO::fromRequest($request, $lead)
         );
@@ -51,6 +59,10 @@ class AdminLeadController extends Controller
         UpdateLeadStatusAction $action,
         int $lead,
     ): JsonResponse {
+        // Wave 2 Remediation: Add explicit policy authorization for platform-level admin resource
+        $leadModel = Lead::findOrFail($lead);
+        $this->authorize('update', $leadModel);
+        
         $leadModel = $action->execute(
             UpdateLeadStatusDTO::fromRequest($request, $lead)
         );
@@ -66,6 +78,10 @@ class AdminLeadController extends Controller
         DeleteLeadAction $action,
         int $lead,
     ): JsonResponse {
+        // Wave 2 Remediation: Add explicit policy authorization for platform-level admin resource
+        $leadModel = Lead::findOrFail($lead);
+        $this->authorize('delete', $leadModel);
+        
         $action->execute(DeleteLeadDTO::fromRequest($request, $lead));
 
         return $this->success(null, 'lead.deleted');

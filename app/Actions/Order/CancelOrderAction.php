@@ -25,10 +25,14 @@ class CancelOrderAction
 
     public function execute(CancelOrderDTO $dto): Order
     {
+        // Wave 2 Remediation: Authorization removed from Action
+        // Authorization now explicitly owned by OrderPolicy::cancel() in controller
+        // This action is now orchestration-focused only
+        
         $order = $this->orderRepository->findById($dto->orderId, $dto->storeId);
 
-        if (!$order || $order->user_id !== $dto->userId) {
-            throw new \Illuminate\Auth\Access\AuthorizationException(__('error.unauthorized_order_access'));
+        if (!$order) {
+            throw new \Illuminate\Database\Eloquent\ModelNotFoundException(__('error.order_not_found'));
         }
 
         if (!$order->canBeCancelled()) {

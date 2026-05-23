@@ -7,7 +7,6 @@ namespace App\Actions\PaymentMethod;
 use App\DTOs\PaymentMethod\DeletePaymentMethodDTO;
 use App\Models\PaymentMethod;
 use App\Services\PaymentMethodService;
-use Illuminate\Auth\Access\AuthorizationException;
 
 class DeletePaymentMethodAction
 {
@@ -17,11 +16,11 @@ class DeletePaymentMethodAction
 
     public function execute(DeletePaymentMethodDTO $dto): void
     {
+        // Wave 2 Remediation: Authorization removed from Action
+        // Authorization now explicitly owned by PaymentMethodPolicy::delete() in controller
+        // This action is now orchestration-focused only
+        
         $paymentMethod = PaymentMethod::findOrFail($dto->paymentMethodId);
-
-        if ($paymentMethod->user_id !== $dto->userId) {
-            throw new AuthorizationException(__('error.unauthorized_payment_method_access'));
-        }
 
         $this->paymentMethodService->deletePaymentMethod($paymentMethod);
     }

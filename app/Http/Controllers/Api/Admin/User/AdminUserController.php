@@ -18,6 +18,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\User\ListUsersRequest;
 use App\Http\Resources\Admin\User\AdminUserDetailResource;
 use App\Http\Resources\Admin\User\AdminUserResource;
+use App\Models\Store;
 use App\Policies\MembershipPolicy;
 use Illuminate\Http\Request;
 
@@ -27,7 +28,10 @@ class AdminUserController extends Controller
 {
     public function index(ListUsersRequest $request, ListUsersAction $action, int $store): JsonResponse
     {
-        $this->authorize('viewAny', [MembershipPolicy::class, app('currentStore')]);
+        // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
+        $storeModel = Store::findOrFail($store);
+        $this->authorize('viewAny', [MembershipPolicy::class, $storeModel]);
+        
         $dto = ListUsersDTO::fromRequest($request, $store);
         $users = $action->execute($dto);
 
@@ -39,7 +43,10 @@ class AdminUserController extends Controller
 
     public function show(Request $request, GetUserAction $action, int $store, int $user): JsonResponse
     {
-        $this->authorize('view', [MembershipPolicy::class, app('currentStore')]);
+        // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
+        $storeModel = Store::findOrFail($store);
+        $this->authorize('view', [MembershipPolicy::class, $storeModel]);
+        
         $dto = GetUserDTO::fromRequest($request, $store, $user);
         $userModel = $action->execute($dto);
 
@@ -48,7 +55,10 @@ class AdminUserController extends Controller
 
     public function block(Request $request, BlockUserAction $action, int $store, int $user): JsonResponse
     {
-        $this->authorize('update', [MembershipPolicy::class, app('currentStore')]);
+        // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
+        $storeModel = Store::findOrFail($store);
+        $this->authorize('update', [MembershipPolicy::class, $storeModel]);
+        
         $dto = BlockUserDTO::fromRequest($request, $store, $user);
         $blockedUser = $action->execute($dto);
 
@@ -60,7 +70,10 @@ class AdminUserController extends Controller
 
     public function unblock(Request $request, UnblockUserAction $action, int $store, int $user): JsonResponse
     {
-        $this->authorize('update', [MembershipPolicy::class, app('currentStore')]);
+        // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
+        $storeModel = Store::findOrFail($store);
+        $this->authorize('update', [MembershipPolicy::class, $storeModel]);
+        
         $dto = UnblockUserDTO::fromRequest($request, $store, $user);
         $unblockedUser = $action->execute($dto);
 
@@ -72,7 +85,10 @@ class AdminUserController extends Controller
 
     public function destroy(Request $request, DeleteUserAction $action, int $store, int $user): JsonResponse
     {
-        $this->authorize('delete', [MembershipPolicy::class, app('currentStore')]);
+        // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
+        $storeModel = Store::findOrFail($store);
+        $this->authorize('delete', [MembershipPolicy::class, $storeModel]);
+        
         $dto = DeleteUserDTO::fromRequest($request, $store, $user);
         $action->execute($dto);
 
@@ -81,7 +97,10 @@ class AdminUserController extends Controller
 
     public function restore(Request $request, RestoreUserAction $action, int $store, int $user): JsonResponse
     {
-        $this->authorize('update', [MembershipPolicy::class, app('currentStore')]);
+        // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
+        $storeModel = Store::findOrFail($store);
+        $this->authorize('update', [MembershipPolicy::class, $storeModel]);
+        
         $dto = RestoreUserDTO::fromRequest($request, $store, $user);
         $restoredUser = $action->execute($dto);
 

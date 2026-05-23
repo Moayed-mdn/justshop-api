@@ -9,10 +9,6 @@ use App\DTOs\Auth\UpdateActiveStoreDTO;
 use App\DTOs\Auth\Bootstrap\GetBootstrapResponseDTO;
 use App\Models\User;
 use App\Models\Store;
-use App\Exceptions\Domain\InvalidActorContextException;
-use App\Exceptions\Domain\StoreMembershipException;
-use App\Exceptions\Domain\InvalidStoreContextException;
-use App\Enums\Auth\ActorContextEnum;
 
 class UpdateActiveStoreAction
 {
@@ -22,29 +18,12 @@ class UpdateActiveStoreAction
 
     public function execute(UpdateActiveStoreDTO $dto): GetBootstrapResponseDTO
     {
+        // Wave 2 Remediation: Authorization removed from Action
+        // Authorization now explicitly owned by StorePolicy::switchStore() in controller
+        // This action is now orchestration-focused only
+        
         $user = User::findOrFail($dto->userId);
-
-        // Security: Ensure merchant only (Super Admin bypasses)
-        if ($user->getActorContext() === ActorContextEnum::CUSTOMER) {
-             throw new InvalidActorContextException(__('auth.merchant_only_action'));
-        }
-
-        // Security: Validate store membership
-        if (!$user->isSuperAdmin()) {
-            $isMember = $user->stores()
-                ->where('store_id', $dto->storeId)
-                ->exists();
-
-            if (!$isMember) {
-                throw new StoreMembershipException();
-            }
-        }
-
-        // Security: Ensure store is active
         $store = Store::findOrFail($dto->storeId);
-        if (!$store->is_active) {
-            throw new InvalidStoreContextException(__('store.store_inactive'));
-        }
 
         // Update last active store
         $user->update([
