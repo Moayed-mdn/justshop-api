@@ -79,6 +79,38 @@ class IdentityTelemetry
         ]));
     }
 
+    public function logPlatformAccess(Request $request, RouteDomainContext $routeDomainContext, IdentityContext $identityContext): void
+    {
+        Log::info('identity.platform_access.audited', $this->context($request, [
+            'route_domain' => $routeDomainContext->routeDomain->value,
+            'actor_type' => $identityContext->actorType->value,
+            'actor_id' => $identityContext->actorId,
+        ]));
+    }
+
+    public function logSupportEscalation(Request $request, array $metadata): void
+    {
+        Log::warning('identity.support.escalated', $this->context($request, $metadata));
+    }
+
+    public function logImpersonationStarted(Request $request, array $metadata): void
+    {
+        Log::warning('identity.impersonation.started', $this->context($request, $metadata));
+    }
+
+    public function logImpersonationEnded(Request $request, array $metadata): void
+    {
+        Log::info('identity.impersonation.ended', $this->context($request, $metadata));
+    }
+
+    public function logPlatformOverride(Request $request, string $reason, array $metadata): void
+    {
+        Log::warning('identity.platform.override_detected', $this->context($request, [
+            'override_reason' => $reason,
+            ...$metadata,
+        ]));
+    }
+
     /**
      * @param array<string, mixed> $context
      * @return array<string, mixed>

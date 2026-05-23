@@ -10,6 +10,7 @@ use App\Services\Auth\IdentityContextResolver;
 use App\Services\Auth\SessionGuardTelemetry;
 use App\Services\Auth\SessionOwnershipManager;
 use App\Services\Auth\SessionOwnershipResolver;
+use App\Services\Auth\TransitionalGuardResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,6 +20,7 @@ class LogoutUserAction
         private readonly IdentityContextResolver $identityContextResolver,
         private readonly SessionOwnershipResolver $sessionOwnershipResolver,
         private readonly GuardShadowAnalyzer $guardShadowAnalyzer,
+        private readonly TransitionalGuardResolver $guardResolver,
         private readonly SessionGuardTelemetry $sessionGuardTelemetry,
         private readonly SessionOwnershipManager $sessionOwnershipManager,
     ) {}
@@ -30,9 +32,13 @@ class LogoutUserAction
         $identityContext = $user ? $this->identityContextResolver->resolve($user) : null;
         $ownership = $this->sessionOwnershipResolver->resolve($request, $identityContext);
         $shadow = $this->guardShadowAnalyzer->analyze($ownership);
+        $guardResolution = $this->guardResolver->resolve($ownership);
+
         $this->sessionGuardTelemetry->logLogoutOwnership($request, $ownership, $shadow);
 
-        Auth::guard('web')->logout();
+        // Wave 5: Guard-aware logout
+        $guard = config('features.auth.guard_split.enabled.default') ? $guardResolution->guard : 'web';
+        Auth::guard($guard)->logout();
 
         $this->sessionOwnershipManager->invalidate($request);
     }

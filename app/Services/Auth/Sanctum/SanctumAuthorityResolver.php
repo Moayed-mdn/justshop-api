@@ -22,10 +22,17 @@ class SanctumAuthorityResolver
         $actorType = $this->sessionOwnershipManager->getActorType();
         $actorId = $this->sessionOwnershipManager->getActorId();
 
+        $resolvedGuard = match ($authDomain) {
+            'customer' => 'customer',
+            'merchant', 'platform' => 'merchant',
+            default => 'web',
+        };
+
         $authorityContext = [
             'auth_domain' => $authDomain,
             'actor_type' => $actorType,
             'actor_id' => $actorId,
+            'resolved_guard' => $resolvedGuard,
             'is_authenticated' => $authDomain !== null,
         ];
 

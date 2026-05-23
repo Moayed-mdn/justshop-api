@@ -26,6 +26,16 @@ class IdentityContextResolver
             );
         }
 
+        if ($user->hasRole(RoleEnum::SUPPORT->value)) {
+            return new IdentityContext(
+                actorType: ActorContextEnum::SUPPORT_AGENT,
+                actorId: (int) $user->id,
+                onboardingRequired: false,
+                operationalContext: OperationalContextEnum::PLATFORM_ADMIN,
+                authDomain: AuthDomainEnum::PLATFORM,
+            );
+        }
+
         $hasStoreMembership = $user->stores()->exists();
         $merchantCandidate = $hasStoreMembership || $user->onboarding_step !== null;
 

@@ -16,6 +16,7 @@ final readonly class SessionOwnershipContext
         public ?int $actorId = null,
         public ?string $routeOwnerAuthDomain = null,
         public ?string $sessionId = null,
+        public ?string $sessionAuthDomain = null,
     ) {}
 
     /**
@@ -33,6 +34,7 @@ final readonly class SessionOwnershipContext
             'actor_id' => $this->actorId,
             'route_owner_auth_domain' => $this->routeOwnerAuthDomain,
             'session_id' => $this->sessionId,
+            'session_auth_domain' => $this->sessionAuthDomain,
         ];
     }
 }

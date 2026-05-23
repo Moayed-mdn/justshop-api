@@ -9,27 +9,15 @@ use App\Enums\RoleEnum;
 use App\Enums\Store\StoreRoleEnum;
 use App\Models\Store;
 use App\Models\User;
-use App\Policies\Concerns\InteractsWithPolicyTelemetry;
+use App\Policies\Concerns\HasStoreMembership;
 
 class BrandPolicy
 {
-    use InteractsWithPolicyTelemetry;
-
-    public function before(User $user, string $ability, mixed $store = null): ?bool
-    {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return $this->decision($user, $ability, true, $store, [
-                'authorization_domain' => 'brand',
-                'fallback_path_used' => false,
-            ]);
-        }
-
-        return null;
-    }
+    use HasStoreMembership;
 
     public function viewAny(User $user, Store $store): bool
     {
-        return $this->decision($user, 'viewAny', $this->canView($user, $store), $store, [
+        return $this->decision($user, 'viewAny', $this->isMerchant($user) && $this->canView($user, $store), $store, [
             'authorization_domain' => 'brand',
             'fallback_path_used' => false,
         ]);
@@ -37,7 +25,7 @@ class BrandPolicy
 
     public function view(User $user, Store $store): bool
     {
-        return $this->decision($user, 'view', $this->canView($user, $store), $store, [
+        return $this->decision($user, 'view', $this->isMerchant($user) && $this->canView($user, $store), $store, [
             'authorization_domain' => 'brand',
             'fallback_path_used' => false,
         ]);
@@ -45,7 +33,7 @@ class BrandPolicy
 
     public function create(User $user, Store $store): bool
     {
-        return $this->decision($user, 'create', $this->canManage($user, $store, PermissionEnum::BRAND_CREATE), $store, [
+        return $this->decision($user, 'create', $this->isMerchant($user) && $this->canManage($user, $store, PermissionEnum::BRAND_CREATE), $store, [
             'authorization_domain' => 'brand',
             'fallback_path_used' => false,
         ]);
@@ -53,7 +41,7 @@ class BrandPolicy
 
     public function update(User $user, Store $store): bool
     {
-        return $this->decision($user, 'update', $this->canManage($user, $store, PermissionEnum::BRAND_UPDATE), $store, [
+        return $this->decision($user, 'update', $this->isMerchant($user) && $this->canManage($user, $store, PermissionEnum::BRAND_UPDATE), $store, [
             'authorization_domain' => 'brand',
             'fallback_path_used' => false,
         ]);
@@ -61,7 +49,7 @@ class BrandPolicy
 
     public function delete(User $user, Store $store): bool
     {
-        return $this->decision($user, 'delete', $this->canManage($user, $store, PermissionEnum::BRAND_DELETE), $store, [
+        return $this->decision($user, 'delete', $this->isMerchant($user) && $this->canManage($user, $store, PermissionEnum::BRAND_DELETE), $store, [
             'authorization_domain' => 'brand',
             'fallback_path_used' => false,
         ]);
@@ -69,7 +57,7 @@ class BrandPolicy
 
     public function restore(User $user, Store $store): bool
     {
-        return $this->decision($user, 'restore', $this->canManage($user, $store, PermissionEnum::BRAND_RESTORE), $store, [
+        return $this->decision($user, 'restore', $this->isMerchant($user) && $this->canManage($user, $store, PermissionEnum::BRAND_RESTORE), $store, [
             'authorization_domain' => 'brand',
             'fallback_path_used' => false,
         ]);
@@ -77,24 +65,11 @@ class BrandPolicy
 
     private function canView(User $user, Store $store): bool
     {
-        return $this->isStoreMember($user, $store) && $user->can(PermissionEnum::BRAND_VIEW);
+        return $this->isMember($user, $store) && $user->can(PermissionEnum::BRAND_VIEW);
     }
 
     private function canManage(User $user, Store $store, string $permission): bool
     {
-        return $this->isStoreAdmin($user, $store) && $user->can($permission);
-    }
-
-    private function isStoreMember(User $user, Store $store): bool
-    {
-        return $user->stores()->where('store_id', $store->id)->exists();
-    }
-
-    private function isStoreAdmin(User $user, Store $store): bool
-    {
-        return $user->stores()
-            ->where('store_id', $store->id)
-            ->wherePivotIn('role', [StoreRoleEnum::STORE_ADMIN->value])
-            ->exists();
+        return $this->isAdmin($user, $store) && $user->can($permission);
     }
 }

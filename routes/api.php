@@ -47,8 +47,36 @@ Route::middleware('identity.route:merchant_admin,merchant,enforce')->group(funct
     require 'api/v1/stores/store-management.php';
 });
 
-Route::middleware('identity.route:merchant_admin,merchant,enforce')->group(function (): void {
-    // Admin routes
+// Wave 6: Platform Authority Domain (SUPER_ADMIN only)
+// Platform authority is INDEPENDENT from merchant authority.
+// Platform routes MUST NOT inherit merchant authority implicitly.
+Route::prefix('/v1/platform')
+    ->middleware([
+        'auth:sanctum',
+        'identity.route:platform,platform,enforce',
+        'platform.authority:platform_admin',
+    ])
+    ->group(function (): void {
+        require 'api/v1/platform/platform.php';
+    });
+
+// Wave 6: Support Authority Domain (SUPPORT_AGENT, SUPER_ADMIN)
+// Support authority is a SUBSET of platform authority.
+// Support actors have LIMITED platform access.
+Route::prefix('/v1/support')
+    ->middleware([
+        'auth:sanctum',
+        'identity.route:support,platform,enforce',
+        'support.authority',
+    ])
+    ->group(function (): void {
+        require 'api/v1/support/support.php';
+    });
+
+// Legacy Platform Routes (TRANSITIONAL - to be migrated to /v1/platform)
+// These routes still use implicit platform authority via identity.route middleware.
+// Wave 6 Goal: Migrate these to explicit platform.authority middleware.
+Route::middleware('identity.route:platform,platform,enforce')->group(function (): void {
     require 'api/v1/admin/admin.php';
     require 'api/v1/admin/leads.php';
     require 'api/v1/admin/cms/blog.php';

@@ -101,6 +101,14 @@ class SessionGuardTelemetry
         ]));
     }
 
+    public function logSessionContamination(Request $request, SessionOwnershipContext $context, string $reason): void
+    {
+        Log::error('session.contamination.detected', $this->context($request, [
+            'session_ownership' => $context->toArray(),
+            'contamination_reason' => $reason,
+        ]));
+    }
+
     public function logCsrfOwnership(Request $request, SessionOwnershipContext $context, GuardShadowSummary $summary): void
     {
         Log::info('session.csrf.ownership_traced', $this->context($request, [

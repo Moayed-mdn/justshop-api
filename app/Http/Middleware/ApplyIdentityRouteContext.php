@@ -71,6 +71,12 @@ class ApplyIdentityRouteContext
         $guardResolution = $this->guardResolver->resolve($sessionOwnership);
         $this->guardSplitSimulation->simulate($sessionOwnership);
 
+        // Wave 5: Guard Authority Activation
+        if (config('features.auth.guard_split.enabled.default')) {
+            \Illuminate\Support\Facades\Auth::shouldUse($guardResolution->guard);
+            $this->enforceSessionOwnership($request, $sessionOwnership, $guardResolution);
+        }
+
         $this->traceContext->enrichSessionOwnership($sessionOwnership);
         $this->traceContext->enrichGuardShadow($guardShadow);
         $this->traceContext->enrichGuardResolution($guardResolution);
@@ -79,8 +85,17 @@ class ApplyIdentityRouteContext
         $this->sessionGuardTelemetry->logGuardShadowResolved($request, $sessionOwnership, $guardShadow);
         $this->sessionGuardTelemetry->logContaminationSignals($request, $sessionOwnership, $guardShadow);
 
+        // Wave 5: Session Isolation Activation
+        if (config('features.auth.guard_split.enabled.default')) {
+            $this->enforceSessionOwnership($request, $sessionOwnership, $guardResolution);
+        }
+
         if ($routeDomainContext->ownerAuthDomain === AuthDomainEnum::CUSTOMER) {
             $this->telemetry->logCustomerRouteAccess($request, $routeDomainContext, $identityContext);
+        }
+
+        if ($routeDomainContext->ownerAuthDomain === AuthDomainEnum::PLATFORM && $identityContext !== null) {
+            $this->telemetry->logPlatformAccess($request, $routeDomainContext, $identityContext);
         }
 
         if ($identityContext !== null && !$this->matchesOwnership($identityContext, $routeDomainContext)) {
@@ -108,7 +123,7 @@ class ApplyIdentityRouteContext
         return match ($ownerAuthDomain) {
             AuthDomainEnum::MERCHANT => [ActorContextEnum::MERCHANT->value, ActorContextEnum::SUPER_ADMIN->value],
             AuthDomainEnum::CUSTOMER => [ActorContextEnum::CUSTOMER->value],
-            AuthDomainEnum::PLATFORM => [ActorContextEnum::SUPER_ADMIN->value],
+            AuthDomainEnum::PLATFORM => [ActorContextEnum::SUPER_ADMIN->value, ActorContextEnum::SUPPORT_AGENT->value],
         };
     }
 
@@ -118,5 +133,34 @@ class ApplyIdentityRouteContext
     ): bool {
         return $identityContext->authDomain === $routeDomainContext->ownerAuthDomain
             && in_array($identityContext->actorType->value, $routeDomainContext->allowedActorTypes, true);
+    }
+
+    private function enforceSessionOwnership(
+        Request $request,
+        \App\DTOs\Auth\Session\SessionOwnershipContext $sessionOwnership,
+        \App\DTOs\Auth\Session\GuardResolutionResult $guardResolution,
+    ): void {
+        // If the route domain is shared transitional, we don't enforce strict ownership yet
+        if ($sessionOwnership->routeDomain === RouteDomainEnum::SHARED_TRANSITIONAL) {
+            return;
+        }
+
+        // Detect contamination: session auth domain does not match route domain
+        if ($sessionOwnership->sessionAuthDomain !== null && $sessionOwnership->sessionAuthDomain !== $sessionOwnership->authDomain) {
+            $this->sessionGuardTelemetry->logSessionContamination(
+                $request,
+                $sessionOwnership,
+                'domain_mismatch'
+            );
+
+            if (config('features.auth.guard_split.enforce.default')) {
+                throw new InvalidIdentityDomainAccessException('Session contamination detected: domain mismatch.');
+            }
+        }
+
+        // Enforce guard authority
+        if ($guardResolution->isFallback && config('features.auth.guard_split.enforce.default')) {
+            throw new InvalidIdentityDomainAccessException('Explicit guard authority required for this domain.');
+        }
     }
 }

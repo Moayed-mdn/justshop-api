@@ -26,6 +26,7 @@ class SessionOwnershipResolver
         $authDomain = $identityContext?->authDomain->value ?? $routeOwnerAuthDomain ?? $currentTrace->authDomain;
         $actorType = $identityContext?->actorType->value;
         $sessionId = $request->hasSession() ? $request->session()->getId() : null;
+        $sessionAuthDomain = $request->hasSession() ? $request->session()->get('auth_domain') : null;
 
         return new SessionOwnershipContext(
             authDomain: $authDomain,
@@ -37,6 +38,7 @@ class SessionOwnershipResolver
             actorId: $identityContext?->actorId,
             routeOwnerAuthDomain: $routeOwnerAuthDomain,
             sessionId: $sessionId,
+            sessionAuthDomain: $sessionAuthDomain,
         );
     }
 

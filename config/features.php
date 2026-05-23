@@ -169,6 +169,19 @@ return [
         'kill_switch' => true,
     ],
 
+    'auth.guard_split.enforce' => [
+        'default' => env('AUTH_GUARD_SPLIT_ENFORCE', false),
+        'owner' => 'security-team',
+        'business_owner' => 'security',
+        'description' => 'Enforce guard isolation (disable silent fallbacks)',
+        'blast_radius' => 'critical-auth',
+        'rollback_effect' => 'revert to shadow/fallback mode',
+        'expiry_milestone' => 'wave5-completion',
+        'category' => 'auth',
+        'introduced_wave' => 'wave5',
+        'kill_switch' => true,
+    ],
+
     'auth.session_cookie.v2' => [
         'default' => env('AUTH_SESSION_COOKIE_V2', false),
         'owner' => 'auth-team',

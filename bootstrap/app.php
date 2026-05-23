@@ -28,6 +28,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'store.context' => \App\Http\Middleware\StoreContext::class,
             'onboarding.completed' => \App\Http\Middleware\EnsureOnboardingIsCompleted::class,
             'identity.route' => \App\Http\Middleware\ApplyIdentityRouteContext::class,
+            'platform.authority' => \App\Http\Middleware\EnforcePlatformAuthority::class,
+            'support.authority' => \App\Http\Middleware\EnforceSupportAuthority::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,

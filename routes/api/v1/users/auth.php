@@ -23,15 +23,6 @@ Route::name('v1.users.auth.')
     });
 
 // Authenticated user endpoint (for Next.js SPA)
-Route::middleware('auth:sanctum')->get('/user', function () {
-    return new \App\Http\Resources\UserResource(auth()->user());
-});
-
-// Debug auth route (temporary - remove before production)
-Route::middleware('auth:sanctum')->get('/debug-auth', function () {
-    return response()->json([
-        'user' => auth()->user(),
-        'session_id' => session()->getId(),
-        'cookies' => request()->cookies->all(),
-    ]);
+Route::middleware(['auth:sanctum', 'identity.route:merchant_users,merchant,enforce'])->get('/user', function (\Illuminate\Http\Request $request) {
+    return new \App\Http\Resources\UserResource($request->user());
 });
