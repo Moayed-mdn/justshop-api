@@ -1,0 +1,38 @@
+{
+  "wave": 4,
+  "status": "VERIFIED_COMPLETE",
+  "dependencies": {
+    "guards": {
+      "authoritative": "web",
+      "consumers": ["sanctum", "socialite", "auth-service"],
+      "isolation_state": "shared"
+    },
+    "sessions": {
+      "driver": "cookie",
+      "cookie_name": "ecommerce_session",
+      "invalidation_scope": "global",
+      "contamination_risk": "high"
+    },
+    "tokens": {
+      "authority": "sanctum",
+      "mode": "stateful_session",
+      "actor_binding": "implicit_via_user_model"
+    },
+    "csrf": {
+      "lifecycle": "shared",
+      "header": "X-XSRF-TOKEN",
+      "cookie": "XSRF-TOKEN"
+    },
+    "identity": {
+      "resolver": "IdentityContextResolver",
+      "actor_types": ["merchant", "customer", "super_admin"],
+      "model": "App\\Models\\User"
+    }
+  },
+  "risk_assessment": {
+    "cross_context_escalation": "mitigated_via_wave3_policies",
+    "session_contamination": "unmitigated_shared_runtime",
+    "logout_inconsistency": "high_shared_invalidation",
+    "split_brain_risk": "low_due_to_single_authority"
+  }
+}

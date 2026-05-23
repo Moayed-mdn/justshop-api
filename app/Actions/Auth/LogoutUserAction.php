@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Auth\GuardShadowAnalyzer;
 use App\Services\Auth\IdentityContextResolver;
 use App\Services\Auth\SessionGuardTelemetry;
+use App\Services\Auth\SessionOwnershipManager;
 use App\Services\Auth\SessionOwnershipResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +20,7 @@ class LogoutUserAction
         private readonly SessionOwnershipResolver $sessionOwnershipResolver,
         private readonly GuardShadowAnalyzer $guardShadowAnalyzer,
         private readonly SessionGuardTelemetry $sessionGuardTelemetry,
+        private readonly SessionOwnershipManager $sessionOwnershipManager,
     ) {}
 
     public function execute(Request $request): void
@@ -32,7 +34,6 @@ class LogoutUserAction
 
         Auth::guard('web')->logout();
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        $this->sessionOwnershipManager->invalidate($request);
     }
 }

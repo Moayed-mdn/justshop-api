@@ -12,11 +12,13 @@ use App\Enums\Auth\RouteDomainEnum;
 use App\Exceptions\Domain\InvalidIdentityDomainAccessException;
 use App\Models\User;
 use App\Services\Auth\GuardShadowAnalyzer;
+use App\Services\Auth\GuardSplitSimulationService;
 use App\Services\Auth\IdentityContextResolver;
 use App\Services\Auth\IdentityTelemetry;
 use App\Services\Auth\SessionBoundaryMetadataResolver;
 use App\Services\Auth\SessionGuardTelemetry;
 use App\Services\Auth\SessionOwnershipResolver;
+use App\Services\Auth\TransitionalGuardResolver;
 use App\Support\Observability\RequestTraceContextManager;
 use Closure;
 use Illuminate\Http\Request;
@@ -30,6 +32,8 @@ class ApplyIdentityRouteContext
         private readonly SessionBoundaryMetadataResolver $sessionBoundaryMetadataResolver,
         private readonly SessionOwnershipResolver $sessionOwnershipResolver,
         private readonly GuardShadowAnalyzer $guardShadowAnalyzer,
+        private readonly TransitionalGuardResolver $guardResolver,
+        private readonly GuardSplitSimulationService $guardSplitSimulation,
         private readonly IdentityTelemetry $telemetry,
         private readonly SessionGuardTelemetry $sessionGuardTelemetry,
     ) {}
@@ -64,8 +68,13 @@ class ApplyIdentityRouteContext
 
         $sessionOwnership = $this->sessionOwnershipResolver->resolve($request, $identityContext, $routeDomainContext);
         $guardShadow = $this->guardShadowAnalyzer->analyze($sessionOwnership);
+        $guardResolution = $this->guardResolver->resolve($sessionOwnership);
+        $this->guardSplitSimulation->simulate($sessionOwnership);
+
         $this->traceContext->enrichSessionOwnership($sessionOwnership);
         $this->traceContext->enrichGuardShadow($guardShadow);
+        $this->traceContext->enrichGuardResolution($guardResolution);
+
         $this->sessionGuardTelemetry->logSessionOwnershipResolved($request, $sessionOwnership);
         $this->sessionGuardTelemetry->logGuardShadowResolved($request, $sessionOwnership, $guardShadow);
         $this->sessionGuardTelemetry->logContaminationSignals($request, $sessionOwnership, $guardShadow);

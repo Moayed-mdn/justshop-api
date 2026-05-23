@@ -21,11 +21,15 @@ Route::middleware('identity.route:merchant_users,merchant,enforce')->group(funct
 });
 
 // Public (no store context)
-require 'api/v1/public/cms.php';
-require 'api/v1/public/leads.php';
+Route::middleware('identity.route:public,customer,observe')->group(function (): void {
+    require 'api/v1/public/cms.php';
+    require 'api/v1/public/leads.php';
+});
 
 // Stripe webhook (no store context)
-require 'api/v1/stripe/webhook.php';
+Route::middleware('identity.route:shared_transitional,merchant,observe')->group(function (): void {
+    require 'api/v1/stripe/webhook.php';
+});
 
 // Store-scoped routes
 Route::middleware('identity.route:storefront_commerce,customer,observe')->group(function (): void {
@@ -39,7 +43,9 @@ Route::middleware('identity.route:storefront_commerce,customer,observe')->group(
 });
 
 // Store management routes (outside {store} group - POST has no store context yet)
-require 'api/v1/stores/store-management.php';
+Route::middleware('identity.route:merchant_admin,merchant,enforce')->group(function (): void {
+    require 'api/v1/stores/store-management.php';
+});
 
 Route::middleware('identity.route:merchant_admin,merchant,enforce')->group(function (): void {
     // Admin routes
@@ -55,4 +61,4 @@ require 'api/v1/storefront/account.php';
 
 
 Route::get('/sanctum/csrf-cookie', [CsrfOwnershipPreparationController::class, 'show'])
-    ->middleware('web');
+    ->middleware(['web', 'identity.route:shared_transitional,merchant,observe']);

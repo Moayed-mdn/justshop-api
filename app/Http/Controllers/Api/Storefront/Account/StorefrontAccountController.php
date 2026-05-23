@@ -18,6 +18,7 @@ use App\Http\Resources\Storefront\Account\StorefrontAccountUserResource;
 use App\Models\User;
 use App\Services\Auth\FrontendSessionMetadataResolver;
 use App\Services\Auth\IdentityContextResolver;
+use App\Services\Auth\SessionOwnershipManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,6 +32,7 @@ class StorefrontAccountController extends Controller
         private readonly GetStorefrontAccountBootstrapAction $getStorefrontAccountBootstrapAction,
         private readonly FrontendSessionMetadataResolver $frontendSessionMetadataResolver,
         private readonly IdentityContextResolver $identityContextResolver,
+        private readonly SessionOwnershipManager $sessionOwnershipManager,
     ) {}
 
     public function register(RegisterCustomerRequest $request): JsonResponse
@@ -41,6 +43,7 @@ class StorefrontAccountController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+        $this->sessionOwnershipManager->tag($request, $user, 'customer');
 
         return $this->successWithMeta(
             new StorefrontAccountUserResource($user),
@@ -58,6 +61,7 @@ class StorefrontAccountController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+        $this->sessionOwnershipManager->tag($request, $user, 'customer');
 
         return $this->successWithMeta(
             ['user' => new StorefrontAccountUserResource($user)],

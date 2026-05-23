@@ -40,6 +40,8 @@ final readonly class RequestTraceContext
         public ?string $guardFutureHint = null,
         public ?bool $guardAmbiguousOwnershipPath = null,
         public ?bool $guardMismatchAnomaly = null,
+        public ?string $guardResolved = null,
+        public ?bool $isGuardFallback = null,
     ) {}
 
     public static function initialize(
@@ -253,6 +255,43 @@ final readonly class RequestTraceContext
             guardFutureHint: $this->guardFutureHint,
             guardAmbiguousOwnershipPath: $this->guardAmbiguousOwnershipPath,
             guardMismatchAnomaly: $this->guardMismatchAnomaly,
+            guardResolved: $this->guardResolved,
+            isGuardFallback: $this->isGuardFallback,
+        );
+    }
+
+    public function withGuardResolution(\App\DTOs\Auth\Session\GuardResolutionResult $resolution): self
+    {
+        return new self(
+            correlationId: $this->correlationId,
+            actorId: $this->actorId,
+            actorType: $this->actorType,
+            membershipId: $this->membershipId,
+            storeId: $this->storeId,
+            apiDomain: $this->apiDomain,
+            releaseVersion: $this->releaseVersion,
+            authDomain: $this->authDomain,
+            operationalContext: $this->operationalContext,
+            onboardingRequired: $this->onboardingRequired,
+            routeDomain: $this->routeDomain,
+            routeOwnerAuthDomain: $this->routeOwnerAuthDomain,
+            routeEnforcementMode: $this->routeEnforcementMode,
+            routeAllowedActorTypes: $this->routeAllowedActorTypes,
+            sessionId: $this->sessionId,
+            sessionAuthDomain: $this->sessionAuthDomain,
+            sessionActorType: $this->sessionActorType,
+            sessionActorId: $this->sessionActorId,
+            sessionAuthorityModel: $this->sessionAuthorityModel,
+            sessionIsolationState: $this->sessionIsolationState,
+            sessionOwnershipKey: $this->sessionOwnershipKey,
+            sessionOrigin: $this->sessionOrigin,
+            sessionIntendedGuardFuture: $this->sessionIntendedGuardFuture,
+            sessionOnboardingApplicable: $this->sessionOnboardingApplicable,
+            guardFutureHint: $this->guardFutureHint,
+            guardAmbiguousOwnershipPath: $this->guardAmbiguousOwnershipPath,
+            guardMismatchAnomaly: $this->guardMismatchAnomaly,
+            guardResolved: $resolution->guard,
+            isGuardFallback: $resolution->isFallback,
         );
     }
 
@@ -286,6 +325,8 @@ final readonly class RequestTraceContext
             guardFutureHint: $guardShadow->futureGuardHint,
             guardAmbiguousOwnershipPath: $guardShadow->ambiguousOwnershipPath,
             guardMismatchAnomaly: $guardShadow->guardMismatchAnomaly,
+            guardResolved: $this->guardResolved,
+            isGuardFallback: $this->isGuardFallback,
         );
     }
 
@@ -322,6 +363,8 @@ final readonly class RequestTraceContext
             'guard_future_hint' => $this->guardFutureHint,
             'guard_ambiguous_ownership_path' => $this->guardAmbiguousOwnershipPath,
             'guard_mismatch_anomaly' => $this->guardMismatchAnomaly,
+            'guard_resolved' => $this->guardResolved,
+            'is_guard_fallback' => $this->isGuardFallback,
         ];
     }
 }

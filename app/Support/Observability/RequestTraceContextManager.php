@@ -104,6 +104,13 @@ class RequestTraceContextManager
         );
     }
 
+    public function enrichGuardResolution(\App\DTOs\Auth\Session\GuardResolutionResult $resolution): RequestTraceContext
+    {
+        return $this->replace(
+            $this->current()->withGuardResolution($resolution)
+        );
+    }
+
     public function correlationId(): string
     {
         return $this->current()->correlationId;

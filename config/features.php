@@ -138,29 +138,34 @@ return [
         'kill_switch' => true,
     ],
 
-    'auth.guard_split.enabled' => [
-        'default' => env('AUTH_GUARD_SPLIT_ENABLED', false),
-        'owner' => 'auth-team',
+    /*
+    |--------------------------------------------------------------------------
+    | Auth Authority Flags (Wave 4)
+    |--------------------------------------------------------------------------
+    */
+    'auth.guard_split.shadow' => [
+        'default' => env('AUTH_GUARD_SPLIT_SHADOW', true),
+        'owner' => 'security-team',
         'business_owner' => 'security',
-        'description' => 'Enable separate merchant/customer guards',
-        'blast_radius' => 'critical-auth',
-        'rollback_effect' => 'revert to shared guard, may require session reset',
-        'expiry_milestone' => 'wave3-completion',
+        'description' => 'Enable shadow guard evaluation for parity comparison',
+        'blast_radius' => 'observability-only',
+        'rollback_effect' => 'disable shadow evaluation, no functional impact',
+        'expiry_milestone' => 'wave4-readiness-proven',
         'category' => 'auth',
-        'introduced_wave' => 'wave3',
+        'introduced_wave' => 'wave4',
         'kill_switch' => true,
     ],
 
-    'auth.customer_guard.shadow' => [
-        'default' => env('AUTH_CUSTOMER_GUARD_SHADOW', false),
-        'owner' => 'auth-team',
-        'business_owner' => 'operations',
-        'description' => 'Enable shadow customer guard resolution (non-authoritative)',
-        'blast_radius' => 'observability-only',
-        'rollback_effect' => 'disable shadow guard, no functional impact',
-        'expiry_milestone' => 'wave3-guard-split-proven',
+    'auth.guard_split.enabled' => [
+        'default' => env('AUTH_GUARD_SPLIT_ENABLED', false),
+        'owner' => 'security-team',
+        'business_owner' => 'security',
+        'description' => 'Enable runtime guard split (dark launch mode)',
+        'blast_radius' => 'auth-wide',
+        'rollback_effect' => 'revert to shared web guard authority',
+        'expiry_milestone' => 'wave5-activation',
         'category' => 'auth',
-        'introduced_wave' => 'wave3',
+        'introduced_wave' => 'wave4',
         'kill_switch' => true,
     ],
 
@@ -171,9 +176,9 @@ return [
         'description' => 'Enable v2 session cookie naming for guard isolation',
         'blast_radius' => 'critical-auth',
         'rollback_effect' => 'revert to v1 cookie naming',
-        'expiry_milestone' => 'wave3-completion',
+        'expiry_milestone' => 'wave4-completion',
         'category' => 'auth',
-        'introduced_wave' => 'wave3',
+        'introduced_wave' => 'wave4',
         'kill_switch' => true,
     ],
 
@@ -223,7 +228,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Policy & RBAC Flags (Wave 2/4)
+    | Policy & RBAC Flags (Wave 4)
     |--------------------------------------------------------------------------
     */
     'policy.normalized_readiness' => [
@@ -300,126 +305,12 @@ return [
         'default' => env('CHECKOUT_HARDENING_ENABLED', false),
         'owner' => 'commerce-team',
         'business_owner' => 'product',
-        'description' => 'Enable checkout ownership and integrity hardening',
-        'blast_radius' => 'critical-revenue',
-        'rollback_effect' => 'revert to legacy checkout, may require manual reconciliation',
+        'description' => 'Enable checkout isolation and hardening',
+        'blast_radius' => 'critical-commerce',
+        'rollback_effect' => 'revert to legacy checkout behavior',
         'expiry_milestone' => 'wave5-completion',
-        'category' => 'checkout',
+        'category' => 'commerce',
         'introduced_wave' => 'wave5',
         'kill_switch' => true,
-    ],
-
-    'checkout.webhook.idempotency' => [
-        'default' => env('CHECKOUT_WEBHOOK_IDEMPOTENCY', false),
-        'owner' => 'commerce-team',
-        'business_owner' => 'operations',
-        'description' => 'Enable webhook idempotency enforcement',
-        'blast_radius' => 'payment-domain',
-        'rollback_effect' => 'disable idempotency checks',
-        'expiry_milestone' => 'wave5-completion',
-        'category' => 'checkout',
-        'introduced_wave' => 'wave5',
-        'kill_switch' => true,
-    ],
-
-    'checkout.ownership_assertions' => [
-        'default' => env('CHECKOUT_OWNERSHIP_ASSERTIONS', false),
-        'owner' => 'commerce-team',
-        'business_owner' => 'security',
-        'description' => 'Enable strict checkout ownership assertions',
-        'blast_radius' => 'checkout-domain',
-        'rollback_effect' => 'disable assertions, log-only mode',
-        'expiry_milestone' => 'wave5-completion',
-        'category' => 'checkout',
-        'introduced_wave' => 'wave5',
-        'kill_switch' => true,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Async Flags (Wave 5)
-    |--------------------------------------------------------------------------
-    */
-    'async.domain_events.enabled' => [
-        'default' => env('ASYNC_DOMAIN_EVENTS_ENABLED', false),
-        'owner' => 'platform-team',
-        'business_owner' => 'operations',
-        'description' => 'Enable async domain event emission',
-        'blast_radius' => 'platform-wide',
-        'rollback_effect' => 'disable async events, sync path remains',
-        'expiry_milestone' => 'wave5-completion',
-        'category' => 'async',
-        'introduced_wave' => 'wave5',
-        'kill_switch' => true,
-    ],
-
-    'async.listener.orders.enabled' => [
-        'default' => env('ASYNC_LISTENER_ORDERS_ENABLED', false),
-        'owner' => 'commerce-team',
-        'business_owner' => 'operations',
-        'description' => 'Enable async order event listeners',
-        'blast_radius' => 'order-domain',
-        'rollback_effect' => 'disable listeners, sync path remains',
-        'expiry_milestone' => 'wave5-completion',
-        'category' => 'async',
-        'introduced_wave' => 'wave5',
-        'kill_switch' => true,
-    ],
-
-    'async.listener.orders.kill' => [
-        'default' => env('ASYNC_LISTENER_ORDERS_KILL', false),
-        'owner' => 'commerce-team',
-        'business_owner' => 'operations',
-        'description' => 'Emergency kill switch for order listeners',
-        'blast_radius' => 'order-domain',
-        'rollback_effect' => 'immediately stop order listener processing',
-        'expiry_milestone' => 'wave5-stable',
-        'category' => 'async',
-        'introduced_wave' => 'wave5',
-        'kill_switch' => true,
-    ],
-
-    'async.replay.pause' => [
-        'default' => env('ASYNC_REPLAY_PAUSE', false),
-        'owner' => 'platform-team',
-        'business_owner' => 'operations',
-        'description' => 'Pause async event replay processing',
-        'blast_radius' => 'async-domain',
-        'rollback_effect' => 'pause replay, queue continues',
-        'expiry_milestone' => 'operational',
-        'category' => 'async',
-        'introduced_wave' => 'wave5',
-        'kill_switch' => true,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Enterprise Flags (Wave 6)
-    |--------------------------------------------------------------------------
-    */
-    'enterprise.readiness.enabled' => [
-        'default' => env('ENTERPRISE_READINESS_ENABLED', false),
-        'owner' => 'platform-team',
-        'business_owner' => 'product',
-        'description' => 'Enable enterprise capability readiness checks',
-        'blast_radius' => 'enterprise-only',
-        'rollback_effect' => 'disable enterprise features',
-        'expiry_milestone' => 'wave6-completion',
-        'category' => 'enterprise',
-        'introduced_wave' => 'wave6',
-        'kill_switch' => false,
-    ],
-
-    'enterprise.audit.strict_mode' => [
-        'default' => env('ENTERPRISE_AUDIT_STRICT_MODE', false),
-        'owner' => 'security-team',
-        'business_owner' => 'compliance',
-        'description' => 'Enable strict audit mode for enterprise tenants',
-        'blast_radius' => 'enterprise-only',
-        'rollback_effect' => 'revert to standard audit mode',
-        'expiry_milestone' => 'wave6-completion',
-        'category' => 'enterprise',
-        'introduced_wave' => 'wave6',
-        'kill_switch' => false,
     ],
 ];

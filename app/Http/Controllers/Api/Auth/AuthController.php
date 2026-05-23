@@ -16,6 +16,7 @@ use App\Models\Store;
 use App\Models\User;
 use App\Services\Auth\FrontendSessionMetadataResolver;
 use App\Services\Auth\IdentityContextResolver;
+use App\Services\Auth\SessionOwnershipManager;
 use App\DTOs\Auth\GetBootstrapDTO;
 use App\DTOs\Auth\UpdateActiveStoreDTO;
 use App\DTOs\Auth\GetMeDTO;
@@ -49,6 +50,7 @@ class AuthController extends Controller
         private UpdateActiveStoreAction $updateActiveStoreAction,
         private FrontendSessionMetadataResolver $frontendSessionMetadataResolver,
         private IdentityContextResolver $identityContextResolver,
+        private SessionOwnershipManager $sessionOwnershipManager,
     ) {}
 
     public function bootstrap(Request $request): JsonResponse
@@ -96,6 +98,7 @@ class AuthController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+        $this->sessionOwnershipManager->tag($request, $user, 'merchant');
 
         return $this->successWithMeta(
             new UserResource($user),
@@ -113,6 +116,7 @@ class AuthController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+        $this->sessionOwnershipManager->tag($request, $user, 'merchant');
 
         return $this->successWithMeta(
             [
