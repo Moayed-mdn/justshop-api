@@ -1,0 +1,79 @@
+name: Wave 1 Governance Enforcement
+
+on:
+  push:
+    branches: [ main, develop, 'feature/**', 'wave/**' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  forbidden-patterns:
+    name: Detect Forbidden Patterns
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, json, bcmath
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Detect Forbidden Patterns
+        run: php artisan architecture:detect-forbidden-patterns --json --fail-on-violations
+
+  drift-detection:
+    name: Architecture Drift Detection
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, json, bcmath
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Run Drift Detection
+        run: php artisan architecture:detect-authorization-drift --json --fail-on-regressions
+
+  wave1-readiness:
+    name: Wave 1 Readiness Gate
+    runs-on: ubuntu-latest
+    needs: [forbidden-patterns, drift-detection]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, json, bcmath
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Generate Wave 1 Readiness Report
+        run: php artisan architecture:wave1-readiness --json
+
+      - name: Upload Readiness Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: wave1-readiness-report
+          path: storage/app/testing/wave1-readiness-report.json
+          retention-days: 30

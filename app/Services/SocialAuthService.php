@@ -32,7 +32,7 @@ class SocialAuthService
         } catch (\Exception $e) {
             Log::error('Google OAuth failed', ['error' => $e->getMessage()]);
             
-            $frontendUrl = config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000'));
+            $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
             return redirect($frontendUrl . '/auth/google/callback?error=google_auth_failed');
         }
 
@@ -41,7 +41,7 @@ class SocialAuthService
         Auth::login($user);
         request()->session()->regenerate();
 
-        $frontendUrl = config('app.frontend_url', env('FRONTEND_URL', 'http://localhost:3000'));
+        $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
 
         return redirect($frontendUrl . '/auth/google/callback?user_id=' . $user->id);
     }

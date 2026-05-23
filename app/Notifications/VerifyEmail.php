@@ -43,24 +43,14 @@ class VerifyEmail extends Notification implements ShouldQueue
             ]
         );
 
-        // 2. Get the frontend URL from .env (fallback to localhost:3000)
-        $frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+        // Get the frontend URL from config
+        $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
 
-        // 3. Extract the query parameters (expires, signature) from the backend URL
+        // Extract the query parameters (expires, signature) from the backend URL
         $query = parse_url($backendUrl, PHP_URL_QUERY);
-        Log::info('Backend URL: ' . $query);
-        // 4. Construct the final Frontend URL
+        
+        // Construct the final Frontend URL
         return $frontendUrl . '/verify-email/' . $notifiable->getKey() . '/' . sha1($notifiable->getEmailForVerification()) . '?' . $query;
-
-
-        return URL::temporarySignedRoute( 
-            'v1.users.auth.verification.verify',
-            now()->addMinutes(60),
-            [
-                'id' => $notifiable->getKey(),
-                'hash' => sha1($notifiable->getEmailForVerification()),
-            ]
-        );
     }
 
     public function failed(\Exception $exception)
