@@ -1,0 +1,34 @@
+{
+    "unregistered_policies": [
+        "App\\Policies\\MembershipPolicy",
+        "App\\Policies\\ProductPolicy"
+    ],
+    "actor_blind_policies": [
+        "App\\Policies\\AddressPolicy",
+        "App\\Policies\\BlogPostPolicy",
+        "App\\Policies\\DashboardPolicy",
+        "App\\Policies\\LeadPolicy",
+        "App\\Policies\\PaymentMethodPolicy",
+        "App\\Policies\\TagPolicy"
+    ],
+    "escalation_capable_policies": [],
+    "unsupported_actor_usage": [
+        "App\\Policies\\AddressPolicy",
+        "App\\Policies\\BlogPostPolicy",
+        "App\\Policies\\BrandPolicy",
+        "App\\Policies\\CategoryPolicy",
+        "App\\Policies\\DashboardPolicy",
+        "App\\Policies\\LeadPolicy",
+        "App\\Policies\\OrderPolicy",
+        "App\\Policies\\PaymentMethodPolicy",
+        "App\\Policies\\StorePolicy",
+        "App\\Policies\\TagPolicy"
+    ],
+    "implicit_assumptions": [
+        "App\\Policies\\StorePolicy (membership without actor check)"
+    ],
+    "direct_gate_usage": [
+        "app\/Services\/Governance\/PolicyGovernanceEnforcer.php"
+    ],
+    "policy_registry_drift": true
+}

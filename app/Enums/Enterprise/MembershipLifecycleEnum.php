@@ -15,8 +15,10 @@ namespace App\Enums\Enterprise;
 enum MembershipLifecycleEnum: string
 {
     case INVITED = 'invited';
+    case PENDING_ACTIVATION = 'pending_activation';
     case ACTIVE = 'active';
     case SUSPENDED = 'suspended';
+    case REVOKED = 'revoked';
     case DELEGATED = 'delegated';
     case TEMPORARY = 'temporary';
     case SUPPORT_MANAGED = 'support_managed';

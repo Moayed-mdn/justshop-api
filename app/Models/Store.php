@@ -28,7 +28,13 @@ class Store extends Model
     public function users(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(User::class, 'store_user')
-            ->withPivot('role')
+            ->withPivot([
+                'role',
+                'lifecycle_status',
+                'lifecycle_changed_at',
+                'lifecycle_changed_by_actor_type',
+                'lifecycle_changed_by_actor_id'
+            ])
             ->withTimestamps();
     }
 

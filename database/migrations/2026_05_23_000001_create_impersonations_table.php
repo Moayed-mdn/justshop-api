@@ -21,10 +21,10 @@ return new class extends Migration
             $table->foreignId('target_id')->constrained('users')->onDelete('cascade');
             $table->text('reason');
             $table->string('status')->index(); // pending, active, terminated, expired, denied
-            $table->timestamp('requested_at');
-            $table->timestamp('activated_at')->nullable();
-            $table->timestamp('terminated_at')->nullable();
-            $table->timestamp('expires_at')->index();
+            $table->dateTime('requested_at');
+            $table->dateTime('activated_at')->nullable();
+            $table->dateTime('terminated_at')->nullable();
+            $table->dateTime('expires_at')->index();
             $table->string('termination_reason')->nullable();
             $table->string('approval_token')->nullable();
             $table->string('session_id')->nullable()->index();

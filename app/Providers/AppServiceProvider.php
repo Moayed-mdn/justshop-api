@@ -117,6 +117,22 @@ class AppServiceProvider extends ServiceProvider
                     supportOverrideRules: [],
                 );
 
+                $registry->register(
+                    \App\Policies\ProductPolicy::class,
+                    \App\Enums\Auth\AuthDomainEnum::MERCHANT,
+                    [\App\Enums\Auth\AuthDomainEnum::MERCHANT, \App\Enums\Auth\AuthDomainEnum::PLATFORM],
+                    escalationRules: ['merchant_to_super_admin'],
+                    supportOverrideRules: ['view', 'update'],
+                );
+
+                $registry->register(
+                    \App\Policies\MembershipPolicy::class,
+                    \App\Enums\Auth\AuthDomainEnum::MERCHANT,
+                    [\App\Enums\Auth\AuthDomainEnum::MERCHANT, \App\Enums\Auth\AuthDomainEnum::PLATFORM],
+                    escalationRules: ['merchant_to_super_admin'],
+                    supportOverrideRules: ['view'],
+                );
+
                 return $registry;
             }
         );

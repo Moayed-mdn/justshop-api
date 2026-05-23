@@ -71,21 +71,49 @@ class ProviderGovernanceService
     private function detectSharedAssumptions(): array
     {
         return [
-            'password_reset_flow' => 'shared', // Uses single password reset flow
-            'email_verification_flow' => 'shared', // Uses single verification flow
-            'notification_ownership' => 'shared', // Uses single notification system
-            'token_assumptions' => 'shared', // Uses single token system
-            'session_provider' => 'shared', // Uses single session provider
+            'shared_model_assumptions' => [
+                'user_model' => 'App\Models\User shared by all domains',
+                'store_model' => 'App\Models\Store shared by merchant/platform',
+            ],
+            'shared_provider_assumptions' => [
+                'eloquent_provider' => 'Single EloquentUserProvider for all guards',
+                'config_auth_providers' => 'Single "users" provider in config/auth.php',
+            ],
+            'shared_notification_assumptions' => [
+                'database_notifications' => 'Shared notifications table',
+                'mail_notifications' => 'Shared mail templates without domain branding',
+            ],
+            'shared_password_broker_assumptions' => [
+                'broker' => 'Single "users" password broker',
+                'tokens_table' => 'Shared password_reset_tokens table',
+            ],
+            'shared_auth_event_assumptions' => [
+                'events' => 'Generic Illuminate\Auth\Events shared across domains',
+            ],
+            'shared_email_verification_assumptions' => [
+                'verification_flow' => 'Shared VerifyEmail notification and route',
+            ],
         ];
     }
 
     private function detectMigrationBlockers(): array
     {
         return [
-            'shared_user_table' => true, // All actors in single 'users' table
-            'shared_password_resets_table' => true, // Single password_resets table
-            'shared_sessions_table' => true, // Single sessions table
-            'shared_personal_access_tokens_table' => true, // Single tokens table
+            'hard_blockers' => [
+                'shared_user_table' => 'Polymorphic relations to "users" table in all domains',
+                'shared_auth_config' => 'Sanctum/Fortify assumptions about single user model',
+            ],
+            'soft_blockers' => [
+                'shared_session_driver' => 'Common session driver and cookie domain',
+                'shared_cache_namespace' => 'Common cache prefix for auth data',
+            ],
+            'hidden_coupling' => [
+                'pivot_membership' => 'store_user pivot table couples merchant and user domains',
+            ],
+            'migration_safe_seams' => [
+                'actor_context' => 'ActorContextEnum allows logic branching',
+                'auth_domain' => 'AuthDomainEnum allows route/middleware branching',
+            ],
         ];
     }
 }

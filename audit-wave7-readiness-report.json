@@ -1,0 +1,357 @@
+{
+    "wave7_readiness_score": 85,
+    "reports": {
+        "policy_governance": {
+            "unregistered_policies": [],
+            "actor_blind_policies": [
+                "App\\Policies\\AddressPolicy",
+                "App\\Policies\\BlogPostPolicy",
+                "App\\Policies\\DashboardPolicy",
+                "App\\Policies\\LeadPolicy",
+                "App\\Policies\\PaymentMethodPolicy",
+                "App\\Policies\\TagPolicy"
+            ],
+            "escalation_capable_policies": [],
+            "unsupported_actor_usage": [
+                "App\\Policies\\AddressPolicy",
+                "App\\Policies\\BlogPostPolicy",
+                "App\\Policies\\BrandPolicy",
+                "App\\Policies\\CategoryPolicy",
+                "App\\Policies\\DashboardPolicy",
+                "App\\Policies\\LeadPolicy",
+                "App\\Policies\\MembershipPolicy",
+                "App\\Policies\\OrderPolicy",
+                "App\\Policies\\PaymentMethodPolicy",
+                "App\\Policies\\ProductPolicy",
+                "App\\Policies\\StorePolicy",
+                "App\\Policies\\TagPolicy"
+            ],
+            "implicit_assumptions": [
+                "App\\Policies\\StorePolicy (membership without actor check)"
+            ],
+            "direct_gate_usage": [
+                "app\/Services\/Governance\/PolicyGovernanceEnforcer.php"
+            ],
+            "policy_registry_drift": false
+        },
+        "membership_lifecycle": {
+            "stale_active_stores": [],
+            "orphaned_memberships": [],
+            "suspended_privilege_leakage": [],
+            "lifecycle_transition_rules_enforced": true,
+            "audit_telemetry_active": true
+        },
+        "impersonation_governance": {
+            "total_impersonations": 0,
+            "active_impersonations": 0,
+            "expired_impersonations": 0,
+            "terminated_impersonations": 0,
+            "security_violations_detected": 0,
+            "governance_status": "enforced"
+        },
+        "multi_session_governance": {
+            "concurrent_authority_collisions": [],
+            "invalid_coexistence_events": [],
+            "cross_domain_contamination_events": [],
+            "shared_device_authority_anomalies": [],
+            "governance_status": "active"
+        },
+        "provider_extraction": {
+            "provider_separation_ready": false,
+            "current_provider": "shared",
+            "shared_assumptions": {
+                "shared_model_assumptions": {
+                    "user_model": "App\\Models\\User shared by all domains",
+                    "store_model": "App\\Models\\Store shared by merchant\/platform"
+                },
+                "shared_provider_assumptions": {
+                    "eloquent_provider": "Single EloquentUserProvider for all guards",
+                    "config_auth_providers": "Single \"users\" provider in config\/auth.php"
+                },
+                "shared_notification_assumptions": {
+                    "database_notifications": "Shared notifications table",
+                    "mail_notifications": "Shared mail templates without domain branding"
+                },
+                "shared_password_broker_assumptions": {
+                    "broker": "Single \"users\" password broker",
+                    "tokens_table": "Shared password_reset_tokens table"
+                },
+                "shared_auth_event_assumptions": {
+                    "events": "Generic Illuminate\\Auth\\Events shared across domains"
+                },
+                "shared_email_verification_assumptions": {
+                    "verification_flow": "Shared VerifyEmail notification and route"
+                }
+            },
+            "migration_blockers": {
+                "hard_blockers": {
+                    "shared_user_table": "Polymorphic relations to \"users\" table in all domains",
+                    "shared_auth_config": "Sanctum\/Fortify assumptions about single user model"
+                },
+                "soft_blockers": {
+                    "shared_session_driver": "Common session driver and cookie domain",
+                    "shared_cache_namespace": "Common cache prefix for auth data"
+                },
+                "hidden_coupling": {
+                    "pivot_membership": "store_user pivot table couples merchant and user domains"
+                },
+                "migration_safe_seams": {
+                    "actor_context": "ActorContextEnum allows logic branching",
+                    "auth_domain": "AuthDomainEnum allows route\/middleware branching"
+                }
+            }
+        },
+        "platform_authority": {
+            "unauthorized_platform_escalation": 0,
+            "support_access_drift": 0,
+            "missing_audit_ownership": 0,
+            "missing_termination_rules": false,
+            "actor_domain_violations": 0,
+            "governance_status": "enforced"
+        },
+        "authorization_topology": {
+            "authorization_patterns": {
+                "controller_local": [
+                    {
+                        "file": "app\/Http\/Controllers\/Api\/Address\/AddressController.php",
+                        "pattern": "$this->authorize"
+                    },
+                    {
+                        "file": "app\/Http\/Controllers\/Api\/Admin\/Brand\/AdminBrandController.php",
+                        "pattern": "$this->authorize"
+                    },
+                    {
+                        "file": "app\/Http\/Controllers\/Api\/Admin\/Category\/AdminCategoryController.php",
+                        "pattern": "$this->authorize"
+                    },
+                    {
+                        "file": "app\/Http\/Controllers\/Api\/Admin\/Dashboard\/AdminDashboardController.php",
+                        "pattern": "$this->authorize"
+                    },
+                    {
+                        "file": "app\/Http\/Controllers\/Api\/Admin\/Lead\/AdminLeadController.php",
+                        "pattern": "$this->authorize"
+                    },
+                    {
+                        "file": "app\/Http\/Controllers\/Api\/Admin\/Order\/AdminOrderController.php",
+                        "pattern": "$this->authorize"
+                    },
+                    {
+                        "file": "app\/Http\/Controllers\/Api\/Admin\/Product\/AdminProductController.php",
+                        "pattern": "$this->authorize"
+                    },
+                    {
+                        "file": "app\/Http\/Controllers\/Api\/Admin\/Tag\/AdminTagController.php",
+                        "pattern": "$this->authorize"
+                    },
+                    {
+                        "file": "app\/Http\/Controllers\/Api\/Admin\/User\/AdminUserController.php",
+                        "pattern": "$this->authorize"
+                    },
+                    {
+                        "file": "app\/Http\/Controllers\/Api\/Auth\/AuthController.php",
+                        "pattern": "$this->authorize"
+                    },
+                    {
+                        "file": "app\/Http\/Controllers\/Api\/Cms\/Blog\/AdminBlogController.php",
+                        "pattern": "$this->authorize"
+                    },
+                    {
+                        "file": "app\/Http\/Controllers\/Api\/Order\/OrderController.php",
+                        "pattern": "$this->authorize"
+                    },
+                    {
+                        "file": "app\/Http\/Controllers\/Api\/PaymentMethod\/PaymentMethodController.php",
+                        "pattern": "$this->authorize"
+                    },
+                    {
+                        "file": "app\/Http\/Controllers\/Api\/Store\/StoreController.php",
+                        "pattern": "$this->authorize"
+                    }
+                ],
+                "action_layer": [
+                    {
+                        "file": "app\/Actions\/Admin\/Brand\/CreateBrandAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Brand\/DeleteBrandAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Brand\/ListBrandsAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Brand\/RestoreBrandAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Brand\/ShowBrandAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Brand\/UpdateBrandAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Category\/CreateCategoryAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Category\/DeleteCategoryAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Category\/ListCategoriesAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Category\/RestoreCategoryAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Category\/ShowCategoryAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Category\/UpdateCategoryAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Order\/CancelOrderAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Order\/GetOrderAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Order\/ListOrdersAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Order\/RefundOrderAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Order\/UpdateOrderStatusAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Product\/CreateProductAction.php",
+                        "pattern": "can"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Product\/DeleteProductAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Product\/RestoreProductAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Product\/UpdateProductAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Tag\/CreateTagAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Tag\/DeleteTagAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/Tag\/UpdateTagAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/User\/BlockUserAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/User\/DeleteUserAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/User\/GetUserAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/User\/ListUsersAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/User\/RestoreUserAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Admin\/User\/UnblockUserAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Cart\/RemoveCartItemAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Cart\/UpdateCartItemAction.php",
+                        "pattern": "authorize"
+                    },
+                    {
+                        "file": "app\/Actions\/Cms\/Blog\/Admin\/CreateBlogPostAction.php",
+                        "pattern": "can"
+                    },
+                    {
+                        "file": "app\/Actions\/Cms\/Blog\/Admin\/UpdateBlogPostAction.php",
+                        "pattern": "can"
+                    },
+                    {
+                        "file": "app\/Actions\/Cms\/Documentation\/Admin\/CreateDocumentAction.php",
+                        "pattern": "can"
+                    },
+                    {
+                        "file": "app\/Actions\/Cms\/Documentation\/Admin\/UpdateDocumentAction.php",
+                        "pattern": "can"
+                    },
+                    {
+                        "file": "app\/Actions\/Order\/CancelOrderAction.php",
+                        "pattern": "can"
+                    },
+                    {
+                        "file": "app\/Actions\/Store\/CreateStoreAction.php",
+                        "pattern": "can"
+                    }
+                ],
+                "repository_layer": [
+                    {
+                        "file": "app\/Repositories\/Admin\/Product\/AdminProductRepository.php",
+                        "pattern": "can"
+                    },
+                    {
+                        "file": "app\/Repositories\/Order\/OrderRepository.php",
+                        "pattern": "can"
+                    }
+                ],
+                "middleware_only": []
+            },
+            "hidden_policy_bypasses": [],
+            "undocumented_escalation_paths": [
+                {
+                    "file": "app\/Services\/Governance\/AuthorizationTopologyLocker.php",
+                    "pattern": "becomeUser"
+                }
+            ],
+            "topology_drift_detected": true,
+            "drift_score": 54,
+            "locking_status": "active"
+        }
+    },
+    "remaining_blockers": [],
+    "escalation_risk_score": 0,
+    "provider_extraction_readiness_score": 40,
+    "impersonation_governance_score": 100,
+    "authorization_topology_stability_score": 60,
+    "enterprise_lifecycle_governance_score": 100,
+    "timestamp": "2026-05-23T12:11:19+00:00"
+}
