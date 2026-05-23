@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Repositories\Store\StoreRepository;
 use App\Services\Store\StoreSlugService;
 use App\Domain\Shared\Events\StoreCreated;
+use App\Enums\Auth\ActorContextEnum;
+use App\Exceptions\Domain\InvalidIdentityDomainAccessException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -21,6 +23,14 @@ class CreateStoreAction
 
     public function execute(CreateStoreDTO $dto): Store
     {
+        /** @var User $user */
+        $user = User::findOrFail($dto->ownerId);
+
+        // Architectural safety: ensure customer actors cannot create stores
+        if ($user->getActorContext() === ActorContextEnum::CUSTOMER) {
+            throw new InvalidIdentityDomainAccessException('Customer actors cannot create stores.');
+        }
+
         // Normalize slug before processing
         $normalizedSlug = $this->slugService->normalize($dto->slug);
 

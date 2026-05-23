@@ -10,8 +10,11 @@ enum RouteDomainEnum: string
     case MERCHANT_ADMIN = 'merchant_admin';
     case CUSTOMER_ACCOUNT = 'customer_account';
     case STOREFRONT = 'storefront';
+    case STOREFRONT_COMMERCE = 'storefront_commerce';
     case PLATFORM = 'platform';
+    case SUPPORT = 'support';
     case PUBLIC = 'public';
+    case SHARED_TRANSITIONAL = 'shared_transitional';
 
     public static function values(): array
     {

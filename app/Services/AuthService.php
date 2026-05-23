@@ -8,6 +8,10 @@ use App\Exceptions\Auth\TooManyRequestsException;
 use App\Exceptions\Auth\UnauthorizedException;
 use App\Exceptions\NotFoundException;
 use App\Models\User;
+use App\Services\Auth\GuardShadowAnalyzer;
+use App\Services\Auth\IdentityContextResolver;
+use App\Services\Auth\SessionGuardTelemetry;
+use App\Services\Auth\SessionOwnershipResolver;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
@@ -17,6 +21,13 @@ use Illuminate\Support\Facades\RateLimiter;
 
 class AuthService
 {
+    public function __construct(
+        private readonly IdentityContextResolver $identityContextResolver,
+        private readonly SessionOwnershipResolver $sessionOwnershipResolver,
+        private readonly GuardShadowAnalyzer $guardShadowAnalyzer,
+        private readonly SessionGuardTelemetry $sessionGuardTelemetry,
+    ) {}
+
     /**
      * Register a new user.
      */
@@ -31,7 +42,14 @@ class AuthService
         event(new Registered($user));
 
         \Illuminate\Support\Facades\Auth::login($user);
-        request()->session()->regenerate();
+        
+        $request = request();
+        $identityContext = $this->identityContextResolver->resolve($user);
+        $ownership = $this->sessionOwnershipResolver->resolve($request, $identityContext);
+        $shadow = $this->guardShadowAnalyzer->analyze($ownership);
+        $this->sessionGuardTelemetry->logSessionOwnershipResolved($request, $ownership);
+
+        $request->session()->regenerate();
 
         return [
             'user' => $user,
@@ -54,7 +72,13 @@ class AuthService
         }
 
         \Illuminate\Support\Facades\Auth::login($user);
-        request()->session()->regenerate();
+        
+        $request = request();
+        $identityContext = $this->identityContextResolver->resolve($user);
+        $ownership = $this->sessionOwnershipResolver->resolve($request, $identityContext);
+        $this->sessionGuardTelemetry->logSessionOwnershipResolved($request, $ownership);
+
+        $request->session()->regenerate();
 
         return [
             'user' => $user,
@@ -66,6 +90,13 @@ class AuthService
      */
     public function logout(Request $request): void
     {
+        /** @var User|null $user */
+        $user = $request->user();
+        $identityContext = $user ? $this->identityContextResolver->resolve($user) : null;
+        $ownership = $this->sessionOwnershipResolver->resolve($request, $identityContext);
+        $shadow = $this->guardShadowAnalyzer->analyze($ownership);
+        $this->sessionGuardTelemetry->logLogoutOwnership($request, $ownership, $shadow);
+
         \Illuminate\Support\Facades\Auth::guard('web')->logout();
 
         $request->session()->invalidate();

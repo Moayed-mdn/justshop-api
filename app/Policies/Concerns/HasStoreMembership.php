@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Store;
 use App\Enums\RoleEnum;
 use App\Enums\Store\StoreRoleEnum;
+use App\Enums\Auth\ActorContextEnum;
 
 trait HasStoreMembership
 {
@@ -23,6 +24,22 @@ trait HasStoreMembership
         }
 
         return null;
+    }
+
+    /**
+     * Check if the user is a merchant actor.
+     */
+    protected function isMerchant(User $user): bool
+    {
+        return $user->getActorContext() === ActorContextEnum::MERCHANT;
+    }
+
+    /**
+     * Check if the user is a customer actor.
+     */
+    protected function isCustomer(User $user): bool
+    {
+        return $user->getActorContext() === ActorContextEnum::CUSTOMER;
     }
 
     /**

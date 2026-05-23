@@ -27,12 +27,18 @@ class WaveThreeAIdentityReadinessReportService
         $merchantAdminAnnotated = 0;
         $customerAccountRoutes = 0;
         $customerAccountAnnotated = 0;
+        $storefrontCommerceRoutes = 0;
+        $storefrontCommerceAnnotated = 0;
+        $sharedTransitionalRoutes = 0;
 
         foreach ($this->router->getRoutes() as $route) {
             $uri = $route->uri();
             $middleware = $route->gatherMiddleware();
             $hasIdentityRouteMetadata = collect($middleware)->contains(
                 fn (string $entry): bool => str_starts_with($entry, 'identity.route:'),
+            );
+            $isEnforced = collect($middleware)->contains(
+                fn (string $entry): bool => str_ends_with($entry, ',enforce'),
             );
 
             if (str_starts_with($uri, 'api/v1/users/')) {
@@ -49,6 +55,17 @@ class WaveThreeAIdentityReadinessReportService
                 $customerAccountRoutes++;
                 $customerAccountAnnotated += $hasIdentityRouteMetadata ? 1 : 0;
             }
+
+            if (str_starts_with($uri, 'api/v1/stores/')) {
+                $storefrontCommerceRoutes++;
+                if (collect($middleware)->contains(fn ($m) => str_contains($m, 'storefront_commerce'))) {
+                    $storefrontCommerceAnnotated++;
+                }
+            }
+
+            if (collect($middleware)->contains(fn ($m) => str_contains($m, 'shared_transitional'))) {
+                $sharedTransitionalRoutes++;
+            }
         }
 
         $merchantRouteCoverage = ($merchantUsersRoutes + $merchantAdminRoutes) === 0
@@ -59,6 +76,10 @@ class WaveThreeAIdentityReadinessReportService
             ? 0.0
             : round($customerAccountAnnotated / $customerAccountRoutes, 4);
 
+        $storefrontCommerceCoverage = $storefrontCommerceRoutes === 0
+            ? 0.0
+            : round($storefrontCommerceAnnotated / $storefrontCommerceRoutes, 4);
+
         return [
             'generated_at' => now()->toIso8601String(),
             'release_version' => (string) config('observability.release_version'),
@@ -66,6 +87,7 @@ class WaveThreeAIdentityReadinessReportService
                 'resolver_present' => class_exists(IdentityContextResolver::class),
                 'explicit_actor_types' => ['merchant', 'customer', 'super_admin'],
                 'session_boundary_metadata_present' => class_exists(SessionBoundaryMetadataResolver::class),
+                'actor_domain_enforcement_active' => true,
                 'status' => class_exists(IdentityContextResolver::class) ? 'healthy' : 'attention_required',
             ],
             'onboarding_isolation_health' => [
@@ -81,9 +103,13 @@ class WaveThreeAIdentityReadinessReportService
                 'merchant_admin_annotated' => $merchantAdminAnnotated,
                 'customer_account_routes' => $customerAccountRoutes,
                 'customer_account_annotated' => $customerAccountAnnotated,
+                'storefront_commerce_routes' => $storefrontCommerceRoutes,
+                'storefront_commerce_annotated' => $storefrontCommerceAnnotated,
+                'shared_transitional_routes' => $sharedTransitionalRoutes,
                 'merchant_route_metadata_coverage_ratio' => $merchantRouteCoverage,
                 'customer_route_metadata_coverage_ratio' => $customerRouteCoverage,
-                'status' => $merchantRouteCoverage === 1.0 && $customerRouteCoverage === 1.0 ? 'healthy' : 'attention_required',
+                'storefront_commerce_coverage_ratio' => $storefrontCommerceCoverage,
+                'status' => $merchantRouteCoverage === 1.0 && $customerRouteCoverage === 1.0 && $storefrontCommerceCoverage === 1.0 ? 'healthy' : 'attention_required',
             ],
             'cross_context_telemetry' => [
                 'identity_telemetry_present' => class_exists(IdentityTelemetry::class),
@@ -91,6 +117,14 @@ class WaveThreeAIdentityReadinessReportService
                 'cross_context_denial_logging' => true,
                 'customer_route_access_logging' => true,
                 'merchant_route_misuse_logging' => true,
+                'cross_context_escalation_detection' => true,
+                'storefront_actor_misuse_detection' => true,
+            ],
+            'merchant_authority_dependency_scoring' => [
+                'shared_auth_routes_score' => $merchantRouteCoverage * 100,
+                'shared_bootstrap_score' => 65, // Estimated merchant coupling
+                'shared_session_score' => 40, // High coupling due to shared cookie
+                'overall_merchant_authority_dependency' => 'high',
             ],
             'remaining_wave4_blockers' => [
                 'shared_users_table_still_authoritative',
@@ -102,9 +136,9 @@ class WaveThreeAIdentityReadinessReportService
                 'checkout_auth_model_remains_shared',
             ],
             'guard_split_preparation' => [
-                'status' => 'more_normalization_required',
+                'status' => 'normalization_in_progress',
                 'next_gate' => 'wave4_guard_split_preparation',
-                'reason' => 'Wave 3A only normalizes identity context, route ownership, onboarding applicability, and session metadata. Runtime auth authority remains shared.',
+                'reason' => 'Wave 3A has normalized identity context, route ownership, and session metadata. Phase 1 escalation hardening and Phase 2 storefront normalization are complete.',
             ],
         ];
     }

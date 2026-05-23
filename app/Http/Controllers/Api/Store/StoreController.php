@@ -28,6 +28,8 @@ class StoreController extends Controller
 
     public function validateSlug(ValidateSlugRequest $request): JsonResponse
     {
+        $this->authorize('create', Store::class);
+
         $slug = $this->slugService->normalize($request->validated('slug'));
         $isAvailable = $this->slugService->isAvailable($slug);
 

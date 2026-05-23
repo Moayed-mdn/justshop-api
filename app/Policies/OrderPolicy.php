@@ -12,24 +12,42 @@ class OrderPolicy
 
     public function view(User $user, Order $order): bool
     {
+        // Rule 1: Owners can always view their own orders
         if ($user->id === $order->user_id) {
             return $this->decision($user, 'view', true, $order);
         }
 
-        return $this->decision($user, 'view', $this->isMember($user, $order->store), $order);
+        // Rule 2: Merchants can view orders for their stores
+        if ($this->isMerchant($user) && $this->isMember($user, $order->store)) {
+            return $this->decision($user, 'view', true, $order);
+        }
+
+        return $this->decision($user, 'view', false, $order);
     }
 
     public function update(User $user, Order $order): bool
     {
-        return $this->decision($user, 'update', $this->isAdmin($user, $order->store), $order);
+        // Rule: Only merchant admins can update orders
+        return $this->decision(
+            $user, 
+            'update', 
+            $this->isMerchant($user) && $this->isAdmin($user, $order->store), 
+            $order
+        );
     }
 
     public function cancel(User $user, Order $order): bool
     {
+        // Rule 1: Owners can cancel their own orders
         if ($user->id === $order->user_id) {
             return $this->decision($user, 'cancel', true, $order);
         }
 
-        return $this->decision($user, 'cancel', $this->isMember($user, $order->store), $order);
+        // Rule 2: Merchants can cancel orders for their stores
+        if ($this->isMerchant($user) && $this->isMember($user, $order->store)) {
+            return $this->decision($user, 'cancel', true, $order);
+        }
+
+        return $this->decision($user, 'cancel', false, $order);
     }
 }

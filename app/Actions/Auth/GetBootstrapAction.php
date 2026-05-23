@@ -114,6 +114,9 @@ class GetBootstrapAction
         $config = $this->telemetry->measure('BootstrapConfigResolver', fn () => $this->configResolver->resolve());
         $metadata = $metadata->withResolverTiming('BootstrapConfigResolver', $config['elapsed_ms']);
 
+        $actorContext = $user->getActorContext();
+
+        // Wave 3: Explicitly document actor-context ownership for bootstrap
         $resolution = new BootstrapResolution(
             user: $identity['value'],
             stores: $stores['value']->stores,
@@ -122,7 +125,7 @@ class GetBootstrapAction
             permissions: $permissions['value']->permissions,
             capabilities: [],
             config: $config['value'],
-            actorContext: $user->getActorContext(),
+            actorContext: $actorContext,
             metadata: $metadata,
         );
 

@@ -6,6 +6,7 @@ namespace App\Services\Auth\Bootstrap;
 
 use App\DTOs\Auth\Bootstrap\BootstrapResolutionMetadata;
 use App\DTOs\Auth\Bootstrap\GetBootstrapResponseDTO;
+use App\Enums\Auth\ActorContextEnum;
 
 class BootstrapDependencyProfiler
 {
@@ -18,6 +19,8 @@ class BootstrapDependencyProfiler
         $payloadJson = json_encode($payload, JSON_UNESCAPED_UNICODE) ?: '{}';
         $permissionJson = json_encode($payload['permissions'] ?? [], JSON_UNESCAPED_UNICODE) ?: '[]';
 
+        $actorContext = $response->actorContext ?? ActorContextEnum::CUSTOMER;
+
         $sectionPresence = [
             'user' => isset($payload['user']),
             'stores' => isset($payload['stores']),
@@ -29,9 +32,19 @@ class BootstrapDependencyProfiler
             'actor_context' => isset($payload['actor_context']),
         ];
 
+        $merchantCoupledAreas = [
+            'stores' => $sectionPresence['stores'] && count($response->stores) > 0,
+            'active_store' => $sectionPresence['active_store'],
+            'onboarding' => $sectionPresence['onboarding'] && ($payload['onboarding']['applies'] ?? false),
+            'permissions' => $sectionPresence['permissions'] && count($response->permissions) > 0,
+        ];
+
         return [
             'sections_requested' => array_keys($sectionPresence),
             'section_presence' => $sectionPresence,
+            'merchant_coupled_areas' => $merchantCoupledAreas,
+            'actor_context' => $actorContext->value,
+            'actor_coupling_anomaly' => $actorContext === ActorContextEnum::CUSTOMER && array_filter($merchantCoupledAreas),
             'resolver_timing_distribution' => $this->bucketizeResolverTimings($metadata->resolverTimingsMs),
             'store_count_distribution' => $this->bucketizeInt(count($response->stores), [0, 1, 3, 10]),
             'permission_payload_size_distribution' => $this->bucketizeInt(strlen($permissionJson), [0, 64, 256, 1024]),

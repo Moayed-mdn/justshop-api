@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\Auth\Preparation\CsrfOwnershipPreparationController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('identity.route:merchant_users,merchant,observe')->group(function (): void {
+Route::middleware('identity.route:merchant_users,merchant,enforce')->group(function (): void {
     // Auth (merchant-authoritative; no store context)
     require 'api/v1/users/auth.php';
 
@@ -28,13 +28,15 @@ require 'api/v1/public/leads.php';
 require 'api/v1/stripe/webhook.php';
 
 // Store-scoped routes
-require 'api/v1/stores/cart.php';
-require 'api/v1/stores/orders.php';
-require 'api/v1/stores/products.php';
-require 'api/v1/stores/addresses.php';
-require 'api/v1/stores/checkout.php';
-require 'api/v1/stores/search.php';
-require 'api/v1/stores/homepage.php';
+Route::middleware('identity.route:storefront_commerce,customer,observe')->group(function (): void {
+    require 'api/v1/stores/cart.php';
+    require 'api/v1/stores/orders.php';
+    require 'api/v1/stores/products.php';
+    require 'api/v1/stores/addresses.php';
+    require 'api/v1/stores/checkout.php';
+    require 'api/v1/stores/search.php';
+    require 'api/v1/stores/homepage.php';
+});
 
 // Store management routes (outside {store} group - POST has no store context yet)
 require 'api/v1/stores/store-management.php';

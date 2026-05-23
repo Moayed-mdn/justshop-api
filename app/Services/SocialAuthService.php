@@ -3,6 +3,10 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Services\Auth\GuardShadowAnalyzer;
+use App\Services\Auth\IdentityContextResolver;
+use App\Services\Auth\SessionGuardTelemetry;
+use App\Services\Auth\SessionOwnershipResolver;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -10,6 +14,13 @@ use Laravel\Socialite\Facades\Socialite;
 
 class SocialAuthService
 {
+    public function __construct(
+        private readonly IdentityContextResolver $identityContextResolver,
+        private readonly SessionOwnershipResolver $sessionOwnershipResolver,
+        private readonly GuardShadowAnalyzer $guardShadowAnalyzer,
+        private readonly SessionGuardTelemetry $sessionGuardTelemetry,
+    ) {}
+
     /**
      * Redirect the user to Google's OAuth page.
      */
@@ -39,7 +50,13 @@ class SocialAuthService
         $user = $this->findOrCreateUser($googleUser);
 
         Auth::login($user);
-        request()->session()->regenerate();
+        
+        $request = request();
+        $identityContext = $this->identityContextResolver->resolve($user);
+        $ownership = $this->sessionOwnershipResolver->resolve($request, $identityContext);
+        $this->sessionGuardTelemetry->logSessionOwnershipResolved($request, $ownership);
+
+        $request->session()->regenerate();
 
         $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
 

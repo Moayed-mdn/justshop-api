@@ -37,6 +37,11 @@ class StorePolicy
      */
     public function view(User $user, Store $store): bool
     {
+        // Rule: Merchant-only operation (customer actors denied)
+        if ($user->getActorContext() === \App\Enums\Auth\ActorContextEnum::CUSTOMER) {
+            return $this->decision($user, 'view', false, $store);
+        }
+
         return $this->decision(
             $user,
             'view',
@@ -50,6 +55,11 @@ class StorePolicy
      */
     public function create(User $user): bool
     {
+        // Rule: Merchant-only operation (customer actors denied)
+        if ($user->getActorContext() === \App\Enums\Auth\ActorContextEnum::CUSTOMER) {
+            return $this->decision($user, 'create', false);
+        }
+
         return $this->decision($user, 'create', true);
     }
 
@@ -58,6 +68,11 @@ class StorePolicy
      */
     public function update(User $user, Store $store): bool
     {
+        // Rule: Merchant-only operation (customer actors denied)
+        if ($user->getActorContext() === \App\Enums\Auth\ActorContextEnum::CUSTOMER) {
+            return $this->decision($user, 'update', false, $store);
+        }
+
         return $this->decision(
             $user,
             'update',
@@ -76,6 +91,11 @@ class StorePolicy
      */
     public function delete(User $user, Store $store): bool
     {
+        // Rule: Merchant-only operation (customer actors denied)
+        if ($user->getActorContext() === \App\Enums\Auth\ActorContextEnum::CUSTOMER) {
+            return $this->decision($user, 'delete', false, $store);
+        }
+
         return $this->decision($user, 'delete', $user->id === $store->owner_id, $store);
     }
 
