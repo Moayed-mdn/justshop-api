@@ -6,7 +6,7 @@ namespace App\Services\Platform;
 
 use App\Enums\Auth\PlatformAuthorityDomainEnum;
 use App\Models\User;
-use App\Services\Telemetry\RequestTraceContextManager;
+use App\Support\Observability\RequestTraceContextManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 

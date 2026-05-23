@@ -326,4 +326,126 @@ return [
         'introduced_wave' => 'wave5',
         'kill_switch' => true,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Platform Authority Flags (Wave 6)
+    |--------------------------------------------------------------------------
+    */
+    'platform.authority.enabled' => [
+        'default' => env('PLATFORM_AUTHORITY_ENABLED', true),
+        'owner' => 'platform-team',
+        'business_owner' => 'security',
+        'description' => 'Enable explicit platform authority enforcement',
+        'blast_radius' => 'platform-domain',
+        'rollback_effect' => 'disable platform authority enforcement, platform routes become inaccessible',
+        'expiry_milestone' => 'permanent',
+        'category' => 'platform',
+        'introduced_wave' => 'wave6',
+        'kill_switch' => true,
+    ],
+
+    'platform.support.enabled' => [
+        'default' => env('PLATFORM_SUPPORT_ENABLED', true),
+        'owner' => 'platform-team',
+        'business_owner' => 'operations',
+        'description' => 'Enable support authority domain',
+        'blast_radius' => 'support-domain',
+        'rollback_effect' => 'disable support routes',
+        'expiry_milestone' => 'permanent',
+        'category' => 'platform',
+        'introduced_wave' => 'wave6',
+        'kill_switch' => true,
+    ],
+
+    'platform.impersonation.enabled' => [
+        'default' => env('PLATFORM_IMPERSONATION_ENABLED', false),
+        'owner' => 'platform-team',
+        'business_owner' => 'security',
+        'description' => 'Enable governed impersonation lifecycle',
+        'blast_radius' => 'critical-auth',
+        'rollback_effect' => 'disable impersonation, no active sessions affected',
+        'expiry_milestone' => 'wave6-impersonation-approval',
+        'category' => 'platform',
+        'introduced_wave' => 'wave6',
+        'kill_switch' => true,
+    ],
+
+    'platform.impersonation.require_approval' => [
+        'default' => env('PLATFORM_IMPERSONATION_REQUIRE_APPROVAL', true),
+        'owner' => 'platform-team',
+        'business_owner' => 'security',
+        'description' => 'Require approval workflow for impersonation requests',
+        'blast_radius' => 'support-domain',
+        'rollback_effect' => 'allow impersonation without approval (not recommended)',
+        'expiry_milestone' => 'permanent',
+        'category' => 'platform',
+        'introduced_wave' => 'wave6',
+        'kill_switch' => false,
+    ],
+
+    'enterprise.membership.lifecycle.enabled' => [
+        'default' => env('ENTERPRISE_MEMBERSHIP_LIFECYCLE_ENABLED', false),
+        'owner' => 'platform-team',
+        'business_owner' => 'product',
+        'description' => 'Enable enterprise membership lifecycle vocabulary on store_user',
+        'blast_radius' => 'merchant-domain',
+        'rollback_effect' => 'revert to simple role-based membership',
+        'expiry_milestone' => 'wave6-enterprise-completion',
+        'category' => 'enterprise',
+        'introduced_wave' => 'wave6',
+        'kill_switch' => true,
+    ],
+
+    'enterprise.authority.inheritance.enabled' => [
+        'default' => env('ENTERPRISE_AUTHORITY_INHERITANCE_ENABLED', false),
+        'owner' => 'platform-team',
+        'business_owner' => 'product',
+        'description' => 'Enable authority inheritance model (org-level, delegated)',
+        'blast_radius' => 'merchant-domain',
+        'rollback_effect' => 'revert to store-scoped authority only',
+        'expiry_milestone' => 'wave7-enterprise',
+        'category' => 'enterprise',
+        'introduced_wave' => 'wave6',
+        'kill_switch' => true,
+    ],
+
+    'provider.separation.preparation' => [
+        'default' => env('PROVIDER_SEPARATION_PREPARATION', true),
+        'owner' => 'auth-team',
+        'business_owner' => 'security',
+        'description' => 'Enable provider governance telemetry (preparation only, no split)',
+        'blast_radius' => 'observability-only',
+        'rollback_effect' => 'disable provider telemetry, no functional impact',
+        'expiry_milestone' => 'wave7-provider-cutover',
+        'category' => 'auth',
+        'introduced_wave' => 'wave6',
+        'kill_switch' => true,
+    ],
+
+    'multi_session.governance.enabled' => [
+        'default' => env('MULTI_SESSION_GOVERNANCE_ENABLED', true),
+        'owner' => 'auth-team',
+        'business_owner' => 'security',
+        'description' => 'Enable multi-session coexistence governance and anomaly detection',
+        'blast_radius' => 'observability-only',
+        'rollback_effect' => 'disable session coexistence detection, no functional impact',
+        'expiry_milestone' => 'permanent',
+        'category' => 'auth',
+        'introduced_wave' => 'wave6',
+        'kill_switch' => true,
+    ],
+
+    'authorization.policy_registry.enabled' => [
+        'default' => env('AUTHORIZATION_POLICY_REGISTRY_ENABLED', true),
+        'owner' => 'platform-team',
+        'business_owner' => 'security',
+        'description' => 'Enable policy ownership registry for actor-domain governance',
+        'blast_radius' => 'observability-only',
+        'rollback_effect' => 'disable policy registry, no functional impact',
+        'expiry_milestone' => 'permanent',
+        'category' => 'authorization',
+        'introduced_wave' => 'wave6',
+        'kill_switch' => true,
+    ],
 ];

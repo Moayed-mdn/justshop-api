@@ -29,6 +29,97 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(AuditLoggerInterface::class, DatabaseAuditLogger::class);
         $this->app->scoped(SecurityEventLoggerInterface::class, LogSecurityEventLogger::class);
         $this->app->bind(MembershipResolver::class, PivotMembershipResolver::class);
+
+        // Wave 6: Policy Ownership Registry — singleton so registrations persist per request
+        $this->app->singleton(
+            \App\Services\Authorization\PolicyOwnershipRegistry::class,
+            function () {
+                $registry = new \App\Services\Authorization\PolicyOwnershipRegistry();
+
+                // Register all known policies with their ownership metadata
+                $registry->register(
+                    \App\Policies\StorePolicy::class,
+                    \App\Enums\Auth\AuthDomainEnum::MERCHANT,
+                    [\App\Enums\Auth\AuthDomainEnum::MERCHANT, \App\Enums\Auth\AuthDomainEnum::PLATFORM],
+                    escalationRules: ['merchant_to_super_admin'],
+                    supportOverrideRules: ['view', 'update'],
+                );
+
+                $registry->register(
+                    \App\Policies\OrderPolicy::class,
+                    \App\Enums\Auth\AuthDomainEnum::MERCHANT,
+                    [\App\Enums\Auth\AuthDomainEnum::MERCHANT, \App\Enums\Auth\AuthDomainEnum::PLATFORM],
+                    escalationRules: ['merchant_to_super_admin'],
+                    supportOverrideRules: ['view'],
+                );
+
+                $registry->register(
+                    \App\Policies\AddressPolicy::class,
+                    \App\Enums\Auth\AuthDomainEnum::CUSTOMER,
+                    [\App\Enums\Auth\AuthDomainEnum::CUSTOMER, \App\Enums\Auth\AuthDomainEnum::PLATFORM],
+                    escalationRules: [],
+                    supportOverrideRules: ['view'],
+                );
+
+                $registry->register(
+                    \App\Policies\BrandPolicy::class,
+                    \App\Enums\Auth\AuthDomainEnum::MERCHANT,
+                    [\App\Enums\Auth\AuthDomainEnum::MERCHANT, \App\Enums\Auth\AuthDomainEnum::PLATFORM],
+                    escalationRules: ['merchant_to_super_admin'],
+                    supportOverrideRules: [],
+                );
+
+                $registry->register(
+                    \App\Policies\CategoryPolicy::class,
+                    \App\Enums\Auth\AuthDomainEnum::MERCHANT,
+                    [\App\Enums\Auth\AuthDomainEnum::MERCHANT, \App\Enums\Auth\AuthDomainEnum::PLATFORM],
+                    escalationRules: ['merchant_to_super_admin'],
+                    supportOverrideRules: [],
+                );
+
+                $registry->register(
+                    \App\Policies\TagPolicy::class,
+                    \App\Enums\Auth\AuthDomainEnum::MERCHANT,
+                    [\App\Enums\Auth\AuthDomainEnum::MERCHANT, \App\Enums\Auth\AuthDomainEnum::PLATFORM],
+                    escalationRules: ['merchant_to_super_admin'],
+                    supportOverrideRules: [],
+                );
+
+                $registry->register(
+                    \App\Policies\LeadPolicy::class,
+                    \App\Enums\Auth\AuthDomainEnum::PLATFORM,
+                    [\App\Enums\Auth\AuthDomainEnum::PLATFORM],
+                    escalationRules: [],
+                    supportOverrideRules: ['view'],
+                );
+
+                $registry->register(
+                    \App\Policies\BlogPostPolicy::class,
+                    \App\Enums\Auth\AuthDomainEnum::PLATFORM,
+                    [\App\Enums\Auth\AuthDomainEnum::PLATFORM],
+                    escalationRules: [],
+                    supportOverrideRules: ['view'],
+                );
+
+                $registry->register(
+                    \App\Policies\PaymentMethodPolicy::class,
+                    \App\Enums\Auth\AuthDomainEnum::CUSTOMER,
+                    [\App\Enums\Auth\AuthDomainEnum::CUSTOMER, \App\Enums\Auth\AuthDomainEnum::PLATFORM],
+                    escalationRules: [],
+                    supportOverrideRules: ['view'],
+                );
+
+                $registry->register(
+                    \App\Policies\DashboardPolicy::class,
+                    \App\Enums\Auth\AuthDomainEnum::MERCHANT,
+                    [\App\Enums\Auth\AuthDomainEnum::MERCHANT, \App\Enums\Auth\AuthDomainEnum::PLATFORM],
+                    escalationRules: ['merchant_to_super_admin'],
+                    supportOverrideRules: [],
+                );
+
+                return $registry;
+            }
+        );
     }
 
     /**
