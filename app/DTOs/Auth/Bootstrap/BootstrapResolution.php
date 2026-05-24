@@ -21,6 +21,7 @@ final readonly class BootstrapResolution
         public array $capabilities,
         public BootstrapConfigDTO $config,
         public ActorContextEnum $actorContext,
+        public array $session,
         public BootstrapResolutionMetadata $metadata,
     ) {}
 }

@@ -71,12 +71,6 @@ class ApplyIdentityRouteContext
         $guardResolution = $this->guardResolver->resolve($sessionOwnership);
         $this->guardSplitSimulation->simulate($sessionOwnership);
 
-        // Wave 5: Guard Authority Activation
-        if (config('features.auth.guard_split.enabled.default')) {
-            \Illuminate\Support\Facades\Auth::shouldUse($guardResolution->guard);
-            $this->enforceSessionOwnership($request, $sessionOwnership, $guardResolution);
-        }
-
         $this->traceContext->enrichSessionOwnership($sessionOwnership);
         $this->traceContext->enrichGuardShadow($guardShadow);
         $this->traceContext->enrichGuardResolution($guardResolution);
@@ -85,8 +79,9 @@ class ApplyIdentityRouteContext
         $this->sessionGuardTelemetry->logGuardShadowResolved($request, $sessionOwnership, $guardShadow);
         $this->sessionGuardTelemetry->logContaminationSignals($request, $sessionOwnership, $guardShadow);
 
-        // Wave 5: Session Isolation Activation
+        // Wave 5: Guard Authority Activation + Session Isolation Enforcement (single call)
         if (config('features.auth.guard_split.enabled.default')) {
+            \Illuminate\Support\Facades\Auth::shouldUse($guardResolution->guard);
             $this->enforceSessionOwnership($request, $sessionOwnership, $guardResolution);
         }
 
@@ -131,6 +126,12 @@ class ApplyIdentityRouteContext
         \App\DTOs\Auth\Identity\IdentityContext $identityContext,
         RouteDomainContext $routeDomainContext,
     ): bool {
+        // Super Admins are authoritative across both Platform and Merchant domains.
+        // This allows them to access merchant-facing routes (e.g., /v1/me) while maintaining a Platform identity.
+        if ($identityContext->actorType === ActorContextEnum::SUPER_ADMIN) {
+            return in_array($routeDomainContext->ownerAuthDomain, [AuthDomainEnum::PLATFORM, AuthDomainEnum::MERCHANT], true);
+        }
+
         return $identityContext->authDomain === $routeDomainContext->ownerAuthDomain
             && in_array($identityContext->actorType->value, $routeDomainContext->allowedActorTypes, true);
     }

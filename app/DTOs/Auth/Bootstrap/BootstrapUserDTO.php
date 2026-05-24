@@ -14,6 +14,7 @@ class BootstrapUserDTO
         public string $email,
         public ?string $avatarUrl,
         public bool $isEmailVerified,
+        public ?string $emailVerifiedAt,
     ) {}
 
     public static function fromModel(User $user): self
@@ -24,6 +25,7 @@ class BootstrapUserDTO
             email: $user->email,
             avatarUrl: $user->getAvatarUrl(),
             isEmailVerified: $user->hasVerifiedEmail(),
+            emailVerifiedAt: $user->email_verified_at?->toIso8601String(),
         );
     }
 }

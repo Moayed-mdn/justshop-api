@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Api\Cms\Blog\AdminBlogController;
+use App\Http\Controllers\Api\Admin\Cms\Blog\AdminBlogController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/admin/cms/blog')

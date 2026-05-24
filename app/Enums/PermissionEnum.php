@@ -60,4 +60,18 @@ class PermissionEnum
     public const CMS_DOC_UPDATE  = 'cms.doc.update';
     public const CMS_DOC_DELETE  = 'cms.doc.delete';
     public const CMS_DOC_PUBLISH = 'cms.doc.publish';
+
+    // --- CMS Blog ---
+    public const CMS_BLOG_VIEW    = 'cms.blog.view';
+    public const CMS_BLOG_CREATE  = 'cms.blog.create';
+    public const CMS_BLOG_UPDATE  = 'cms.blog.update';
+    public const CMS_BLOG_DELETE  = 'cms.blog.delete';
+    public const CMS_BLOG_PUBLISH = 'cms.blog.publish';
+
+    // --- CMS Marketing Pages ---
+    public const CMS_PAGE_VIEW    = 'cms.page.view';
+    public const CMS_PAGE_CREATE  = 'cms.page.create';
+    public const CMS_PAGE_UPDATE  = 'cms.page.update';
+    public const CMS_PAGE_DELETE  = 'cms.page.delete';
+    public const CMS_PAGE_PUBLISH = 'cms.page.publish';
 }

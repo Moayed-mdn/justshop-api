@@ -59,4 +59,30 @@ class IdentityContextNormalizationTest extends TestCase
         $this->assertFalse($context->onboardingRequired);
         $this->assertSame(OperationalContextEnum::PLATFORM_ADMIN, $context->operationalContext);
     }
+
+    public function test_super_admin_can_access_merchant_routes(): void
+    {
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        Role::findOrCreate(RoleEnum::SUPER_ADMIN->value, 'web');
+
+        /** @var \App\Models\User $user */
+        $user = \App\Models\User::factory()->superAdmin()->create();
+
+        // The /api/v1/me endpoint is a merchant route
+        $response = $this->actingAs($user)->getJson('/api/v1/me');
+
+        $response->assertStatus(200);
+        $response->assertJsonPath('success', true);
+    }
+
+    public function test_customer_user_cannot_access_merchant_routes(): void
+    {
+        /** @var \App\Models\User $user */
+        $user = \App\Models\User::factory()->customer()->create();
+
+        $response = $this->actingAs($user)->getJson('/api/v1/me');
+
+        $response->assertStatus(403);
+        $response->assertJsonPath('code', 'STORE_ACCESS_DENIED');
+    }
 }

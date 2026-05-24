@@ -20,8 +20,9 @@ return [
     'checkout_email_required' => 'Please enter the email used during checkout.',
     
     // Store Messages
-    'store_not_found' => 'Store not found or inactive.',
+    'store_not_found' => 'Store not found',
     'unauthorized_store' => 'You are not authorized to access this store.',
+    'invalid_store_lifecycle_transition' => 'This store status transition is not allowed.',
 
     // User Messages
     'user_not_found' => 'User not found.',

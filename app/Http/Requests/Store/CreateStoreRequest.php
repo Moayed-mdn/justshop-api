@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Store;
 
+use App\Rules\ReservedOrBlockedSlug;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CreateStoreRequest extends FormRequest
@@ -15,7 +16,7 @@ class CreateStoreRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'slug' => ['required', 'string', 'max:255', 'unique:stores,slug', 'regex:/^[a-z0-9-]+$/'],
+            'slug' => ['required', 'string', 'max:255', 'unique:stores,slug', 'regex:/^[a-z0-9-]+$/', new ReservedOrBlockedSlug()],
         ];
     }
 }

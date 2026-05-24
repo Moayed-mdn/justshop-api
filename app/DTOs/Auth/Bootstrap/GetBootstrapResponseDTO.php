@@ -20,5 +20,6 @@ class GetBootstrapResponseDTO
         public array $capabilities,
         public BootstrapConfigDTO $config,
         public ActorContextEnum $actorContext,
+        public array $session,
     ) {}
 }

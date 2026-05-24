@@ -9,7 +9,6 @@ use App\Models\Store;
 use App\Models\User;
 use App\Exceptions\Store\StoreNotFoundException;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\DB;
 
 class StoreRepository
 {
@@ -27,17 +26,26 @@ class StoreRepository
 
     public function create(CreateStoreDTO $dto): Store
     {
-        return DB::transaction(function () use ($dto) {
-            $store = Store::create([
-                'name' => $dto->name,
-                'slug' => $dto->slug,
-                'owner_id' => $dto->ownerId,
-            ]);
+        // No transaction here — CreateStoreAction owns the transaction boundary.
+        // Adding a nested transaction would create a savepoint and could cause
+        // DB::afterCommit callbacks to fire at the wrong commit level.
+        $store = Store::create([
+            'name'             => $dto->name,
+            'slug'             => $dto->slug,
+            'owner_id'         => $dto->ownerId,
+            // New stores are created in a non-operational state and become active only
+            // after async bootstrap finishes successfully.
+            'status'           => \App\Enums\Store\StoreStatusEnum::PENDING_SETUP->value,
+            'is_active'        => false,
+            'status_changed_at' => now(),
+            'provisioning_status' => \App\Enums\Store\ProvisioningStatusEnum::PENDING->value,
+            'provisioning_progress' => 0,
+            'provisioning_retryable' => false,
+        ]);
 
-            $store->users()->attach($dto->ownerId, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
+        $store->users()->attach($dto->ownerId, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
 
-            return $store;
-        });
+        return $store;
     }
 
     public function findById(int $storeId): Store
@@ -63,6 +71,18 @@ class StoreRepository
 
         if ($dto->slug !== null) {
             $data['slug'] = $dto->slug;
+        }
+
+        if ($dto->domain !== null) {
+            $data['domain'] = $dto->domain;
+        }
+
+        if ($dto->currency !== null) {
+            $data['currency'] = $dto->currency;
+        }
+
+        if ($dto->timezone !== null) {
+            $data['timezone'] = $dto->timezone;
         }
 
         if ($dto->isActive !== null) {

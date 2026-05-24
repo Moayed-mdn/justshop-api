@@ -2,11 +2,14 @@
 namespace App\Exceptions;
 
 use App\Enums\ErrorCode;
+use App\Exceptions\Auth\AccountDisabledException;
 use App\Exceptions\Auth\InvalidCredentialsException;
 use App\Exceptions\BaseApiException;
 use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\InvalidStoreContextException;
 use App\Exceptions\Domain\OnboardingIncompleteException;
+use App\Exceptions\Store\StoreDisabledException;
+use App\Exceptions\Store\StoreNotFoundException;
 use App\Exceptions\Store\UnauthorizedStoreAccessException;
 use App\Support\Observability\RequestTraceContextManager;
 use App\Support\Security\SecurityEventLoggerInterface;
@@ -34,47 +37,85 @@ class ExceptionRegistrar
 
             if ($e instanceof DomainException) {
                 return $this->attachTraceHeaders(response()->json([
-                    'status' => false,
+                    'success' => false,
+                    'code' => $e->getErrorCode(),
                     'message' => $e->getMessage(),
-                    'error_code' => $e->getErrorCode(),
-                    'errors' => [],
+                    'errors' => new \stdClass(),
                 ], $e->getStatus()));
             }
 
             if ($e instanceof ValidationException) {
                 return $this->attachTraceHeaders(response()->json([
-                    'status' => false,
+                    'success' => false,
+                    'code' => ErrorCode::VAL_001->value,
                     'message' => __('error.validation_failed'),
-                    'error_code' => ErrorCode::VAL_001->value,
                     'errors' => $e->errors(),
                 ], 422));
             }
 
             if ($e instanceof AuthenticationException) {
                 return $this->attachTraceHeaders(response()->json([
-                    'status' => false,
+                    'success' => false,
+                    'code' => ErrorCode::AUTH_002->value,
                     'message' => $e->getMessage(),
-                    'error_code' => ErrorCode::AUTH_002->value,
-                    'errors' => null,
+                    'errors' => new \stdClass(),
                 ], 401));
+            }
+
+            if ($e instanceof AuthorizationException || $e instanceof \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException) {
+                return $this->attachTraceHeaders(response()->json([
+                    'success' => false,
+                    'code' => ErrorCode::STORE_ACCESS_DENIED->value,
+                    'message' => $e->getMessage(),
+                    'redirect' => '/dashboard',
+                    'errors' => new \stdClass(),
+                ], 403));
+            }
+
+            if ($e instanceof UnauthorizedStoreAccessException) {
+                return $this->attachTraceHeaders(response()->json([
+                    'success' => false,
+                    'code' => ErrorCode::STORE_ACCESS_DENIED->value,
+                    'message' => $e->getMessage(),
+                    'redirect' => '/dashboard',
+                    'errors' => new \stdClass(),
+                ], 403));
+            }
+
+            if ($e instanceof StoreNotFoundException || $e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
+                return $this->attachTraceHeaders(response()->json([
+                    'success' => false,
+                    'code' => ErrorCode::STR_001->value,
+                    'message' => $e->getMessage(),
+                    'errors' => new \stdClass(),
+                ], 404));
+            }
+
+            if ($e instanceof StoreDisabledException) {
+                return $this->attachTraceHeaders(response()->json([
+                    'success' => false,
+                    'code' => ErrorCode::STR_002->value,
+                    'message' => $e->getMessage(),
+                    'errors' => new \stdClass(),
+                ], 403));
             }
 
             if ($e instanceof HttpExceptionInterface) {
                 return $this->attachTraceHeaders(response()->json([
-                    'status' => false,
+                    'success' => false,
+                    'code' => "HTTP_{$e->getStatusCode()}",
                     'message' => $e->getMessage(),
-                    'error_code' => "HTTP_{$e->getStatusCode()}",
-                    'errors' => null,
+                    'errors' => new \stdClass(),
                 ], $e->getStatusCode()));
             }
 
             Log::error($e);
 
             return $this->attachTraceHeaders(response()->json([
-                'status' => false,
-                'message' => in_array(config('app.env'), ['local', 'testing']) ? $e->getMessage() : __('error.internal_server_error'),
-                'error_code' => ErrorCode::SYS_001->value,
-                'errors' => null,
+                'success' => false,
+                'code' => ErrorCode::SYS_001->value,
+                'message' => config('app.debug') ? $e->getMessage() : __('error.internal_server_error'),
+                'errors' => new \stdClass(),
             ], 500));
         });
     }
@@ -99,6 +140,11 @@ class ExceptionRegistrar
                     SecurityEventType::AUTH_LOGIN_FAILED,
                     ['path' => request()->path()],
                     'notice',
+                ),
+                $exception instanceof AccountDisabledException => $securityEventLogger->record(
+                    SecurityEventType::AUTH_LOGIN_FAILED,
+                    ['path' => request()->path(), 'reason' => 'account_disabled'],
+                    'warning',
                 ),
                 $exception instanceof OnboardingIncompleteException => $securityEventLogger->record(
                     SecurityEventType::AUTH_ONBOARDING_DENIED,

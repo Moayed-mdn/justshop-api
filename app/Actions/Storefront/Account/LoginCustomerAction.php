@@ -6,6 +6,7 @@ namespace App\Actions\Storefront\Account;
 
 use App\DTOs\Storefront\Account\LoginCustomerDTO;
 use App\Enums\Auth\ActorContextEnum;
+use App\Exceptions\Auth\AccountDisabledException;
 use App\Exceptions\Auth\InvalidCredentialsException;
 use App\Exceptions\Domain\InvalidIdentityDomainAccessException;
 use App\Models\User;
@@ -24,6 +25,10 @@ class LoginCustomerAction
 
         if (!$user || !Hash::check($dto->password, $user->password)) {
             throw new InvalidCredentialsException();
+        }
+
+        if ($user->is_active === false) {
+            throw new AccountDisabledException();
         }
 
         $identityContext = $this->identityContextResolver->resolve($user);

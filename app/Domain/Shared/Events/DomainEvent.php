@@ -12,7 +12,7 @@ abstract class DomainEvent
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public readonly \DateTimeImmutable $occurredAt;
+    public \DateTimeImmutable $occurredAt;
 
     public function __construct()
     {

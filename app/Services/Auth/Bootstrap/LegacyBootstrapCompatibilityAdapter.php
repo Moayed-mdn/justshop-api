@@ -21,7 +21,7 @@ class LegacyBootstrapCompatibilityAdapter
         private readonly StoreRepository $storeRepository,
     ) {}
 
-    public function adapt(User $user): GetBootstrapResponseDTO
+    public function adapt(User $user, array $session = []): GetBootstrapResponseDTO
     {
         $stores = $this->storeRepository->getAccessibleStores($user);
 
@@ -34,31 +34,45 @@ class LegacyBootstrapCompatibilityAdapter
             $activeStoreModel = $stores->first();
         }
 
-        $storeDTOs = $stores->map(function (Store $store): BootstrapStoreDTO {
+        $storeDTOs = $stores->map(function (Store $store) use ($user): BootstrapStoreDTO {
             $role = $store->pivot?->role ?? 'member';
+            $permissions = $this->legacyPermissionAuthority->resolve($user, $store)->permissions();
 
-            return BootstrapStoreDTO::fromModel($store, $role);
+            return BootstrapStoreDTO::fromModel($store, $role, $permissions);
         })->toArray();
 
-        $activeStoreDTO = $activeStoreModel
-            ? BootstrapStoreDTO::fromModel(
-                $activeStoreModel,
-                $activeStoreModel->pivot?->role ?? 'member',
-            )
-            : null;
+        $activeStoreDTO = null;
+        if ($activeStoreModel) {
+            $activeRole = $activeStoreModel->pivot?->role ?? 'member';
+            $activePermissions = $this->legacyPermissionAuthority->resolve($user, $activeStoreModel)->permissions();
+            $activeStoreDTO = BootstrapStoreDTO::fromModel($activeStoreModel, $activeRole, $activePermissions);
+        }
+
+        $step = $user->onboarding_step ?? \App\Enums\Auth\OnboardingStepEnum::COMPLETED;
+        $steps = \App\Enums\Auth\OnboardingStepEnum::values();
+        $currentStepIndex = array_search($step->value, $steps, true);
+        $completedSteps = $currentStepIndex !== false ? array_slice($steps, 0, $currentStepIndex) : [];
+        $storeId = $user->stores()->first()?->id;
+
+        $activePermissions = $activeStoreModel ? $this->legacyPermissionAuthority->resolve($user, $activeStoreModel)->permissions() : [];
+        $activeCapabilities = \App\Services\Auth\Permission\PermissionTransformer::toFrontendFlags($activePermissions);
 
         return new GetBootstrapResponseDTO(
             user: BootstrapUserDTO::fromModel($user),
             stores: $storeDTOs,
             activeStore: $activeStoreDTO,
             onboarding: BootstrapOnboardingDTO::fromData(
-                $user->onboarding_step ?? \App\Enums\Auth\OnboardingStepEnum::COMPLETED,
+                $step,
+                $completedSteps,
+                !$user->isOnboardingCompleted(),
+                $storeId !== null ? (string) $storeId : null,
                 $user->isOnboardingCompleted(),
             ),
-            permissions: $this->legacyPermissionAuthority->resolve($user, $activeStoreModel)->permissions(),
-            capabilities: [],
+            permissions: $activePermissions,
+            capabilities: $activeCapabilities,
             config: BootstrapConfigDTO::fromDefaults(),
             actorContext: $user->getActorContext(),
+            session: $session,
         );
     }
 }

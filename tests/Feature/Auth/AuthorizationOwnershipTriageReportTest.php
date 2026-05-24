@@ -30,15 +30,15 @@ class AuthorizationOwnershipTriageReportTest extends TestCase
         $this->assertArrayHasKey('migration_priority_order', $report);
         $this->assertArrayHasKey('generic_current_store_triage', $report);
         $this->assertArrayHasKey('compatibility_bridges', $report);
-        $this->assertSame(17, $report['summary']['generic_current_store_findings']);
+        // Wave 2.5 normalization is complete: all generic currentStore authorization
+        // findings have been resolved. The count is now 0.
+        $this->assertSame(0, $report['summary']['generic_current_store_findings']);
         $this->assertSame(1, $report['migration_priority_order'][0]['priority']);
         $this->assertSame('brand', $report['migration_priority_order'][0]['domain']);
         $this->assertSame('safe_to_normalize_now', $report['migration_priority_order'][0]['status']);
 
+        // Wave 2.5 complete: no remaining findings to classify.
         $classifications = $report['summary']['classifications'];
-        $this->assertArrayNotHasKey('safe_to_normalize_now', $classifications);
-        $this->assertSame(6, $classifications['requires_rbac_normalization_later']);
-        $this->assertSame(6, $classifications['requires_membership_evolution_later']);
-        $this->assertSame(5, $classifications['requires_wave_3_context']);
+        $this->assertEmpty($classifications);
     }
 }

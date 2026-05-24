@@ -56,8 +56,20 @@ class LegacyPermissionAuthority
             );
         }
 
-        $role = Role::findByName((string) $storeMembership->pivot->role, 'web');
+        try {
+            $role = Role::findByName((string) $storeMembership->pivot->role, 'web');
+        } catch (\Spatie\Permission\Exceptions\RoleDoesNotExist) {
+            $role = null;
+        }
+
         $capabilities = $role ? $role->permissions->pluck('name')->sort()->values()->toArray() : [];
+
+        // If the store is not active, restrict permissions to view-only or empty
+        if (!$activeStore->is_active || $activeStore->status !== \App\Enums\Store\StoreStatusEnum::ACTIVE) {
+            $capabilities = array_values(array_filter($capabilities, function ($permission) {
+                return str_ends_with($permission, '.view') || $permission === 'dashboard.view';
+            }));
+        }
 
         return new CapabilityResolutionResult(
             capabilities: $capabilities,

@@ -3,6 +3,8 @@
 namespace App\Http\Middleware;
 
 use App\Exceptions\Store\StoreNotFoundException;
+use App\Exceptions\Store\StoreDisabledException;
+use App\Enums\Store\StoreStatusEnum;
 use App\Models\Store;
 use App\Support\Observability\RequestTraceContextManager;
 use App\Services\Auth\Membership\MembershipResolver;
@@ -22,14 +24,25 @@ class StoreContext
         $storeId = $request->route('store');
         $user = $request->user();
 
-        $store = Store::where('id', $storeId)
-            ->where('is_active', true)
-            ->first();
+        $store = Store::find($storeId);
 
         if (!$store) {
             if ($user && $user->last_active_store_id == $storeId) {
                 $user->update(['last_active_store_id' => null]);
             }
+
+            throw new StoreNotFoundException();
+        }
+
+        if ($store->status === StoreStatusEnum::DISABLED) {
+            throw new StoreDisabledException();
+        }
+
+        if (!$store->isOperational()) {
+            if ($user && $user->last_active_store_id == $storeId) {
+                $user->update(['last_active_store_id' => null]);
+            }
+
             throw new StoreNotFoundException();
         }
 

@@ -16,6 +16,7 @@ use App\Http\Requests\Cms\Documentation\Admin\CreateDocumentRequest;
 use App\Http\Requests\Cms\Documentation\Admin\PublishDocumentRequest;
 use App\Http\Requests\Cms\Documentation\Admin\UpdateDocumentRequest;
 use App\Http\Resources\Admin\Cms\Documentation\AdminDocumentResource;
+use App\Models\Cms\CmsDocument;
 use App\Repositories\Cms\Documentation\CmsDocumentRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,12 +33,16 @@ class AdminDocumentController extends Controller
 
     public function index(): JsonResponse
     {
+        $this->authorize('viewAny', CmsDocument::class);
+
         $documents = $this->repository->getPublishedDocuments();
         return $this->success(AdminDocumentResource::collection($documents));
     }
 
     public function store(CreateDocumentRequest $request): JsonResponse
     {
+        $this->authorize('create', CmsDocument::class);
+
         $document = $this->createAction->execute(
             CreateDocumentDTO::fromRequest($request)
         );
@@ -53,6 +58,8 @@ class AdminDocumentController extends Controller
             return $this->error('Document not found', 404);
         }
 
+        $this->authorize('view', $document);
+
         return $this->success(new AdminDocumentResource($document));
     }
 
@@ -63,6 +70,8 @@ class AdminDocumentController extends Controller
         if (!$document) {
             return $this->error('Document not found', 404);
         }
+
+        $this->authorize('update', $document);
 
         $document = $this->updateAction->execute(
             $document,
@@ -80,6 +89,8 @@ class AdminDocumentController extends Controller
             return $this->error('Document not found', 404);
         }
 
+        $this->authorize('delete', $document);
+
         $this->repository->delete($document);
 
         return $this->success(null, 'Document deleted successfully');
@@ -92,6 +103,8 @@ class AdminDocumentController extends Controller
         if (!$document) {
             return $this->error('Document not found', 404);
         }
+
+        $this->authorize('publish', $document);
 
         $document = $this->publishAction->execute(
             $document,

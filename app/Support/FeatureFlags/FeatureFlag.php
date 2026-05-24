@@ -11,7 +11,8 @@ class FeatureFlag
      */
     public static function enabled(string $flag): bool
     {
-        $config = config("features.{$flag}");
+        $features = static::all();
+        $config = $features[$flag] ?? null;
 
         if ($config === null) {
             throw new \InvalidArgumentException("Feature flag '{$flag}' is not registered in config/features.php");
@@ -37,7 +38,8 @@ class FeatureFlag
      */
     public static function metadata(string $flag): ?array
     {
-        $config = config("features.{$flag}");
+        $features = static::all();
+        $config = $features[$flag] ?? null;
 
         if (!is_array($config)) {
             return null;

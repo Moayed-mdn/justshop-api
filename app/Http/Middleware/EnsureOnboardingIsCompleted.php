@@ -8,6 +8,7 @@ use App\Enums\Auth\OnboardingStepEnum;
 use App\Exceptions\Domain\OnboardingIncompleteException;
 use App\Services\Auth\IdentityTelemetry;
 use App\Services\Auth\OnboardingApplicabilityResolver;
+use App\Services\Auth\OnboardingRecoveryService;
 use App\Support\Security\SecurityEventLoggerInterface;
 use App\Support\Security\SecurityEventType;
 use Closure;
@@ -19,6 +20,7 @@ class EnsureOnboardingIsCompleted
     public function __construct(
         private readonly SecurityEventLoggerInterface $securityEventLogger,
         private readonly OnboardingApplicabilityResolver $onboardingApplicabilityResolver,
+        private readonly OnboardingRecoveryService $onboardingRecoveryService,
         private readonly IdentityTelemetry $identityTelemetry,
     ) {}
 
@@ -30,6 +32,7 @@ class EnsureOnboardingIsCompleted
             return $next($request);
         }
 
+        $user = $this->onboardingRecoveryService->recover($user);
         $applicability = $this->onboardingApplicabilityResolver->resolve($user);
         $this->identityTelemetry->logOnboardingEvaluated($request, $applicability, $user->onboarding_step?->value);
 

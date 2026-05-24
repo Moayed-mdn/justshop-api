@@ -42,10 +42,13 @@ class StorePolicy
             return $this->decision($user, 'view', false, $store);
         }
 
+        $isAccessibleStore = $store->owner_id === $user->id
+            || $user->stores()->where('store_id', $store->id)->exists();
+
         return $this->decision(
             $user,
             'view',
-            $user->stores()->where('store_id', $store->id)->exists(),
+            $isAccessibleStore,
             $store,
         );
     }
@@ -139,9 +142,10 @@ class StorePolicy
         }
 
         // Rule 3: User must be a member of the store (super_admin bypassed in before())
-        $isMember = $user->stores()
-            ->where('store_id', $store->id)
-            ->exists();
+        $isMember = $store->owner_id === $user->id
+            || $user->stores()
+                ->where('store_id', $store->id)
+                ->exists();
 
         return $this->decision($user, 'switchStore', $isMember, $store);
     }

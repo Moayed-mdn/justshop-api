@@ -3,8 +3,12 @@
 namespace App\Providers;
 
 use App\Events\Lead\LeadSubmitted;
+use App\Domain\Shared\Events\MerchantRegistered;
+use App\Domain\Shared\Events\StoreCreated;
 use App\Exceptions\Auth\TooManyRequestsException;
+use App\Listeners\Auth\SendWelcomeEmailListener;
 use App\Listeners\Lead\SendLeadSubmittedNotificationListener;
+use App\Listeners\Store\BootstrapStoreListener;
 use App\Services\Auth\Membership\MembershipResolver;
 use App\Services\Auth\Membership\PivotMembershipResolver;
 use App\Support\Audit\AuditLoggerInterface;
@@ -13,7 +17,6 @@ use App\Support\Observability\RequestTraceContextManager;
 use App\Support\Security\LogSecurityEventLogger;
 use App\Support\Security\SecurityEventLoggerInterface;
 use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -143,11 +146,22 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Model::unguard();
+        // Model::unguard() intentionally removed — all models use explicit $fillable arrays.
+        // Mass assignment protection is active platform-wide.
 
         Event::listen(
             LeadSubmitted::class,
             SendLeadSubmittedNotificationListener::class,
+        );
+
+        Event::listen(
+            MerchantRegistered::class,
+            SendWelcomeEmailListener::class,
+        );
+
+        Event::listen(
+            StoreCreated::class,
+            BootstrapStoreListener::class,
         );
 
         // Register custom rate limiter for email verification resends
@@ -155,6 +169,28 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perHour(3)->by($request->email . '|' . $request->ip())->response(function () {
                 throw new TooManyRequestsException(
                     'You have sent too many verification email requests. Please try again in an hour.'
+                );
+            });
+        });
+
+        // Login brute-force protection: 5 attempts per minute per email+IP
+        RateLimiter::for('login', function ($request) {
+            return Limit::perMinute(5)->by(
+                strtolower((string) $request->input('email')) . '|' . $request->ip()
+            )->response(function () {
+                throw new TooManyRequestsException(
+                    __('auth.too_many_login_attempts')
+                );
+            });
+        });
+
+        // Storefront customer login: same protection, separate key namespace
+        RateLimiter::for('customer-login', function ($request) {
+            return Limit::perMinute(5)->by(
+                'customer|' . strtolower((string) $request->input('email')) . '|' . $request->ip()
+            )->response(function () {
+                throw new TooManyRequestsException(
+                    __('auth.too_many_login_attempts')
                 );
             });
         });

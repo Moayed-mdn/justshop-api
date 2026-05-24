@@ -10,13 +10,25 @@ class BootstrapOnboardingDTO
 {
     public function __construct(
         public string $step,
+        public array $completedSteps,
+        public bool $canResume,
+        public ?string $storeId,
         public bool $isCompleted,
     ) {}
 
-    public static function fromData(OnboardingStepEnum $step, bool $isCompleted): self
+    public static function fromData(
+        OnboardingStepEnum $step,
+        array $completedSteps,
+        bool $canResume,
+        ?string $storeId,
+        bool $isCompleted
+    ): self
     {
         return new self(
             step: $step->value,
+            completedSteps: $completedSteps,
+            canResume: $canResume,
+            storeId: $storeId,
             isCompleted: $isCompleted,
         );
     }

@@ -40,6 +40,13 @@ class LogoutUserAction
         $guard = config('features.auth.guard_split.enabled.default') ? $guardResolution->guard : 'web';
         Auth::guard($guard)->logout();
 
+        $currentAccessToken = $user?->currentAccessToken();
+        if ($currentAccessToken !== null && method_exists($currentAccessToken, 'delete')) {
+            $currentAccessToken->delete();
+        }
+
         $this->sessionOwnershipManager->invalidate($request);
+        $request->setUserResolver(static fn (): null => null);
+        Auth::forgetGuards();
     }
 }

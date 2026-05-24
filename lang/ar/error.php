@@ -20,7 +20,7 @@ return [
     'checkout_email_required' => 'يرجى إدخال البريد الإلكتروني المستخدم أثناء الدفع.',
     
     // Store Messages
-    'store_not_found' => 'المتجر غير موجود أو غير نشط.',
+    'store_not_found' => 'المتجر غير موجود.',
     'unauthorized_store' => 'ليس لديك صلاحية للوصول إلى هذا المتجر.',
 
     // User Messages

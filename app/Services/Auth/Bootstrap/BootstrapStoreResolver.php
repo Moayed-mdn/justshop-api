@@ -10,12 +10,14 @@ use App\Models\Store;
 use App\Models\User;
 use App\Repositories\Store\StoreRepository;
 use App\Services\Auth\Membership\MembershipResolver;
+use App\Services\Auth\Bootstrap\BootstrapPermissionResolver;
 
 class BootstrapStoreResolver
 {
     public function __construct(
         private readonly StoreRepository $storeRepository,
         private readonly MembershipResolver $membershipResolver,
+        private readonly BootstrapPermissionResolver $permissionResolver,
     ) {}
 
     public function resolve(User $user): BootstrapStoreResolution
@@ -32,18 +34,20 @@ class BootstrapStoreResolver
             $activeStoreModel = $stores->first();
         }
 
-        $storeDTOs = $stores->map(function (Store $store) use ($membershipsByStoreId): BootstrapStoreDTO {
+        $storeDTOs = $stores->map(function (Store $store) use ($membershipsByStoreId, $user): BootstrapStoreDTO {
             $membership = $membershipsByStoreId[(int) $store->id] ?? null;
             $role = $membership?->role ?? (string) ($store->pivot?->role ?? 'member');
+            $permissions = $this->permissionResolver->resolve($user, $store)->permissions;
 
-            return BootstrapStoreDTO::fromModel($store, $role);
+            return BootstrapStoreDTO::fromModel($store, $role, $permissions);
         })->values()->all();
 
         $activeStoreDTO = null;
         if ($activeStoreModel) {
             $activeMembership = $membershipsByStoreId[(int) $activeStoreModel->id] ?? null;
             $activeRole = $activeMembership?->role ?? (string) ($activeStoreModel->pivot?->role ?? 'member');
-            $activeStoreDTO = BootstrapStoreDTO::fromModel($activeStoreModel, $activeRole);
+            $activePermissions = $this->permissionResolver->resolve($user, $activeStoreModel)->permissions;
+            $activeStoreDTO = BootstrapStoreDTO::fromModel($activeStoreModel, $activeRole, $activePermissions);
         }
 
         return new BootstrapStoreResolution(

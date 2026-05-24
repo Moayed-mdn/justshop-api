@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Auth;
 
 use App\DTOs\Auth\LoginUserDTO;
+use App\Exceptions\Auth\AccountDisabledException;
 use App\Exceptions\Auth\InvalidCredentialsException;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -17,6 +18,10 @@ class LoginUserAction
 
         if (!$user || !Hash::check($dto->password, $user->password)) {
             throw new InvalidCredentialsException();
+        }
+
+        if ($user->is_active === false) {
+            throw new AccountDisabledException();
         }
 
         return $user;

@@ -17,13 +17,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -40,6 +41,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_active',
         'onboarding_step',
         'onboarding_completed_at',
+        'onboarding_step_changed_at',
         'last_active_store_id',
     ];
 
@@ -66,6 +68,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'is_active' => 'boolean',
             'onboarding_step' => OnboardingStepEnum::class,
             'onboarding_completed_at' => 'datetime',
+            'onboarding_step_changed_at' => 'datetime',
         ];
     }
 

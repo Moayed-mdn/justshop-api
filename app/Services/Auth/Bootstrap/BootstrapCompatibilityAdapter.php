@@ -20,6 +20,7 @@ class BootstrapCompatibilityAdapter
             capabilities: $resolution->capabilities,
             config: $resolution->config,
             actorContext: $resolution->actorContext,
+            session: $resolution->session,
         );
     }
 }

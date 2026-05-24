@@ -39,8 +39,10 @@ enum ErrorCode: string
     case PRD_002 = 'PRD_002';
 
     // --- Store (STR) ---
-    case STR_001 = 'STR_001';
-    case STR_002 = 'STR_002';
+    case STR_001 = 'STR_001'; // Store Not Found
+    case STR_002 = 'STR_002'; // Store Disabled
+    case STR_003 = 'STR_003'; // Invalid store lifecycle transition
+    case STORE_ACCESS_DENIED = 'STORE_ACCESS_DENIED';
 
     // --- Category (CAT) ---
     case CAT_001 = 'CAT_001'; // Category not found

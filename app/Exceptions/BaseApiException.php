@@ -23,10 +23,10 @@ class BaseApiException extends Exception
     public function render(Request $request): JsonResponse
     {
         return response()->json([
-            'status' => false,
+            'success' => false,
+            'code' => $this->errorCode,
             'message' => $this->getMessage(),
-            'error_code' => $this->errorCode,
-            'errors' => $this->errors,
+            'errors' => $this->errors ?? new \stdClass(),
         ], $this->statusCode);
     }
 }

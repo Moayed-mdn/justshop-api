@@ -10,7 +10,7 @@ Route::prefix('/v1/storefront/account')
     ->controller(StorefrontAccountController::class)
     ->group(function (): void {
         Route::post('/register', 'register')->name('v1.storefront.account.register');
-        Route::post('/login', 'login')->name('v1.storefront.account.login');
+        Route::post('/login', 'login')->name('v1.storefront.account.login')->middleware('throttle:customer-login');
 
         Route::middleware('auth:sanctum')->group(function (): void {
             Route::post('/logout', 'logout')->name('v1.storefront.account.logout');

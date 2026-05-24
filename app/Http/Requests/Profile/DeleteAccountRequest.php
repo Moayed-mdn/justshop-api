@@ -15,6 +15,24 @@ class DeleteAccountRequest extends FormRequest
 
     public function rules(): array
     {
-        return [];
+        $user = $this->user();
+
+        // Google OAuth users have no password — skip confirmation.
+        // Password-based users must confirm before deletion.
+        if (is_null($user?->password)) {
+            return [];
+        }
+
+        return [
+            'password' => ['required', 'current_password'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'password.required' => __('auth.account_deletion_password_required'),
+            'password.current_password' => __('auth.account_deletion_password_incorrect'),
+        ];
     }
 }

@@ -19,13 +19,13 @@ class UpdateStoreDTO
     public static function fromRequest(UpdateStoreRequest $request, int $storeId): self
     {
         return new self(
-            domain: $request->string('domain', null),
-            currency: $request->string('currency', null),
-            timezone: $request->string('timezone', null),
             storeId: $storeId,
-            name: $request->string('name', null),
-            slug: $request->string('slug', null),
-            isActive: $request->boolean('is_active', null),
+            name: $request->has('name') ? $request->string('name')->toString() : null,
+            slug: $request->has('slug') ? $request->string('slug')->toString() : null,
+            domain: $request->has('domain') ? ($request->input('domain') !== null ? $request->string('domain')->toString() : null) : null,
+            currency: $request->has('currency') ? $request->string('currency')->toString() : null,
+            timezone: $request->has('timezone') ? $request->string('timezone')->toString() : null,
+            isActive: $request->has('is_active') ? $request->boolean('is_active') : null,
         );
     }
 }

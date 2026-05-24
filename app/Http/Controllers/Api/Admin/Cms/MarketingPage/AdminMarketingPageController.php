@@ -22,6 +22,7 @@ use App\Http\Requests\Cms\MarketingPage\Admin\ListMarketingPagesRequest;
 use App\Http\Requests\Cms\MarketingPage\Admin\PublishMarketingPageRequest;
 use App\Http\Requests\Cms\MarketingPage\Admin\UpdateMarketingPageRequest;
 use App\Http\Resources\Admin\Cms\MarketingPage\AdminMarketingPageResource;
+use App\Models\Cms\MarketingPage;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
 class AdminMarketingPageController extends Controller
@@ -30,6 +31,8 @@ class AdminMarketingPageController extends Controller
         ListMarketingPagesRequest $request,
         ListMarketingPagesAction $action,
     ): JsonResponse {
+        $this->authorize('viewAny', MarketingPage::class);
+
         $pages = $action->execute(ListMarketingPagesDTO::fromRequest($request));
 
         return $this->paginated(
@@ -42,6 +45,8 @@ class AdminMarketingPageController extends Controller
         CreateMarketingPageRequest $request,
         CreateMarketingPageAction $action,
     ): JsonResponse {
+        $this->authorize('create', MarketingPage::class);
+
         $page = $action->execute(CreateMarketingPageDTO::fromRequest($request));
 
         return $this->success(new AdminMarketingPageResource($page), 'cms.page_created', 201);
@@ -53,6 +58,8 @@ class AdminMarketingPageController extends Controller
     ): JsonResponse {
         $page = $action->execute(new GetMarketingPageDTO($id));
 
+        $this->authorize('view', $page);
+
         return $this->success(new AdminMarketingPageResource($page));
     }
 
@@ -63,6 +70,8 @@ class AdminMarketingPageController extends Controller
     ): JsonResponse {
         $page = $action->execute(UpdateMarketingPageDTO::fromRequest($request, $id));
 
+        $this->authorize('update', $page);
+
         return $this->success(new AdminMarketingPageResource($page), 'cms.page_updated');
     }
 
@@ -70,6 +79,12 @@ class AdminMarketingPageController extends Controller
         int $id,
         DeleteMarketingPageAction $action,
     ): JsonResponse {
+        // Fetch page first for authorization
+        $getAction = app(GetMarketingPageAction::class);
+        $page = $getAction->execute(new GetMarketingPageDTO($id));
+
+        $this->authorize('delete', $page);
+
         $action->execute(new DeleteMarketingPageDTO($id));
 
         return $this->success(null, 'cms.page_deleted');
@@ -81,6 +96,8 @@ class AdminMarketingPageController extends Controller
         PublishMarketingPageAction $action,
     ): JsonResponse {
         $page = $action->execute(PublishMarketingPageDTO::fromRequest($request, $id));
+
+        $this->authorize('publish', $page);
 
         return $this->success(new AdminMarketingPageResource($page), 'cms.page_published');
     }

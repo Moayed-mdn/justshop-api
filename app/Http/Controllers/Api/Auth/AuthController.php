@@ -59,12 +59,9 @@ class AuthController extends Controller
             GetBootstrapDTO::fromRequest($request)
         );
 
-        /** @var User $user */
-        $user = $request->user();
-
         return $this->successWithMeta(
             new BootstrapResource($data),
-            ['session' => $this->frontendSessionMetadataResolver->resolve($request, $this->identityContextResolver->resolve($user))],
+            ['session' => $data->session],
             __('auth.bootstrap_successful')
         );
     }
@@ -77,7 +74,8 @@ class AuthController extends Controller
         $this->authorize('switchStore', $store);
 
         $data = $this->updateActiveStoreAction->execute(
-            UpdateActiveStoreDTO::fromRequest($request)
+            UpdateActiveStoreDTO::fromRequest($request),
+            $request
         );
 
         /** @var User $user */

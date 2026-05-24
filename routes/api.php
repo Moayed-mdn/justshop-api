@@ -4,6 +4,11 @@ use App\Http\Controllers\Api\Auth\Preparation\CsrfOwnershipPreparationController
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('identity.route:merchant_users,merchant,enforce')->group(function (): void {
+    // Canonical bootstrap endpoint
+    Route::get('/v1/me', [\App\Http\Controllers\Api\Auth\AuthController::class, 'bootstrap'])
+        ->middleware('auth:sanctum')
+        ->name('v1.me');
+
     // Auth (merchant-authoritative; no store context)
     require 'api/v1/users/auth.php';
 

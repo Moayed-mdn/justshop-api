@@ -8,10 +8,15 @@ use App\Enums\Auth\OnboardingStepEnum;
 use App\DTOs\Auth\VerifyEmailDTO;
 use App\Exceptions\Auth\EmailVerificationException;
 use App\Models\User;
+use App\Services\Auth\OnboardingTransitionService;
 use Illuminate\Auth\Events\Verified;
 
 class VerifyEmailAction
 {
+    public function __construct(
+        private readonly OnboardingTransitionService $onboardingTransitionService,
+    ) {}
+
     public function execute(VerifyEmailDTO $dto): array
     {
         $user = User::findOrFail($dto->id);
@@ -27,9 +32,13 @@ class VerifyEmailAction
 
         $user->markEmailAsVerified();
 
-        // Advance onboarding step if it was pending verification
+        // Advance onboarding step if it was pending verification.
+        // Uses the transition service for atomic, logged, validated transitions.
         if ($user->onboarding_step === OnboardingStepEnum::PENDING_VERIFICATION) {
-            $user->update(['onboarding_step' => OnboardingStepEnum::CREATE_STORE]);
+            $this->onboardingTransitionService->transition(
+                $user,
+                OnboardingStepEnum::CREATE_STORE,
+            );
         }
 
         event(new Verified($user));

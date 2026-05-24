@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers\Api\Cms\Blog;
+namespace App\Http\Controllers\Api\Admin\Cms\Blog;
 
 use App\Actions\Cms\Blog\Admin\CreateBlogPostAction;
 use App\Actions\Cms\Blog\Admin\DeleteBlogPostAction;

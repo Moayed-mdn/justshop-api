@@ -18,11 +18,13 @@ use App\Services\Auth\Bootstrap\BootstrapShadowParityService;
 use App\Services\Auth\Bootstrap\BootstrapStoreResolver;
 use App\Services\Auth\Bootstrap\BootstrapTelemetry;
 use App\Services\Auth\Bootstrap\LegacyBootstrapCompatibilityAdapter;
+use App\Services\Auth\FrontendSessionMetadataResolver;
 
 class GetBootstrapAction
 {
     public function __construct(
         private readonly BootstrapIdentityResolver $identityResolver,
+        private readonly \App\Services\Auth\IdentityContextResolver $identityContextResolver,
         private readonly BootstrapStoreResolver $storeResolver,
         private readonly BootstrapPermissionResolver $permissionResolver,
         private readonly BootstrapOnboardingResolver $onboardingResolver,
@@ -31,6 +33,7 @@ class GetBootstrapAction
         private readonly LegacyBootstrapCompatibilityAdapter $legacyCompatibilityAdapter,
         private readonly BootstrapShadowParityService $shadowParityService,
         private readonly BootstrapTelemetry $telemetry,
+        private readonly FrontendSessionMetadataResolver $frontendSessionMetadataResolver,
     ) {}
 
     public function execute(GetBootstrapDTO $dto): GetBootstrapResponseDTO
@@ -44,10 +47,11 @@ class GetBootstrapAction
         $this->telemetry->logStarted($user, $authorityPath, $responseVersion);
 
         if ($useDecomposedAuthority) {
-            [$authoritativeResponse, $metadata] = $this->resolveDecomposed($user, $responseVersion, 'decomposed');
+            [$authoritativeResponse, $metadata] = $this->resolveDecomposed($dto, $user, $responseVersion, 'decomposed');
 
             if ($shadowReadEnabled) {
-                $shadowResponse = $this->legacyCompatibilityAdapter->adapt($user);
+                $session = $this->frontendSessionMetadataResolver->resolve($dto->request, $this->identityContextResolver->resolve($user));
+                $shadowResponse = $this->legacyCompatibilityAdapter->adapt($user, $session);
                 $this->shadowParityService->compare(
                     $user,
                     $authoritativeResponse,
@@ -62,7 +66,8 @@ class GetBootstrapAction
             return $authoritativeResponse;
         }
 
-        $authoritativeResponse = $this->legacyCompatibilityAdapter->adapt($user);
+        $session = $this->frontendSessionMetadataResolver->resolve($dto->request, $this->identityContextResolver->resolve($user));
+        $authoritativeResponse = $this->legacyCompatibilityAdapter->adapt($user, $session);
         $metadata = new BootstrapResolutionMetadata(
             responseVersion: $responseVersion,
             resolverVersion: 'legacy_compat',
@@ -70,7 +75,7 @@ class GetBootstrapAction
         );
 
         if ($shadowReadEnabled) {
-            [$shadowResponse, $shadowMetadata] = $this->resolveDecomposed($user, $responseVersion, 'shadow');
+            [$shadowResponse, $shadowMetadata] = $this->resolveDecomposed($dto, $user, $responseVersion, 'shadow');
             $this->shadowParityService->compare(
                 $user,
                 $authoritativeResponse,
@@ -88,7 +93,7 @@ class GetBootstrapAction
     /**
      * @return array{0: GetBootstrapResponseDTO, 1: BootstrapResolutionMetadata}
      */
-    private function resolveDecomposed(User $user, string $responseVersion, string $authorityPath): array
+    private function resolveDecomposed(GetBootstrapDTO $dto, User $user, string $responseVersion, string $authorityPath): array
     {
         $metadata = new BootstrapResolutionMetadata(
             responseVersion: $responseVersion,
@@ -117,6 +122,10 @@ class GetBootstrapAction
         $actorContext = $user->getActorContext();
 
         // Wave 3: Explicitly document actor-context ownership for bootstrap
+        $session = $this->frontendSessionMetadataResolver->resolve(
+            $dto->request,
+            $this->identityContextResolver->resolve($user),
+        );
         $resolution = new BootstrapResolution(
             user: $identity['value'],
             stores: $stores['value']->stores,
@@ -126,6 +135,7 @@ class GetBootstrapAction
             capabilities: [],
             config: $config['value'],
             actorContext: $actorContext,
+            session: $session,
             metadata: $metadata,
         );
 

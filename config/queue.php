@@ -86,7 +86,9 @@ return [
     */
 
     'batching' => [
-        'database' => env('DB_CONNECTION', 'sqlite'),
+        // Use the application's primary DB connection, not sqlite.
+        // sqlite is only appropriate for local testing without a real DB.
+        'database' => env('DB_QUEUE_CONNECTION', env('DB_CONNECTION', 'mysql')),
         'table' => 'job_batches',
     ],
 
@@ -105,7 +107,8 @@ return [
 
     'failed' => [
         'driver' => env('QUEUE_FAILED_DRIVER', 'database-uuids'),
-        'database' => env('DB_CONNECTION', 'sqlite'),
+        // Use the application's primary DB connection, not sqlite.
+        'database' => env('DB_QUEUE_CONNECTION', env('DB_CONNECTION', 'mysql')),
         'table' => 'failed_jobs',
     ],
 
