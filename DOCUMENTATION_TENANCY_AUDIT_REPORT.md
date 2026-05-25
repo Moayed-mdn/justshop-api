@@ -385,7 +385,7 @@ Schema::table('cms_document_sections', function (Blueprint $table) {
 
 | Content Type | Store ID | Authorization | Routes |
 |:-------------|:---------|:--------------|:-------|
-| Marketing Pages | NO | `cms.page.*` | `/api/v1/admin/cms/pages/*` |
+| Marketing Pages | NO | legacy `cms.page.*`, evolving to `marketing.platform.*` | `/api/v1/admin/cms/pages/*` |
 | Blog Posts | NO | `cms.blog.*` | `/api/v1/admin/cms/blog/*` |
 | **Documentation** | **NO** | **`cms.doc.*`** | **`/api/v1/admin/cms/docs/*`** |
 

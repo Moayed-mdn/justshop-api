@@ -96,17 +96,6 @@ class CreateStoreAction
                 );
             }
 
-            // For now, STORE_CREATED → COMPLETED directly (no separate config step required).
-            // When a store configuration step is added to the frontend, change this to
-            // STORE_CONFIGURED and require an explicit /stores/{store}/configure call.
-            $lockedUser->refresh();
-            if ($lockedUser->onboarding_step === OnboardingStepEnum::STORE_CREATED) {
-                $this->onboardingTransitionService->transition(
-                    $lockedUser,
-                    OnboardingStepEnum::COMPLETED,
-                );
-            }
-
             // Set as last active store.
             $lockedUser->update(['last_active_store_id' => $store->id]);
 

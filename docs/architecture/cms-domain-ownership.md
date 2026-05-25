@@ -31,7 +31,8 @@ enum CmsOwnershipEnum: string
 
 | Subdomain | Ownership | Store ID | Authorization | Frontend Consumer |
 |:----------|:----------|:---------|:--------------|:------------------|
-| **Marketing** | Platform | NO | `cms.page.*` permissions | Next.js Marketing Site |
+| **Marketing / Platform** | Platform | NO | `marketing.platform.*` permissions | Next.js Marketing Site |
+| **Marketing / Store** | Store | YES | `marketing.store.*` permissions | Storefront frontend (deferred) |
 | **Blog** | Platform | NO | `cms.blog.*` permissions | Next.js Marketing Site |
 | **Documentation** | Platform | NO | `cms.doc.*` permissions | Next.js Marketing Site |
 | **SEO Services** | Shared | N/A | N/A | All frontends |
@@ -56,9 +57,11 @@ Content managed by **super admins** at the platform level. NOT scoped to individ
 ### Current Platform Content
 
 **1. Marketing Pages**
-- Table: `marketing_pages`
-- Model: `App\Models\Cms\MarketingPage`
-- Policy: `MarketingPagePolicy`
+- Legacy table/model: `marketing_pages`, `App\Models\Cms\MarketingPage`
+- Target table/model: `platform_marketing_pages`, `App\Models\Cms\Marketing\Platform\PlatformMarketingPage`
+- Current compatibility routes: `/api/v1/admin/cms/pages/*`, `/api/v1/public/cms/pages/{slug}`
+- Target admin routes: `/api/v1/admin/cms/platform/pages/*`
+- Policy direction: `PlatformMarketingPolicy`
 - Examples: Home, About, Features, Pricing, Contact
 
 **2. Blog Posts**
@@ -89,13 +92,13 @@ Schema::table('cms_documents', function (Blueprint $table) {
 
 ---
 
-## Tenant-Owned Content (Future)
+## Tenant-Owned Content
 
 ### Definition
 
 Content managed by **store owners/admins** within their tenant scope.
 
-### Characteristics (When Implemented)
+### Characteristics
 
 - ✅ MUST have `store_id` foreign key
 - ✅ Managed via `/api/v1/admin/stores/{store}/cms/*` endpoints
@@ -103,20 +106,20 @@ Content managed by **store owners/admins** within their tenant scope.
 - ✅ Scoped queries: `->where('store_id', $storeId)`
 - ✅ Consumed by Nuxt Storefront
 
-### Potential Future Use Cases
+### Current Planned Scope
 
-**NOT CURRENTLY IMPLEMENTED:**
+Store-owned CMS currently means:
 
-1. **Store-Specific Pages**
+1. **Store Marketing Pages**
    - Custom landing pages per store
-   - Store-specific terms & conditions
-   - Store-specific FAQs
+   - Store-specific campaigns and promotions
+   - Tenant-scoped public marketing content
 
-2. **Store-Specific Documentation**
-   - Custom product guides per store
-   - Store-specific help articles
+### Delivery Status
 
-**Decision:** Out of scope for current architecture. If needed, create separate subdomain under `Cms/Tenant/`.
+- Backend foundation may be prepared before storefront rollout.
+- Store frontend integration is deferred until its contract is finalized.
+- Store documentation and store blog remain out of scope unless explicitly approved later.
 
 ---
 
@@ -158,12 +161,19 @@ Services and utilities used by **both platform and tenant content**.
 
 **Permissions:**
 ```php
-// Marketing Pages
-cms.page.view
-cms.page.create
-cms.page.update
-cms.page.delete
-cms.page.publish
+// Platform Marketing Pages
+marketing.platform.view
+marketing.platform.create
+marketing.platform.update
+marketing.platform.delete
+marketing.platform.publish
+
+// Store Marketing Pages
+marketing.store.view
+marketing.store.create
+marketing.store.update
+marketing.store.delete
+marketing.store.publish
 
 // Blog
 cms.blog.view
@@ -208,7 +218,7 @@ cms.doc.publish
 ### Next.js Dashboard (Platform Admin)
 
 **Manages:**
-- Marketing Pages: `/api/v1/admin/cms/pages/*`
+- Platform Marketing Pages: `/api/v1/admin/cms/pages/*` or `/api/v1/admin/cms/platform/pages/*`
 - Blog Posts: `/api/v1/admin/cms/blog/*`
 - Documentation: `/api/v1/admin/cms/docs/*`
 
@@ -217,16 +227,16 @@ cms.doc.publish
 - NO store context
 - Full CRUD operations
 
-### Nuxt Storefront (Tenant Content - Future)
+### Storefront Frontend (Tenant Content)
 
-**Would consume (if implemented):**
+**Will consume when activated:**
 - Store Pages: `/api/v1/stores/{store}/cms/pages/*`
-- Store Docs: `/api/v1/stores/{store}/cms/docs/*`
 
 **Characteristics:**
 - Store-scoped content
 - Tenant-specific branding
 - Store membership required for management
+- Public rollout may remain feature-flagged until the frontend is ready
 
 ---
 
@@ -266,9 +276,9 @@ TenantPage::all(); // WRONG - leaks cross-tenant data
 
 ## Migration Strategy
 
-### Adding Tenant-Scoped CMS (Future)
+### Adding Store-Owned CMS
 
-If tenant-scoped CMS is needed:
+If store-owned CMS is expanded:
 
 **1. Create Separate Subdomain**
 ```
@@ -277,14 +287,13 @@ Cms/
 ├── Blog/           # Platform (existing)
 ├── Documentation/  # Platform (existing)
 ├── Seo/            # Shared (existing)
-└── Tenant/         # NEW
-    ├── Pages/
-    └── Documentation/
+└── Marketing/
+    └── Store/
 ```
 
 **2. Create Separate Tables**
 ```php
-Schema::create('tenant_cms_pages', function (Blueprint $table) {
+Schema::create('store_marketing_pages', function (Blueprint $table) {
     $table->id();
     $table->foreignId('store_id')->constrained()->cascadeOnDelete();
     // ... other columns
@@ -294,14 +303,14 @@ Schema::create('tenant_cms_pages', function (Blueprint $table) {
 
 **3. Create Separate Policies**
 ```php
-class TenantPagePolicy
+class StoreMarketingPolicy
 {
     use HasStoreMembership;
     
-    public function view(User $user, TenantPage $page): bool
+    public function view(User $user, Store $store): bool
     {
-        return $this->userBelongsToStore($user, $page->store_id)
-            && $user->can('tenant.cms.page.view');
+        return $this->isMember($user, $store)
+            && $user->can('marketing.store.view');
     }
 }
 ```
@@ -311,7 +320,7 @@ class TenantPagePolicy
 Route::prefix('v1/admin/stores/{store}/cms')
     ->middleware(['auth:sanctum', 'store.member:{store}'])
     ->group(function () {
-        // Tenant CMS routes
+        // Store marketing CMS routes
     });
 ```
 

@@ -74,4 +74,18 @@ class PermissionEnum
     public const CMS_PAGE_UPDATE  = 'cms.page.update';
     public const CMS_PAGE_DELETE  = 'cms.page.delete';
     public const CMS_PAGE_PUBLISH = 'cms.page.publish';
+
+    // --- Platform Marketing ---
+    public const MARKETING_PLATFORM_VIEW    = 'marketing.platform.view';
+    public const MARKETING_PLATFORM_CREATE  = 'marketing.platform.create';
+    public const MARKETING_PLATFORM_UPDATE  = 'marketing.platform.update';
+    public const MARKETING_PLATFORM_DELETE  = 'marketing.platform.delete';
+    public const MARKETING_PLATFORM_PUBLISH = 'marketing.platform.publish';
+
+    // --- Store Marketing ---
+    public const MARKETING_STORE_VIEW    = 'marketing.store.view';
+    public const MARKETING_STORE_CREATE  = 'marketing.store.create';
+    public const MARKETING_STORE_UPDATE  = 'marketing.store.update';
+    public const MARKETING_STORE_DELETE  = 'marketing.store.delete';
+    public const MARKETING_STORE_PUBLISH = 'marketing.store.publish';
 }

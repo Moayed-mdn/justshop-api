@@ -14,18 +14,6 @@ class DashboardPolicy
 {
     use InteractsWithPolicyTelemetry;
 
-    public function before(User $user, string $ability, mixed $store = null): ?bool
-    {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return $this->decision($user, $ability, true, $store, [
-                'authorization_domain' => 'dashboard',
-                'fallback_path_used' => false,
-            ]);
-        }
-
-        return null;
-    }
-
     public function viewStats(User $user, Store $store): bool
     {
         return $this->decision($user, 'viewStats', $this->canView($user, $store), $store, [

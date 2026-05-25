@@ -4,6 +4,7 @@ use App\Enums\PermissionEnum;
 use App\Http\Controllers\Api\Admin\Brand\AdminBrandController;
 use App\Http\Controllers\Api\Admin\Category\AdminCategoryController;
 use App\Http\Controllers\Api\Admin\Dashboard\AdminDashboardController;
+use App\Http\Controllers\Api\Admin\Cms\Marketing\Store\AdminStoreMarketingPageController;
 use App\Http\Controllers\Api\Admin\Order\AdminOrderController;
 use App\Http\Controllers\Api\Admin\Product\AdminProductController;
 use App\Http\Controllers\Api\Admin\Tag\AdminTagController;
@@ -149,5 +150,14 @@ Route::prefix('v1/admin/stores/{store}')
             Route::delete('/{tag}', [AdminTagController::class, 'destroy'])
                 ->middleware('permission:' . PermissionEnum::TAG_DELETE)
                 ->name('tags.destroy');
+        });
+
+        // ── Store Marketing ────────────────────────────────────
+        Route::prefix('cms/pages')->group(function () {
+            Route::get('/', [AdminStoreMarketingPageController::class, 'index']);
+            Route::post('/', [AdminStoreMarketingPageController::class, 'store']);
+            Route::get('/{id}', [AdminStoreMarketingPageController::class, 'show']);
+            Route::put('/{id}', [AdminStoreMarketingPageController::class, 'update']);
+            Route::delete('/{id}', [AdminStoreMarketingPageController::class, 'destroy']);
         });
     });

@@ -5,10 +5,16 @@ declare(strict_types=1);
 namespace Tests\Feature\Auth;
 
 use App\Enums\Auth\OnboardingStepEnum;
+use App\Enums\PermissionEnum;
+use App\Enums\Store\StoreRoleEnum;
+use App\Models\Store;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Mockery;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class StorefrontAccountNamespaceTest extends TestCase
@@ -35,6 +41,7 @@ class StorefrontAccountNamespaceTest extends TestCase
 
     public function test_customer_bootstrap_is_isolated_from_merchant_bootstrap_and_contains_identity_and_session_metadata(): void
     {
+        /** @var User $user */
         $user = User::factory()->customer()->verified()->create();
 
         $response = $this->actingAs($user)->getJson('/api/v1/storefront/account/bootstrap');
@@ -55,6 +62,7 @@ class StorefrontAccountNamespaceTest extends TestCase
     {
         Log::spy();
 
+        /** @var User $merchant */
         $merchant = User::factory()->merchant()->verified()->create([
             'onboarding_step' => OnboardingStepEnum::COMPLETED,
         ]);
@@ -62,7 +70,7 @@ class StorefrontAccountNamespaceTest extends TestCase
         $response = $this->actingAs($merchant)->getJson('/api/v1/storefront/account/bootstrap');
 
         $response->assertForbidden()
-            ->assertJsonPath('error_code', 'AUTH_002');
+            ->assertJsonPath('code', 'STORE_ACCESS_DENIED');
 
         Log::shouldHaveReceived('warning')->with(
             'identity.cross_context.denied',
@@ -76,16 +84,39 @@ class StorefrontAccountNamespaceTest extends TestCase
     {
         Log::spy();
 
+        /** @var User $customer */
         $customer = User::factory()->customer()->verified()->create();
         $response = $this->actingAs($customer)->getJson('/api/v1/admin/stores/999/dashboard/stats');
 
         $response->assertForbidden()
-            ->assertJsonPath('error_code', 'AUTH_002');
+            ->assertJsonPath('code', 'STORE_ACCESS_DENIED');
 
         Log::shouldHaveReceived('warning')->with(
             'identity.merchant_route.misused',
             Mockery::on(fn (array $context): bool => ($context['route_domain'] ?? null) === 'merchant_admin'
                 && (($context['identity_context']['actor_type'] ?? null) === 'customer')),
         )->atLeast()->once();
+    }
+
+    public function test_store_owner_can_access_store_admin_dashboard_via_pivot_role_permissions(): void
+    {
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        Permission::findOrCreate(PermissionEnum::DASHBOARD_VIEW, 'web');
+        $storeAdminRole = Role::findOrCreate(StoreRoleEnum::STORE_ADMIN->value, 'web');
+        $storeAdminRole->syncPermissions([PermissionEnum::DASHBOARD_VIEW]);
+
+        /** @var User $merchant */
+        $merchant = User::factory()->merchant()->verified()->create([
+            'onboarding_step' => OnboardingStepEnum::COMPLETED,
+        ]);
+
+        $store = Store::factory()->for($merchant, 'owner')->create();
+        $merchant->stores()->attach($store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
+
+        $response = $this->actingAs($merchant)->getJson("/api/v1/admin/stores/{$store->id}/dashboard/stats");
+
+        $response->assertOk()
+            ->assertJsonPath('success', true);
     }
 }

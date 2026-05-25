@@ -13,19 +13,6 @@ class LegacyPermissionAuthority
 {
     public function resolve(User $user, ?Store $activeStore): CapabilityResolutionResult
     {
-        if ($user->isSuperAdmin()) {
-            return new CapabilityResolutionResult(
-                capabilities: $user->getAllPermissions()->pluck('name')->sort()->values()->toArray(),
-                authority: 'legacy.role_permissions',
-                resolutionPath: 'super_admin.all_permissions',
-                storeId: $activeStore?->id,
-                membershipId: null,
-                membershipRole: null,
-                storeScoped: $activeStore !== null,
-                superAdminBypass: true,
-            );
-        }
-
         if (!$activeStore) {
             return new CapabilityResolutionResult(
                 capabilities: [],

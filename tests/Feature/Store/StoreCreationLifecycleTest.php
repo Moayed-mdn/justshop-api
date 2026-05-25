@@ -18,7 +18,7 @@ class StoreCreationLifecycleTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_first_store_creation_completes_onboarding(): void
+    public function test_first_store_creation_moves_onboarding_to_store_created(): void
     {
         /** @var User $user */
         $user = User::factory()->createStoreStep()->create();
@@ -35,9 +35,37 @@ class StoreCreationLifecycleTest extends TestCase
         $response->assertStatus(201);
         
         $user->refresh();
-        $this->assertEquals(OnboardingStepEnum::COMPLETED, $user->onboarding_step);
-        $this->assertNotNull($user->onboarding_completed_at);
+        $this->assertEquals(OnboardingStepEnum::STORE_CREATED, $user->onboarding_step);
         $this->assertNotNull($user->last_active_store_id);
+    }
+
+    public function test_bootstrap_store_job_completes_onboarding(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->create([
+            'onboarding_step' => OnboardingStepEnum::STORE_CREATED,
+        ]);
+        
+        $store = Store::factory()->create([
+            'owner_id' => $user->id,
+            'status' => StoreStatusEnum::PROVISIONING,
+            'provisioning_status' => ProvisioningStatusEnum::RUNNING,
+        ]);
+
+        $job = new BootstrapStoreJob($store->id);
+        
+        // Use real services
+        $initializationService = app(\App\Services\Store\StoreInitializationService::class);
+        $onboardingTransitionService = app(\App\Services\Auth\OnboardingTransitionService::class);
+
+        $job->handle($initializationService, $onboardingTransitionService);
+
+        $user->refresh();
+        $store->refresh();
+
+        $this->assertEquals(OnboardingStepEnum::COMPLETED, $user->onboarding_step);
+        $this->assertEquals(ProvisioningStatusEnum::COMPLETED, $store->provisioning_status);
+        $this->assertEquals(StoreStatusEnum::ACTIVE, $store->status);
     }
 
     public function test_bootstrap_store_job_failure_marks_provisioning_as_failed(): void

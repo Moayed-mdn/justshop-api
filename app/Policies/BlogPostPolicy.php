@@ -97,9 +97,3 @@ class BlogPostPolicy
         );
     }
 }
-
-    public function schedule(User $user, BlogPost $post): bool
-    {
-        return $this->decision($user, 'schedule', $user->hasRole(RoleEnum::SUPER_ADMIN->value), $post);
-    }
-}

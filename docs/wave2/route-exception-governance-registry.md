@@ -98,6 +98,10 @@ This document defines approved platform exceptions, approval criteria, required 
 
 ### 2. CMS Marketing Pages (Platform Admin)
 
+> Legacy note:
+> The route names and policy references below reflect the Wave 2 compatibility-era marketing implementation.
+> Current architecture may expose compatibility routes such as `/api/v1/admin/cms/pages/*` and target routes such as `/api/v1/admin/cms/platform/pages/*` with ownership-aware marketing policies.
+
 | Route | Method | Controller | Policy | Middleware | Tenant Isolation |
 |-------|--------|------------|--------|------------|------------------|
 | `/api/v1/admin/cms/marketing-pages` | GET | `AdminMarketingPageController::index` | `MarketingPagePolicy::viewAny` | `auth:sanctum`, `verified`, `role:super_admin` | N/A (platform resource) |

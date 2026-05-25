@@ -1,26 +1,39 @@
-# CMS Architecture
+# CMS Marketing Architecture
 
 ## Overview
 
-The CMS domain is a **platform-level content management system** for marketing, blog, and documentation content. It is intentionally separate from the tenant/store commerce architecture.
+The CMS domain is an ownership-aware content management system for marketing, blog, and documentation content.
+
+Current runtime priority:
+- Platform marketing pages
+- Platform blog
+- Platform documentation
+
+Planned extension:
+- Store marketing pages as a tenant-scoped CMS subdomain
+
+The CMS remains intentionally separate from the tenant/store commerce architecture even when some CMS entities are tenant-owned.
 
 ## CMS Subdomain Organization
 
-The CMS domain is organized into **4 primary subdomains** under a unified umbrella:
+The CMS domain is organized into ownership-aware subdomains under a unified umbrella:
 
 ```
 Cms/
-├── Marketing/      # Platform marketing pages (home, about, features, etc.)
-├── Blog/           # Platform blog posts with categories and tags
-├── Documentation/  # Platform documentation with hierarchical structure
-└── Seo/            # Shared SEO infrastructure for all CMS content
+├── Marketing/
+│   ├── Platform/      # Platform marketing pages (home, about, features, etc.)
+│   └── Store/         # Store marketing pages (tenant-scoped, rollout deferred)
+├── Blog/              # Platform blog posts with categories and tags
+├── Documentation/     # Platform documentation with hierarchical structure
+└── Seo/               # Shared SEO infrastructure for all CMS content
 ```
 
 ### Subdomain Responsibilities
 
 | Subdomain | Purpose | Ownership | Storage |
 |:----------|:--------|:----------|:--------|
-| **Marketing** | Landing pages, feature pages, pricing | Platform | JSON columns |
+| **Marketing / Platform** | Landing pages, feature pages, pricing | Platform | JSON columns |
+| **Marketing / Store** | Store landing pages, campaigns, promotions | Store | JSON columns |
 | **Blog** | Blog posts with categories, tags, authors | Platform | JSON columns |
 | **Documentation** | Product docs with sections and hierarchy | Platform | JSON columns |
 | **SEO** | Unified SEO metadata, sitemaps, structured data | Shared | Services |
@@ -29,32 +42,49 @@ Cms/
 
 ## Platform vs Tenant Ownership
 
-### Current Ownership Model
+### Current Runtime Model
 
-All CMS content is **platform-owned** and managed by super admins:
+Current runtime behavior is:
 
-- ✅ `marketing_pages` - NO `store_id` (platform-level)
+- ✅ public marketing reads are platform-facing
+- ✅ blog is platform-owned
+- ✅ documentation is platform-owned
+- ✅ current frontend integration depends on platform marketing pages with minimal change tolerance
+
+### Target Ownership Model
+
+The ownership split for CMS is:
+
+- ✅ `platform_marketing_pages` - NO `store_id` (platform-level)
+- ✅ `store_marketing_pages` - MUST include `store_id` (tenant-level)
 - ✅ `blog_posts` - NO `store_id` (platform-level)
-- ✅ `cms_documents` - NO `store_id` (platform-level, store_id removed via migration)
+- ✅ `cms_documents` - NO `store_id` (platform-level)
 - ✅ `cms_document_sections` - NO `store_id` (platform-level)
+
+### Delivery Rule
+
+- Platform marketing pages are migrated first.
+- Store marketing pages are backend-foundation only until the store frontend contract is ready.
+- Backend compatibility is preferred over large frontend changes.
 
 ### Authorization Model
 
-All CMS modules use **permission-based authorization** via Laravel Policies:
+All CMS modules use **policy-based authorization** with ownership-aware permissions:
 
 | Module | Policy | Permissions |
 |:-------|:-------|:------------|
-| Marketing Pages | `MarketingPagePolicy` | `cms.page.view`, `cms.page.create`, `cms.page.update`, `cms.page.delete`, `cms.page.publish` |
+| Platform Marketing Pages | `PlatformMarketingPolicy` | `marketing.platform.view`, `marketing.platform.create`, `marketing.platform.update`, `marketing.platform.delete`, `marketing.platform.publish` |
+| Store Marketing Pages | `StoreMarketingPolicy` | `marketing.store.view`, `marketing.store.create`, `marketing.store.update`, `marketing.store.delete`, `marketing.store.publish` |
 | Blog | `BlogPostPolicy` | `cms.blog.view`, `cms.blog.create`, `cms.blog.update`, `cms.blog.delete`, `cms.blog.publish` |
 | Documentation | `CmsDocumentPolicy` | `cms.doc.view`, `cms.doc.create`, `cms.doc.update`, `cms.doc.delete`, `cms.doc.publish` |
 
 **Authorization Flow:**
-1. Route middleware: `auth:sanctum`, `verified`, `role:super_admin`
-2. Controller: `$this->authorize('action', Model::class)`
-3. Policy: `$user->can(PermissionEnum::CMS_*)`
+1. Route middleware resolves the correct admin surface
+2. Controller calls `$this->authorize(...)`
+3. Policy enforces ownership-aware capabilities
 
 This provides:
-- Consistent authorization pattern across all CMS modules
+- Consistent authorization pattern across platform and store CMS
 - Granular permission control
 - Policy telemetry for observability
 - Future extensibility for role-based access
@@ -105,7 +135,9 @@ All CMS modules share the **same SEO contract** to ensure consistent frontend in
 
 ## Frontend API Boundaries
 
-### Public API (Next.js Marketing Site / Nuxt Storefront)
+### Public API
+
+#### Platform Public API (Current Runtime)
 
 **Endpoints:**
 ```
@@ -128,7 +160,21 @@ GET /api/v1/public/cms/seo/robots.txt            # Robots.txt
 - Includes unified SEO payload via `SeoResource`
 - Cache-friendly responses for ISR
 
-### Admin API (Next.js Dashboard)
+#### Store Public API (Deferred)
+
+Potential store-public shape:
+
+```http
+GET /api/v1/stores/{store}/cms/pages/{slug}
+GET /api/v1/stores/{store}/cms/seo/sitemap
+```
+
+Rules:
+- Store public CMS is tenant-scoped.
+- Store public CMS is not part of the active frontend contract yet.
+- Store public CMS may remain disabled or feature-flagged until the frontend is ready.
+
+### Admin API
 
 **Authentication:**
 - `auth:sanctum` + `verified` + `role:super_admin`
@@ -136,13 +182,20 @@ GET /api/v1/public/cms/seo/robots.txt            # Robots.txt
 
 **Endpoints:**
 ```
-# Marketing Pages
-GET    /api/v1/admin/cms/pages
-POST   /api/v1/admin/cms/pages
-GET    /api/v1/admin/cms/pages/{id}
-PUT    /api/v1/admin/cms/pages/{id}
-DELETE /api/v1/admin/cms/pages/{id}
-POST   /api/v1/admin/cms/pages/{id}/publish
+# Platform Marketing Pages
+GET    /api/v1/admin/cms/pages                    # compatibility route
+POST   /api/v1/admin/cms/pages                    # compatibility route
+GET    /api/v1/admin/cms/pages/{id}               # compatibility route
+PUT    /api/v1/admin/cms/pages/{id}               # compatibility route
+DELETE /api/v1/admin/cms/pages/{id}               # compatibility route
+POST   /api/v1/admin/cms/pages/{id}/publish       # compatibility route
+
+GET    /api/v1/admin/cms/platform/pages           # target route
+POST   /api/v1/admin/cms/platform/pages           # target route
+GET    /api/v1/admin/cms/platform/pages/{id}      # target route
+PUT    /api/v1/admin/cms/platform/pages/{id}      # target route
+DELETE /api/v1/admin/cms/platform/pages/{id}      # target route
+POST   /api/v1/admin/cms/platform/pages/{id}/publish
 
 # Blog
 GET    /api/v1/admin/cms/blog
@@ -164,16 +217,65 @@ POST   /api/v1/admin/cms/docs/{id}/publish
 POST   /api/v1/admin/cms/docs/reorder
 ```
 
+#### Store Marketing Admin API (Backend Foundation)
+
+```http
+GET    /api/v1/admin/stores/{store}/cms/pages
+POST   /api/v1/admin/stores/{store}/cms/pages
+GET    /api/v1/admin/stores/{store}/cms/pages/{id}
+PUT    /api/v1/admin/stores/{store}/cms/pages/{id}
+DELETE /api/v1/admin/stores/{store}/cms/pages/{id}
+POST   /api/v1/admin/stores/{store}/cms/pages/{id}/publish
+```
+
+Rules:
+- Platform admin CMS routes are super-admin global routes.
+- Store admin CMS routes are store-scoped.
+flowchart LR
+    A[Merchant actor<br/>store owner or store admin] --> B[merchant_admin identity domain]
+    B --> C[/api/v1/admin/stores/{store}/...]
+    C --> D[store.context]
+    D --> E[store-aware permission resolution]
+    E --> F[policy + action + repository]
+
+    G[super_admin actor] --> H[platform identity domain]
+    H --> I[/api/v1/admin/cms/* or /api/v1/platform/*]
+
+    style B fill:#bbdefb,color:#0d47a1
+    style C fill:#c8e6c9,color:#1a5e20
+    style E fill:#fff3e0,color:#e65100
+    style H fill:#f3e5f5,color:#7b1fa2
+    style I fill:#f3e5f5,color:#7b1fa2flowchart LR
+    A[Merchant actor<br/>store owner or store admin] --> B[merchant_admin identity domain]
+    B --> C[/api/v1/admin/stores/{store}/...]
+    C --> D[store.context]
+    D --> E[store-aware permission resolution]
+    E --> F[policy + action + repository]
+
+    G[super_admin actor] --> H[platform identity domain]
+    H --> I[/api/v1/admin/cms/* or /api/v1/platform/*]
+
+    style B fill:#bbdefb,color:#0d47a1
+    style C fill:#c8e6c9,color:#1a5e20
+    style E fill:#fff3e0,color:#e65100
+    style H fill:#f3e5f5,color:#7b1fa2
+    style I fill:#f3e5f5,color:#7b1fa2- Platform admin CMS routes belong to the platform identity domain.
+- Store admin CMS routes belong to the merchant-admin identity domain and MUST include `{store}`.
+- Current frontend should require only minimal route changes if target platform routes are adopted.
+
 ---
 
 ## Controller Organization
 
-All admin controllers follow a **consistent namespace pattern**:
+All admin controllers follow a consistent namespace pattern:
 
 ```
 App\Http\Controllers\Api\Admin\Cms\
 ├── MarketingPage\
 │   └── AdminMarketingPageController
+├── Marketing\
+│   ├── Platform\
+│   └── Store\
 ├── Blog\
 │   └── AdminBlogController
 └── Documentation\
@@ -195,11 +297,12 @@ App\Http\Controllers\Api\Cms\
     └── PublicCmsSeoController
 ```
 
-**Rules:**
-- Admin controllers MUST be under `Api\Admin\Cms\{Subdomain}\`
-- Public controllers MUST be under `Api\Cms\{Subdomain}\`
+Rules:
+- Admin controllers MUST be under `Api\Admin\Cms\...`
+- Public platform controllers MUST be under `Api\Cms\...`
+- Store-scoped public controllers MAY use store-aware namespaces later
 - Controllers MUST use policy authorization via `$this->authorize()`
-- Controllers MUST be thin (delegate to Actions)
+- Controllers MUST be thin and delegate to Actions
 
 ---
 
@@ -286,9 +389,9 @@ All CMS content supports a unified publishing workflow:
 
 ### States
 
-- **Draft**: `is_published = false`, `published_at = null`
-- **Scheduled**: `is_published = true`, `published_at > now()`
-- **Published**: `is_published = true`, `published_at <= now()`
+- **Draft**: content is editable and not publicly visible
+- **Scheduled**: content becomes public only when publish time is reached
+- **Published**: content is publicly visible
 
 ### SEO Implications
 
@@ -299,7 +402,7 @@ All CMS content supports a unified publishing workflow:
 
 ### Public API Behavior
 
-Public endpoints ONLY return content where:
+Public endpoints ONLY return content where publication visibility has been satisfied:
 ```php
 ->where('is_published', true)
 ->where(function ($q) {
@@ -345,28 +448,29 @@ The CMS uses JSON columns for `title`, `slug`, `sections`, `content`, and `seo`.
 
 ---
 
-## Future Considerations
+## Migration And Rollout Rules
 
-### Tenant-Scoped Documentation (Not Implemented)
+### Platform Marketing Migration
 
-If tenant-specific documentation is needed in the future:
+Rules:
+- Migrate platform marketing storage and runtime first.
+- Keep the current frontend contract stable as much as possible.
+- Prefer backend compatibility adapters over frontend rewrites.
+- Temporary legacy fallback reads are allowed during migration only.
 
-1. Create new `TenantDocumentation` subdomain under `Cms/`
-2. Add `store_id` foreign key to new tables
-3. Use separate policies with store membership checks
-4. Keep platform documentation separate
-5. Update `CmsOwnershipEnum` usage
+### Store Marketing Rollout
 
-**Current State:** All documentation is platform-level.
+Rules:
+- Store marketing backend may be prepared before store frontend rollout.
+- Store marketing public contract is not final yet.
+- Do not force store marketing frontend implementation until requirements are defined.
 
-### Multi-Tenant Blog (Not Planned)
+### Blog And Documentation
 
-Blog remains platform-level. Tenant-specific blogs would require:
-- Separate subdomain
-- Store-scoped queries
-- Different authorization model
-
-**Decision:** Out of scope for current architecture.
+Rules:
+- Blog remains platform-owned.
+- Documentation remains platform-owned.
+- Tenant-scoped blog or documentation remains out of scope unless explicitly approved later.
 
 ---
 

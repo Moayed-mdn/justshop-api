@@ -4,6 +4,10 @@
 **Status:** ✅ COMPLETE  
 **Approach:** Controlled stabilization, NOT redesign
 
+> Historical note:
+> This summary captures an earlier stabilization state.
+> The current architecture is defined by `docs/ARCHITECTURE.md` and `docs/CMS_MARKETING_ARCHITECTURE.md`, which now distinguish `Platform CMS` and `Store CMS` for marketing.
+
 ---
 
 ## What Was Done
@@ -14,14 +18,14 @@
 - **Impact:** Clear separation, no breaking changes
 
 ### 2. ✅ Authorization Normalization
-- Created `MarketingPagePolicy` and `CmsDocumentPolicy`
+- Created the original marketing/documentation policy layer
 - Updated `BlogPostPolicy` from role-based to permission-based
 - Added authorization checks to all admin controllers
 - **Impact:** Consistent, granular, observable authorization
 
 ### 3. ✅ Permission Constants
 - Added `CMS_BLOG_*` permissions (view, create, update, delete, publish)
-- Added `CMS_PAGE_*` permissions (view, create, update, delete, publish)
+- Added the original platform marketing permissions (`CMS_PAGE_*`) used during that stabilization pass
 - **Impact:** Complete permission taxonomy for CMS domain
 
 ### 4. ✅ Shared Infrastructure
@@ -55,14 +59,17 @@
 ### CMS Subdomains
 ```
 Cms/
-├── Marketing/      # Platform marketing pages
+├── Marketing/
+│   ├── Platform/   # Current direction for platform marketing pages
+│   └── Store/      # Current direction for store marketing pages
 ├── Blog/           # Platform blog posts
 ├── Documentation/  # Platform documentation
 └── Seo/            # Shared SEO infrastructure
 ```
 
 ### Ownership Model
-- **Marketing:** Platform (NO store_id)
+- **Marketing / Platform:** Platform (NO store_id)
+- **Marketing / Store:** Store (requires store_id; frontend rollout may be deferred)
 - **Blog:** Platform (NO store_id)
 - **Documentation:** Platform (NO store_id, migrated from tenant)
 - **SEO:** Shared infrastructure
@@ -70,7 +77,7 @@ Cms/
 ### Authorization Pattern
 - **Route:** `auth:sanctum`, `verified`, `role:super_admin`
 - **Controller:** `$this->authorize('action', Model::class)`
-- **Policy:** `$user->can(PermissionEnum::CMS_*)`
+- **Policy:** ownership-aware policies; legacy `cms.page.*` references in this summary are historical
 
 ### SEO Architecture
 - **Storage:** `SeoMetaDTO` (JSON localized maps)
@@ -155,7 +162,7 @@ Cms/
 ### ✅ Permission-Based Authorization
 **Decision:** All CMS modules use permission-based policies  
 **Rationale:** Granular control, observability, extensibility  
-**Impact:** Consistent authorization pattern
+**Impact:** Consistent authorization pattern, later evolved into explicit platform/store marketing permissions
 
 ### ✅ Unified SEO Contract
 **Decision:** Single SEO response structure for all CMS content  

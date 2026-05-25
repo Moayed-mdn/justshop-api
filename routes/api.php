@@ -49,6 +49,7 @@ Route::middleware('identity.route:storefront_commerce,customer,observe')->group(
 
 // Store management routes (outside {store} group - POST has no store context yet)
 Route::middleware('identity.route:merchant_admin,merchant,enforce')->group(function (): void {
+    require 'api/v1/admin/admin.php';
     require 'api/v1/stores/store-management.php';
 });
 
@@ -82,7 +83,6 @@ Route::prefix('/v1/support')
 // These routes still use implicit platform authority via identity.route middleware.
 // Wave 6 Goal: Migrate these to explicit platform.authority middleware.
 Route::middleware('identity.route:platform,platform,enforce')->group(function (): void {
-    require 'api/v1/admin/admin.php';
     require 'api/v1/admin/leads.php';
     require 'api/v1/admin/cms/blog.php';
     require 'api/v1/admin/cms/marketing-pages.php';

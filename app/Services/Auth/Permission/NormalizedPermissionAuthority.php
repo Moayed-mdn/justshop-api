@@ -18,19 +18,6 @@ class NormalizedPermissionAuthority
 
     public function resolve(User $user, ?Store $activeStore): CapabilityResolutionResult
     {
-        if ($user->isSuperAdmin()) {
-            return new CapabilityResolutionResult(
-                capabilities: $user->getAllPermissions()->pluck('name')->sort()->values()->toArray(),
-                authority: 'normalized.store_scope',
-                resolutionPath: 'super_admin.all_permissions',
-                storeId: $activeStore?->id,
-                membershipId: null,
-                membershipRole: null,
-                storeScoped: $activeStore !== null,
-                superAdminBypass: true,
-            );
-        }
-
         if (!$activeStore) {
             return new CapabilityResolutionResult(
                 capabilities: [],

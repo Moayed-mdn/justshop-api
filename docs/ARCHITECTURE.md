@@ -50,7 +50,10 @@ Route ownership must be explicit and observable.
 Normalized ownership domains:
 
 - merchant ownership: `/api/v1/users/*`
-- merchant ownership: `/api/v1/admin/*`
+- merchant ownership: `/api/v1/admin/stores/{store}/*`
+- platform ownership: `/api/v1/admin/cms/*`
+- platform ownership: `/api/v1/admin/leads/*`
+- platform ownership: `/api/v1/platform/*`
 - customer ownership: `/api/v1/storefront/account/*`
 
 Route-domain metadata is allowed to assert and log ownership mismatches.
@@ -626,7 +629,9 @@ public int $storeId;
 * `storeId` MUST be the **first constructor parameter**
 
 #### Exception:
-* **Platform-level CMS DTOs** (Documentation, Marketing Pages) do NOT require `storeId` as they are shared globally across the platform.
+* **Platform-level CMS DTOs** do NOT require `storeId`.
+* This exception applies to platform-owned CMS entities such as platform marketing pages, blog posts, and documentation.
+* Store-owned CMS entities MUST include `storeId` as the first constructor parameter.
 
 ---
 
@@ -1319,8 +1324,7 @@ Rules:
 * Admin MUST be store-aware at all times
 
 ## 16.2 API Structure
-
-All admin endpoints MUST include the store context:
+All store-admin endpoints MUST include the store context:
 
 ```http
 /api/v1/admin/stores/{store}/...
@@ -1334,6 +1338,15 @@ DELETE /api/v1/admin/stores/{store}/users/{id}
 POST   /api/v1/admin/stores/{store}/products
 PATCH  /api/v1/admin/stores/{store}/orders/{id}/status
 GET    /api/v1/admin/stores/{store}/dashboard/stats
+```
+
+### Super Admin Global Exceptions:
+```http
+GET    /api/v1/admin/cms/pages
+POST   /api/v1/admin/cms/pages
+GET    /api/v1/admin/cms/blog
+GET    /api/v1/admin/cms/docs
+GET    /api/v1/platform/*
 ```
 
 #### ❌ Forbidden:
@@ -1389,7 +1402,7 @@ Uses `spatie/laravel-permission`.
 ### Roles
 
 #### Platform:
-* `super_admin` → full global access, bypasses store restrictions
+* `super_admin` → full platform-level access. Bypasses store restrictions ONLY via explicit Impersonation flow. Directly accessing store routes or merchant data as a super_admin is forbidden.
 
 #### Store:
 * `store_admin` → full access within a store
@@ -1447,7 +1460,7 @@ if (!$user->stores()->where('store_id', $storeId)->exists()) {
 }
 ```
 
-**Exception**: `super_admin` bypasses this check.
+**Note**: `super_admin` users MUST use the impersonation mechanism to satisfy this check when managing store-scoped resources. Direct bypass is no longer supported to maintain auditability.
 
 ### Policies (permission check ONLY — no business logic)
 ```php
@@ -1767,473 +1780,343 @@ Architecture MUST allow:
 # 18. CMS Architecture Rules
 
 ## 18.1 CMS Philosophy
-The CMS is an **independent domain** responsible for managing non-commerce content. While the Commerce domain (Products, Orders, Cart) handles transactional entities, the CMS domain handles the storytelling, layout, and informational aspects of the platform.
+The CMS is an independent domain for non-commerce content. It is API-first and JSON-delivered only.
 
-*   **Commerce Domain**: Products, Orders, Cart, Payments, Inventory.
-*   **CMS Domain**: Pages, Blocks, Sections, Navigation, SEO, Media.
+Rules:
+* Platform CMS and Store CMS are different ownership models under the same domain.
+* The backend delivers structured content and SEO metadata.
+* Frontends render components and pages.
+* No Blade rendering is allowed for CMS delivery.
 
-## 18.2 CMS Entity Ownership (Multi-Tenancy)
-All CMS entities are strictly **store-scoped**.
-*   Every Page, Block, or Menu MUST belong to a `store_id`.
-*   Store isolation is absolute; CMS content is never shared across stores.
-*   Queries for CMS entities MUST include the `store_id` constraint in Repositories.
+## 18.2 Ownership Model
+The CMS is split by ownership:
 
-## 18.3 CMS Rendering Principles (API-First Only)
-The backend serves as a **pure content provider**.
-*   **No Blade Rendering**: The backend MUST NOT generate HTML or use Blade templates for CMS content.
-*   **JSON Delivery**: The backend delivers structured JSON data representing the page structure and content.
-*   **Frontend Responsibility**: The Next.js frontend is responsible for interpreting the JSON schema and rendering the corresponding UI components.
-*   **Storefront Rendering**: The storefront API delivers optimized, read-only content for public consumption.
+### Platform CMS
+Platform CMS is global and managed by super admins.
 
-## 18.4 Dynamic Schema Philosophy
-The CMS uses a **flexible block-based schema** to support modern page builders.
-*   **Reusable Blocks/Sections**: Pages are composed of an ordered array of blocks (e.g., `Hero`, `ProductCarousel`, `RichText`).
-*   **Schema Validation**: Each block type has a predefined JSON schema. The backend MUST validate block content against these schemas during creation/update.
-*   **Flexible Layouts**: The architecture allows for nested blocks and flexible section arrangements without database schema changes.
+Entities include:
+* platform marketing pages
+* blog posts
+* documentation
 
-## 18.5 Separation between Content and Commerce
-*   **Decoupled Entities**: CMS pages should reference Commerce entities (e.g., `product_id`, `category_slug`) but MUST NOT duplicate commerce data.
-*   **Reference-based Integration**: A "Featured Product" block stores the `product_id`. The API response may include basic product details via a Repository call, but the source of truth remains the Commerce domain.
+Rules:
+* Platform CMS entities MUST NOT include `store_id`.
+* Platform CMS repositories MUST NOT apply store scoping.
+* Platform CMS admin routes MAY exist without `{store}` because they are super-admin global routes.
 
-## 18.6 Draft/Publish Workflow
-The CMS supports a robust content lifecycle:
-*   **Draft**: Content currently being edited; visible only via Admin APIs.
-*   **Published**: The live version of the content; delivered by the Storefront API.
-*   **Workflow**: Content transitions from Draft to Published via a `PublishAction`.
+### Store CMS
+Store CMS is tenant-owned and isolated per store.
 
-## 18.7 CMS Folder Structure (Domain-First)
-The CMS system follows the strict **Domain-First** architecture. All CMS domains MUST be nested under a `Cms` namespace to maintain isolation from commerce domains.
+Current scope:
+* store marketing pages only
 
-### Structure:
+Rules:
+* Store CMS entities MUST include `store_id`.
+* Store CMS repositories MUST scope queries by `store_id`.
+* Store CMS admin routes MUST include `{store}`.
+* Store CMS public routes MUST include `{store}` or equivalent store resolution.
+
+## 18.3 CMS Subdomains
+The CMS domain is organized into ownership-aware subdomains:
+
+```plaintext
+Cms/
+ ├── Marketing/
+ │    ├── Platform/
+ │    └── Store/
+ ├── Blog/           # Platform-owned
+ ├── Documentation/  # Platform-owned
+ └── Seo/            # Shared infrastructure
+```
+
+Rules:
+* `Marketing/Platform` is the runtime source for platform marketing pages.
+* `Marketing/Store` is reserved for tenant marketing pages and may be delivered incrementally.
+* Blog and Documentation remain platform-owned.
+* Shared SEO services may serve both ownership models.
+
+## 18.4 Rendering Principles
+The backend is a content API only.
+
+Rules:
+* No HTML rendering in Laravel for CMS content.
+* CMS payloads MUST be JSON.
+* Frontends interpret content structure and render components.
+* Public APIs MUST be read-only and published-only.
+
+## 18.5 Storage And Schema Rules
+CMS content uses JSON-localized and JSON-structured fields.
+
+Rules:
+* Translatable CMS fields MUST use JSON maps.
+* Flexible content structures such as `sections`, `content`, and `seo` MAY use JSON columns.
+* Do not create relational translation tables for CMS entities.
+* Do not force store ownership onto platform CMS entities.
+
+## 18.6 Publishing Workflow
+All CMS content follows the same publishing model.
+
+States:
+* Draft
+* Scheduled
+* Published
+
+Rules:
+* Public APIs return only published content.
+* Draft and scheduled content are admin-only unless a secure preview flow exists.
+* SEO for non-published content must remain non-indexable.
+
+## 18.7 Folder Structure
+CMS code must remain domain-first and ownership-aware.
+
 ```plaintext
 app/
  ├── Actions/Cms/
- │    ├── Page/           (e.g., CreatePageAction, PublishPageAction)
- │    ├── Block/          (e.g., CreateBlockAction, SyncGlobalBlockAction)
- │    ├── Menu/           (e.g., BuildMenuTreeAction)
- │    ├── Seo/            (e.g., UpdateSeoMetadataAction)
- │    ├── Redirect/       (e.g., CreateRedirectAction)
- │    ├── Template/       (e.g., RegisterTemplateAction)
- │    ├── Media/          (e.g., ProcessCmsMediaAction)
- │
+ │    ├── Marketing/
+ │    │    ├── Platform/
+ │    │    └── Store/
+ │    ├── Blog/
+ │    ├── Documentation/
+ │    └── Seo/
  ├── DTOs/Cms/
- │    ├── Page/           (e.g., PageDTO, CreatePageDTO)
- │    ├── Block/          (e.g., BlockDTO, BlockSchemaDTO)
- │    ├── Menu/
- │    ├── Seo/
- │    ├── Redirect/
- │    ├── Template/
- │    ├── Media/
- │
+ │    ├── Marketing/
+ │    │    ├── Platform/
+ │    │    └── Store/
+ │    ├── Blog/
+ │    ├── Documentation/
+ │    └── Seo/
  ├── Repositories/Cms/
- │    ├── Page/           (e.g., PageRepository)
- │    ├── Block/          (e.g., BlockRepository)
- │    ├── Menu/           (e.g., MenuRepository)
- │    ├── Redirect/
- │    ├── Media/
- │
+ │    ├── Marketing/
+ │    │    ├── Platform/
+ │    │    └── Store/
+ │    ├── Blog/
+ │    ├── Documentation/
+ │    └── Sitemap/
  ├── Services/Cms/
- │    ├── Content/        (e.g., ContentCompositionService)
- │    ├── Rendering/      (e.g., BlockRendererContractService)
- │    ├── SEO/            (e.g., SitemapGeneratorService)
- │
- ├── Http/
- │    ├── Controllers/Api/
- │    │    ├── Cms/       (STOREFRONT APIs - Read-only)
- │    │    │    ├── PageController.php
- │    │    │    ├── MenuController.php
- │    │    │    ├── SitemapController.php
- │    │    ├── Admin/Cms/ (ADMIN APIs - Management)
- │    │    │    ├── PageController.php
- │    │    │    ├── BlockController.php
- │    │    │    ├── MenuController.php
- │    │    │    ├── RedirectController.php
- │    │
- │    ├── Requests/Cms/ (and Admin/Cms/)
- │    │    ├── Page/
- │    │    ├── Block/
- │    │
- │    ├── Resources/Cms/ (and Admin/Cms/)
- │    │    ├── Page/
- │    │    ├── Block/
+ │    ├── Marketing/
+ │    └── Seo/
 ```
 
-## 18.8 Admin CMS vs. Storefront API
-The CMS domain is split into two distinct API surfaces:
+## 18.8 DTO And Repository Rules
+DTO and repository behavior depends on CMS ownership.
 
-### 1. Admin CMS (Management)
-*   **Purpose**: Full CRUD operations for content managers.
-*   **Rules**:
-    *   MUST support Draft vs. Published states.
-    *   MUST allow raw schema editing and validation.
-    *   Endpoints live under `/api/v1/admin/stores/{store}/cms/...`.
-    *   Returns detailed management metadata (author, timestamps, version history).
+Rules:
+* Platform CMS DTOs MUST NOT require `storeId`.
+* Store CMS DTOs MUST include `storeId` as the first constructor parameter.
+* Platform CMS repositories MUST query without store scoping.
+* Store CMS repositories MUST apply `where('store_id', $storeId)`.
+* Repositories remain the only database access layer.
 
+## 18.9 API Surfaces
+CMS delivery is split into platform and store surfaces.
 
-
-### 2. Storefront CMS (Public Delivery)
-*   **Purpose**: High-performance, read-only content delivery for Next.js.
-*   **Rules**:
-    *   MUST ONLY return "Published" content.
-    *   MUST deliver optimized JSON payloads (stripped of admin metadata).
-    *   Endpoints live under `/api/v1/stores/{store}/cms/...`.
-    *   MUST be cache-friendly and optimized for SEO.
-
-## 18.9 Content Composition & Reusability Rules
-
-### Reusable Blocks
-*   **Definition**: A "Global Block" is a block entity stored independently of any page.
-*   **Rule**: Global blocks are identified by a unique `handle` or `uuid`.
-*   **Usage**: Multiple pages may reference the same Global Block. Updating the Global Block updates all referencing pages.
-
-### Content Composition
-*   **Composition Model**: A Page is a collection of `BlockInstances`.
-*   **Block Instance**: Contains the block `type` (e.g., `hero-banner`), its local `content` (data), and `settings` (layout/styling).
-*   **Mixed Content**: A page can contain both local-only blocks and references to Global Blocks.
-
-### Content Rendering Contract
-To ensure the Next.js frontend can render content reliably, the API MUST follow a strict JSON contract:
-
-```json
-{
-  "type": "block-type-identifier",
-  "data": {
-    "title": "...",
-    "image": "...",
-    "cta_link": "..."
-  },
-  "settings": {
-    "background_color": "#ffffff",
-    "padding": "large"
-  }
-}
+### Platform Public CMS
+Examples:
+```http
+GET /api/v1/public/cms/pages/{slug}
+GET /api/v1/public/cms/blog
+GET /api/v1/public/cms/blog/{slug}
+GET /api/v1/public/cms/docs/{slugPath}
 ```
-*   **Contract Rule**: Every block MUST have a `type`, `data`, and `settings` key.
 
-## 18.10 Shared Reusable CMS Services
-The `Services/Cms/` folder contains orchestrators that don't belong to a single entity:
-*   **`ContentCompositionService`**: Responsible for resolving a page's block tree, including fetching global blocks and injecting commerce data (e.g., resolving a product ID into a product card).
-*   **`BlockRendererContractService`**: Validates that block JSON payloads adhere to the defined schema before storage.
+Rules:
+* Used for platform marketing site content.
+* No authentication.
+* Published content only.
+* Locale-aware and SEO-ready.
 
-## 18.11 SEO & Localization
-*   **SEO Content**: Every Page and major CMS entity MUST include metadata (Title, Description, OG Tags, Canonical URLs).
-*   **Localized Content**: CMS content MUST support multi-lingual fields. Translatable strings are handled at the application level, following the project's localization rules.
+### Platform Admin CMS
+Examples:
+```http
+GET    /api/v1/admin/cms/pages
+POST   /api/v1/admin/cms/pages
+GET    /api/v1/admin/cms/blog
+GET    /api/v1/admin/cms/docs
+```
 
-## 18.12 Architectural Integration
-The CMS system MUST integrate naturally with the existing core architecture:
-*   **DTO Architecture**: Every CMS Action (e.g., `CreatePageAction`) MUST receive a strictly typed DTO including `storeId` as the first parameter.
-*   **Repository Pattern**: All CMS data access MUST go through Repositories and MUST be store-scoped.
-*   **Action-Based Logic**: All business logic (publishing, validation, schema processing) MUST be encapsulated in Actions.
+Rules:
+* Super-admin global routes.
+* No `{store}` route segment is required.
+* Authorization is policy-based.
 
-## 18.13 Future Extensibility
-The CMS architecture is designed to be extensible:
-*   New block types can be added by defining a new schema and frontend component.
-*   Supports future features like scheduled publishing, content versioning, and A/B testing.
+### Store CMS
+Examples:
+```http
+GET    /api/v1/stores/{store}/cms/pages/{slug}
+GET    /api/v1/admin/stores/{store}/cms/pages
+POST   /api/v1/admin/stores/{store}/cms/pages
+```
+
+Rules:
+* Store CMS is tenant-scoped.
+* Store frontend rollout may be deferred.
+* Store public routes may remain disabled or feature-flagged until the frontend contract is ready.
+
+## 18.10 Response Contract Rules
+The backend delivers structure; the frontend renders components.
+
+Rules:
+* Keep platform public payloads stable when migrating internals.
+* Prefer compatibility adapters over frontend rewrites.
+* SEO payloads MUST remain complete and locale-aware.
+* Localized slugs and titles MUST preserve fallback behavior.
+
+## 18.11 Authorization And Security Rules
+Policies are the only authorization enforcement layer for CMS.
+
+Rules:
+* Platform CMS controllers authorize platform models and policies directly.
+* Store CMS controllers authorize store-scoped models and policies directly.
+* Actions MUST NOT perform authorization checks.
+* Public CMS endpoints MUST enforce published visibility only.
+* Slug uniqueness must match ownership scope:
+  * platform slug uniqueness is global
+  * store slug uniqueness is per store
+
+## 18.12 Shared SEO Rules
+SEO infrastructure is shared across platform and store CMS.
+
+Rules:
+* Use a unified SEO contract for CMS entities.
+* SEO resolution may vary by route prefix and ownership, but response shape must remain consistent.
+* Sitemap generation must read from the correct ownership-specific source.
+
+## 18.13 Current Delivery Priority
+Current implementation priority is:
+* platform marketing pages first
+* store marketing backend foundation second
+
+Rules:
+* Do not require a large frontend rewrite for platform marketing migration.
+* Backend compatibility is preferred over frontend changes.
+* Store marketing frontend rollout is deferred until its contract is agreed.
 
 # 19. CMS Database Architecture Rules
 
-## 19.1 Core Storage Principles
-The CMS database architecture is designed for maximum flexibility while maintaining strict multi-tenant isolation and data integrity.
+## 19.1 Ownership-Specific Storage
+Database rules depend on CMS ownership.
 
-### 1. Mandatory JSON for Dynamic Content
-JSON columns MUST be used for all entities requiring structural flexibility.
-*   **`blocks.content`**: Stores the actual data (text, images, links) for a block.
-*   **`block_instances.settings`**: Stores layout-specific settings (padding, colors, visibility).
-*   **`pages.layout`**: Stores the ordered list of block instances and their configurations.
-*   **`seo_metas.meta`**: Stores open graph tags, schema.org data, and custom meta tags.
+### Platform CMS
+Rules:
+* Platform CMS tables MUST NOT include `store_id`.
+* Slugs are globally unique within the relevant platform entity scope.
 
-### 2. No Rigid Schemas for Dynamic Content
-DO NOT create relational tables for specific block types (e.g., `hero_blocks`, `carousel_blocks`). All dynamic structures must live within JSON fields to allow the frontend and page builders to evolve without migration friction.
+### Store CMS
+Rules:
+* Store CMS tables MUST include `store_id`.
+* Slugs and handles are unique per store.
 
-## 19.2 Store Isolation (STRICT)
-ALL CMS entities MUST include a `store_id` foreign key.
-*   **Entities**: `pages`, `blocks`, `menus`, `redirects`, `media`, `seo_metas`.
-*   **Uniqueness**: Slugs and handles MUST be unique per store.
-    *   `UNIQUE(store_id, slug)`
-    *   `UNIQUE(store_id, handle)`
+## 19.2 JSON And Localization Rules
+Rules:
+* Use JSON columns for localized CMS fields such as `title`, `slug`, `content`, and `seo`.
+* Use JSON columns for flexible structured content such as `sections`.
+* Avoid relational translation tables for CMS content.
 
-## 19.3 Content Lifecycle & States
-Every CMS entity (except redirects and media) MUST support:
-*   **`is_published`**: Boolean flag.
-*   **`published_at`**: Timestamp for scheduled or historical publishing.
-*   **`deleted_at`**: Mandatory Soft Deletes.
-*   **Draft State**: Managed via a `version` system or a dedicated `draft_content` JSON column.
+## 19.3 Lifecycle Columns
+Rules:
+* CMS entities may use status enums cast in PHP or boolean-plus-timestamp patterns, but the public visibility rule must remain consistent.
+* Soft deletes are allowed where lifecycle management requires them.
+* Scheduled publishing must be supported through `published_at` or equivalent timing metadata.
 
-## 19.4 Localization Architecture
-The CMS MUST be localization-ready from the database layer.
-*   **JSON-based Translations**: Translatable fields (e.g., `title`, `content`) MUST be stored as JSON objects where keys are locale codes (`en`, `ar`).
-    *   Example: `{"en": "Hello", "ar": "مرحبا"}`.
-*   **Rule**: Never create separate tables for translations.
+## 19.4 Cache Invalidation
+Rules:
+* Platform CMS cache tags SHOULD be global CMS tags.
+* Store CMS cache tags SHOULD include store identity.
+* Publish/update/delete operations MUST invalidate affected CMS caches.
 
-## 19.5 Relationships & Polymorphism
+# 20. CMS DTO, Action, And Service Rules
 
-### 1. SEO Entities
-SEO metadata MUST be attached via a **Polymorphic Relationship** (`seoable`).
-*   Supported entities: `Page`, `Product`, `Category`, `GlobalBlock`.
+## 20.1 DTO Rules
+Rules:
+* All CMS actions MUST receive DTOs.
+* Platform CMS DTOs do not include `storeId`.
+* Store CMS DTOs include `storeId` as the first constructor parameter.
+* DTOs must stay strictly typed and immutable.
 
-### 2. Media Ownership
-Media entities (images, videos, documents) are global to the store but attached to entities via a many-to-many or polymorphic relation.
-*   **Rule**: Media MUST belong to a `store_id`.
-*   **Rule**: Deleting a store MUST cascade and delete all associated media files and records.
+## 20.2 Action Rules
+Rules:
+* Actions perform business logic only.
+* Slug validation must respect ownership scope.
+* Publish actions must update publication state and trigger necessary invalidation.
+* Compatibility adapters belong in resources/services, not controllers.
 
-### 3. Page-Block Relationship
-*   A **Page** has many **BlockInstances**.
-*   A **BlockInstance** references a **GlobalBlock** (optional) and contains local overrides.
-
-## 19.6 Selection Criteria: JSON vs Relational
-
-| Feature | Use JSON When... | Use Relational When... |
-|---------|------------------|------------------------|
-| **Data Structure** | Dynamic, nested, or evolving | Fixed, flat, and stable |
-| **Querying** | Primarily fetched as a whole | Needs filtering or joining |
-| **Integrity** | Schema-less validation (JSON Schema) | Foreign key constraints needed |
-| **Example** | Block content, Page layouts | Slugs, Store ownership, Redirects |
-
-## 19.7 Cache Invalidation Principles
-CMS content is high-read, low-write.
-*   **Store-Level Tagging**: All CMS cache entries MUST be tagged with `store:{id}`.
-*   **Entity-Level Tagging**: Cache entries for pages/blocks MUST be tagged with `cms:{entity}:{id}`.
-*   **Invalidation**: Actions (Create/Update/Delete/Publish) MUST trigger tag-based invalidation.
-*   **Rule**: Storefront APIs MUST never serve stale CMS content after a "Publish" action.
-
-# 20. CMS DTO & Action Rules
-
-## 20.1 DTO Architecture (MANDATORY)
-All CMS operations MUST use strictly typed DTOs. CMS DTOs MUST follow the project-wide requirement of having `storeId` as the first constructor parameter.
-
-### Rules:
-*   **Nested Payloads**: DTOs for Pages MUST support nested block structures (typically as an array of `BlockDTO` or `BlockInstanceDTO`).
-*   **Localized Fields**: Translatable fields MUST be accepted as associative arrays (`['en' => '...', 'ar' => '...']`) and typed as `array`.
-*   **SEO Structures**: DTOs MUST include a nested `SeoDTO` or `meta` array for SEO metadata.
-*   **Immutability**: All CMS DTOs MUST be immutable.
-
-### Example: CreatePageDTO
-```php
-class CreatePageDTO
-{
-    public function __construct(
-        public int $storeId,
-        public array $title, // Localized: ['en' => 'Home', 'ar' => 'الرئيسية']
-        public string $slug,
-        public array $layout, // Array of block configurations
-        public CreateSeoDTO $seo,
-        public bool $isPublished = false,
-    ) {}
-
-    public static function fromRequest(CreatePageRequest $request, int $storeId): self
-    {
-        return new self(
-            storeId: $storeId,
-            title: $request->array('title'),
-            slug: $request->string('slug'),
-            layout: $request->array('layout'),
-            seo: CreateSeoDTO::fromArray($request->array('seo')),
-            isPublished: $request->boolean('is_published'),
-        );
-    }
-}
-```
-
-## 20.2 CMS Actions (Single Responsibility)
-Actions MUST perform exactly one business operation. Complex workflows MUST be handled by **Services**.
-
-### Core CMS Actions:
-*   **`CreatePageAction`**: Validates slug availability within the store and persists the page entity.
-*   **`PublishPageAction`**: Validates content readiness, updates `is_published` and `published_at`, and triggers cache invalidation.
-*   **`DuplicatePageAction`**: Clones a page entity, generating a unique slug (e.g., `-copy`) and duplicating its layout/blocks.
-*   **`ReorderBlocksAction`**: Updates the sequence of blocks within a page's layout JSON.
-*   **`ResolvePageBySlugAction`**: (Storefront) Retrieves a published page by slug, ensuring store-scoping.
-
-### Action Rules:
-*   **Slug Collision**: Actions MUST handle slug collisions within the same store. A 422 error or automatic suffixing is required.
-*   **Block Validation**: Actions MUST delegate block content validation to a `BlockValidatorService` or similar.
-*   **Reusable References**: When a page layout references a Global Block, the Action MUST only store the reference (ID/Handle), not a copy of the block content.
-
-## 20.3 CMS Orchestration Services
-Services are used to coordinate multiple Actions or complex logic that spans entities.
-
-*   **`PagePublishingService`**: Orchestrates `PublishPageAction` + `SitemapUpdateAction` + `CacheClearAction`.
-*   **`PageRenderingService`**: (Storefront) Fetches a page, resolves all Global Block references, injects commerce data, and returns a fully hydrated response.
-*   **`MenuGenerationService`**: Builds nested menu trees from raw database records, handling localization and active-state logic.
-*   **`SeoResolutionService`**: Merges entity-specific SEO metadata with store-wide defaults to produce the final meta payload.
-
-## 20.4 Repository Rules
-Repositories are the **only** layer allowed to perform database queries.
-
-### Retrieval Patterns:
-*   **Hydrated Pages**: Repositories MUST support eager loading or manual hydration of SEO metadata and associated media.
-*   **Nested Blocks**: For storefront delivery, Repositories MUST provide methods to retrieve pages with their full block tree resolved.
-*   **Localization**: Repositories MUST return localized fields as they are stored (JSON objects), leaving transformation to the **API Resource** layer.
-
-### Strict Separation of Concerns:
-*   **Repositories**: DB access, store-scoping (`where('store_id', $storeId)`).
-*   **Actions**: Business rules, slug validation, permission checks (store-scoped).
-*   **Services**: Workflow orchestration, cross-domain coordination (e.g., CMS + Product).
+## 20.3 Service Rules
+Rules:
+* Shared CMS services may orchestrate SEO, sitemap generation, caching, and compatibility adaptation.
+* Services may support migration from legacy platform marketing storage to the new platform storage.
 
 # 21. CMS API Contract Rules
 
-## 21.1 Storefront API (Public Delivery)
-Storefront APIs are read-only and optimized for Next.js (SSR/ISR/SWR).
+## 21.1 Platform Contract Stability
+Rules:
+* Existing platform public CMS consumers must be protected from breaking payload changes.
+* Small route updates are acceptable only when necessary.
+* Payload shape changes require explicit approval.
 
-### Endpoints:
-*   `GET /api/v1/stores/{store}/cms/pages/{slug}`: Returns a published page by slug.
-*   `GET /api/v1/stores/{store}/cms/menus/{handle}`: Returns a nested menu tree.
-*   `GET /api/v1/stores/{store}/cms/sitemap`: Returns data for sitemap generation.
+## 21.2 Store Contract Timing
+Rules:
+* Store marketing public contracts are not final until frontend requirements are defined.
+* Store CMS public delivery may be postponed while backend foundations are built.
 
-### Rules:
-*   **Published Only**: Storefront APIs MUST NEVER return draft content.
-*   **Slug Resolution**: Slugs are resolved within the store context. Homepages typically use the slug `index` or `/`.
-*   **Cache Control**: Responses SHOULD include tags for Next.js On-Demand Revalidation.
+## 21.3 Preview And Revalidation
+Rules:
+* Draft preview must be secure if exposed.
+* Publish flows should trigger frontend cache or ISR revalidation when supported.
 
-## 21.2 Admin API (Management)
-Admin APIs handle the full content lifecycle within the dashboard.
+# 22. CMS Authorization And Security Rules
 
-### Endpoints:
-*   `GET|POST|PUT|DELETE /api/v1/admin/stores/{store}/cms/pages`
-*   `GET|POST|PUT|DELETE /api/v1/admin/stores/{store}/cms/blocks`
-*   `GET|POST|PUT|DELETE /api/v1/admin/stores/{store}/cms/menus`
-*   `GET /api/v1/admin/stores/{store}/cms/pages/{id}/preview`: Secure endpoint for draft preview.
+## 22.1 Platform CMS Authorization
+Rules:
+* Platform CMS uses super-admin global access plus platform CMS permissions/policies.
+* Platform CMS admin endpoints are exempt from the store-scoped admin route rule.
 
-## 21.3 Response Contracts
-The backend delivers **Structure**; the frontend renders **Components**.
+## 22.2 Store CMS Authorization
+Rules:
+* Store CMS uses store-scoped permissions and membership-aware policies.
+* Store CMS admin endpoints must include `{store}`.
 
-### Page Response Structure:
-```json
-{
-  "id": 1,
-  "title": "Home Page",
-  "slug": "index",
-  "seo": {
-    "title": "Best Ecommerce Store",
-    "description": "...",
-    "og_image": "https://..."
-  },
-  "layout": [
-    {
-      "type": "hero",
-      "data": {
-        "title": "Welcome to Our Store",
-        "cta_label": "Shop Now",
-        "cta_url": "/products"
-      },
-      "settings": { "full_width": true, "theme": "dark" }
-    },
-    {
-      "type": "product-grid",
-      "data": { "category_id": 12, "limit": 4 },
-      "settings": { "columns": 4 }
-    }
-  ]
-}
-```
+## 22.3 Public Access
+Rules:
+* Public CMS endpoints must never expose unpublished content.
+* Public responses must remain safe for SSR/ISR consumption.
 
-### Rules:
-*   **Block Identifier**: Every block MUST have a `type` string that matches a Next.js component name.
-*   **Localized Content**: Content fields MUST be returned in the requested locale or fall back to the store default.
-*   **SEO Payloads**: Every page response MUST include a complete SEO object for SSR metadata injection.
+# 23. CMS Adoption And Migration Strategy
 
-## 21.4 Draft Preview & Revalidation Strategy
-*   **Preview Mode**: The Admin API provides a signed URL or token that allows the Next.js frontend to bypass cache and fetch `is_published = false` content.
-*   **ISR Revalidation**: Upon a "Publish" action, the backend SHOULD trigger a webhook to Next.js to revalidate the affected page paths.
+## 23.1 Core Principles
+Rules:
+* CMS migration must be compatibility-first.
+* Existing commerce APIs must remain unaffected.
+* Platform marketing migration must minimize frontend changes.
 
-## 21.5 Validation Philosophy
-Dynamic blocks are validated using **JSON Schema**.
-*   Each `type` (e.g., `hero`) has a corresponding JSON Schema.
-*   The backend validates the `data` and `settings` objects against the schema before persisting.
+## 23.2 Rollout Order
+Ordered delivery:
+1. Platform marketing backend CRUD on platform-owned storage
+2. Public compatibility layer for platform marketing reads
+3. Legacy platform data migration
+4. Platform SEO and sitemap cutover
+5. Store marketing backend foundation
 
-## 21.6 Future Extensibility
-The CMS architecture is built for growth:
-*   **Landing Pages**: Ad-hoc pages with unique block arrangements for marketing.
-*   **Blog System**: Extension of the `Page` model with categories, tags, and author profiles.
-*   **Marketing Campaigns**: Time-bound content visibility using `published_at` and `expired_at`.
-*   **A/B Testing**: Ability for the API to return variant `layout` arrays for experiment-tracked users.
-*   **Reusable Templates**: Library of predefined block configurations (e.g., "Contact Page Template").
-
-# 22. CMS Authorization & Security Rules
-
-## 22.1 Permissions & Roles (Store-Scoped)
-The CMS system uses `spatie/laravel-permission` with mandatory store-scoping. All CMS permissions follow the `cms.{entity}.{action}` format.
-
-### Required Permissions:
-*   `cms.page.view` - Access to view pages in admin.
-*   `cms.page.create` - Ability to create new pages.
-*   `cms.page.publish` - Dedicated permission for the "Publish" action.
-*   `cms.block.update` - Ability to manage global/reusable blocks.
-*   `cms.menu.manage` - Ability to build and update menus.
-*   `cms.seo.update` - Ability to edit SEO metadata.
-
-### Rules:
-*   **Store-Scoped Checks**: `hasPermissionTo('cms.page.publish', $storeId)` is mandatory for all admin actions.
-*   **Super Admin Bypass**: `super_admin` role bypasses all store-scoped permission checks.
-
-## 22.2 Data Isolation & Public Access
-*   **Query Scoping**: ALL CMS queries (Pages, Blocks, Menus, Media) MUST include the `where('store_id', $storeId)` constraint in the Repository layer.
-*   **Public API Restriction**: Public storefront APIs MUST enforce `is_published = true` and `published_at <= now()`. Draft pages MUST NEVER be publicly accessible.
-*   **Slug Integrity**: Slug uniqueness is enforced at the store level. Actions MUST prevent slug collisions before persistence.
-
-## 22.3 Content Security (XSS & JSON)
-Since the CMS handles dynamic JSON content, security is a shared responsibility between backend and frontend.
-
-### Backend Rules:
-*   **JSON Schema Validation**: Every block payload MUST be validated against a JSON Schema to prevent injection of unexpected fields or scripts.
-*   **Untrusted Content**: The backend delivers content "as-is" from the database but MUST ensure JSON integrity.
-*   **XSS Prevention**: The backend MUST NOT store raw, unencoded script tags. While Next.js handles most XSS by default, the backend should perform basic sanitization on rich-text inputs using a library like `HTMLPurifier` during the Action phase.
-
-### Frontend Expectations:
-*   **Sanitization**: The Next.js frontend is responsible for sanitizing content when using `dangerouslySetInnerHTML`.
-*   **Component Safety**: Block components MUST NOT execute arbitrary JavaScript strings passed via the API.
-
-## 22.4 Media & Preview Security
-*   **Media Ownership**: Media uploads MUST be validated against the active `store_id`. A user cannot reference media from another store in their CMS content.
-*   **Preview Security**: Preview URLs (for draft content) MUST be signed using Laravel's `URL::signedRoute()` or protected by a short-lived token. Access to previews requires `cms.page.view` permission.
-*   **Media Exposure**: Private media (e.g., restricted documents) MUST NOT be served via public CMS URLs.
-
-## 22.5 Cache Invalidation Security
-*   **Tag-Based Clearing**: When content is published, the `cms:{entity}:{id}` and `store:{id}` cache tags MUST be cleared immediately to prevent unauthorized access to stale content or metadata leaks.
-
-# 23. CMS Adoption & Migration Strategy
-
-## 23.1 Core Principles for Migration
-The CMS is designed to be introduced into the existing ecommerce ecosystem as a non-breaking, optional extension.
-
-### Rules:
-*   **Optionality**: CMS functionality MUST be optional. A store should be fully operational for commerce without any CMS records.
-*   **Isolation**: CMS routes, actions, and repositories MUST remain isolated from core commerce logic (Products, Orders, Cart).
-*   **Backward Compatibility**: Existing ecommerce APIs (e.g., `/api/v1/stores/{store}/products`) MUST continue to work without modification.
-
-## 23.2 Recommended Rollout Order
-Adoption should follow a phased approach to minimize risk:
-
-1.  **Phase 1: Static Pages**: Migrate existing static frontend pages (About Us, Contact, FAQ) to the CMS using a simple "Rich Text" block.
-2.  **Phase 2: Dynamic Landing Pages**: Introduce the ability to create new pages with multiple block types for marketing campaigns.
-3.  **Phase 3: Reusable Content**: Introduce Global Blocks for shared sections like footers, promotional banners, or size guides.
-4.  **Phase 4: Advanced CMS Integration**: Implement complex features like SEO management, dynamic menus, and commerce-data-injected blocks (e.g., "Trending Products" carousel).
-
-## 23.3 Frontend Migration Safety
-The Next.js storefront can adopt the CMS incrementally using the following strategy:
-*   **Hybrid Routing**: Use Next.js middleware or catch-all routes (`[[...slug]].tsx`) to check for a CMS page. If no CMS page exists, fall back to the existing static frontend route or a 404.
-*   **Parallel Coexistence**: Static frontend pages and CMS-driven pages can coexist. A page like `/about` can be migrated to the CMS while `/checkout` remains a dedicated, static commerce page.
-
-## 23.4 SEO Migration Considerations
-To maintain search rankings during migration:
-*   **Redirect Management**: Use the CMS `Redirect` domain to manage legacy URLs that may change during the move to a CMS-driven structure.
-*   **Metadata Parity**: Ensure that CMS-driven pages provide at least the same level of SEO metadata (titles, descriptions) as the static pages they replace.
-
-## 23.5 API Versioning & Compatibility
-*   **Stable Versioning**: Introduce CMS endpoints under the current API version (`/api/v1/...`).
-*   **Feature Detection**: The frontend should check for the presence of CMS data before attempting to render CMS components.
-* **Graceful Fallbacks**: If a CMS API call fails or returns empty, the frontend MUST have a fallback state (e.g., rendering a default static message or hiding the block).
+## 23.3 Frontend Safety
+Rules:
+* Prefer backend compatibility adapters to frontend rewrites.
+* Allow only small frontend changes such as API route updates or minor response wiring.
+* Do not begin full store marketing frontend implementation until its contract is finalized.
 
 # 24. Authentication & Onboarding Architecture
 
 ## 24.1 Actor Types & Contexts
 The system distinguishes between actors to ensure proper lifecycle handling.
 
-*   **SUPER_ADMIN**: Platform-level global access. Bypasses all store restrictions.
-*   **STORE_OWNER**: The creator/legal owner of a store.
-*   **STORE_ADMIN**: Managed user with high-level access to a specific store.
-*   **STORE_STAFF**: Managed user with limited access (e.g., Order processing).
+*   **SUPER_ADMIN**: Platform-level global access actor. Bypasses all store restrictions.
+*   **STORE_OWNER**: Ownership relationship for the user referenced by `stores.owner_id`.
+*   **STORE_ADMIN**: Store membership role with high-level access to a specific store.
+*   **STORE_STAFF**: Store membership role with limited access (e.g., Order processing).
 *   **CUSTOMER**: Public user who browses and purchases. No dashboard access.
+
+Terminology rule:
+*   **Actor context** answers "which identity domain is this request in?" (`merchant`, `customer`, `super_admin`).
+*   **Role** answers "which capabilities does this user have?" (`super_admin`, `store_admin`, `staff`).
+*   **Ownership** answers "which store does this user legally own?" (`stores.owner_id` / `STORE_OWNER`).
 
 ### Actor Separation Rules
 1.  **Merchant Auth != Customer Auth**: Merchant dashboard sessions are operational; customer sessions are storefront sessions.
@@ -2483,13 +2366,14 @@ EXCEPTION: super_admin global analytics ONLY.
 NO PERMISSION CHECK MAY EXECUTE WITHOUT STORE SCOPE.
 EXCEPTION: super_admin role check ONLY.
 
-NO ADMIN ROUTE MAY EXIST WITHOUT {store} IN THE PATH.
-EXCEPTION: super_admin global routes ONLY.
+NO STORE-ADMIN ROUTE MAY EXIST WITHOUT {store} IN THE PATH.
+EXCEPTION: super_admin global routes ONLY, INCLUDING PLATFORM CMS ROUTES SUCH AS /api/v1/admin/cms/* AND /api/v1/platform/*.
 
 NO MERCHANT DASHBOARD ACCESS WITHOUT onboarding_step = COMPLETED.
 EXCEPTION: super_admin access ONLY.
 
-ALL STORE-SCOPED ADMIN ACTIONS MUST USE StorePolicy.
+ALL STORE-SCOPED ADMIN ACTIONS MUST USE A STORE-AWARE POLICY.
+WHEN THE PRIMARY SUBJECT IS THE STORE ITSELF, `StorePolicy` IS AUTHORITATIVE.
 
 NO AUTHORIZATION LOGIC INSIDE ACTIONS.
 

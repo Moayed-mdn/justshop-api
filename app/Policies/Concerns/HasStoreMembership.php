@@ -15,18 +15,6 @@ trait HasStoreMembership
     use InteractsWithPolicyTelemetry;
 
     /**
-     * Pre-authorization check for Super Admins.
-     */
-    public function before(User $user, string $ability, mixed $store = null): ?bool
-    {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return $this->decision($user, $ability, true, $store);
-        }
-
-        return null;
-    }
-
-    /**
      * Check if the user is a merchant actor.
      */
     protected function isMerchant(User $user): bool

@@ -20,6 +20,12 @@ use App\Policies\OrderPolicy;
 use App\Policies\PaymentMethodPolicy;
 use App\Policies\StorePolicy;
 use App\Policies\TagPolicy;
+use App\Models\Cms\Marketing\Platform\PlatformMarketingPage;
+use App\Models\Cms\Marketing\Store\StoreMarketingPage;
+use App\Models\Cms\MarketingPage;
+use App\Policies\Cms\Marketing\Platform\PlatformMarketingPagePolicy;
+use App\Policies\Cms\Marketing\Store\StoreMarketingPagePolicy;
+use App\Policies\MarketingPagePolicy;
 use App\Support\Auth\DashboardAuthorization;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
@@ -36,6 +42,9 @@ class AuthServiceProvider extends ServiceProvider
         PaymentMethod::class => PaymentMethodPolicy::class,
         Store::class => StorePolicy::class,
         Tag::class => TagPolicy::class,
+        MarketingPage::class => MarketingPagePolicy::class,
+        PlatformMarketingPage::class => PlatformMarketingPagePolicy::class,
+        StoreMarketingPage::class => StoreMarketingPagePolicy::class,
     ];
 
     public function boot()

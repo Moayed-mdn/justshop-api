@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories\Cms\Sitemap;
 
 use App\Models\BlogPost;
+use App\Models\Cms\Marketing\Platform\PlatformMarketingPage;
 use App\Models\Cms\MarketingPage;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -23,16 +24,26 @@ final class SitemapRepository
 {
     /**
      * Get all published marketing pages for sitemap.
-     * Minimal columns only — no sections, no seo blob.
+     * Now primarily uses PlatformMarketingPage with legacy fallback if needed.
      */
     public function getPublishedMarketingPages(): Collection
     {
-        return MarketingPage::query()
-            ->select(['id', 'type', 'slug', 'status', 'published_at', 'updated_at'])
+        // 1. Get platform marketing pages
+        $platformPages = PlatformMarketingPage::query()
+            ->select(['id', 'template as type', 'slug', 'status', 'published_at', 'updated_at'])
             ->published()
-            ->orderBy('type')
             ->orderBy('id')
             ->get();
+
+        // 2. Get legacy marketing pages (optional, during migration)
+        $legacyPages = MarketingPage::query()
+            ->select(['id', 'type', 'slug', 'status', 'published_at', 'updated_at'])
+            ->published()
+            ->orderBy('id')
+            ->get();
+
+        // Merge them for now to ensure no loss of visibility during migration
+        return $platformPages->concat($legacyPages);
     }
 
     /**

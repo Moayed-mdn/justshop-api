@@ -117,7 +117,8 @@ class SitemapService
             }
 
             // Home page gets highest priority
-            $priority = $page->type->value === 'home' ? 1.0 : 0.8;
+            $pageType = is_object($page->type) ? $page->type->value : (string) $page->type;
+            $priority = $pageType === 'home' ? 1.0 : 0.8;
 
             $entries[] = new SitemapEntryDTO(
                 loc: $canonical,

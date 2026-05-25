@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use BackedEnum;
 use App\DTOs\Auth\Identity\IdentityContext;
 use App\Enums\Auth\OnboardingStepEnum;
 use App\Enums\Auth\ActorContextEnum;
-use App\Support\Auth\ActorResolver;
-use App\Services\Auth\IdentityContextResolver;
 use App\Enums\RoleEnum;
+use App\Services\Auth\IdentityContextResolver;
+use App\Services\Auth\PermissionResolver;
+use App\Support\Auth\ActorResolver;
 use App\Enums\Address\AddressTypeEnum;
 use App\Notifications\CustomResetPassword;
 use App\Notifications\VerifyEmail;
@@ -24,7 +26,9 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, HasRoles {
+        checkPermissionTo as protected spatieCheckPermissionTo;
+    }
 
     /**
      * The attributes that are mass assignable.
@@ -95,6 +99,30 @@ class User extends Authenticatable implements MustVerifyEmail
     public function resolveIdentityContext(): IdentityContext
     {
         return app(IdentityContextResolver::class)->resolve($this);
+    }
+
+    /**
+     * Make permission checks store-aware whenever the request has already resolved
+     * the active store via store.context.
+     *
+     * @param  string|int|BackedEnum  $permission
+     */
+    public function checkPermissionTo($permission, ?string $guardName = null): bool
+    {
+        if (! app()->bound('currentStore')) {
+            return $this->spatieCheckPermissionTo($permission, $guardName);
+        }
+
+        $store = app('currentStore');
+
+        if (! $store instanceof Store) {
+            return $this->spatieCheckPermissionTo($permission, $guardName);
+        }
+
+        $ability = $permission instanceof BackedEnum ? $permission->value : (string) $permission;
+        $permissions = app(PermissionResolver::class)->resolve($this, $store);
+
+        return in_array($ability, $permissions, true);
     }
 
     public function activeStore()

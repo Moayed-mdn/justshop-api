@@ -49,7 +49,7 @@ class ApplyIdentityRouteContext
             routeDomain: RouteDomainEnum::from($routeDomain),
             ownerAuthDomain: AuthDomainEnum::from($ownerAuthDomain),
             enforcementMode: RouteDomainEnforcementModeEnum::from($enforcementMode),
-            allowedActorTypes: $this->allowedActorTypes(AuthDomainEnum::from($ownerAuthDomain)),
+            allowedActorTypes: $this->allowedActorTypes(AuthDomainEnum::from($ownerAuthDomain), RouteDomainEnum::from($routeDomain)),
         );
 
         $this->traceContext->enrichRouteDomain($routeDomainContext);
@@ -113,13 +113,24 @@ class ApplyIdentityRouteContext
     /**
      * @return string[]
      */
-    private function allowedActorTypes(AuthDomainEnum $ownerAuthDomain): array
+    private function allowedActorTypes(AuthDomainEnum $ownerAuthDomain, RouteDomainEnum $routeDomain): array
     {
         return match ($ownerAuthDomain) {
-            AuthDomainEnum::MERCHANT => [ActorContextEnum::MERCHANT->value, ActorContextEnum::SUPER_ADMIN->value],
+            AuthDomainEnum::MERCHANT => $this->allowedMerchantActors($routeDomain),
             AuthDomainEnum::CUSTOMER => [ActorContextEnum::CUSTOMER->value],
             AuthDomainEnum::PLATFORM => [ActorContextEnum::SUPER_ADMIN->value, ActorContextEnum::SUPPORT_AGENT->value],
         };
+    }
+
+    /**
+     * @return string[]
+     */
+    private function allowedMerchantActors(RouteDomainEnum $routeDomain): array
+    {
+        // Rule: Super Admins are allowed to access merchant-facing routes (e.g., /v1/me and store admin)
+        // This allows them to manage stores they explicitly own or are members of,
+        // while the policy layer (HasStoreMembership) prevents implicit global bypass.
+        return [ActorContextEnum::MERCHANT->value, ActorContextEnum::SUPER_ADMIN->value];
     }
 
     private function matchesOwnership(

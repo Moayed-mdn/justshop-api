@@ -13,18 +13,6 @@ class StorePolicy
     use InteractsWithPolicyTelemetry;
 
     /**
-     * Perform pre-authorization checks.
-     */
-    public function before(User $user, string $ability, mixed $store = null): ?bool
-    {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return $this->decision($user, $ability, true, $store);
-        }
-
-        return null;
-    }
-
-    /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool

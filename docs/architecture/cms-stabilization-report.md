@@ -5,6 +5,11 @@
 **Scope:** CMS + Marketing Domains  
 **Approach:** Incremental improvements, NOT greenfield redesign
 
+> Historical note:
+> This report documents an earlier stabilization pass.
+> The current authoritative architecture is defined in `docs/ARCHITECTURE.md` and `docs/CMS_MARKETING_ARCHITECTURE.md`.
+> Where this report mentions a single marketing policy or `cms.page.*`, treat that as legacy terminology from the stabilization period.
+
 ---
 
 ## Executive Summary
@@ -54,7 +59,7 @@ This stabilization pass addressed **architectural inconsistencies** in the CMS +
 **Solution:** Standardized on **permission-based authorization** via policies:
 
 **Created Policies:**
-- `MarketingPagePolicy` - Permission-based authorization for marketing pages
+- `MarketingPagePolicy` - Original permission-based authorization for marketing pages during that pass
 - `CmsDocumentPolicy` - Permission-based authorization for documentation
 
 **Updated Policies:**
@@ -95,7 +100,7 @@ cms.blog.update
 cms.blog.delete
 cms.blog.publish
 
-// CMS Marketing Pages
+// Marketing pages at that time
 cms.page.view
 cms.page.create
 cms.page.update
@@ -294,35 +299,12 @@ cms.page.publish
 
 ```
 Cms/
-├── Marketing/      # Platform marketing pages
-│   ├── Actions/
-│   ├── DTOs/
-│   ├── Controllers/ (Admin + Public)
-│   └── Policy: MarketingPagePolicy
-│
+├── Marketing/
+│   ├── Platform/   # Current direction for platform marketing pages
+│   └── Store/      # Current direction for store marketing pages
 ├── Blog/           # Platform blog posts
-│   ├── Actions/
-│   ├── DTOs/
-│   ├── Controllers/ (Admin + Public)
-│   └── Policy: BlogPostPolicy
-│
 ├── Documentation/  # Platform documentation
-│   ├── Actions/
-│   ├── DTOs/
-│   ├── Controllers/ (Admin + Public)
-│   └── Policy: CmsDocumentPolicy
-│
 └── Seo/            # Shared SEO infrastructure
-    ├── Services/
-    │   ├── SeoResolutionService
-    │   ├── CanonicalUrlService
-    │   ├── StructuredDataService
-    │   └── SitemapService
-    ├── DTOs/
-    │   ├── SeoMetaDTO
-    │   └── ResolvedSeoDTO
-    └── Resources/
-        └── SeoResource
 ```
 
 ---
@@ -331,7 +313,8 @@ Cms/
 
 | Subdomain | Ownership | Store ID | Authorization | Frontend |
 |:----------|:----------|:---------|:--------------|:---------|
-| Marketing | Platform | NO | `cms.page.*` | Next.js Marketing |
+| Marketing / Platform | Platform | NO | `marketing.platform.*` | Next.js Marketing |
+| Marketing / Store | Store | YES | `marketing.store.*` | Storefront frontend (deferred) |
 | Blog | Platform | NO | `cms.blog.*` | Next.js Marketing |
 | Documentation | Platform | NO | `cms.doc.*` | Next.js Marketing |
 | SEO | Shared | N/A | N/A | All |
@@ -345,7 +328,7 @@ Cms/
 **Flow:**
 1. Route middleware: `auth:sanctum`, `verified`, `role:super_admin`
 2. Controller: `$this->authorize('action', Model::class)`
-3. Policy: `$user->can(PermissionEnum::CMS_*)`
+3. Policy: ownership-aware permission checks; legacy `cms.page.*` references are historical
 
 **Benefits:**
 - Granular permission control
@@ -391,9 +374,9 @@ Cms/
 - Blog Posts: `/api/v1/admin/cms/blog/*`
 - Documentation: `/api/v1/admin/cms/docs/*`
 
-**Nuxt Storefront:**
-- No CMS content (platform-level only)
-- Future: Tenant-scoped CMS would be separate subdomain
+**Storefront Frontend:**
+- Store marketing frontend is deferred
+- Store-owned CMS may be introduced under store-scoped routes when its contract is ready
 
 ---
 

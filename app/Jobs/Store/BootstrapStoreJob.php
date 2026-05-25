@@ -6,7 +6,9 @@ namespace App\Jobs\Store;
 
 use App\Enums\Store\ProvisioningStatusEnum;
 use App\Enums\Store\StoreStatusEnum;
+use App\Enums\Auth\OnboardingStepEnum;
 use App\Models\Store;
+use App\Services\Auth\OnboardingTransitionService;
 use App\Services\Store\StoreInitializationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -53,8 +55,15 @@ class BootstrapStoreJob implements ShouldQueue
         return [10, 30, 90];
     }
 
-    public function handle(StoreInitializationService $initializationService): void
+    public function handle(
+        StoreInitializationService $initializationService,
+        OnboardingTransitionService $onboardingTransitionService
+    ): void
     {
+        Log::info('Job: BootstrapStoreJob starting', [
+            'store_id' => $this->storeId,
+        ]);
+
         $store = Store::find($this->storeId);
 
         if (!$store) {
@@ -65,15 +74,31 @@ class BootstrapStoreJob implements ShouldQueue
         }
 
         if ($store->setup_completed_at !== null) {
-            $this->markCompleted($store);
+            Log::info('Job: BootstrapStoreJob - Store already bootstrapped, skipping.', [
+                'store_id' => $this->storeId,
+            ]);
+            $this->markCompleted($store, $onboardingTransitionService);
 
             return;
         }
 
         $this->markRunning($store);
-        $initializationService->initialize($store);
-        $store->refresh();
-        $this->markCompleted($store);
+        
+        try {
+            $initializationService->initialize($store);
+            $store->refresh();
+            $this->markCompleted($store, $onboardingTransitionService);
+
+            Log::info('Job: BootstrapStoreJob completed successfully', [
+                'store_id' => $this->storeId,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Job: BootstrapStoreJob encountered an error', [
+                'store_id' => $this->storeId,
+                'error'    => $e->getMessage(),
+            ]);
+            throw $e;
+        }
     }
 
     public function failed(\Throwable $exception): void
@@ -133,7 +158,7 @@ class BootstrapStoreJob implements ShouldQueue
         $store->update($updates);
     }
 
-    private function markCompleted(Store $store): void
+    private function markCompleted(Store $store, OnboardingTransitionService $onboardingTransitionService): void
     {
         $store->update([
             'provisioning_status' => ProvisioningStatusEnum::COMPLETED,
@@ -146,5 +171,16 @@ class BootstrapStoreJob implements ShouldQueue
             'provisioning_failed_at' => null,
             'provisioning_last_error' => null,
         ]);
+
+        // If this was part of the onboarding flow, mark onboarding as completed.
+        $owner = $store->owner;
+        if ($owner && $owner->onboarding_step !== OnboardingStepEnum::COMPLETED) {
+            $onboardingTransitionService->transition($owner, OnboardingStepEnum::COMPLETED);
+            
+            Log::info('BootstrapStoreJob: onboarding marked as completed for store owner', [
+                'store_id' => $store->id,
+                'owner_id' => $owner->id,
+            ]);
+        }
     }
 }
