@@ -112,8 +112,11 @@ Still intentionally unchanged:
 
 ## 📄 Documentation
 
-Detailed architectural documentation is available in the `docs/` directory:
+Detailed project documentation is available in the `docs/` directory:
+- [docs/README.md](./docs/README.md) - Documentation index and organization map.
 - [ARCHITECTURE.md](./docs/ARCHITECTURE.md) - Core project rules.
 - [AUTH_ROUTING.md](./docs/AUTH_ROUTING.md) - Wave 3A identity-context and route-ownership doctrine.
 - [CMS_MARKETING_ARCHITECTURE.md](./docs/CMS_MARKETING_ARCHITECTURE.md) - CMS-specific logic.
+- [EXECUTION_GOVERNANCE.md](./docs/EXECUTION_GOVERNANCE.md) - Governance and rollout rules.
+- [OBSERVABILITY.md](./docs/OBSERVABILITY.md) - Observability and telemetry guidance.
 - [exception-system.md](./docs/exception-system.md) - Error handling standards.

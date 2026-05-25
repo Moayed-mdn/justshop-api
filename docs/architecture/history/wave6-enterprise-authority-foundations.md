@@ -1,5 +1,9 @@
 # Wave 6: Enterprise Authority Foundations
 
+> Historical note:
+> This file is retained as an architecture-history copy.
+> The active Wave 6 foundations document lives at `docs/wave6/wave6-enterprise-authority-foundations.md`.
+
 **Status:** VERIFIED_COMPLETE  
 **Wave:** 6  
 **Objective:** Transform from merchant/customer isolation into explicit multi-domain platform authority
