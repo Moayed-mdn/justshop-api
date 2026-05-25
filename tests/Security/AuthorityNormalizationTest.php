@@ -102,4 +102,40 @@ class AuthorityNormalizationTest extends TestCase
         $admin = User::factory()->superAdmin()->create();
         $this->actingAs($admin)->getJson('/api/v1/admin/leads')->assertStatus(200);
     }
+
+    /**
+     * Step 3 Hardening: Verify strict guard enforcement.
+     */
+    public function test_merchant_cannot_access_platform_routes_via_fallback(): void
+    {
+        /** @var User $merchant */
+        $merchant = User::factory()->merchant()->create();
+
+        // Merchant authenticated via 'merchant' guard should NOT be allowed on platform routes
+        $response = $this->actingAs($merchant, 'merchant')
+            ->getJson('/api/v1/admin/leads');
+
+        $response->assertStatus(403);
+    }
+
+    /**
+     * Step 3 Hardening: Verify impersonation rotation.
+     */
+    public function test_impersonation_activation_regenerates_session(): void
+    {
+        /** @var User $admin */
+        $admin = User::factory()->superAdmin()->create();
+        /** @var User $target */
+        $target = User::factory()->merchant()->create();
+
+        $manager = app(\App\Services\Platform\Impersonation\ImpersonationLifecycleManager::class);
+        $impersonation = $manager->request($admin, $target, 'Testing');
+
+        $this->actingAs($admin);
+        $oldSessionId = session()->getId();
+
+        $manager->activate(request(), $impersonation);
+
+        $this->assertNotEquals($oldSessionId, session()->getId());
+    }
 }

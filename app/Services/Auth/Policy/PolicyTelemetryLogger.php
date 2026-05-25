@@ -6,6 +6,7 @@ namespace App\Services\Auth\Policy;
 
 use App\Models\Store;
 use App\Models\User;
+use App\Services\Platform\Impersonation\ImpersonationLifecycleManager;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +17,7 @@ class PolicyTelemetryLogger
         private readonly Request $request,
         private readonly PolicyCapabilityResolver $capabilityResolver,
         private readonly PolicyCapabilityCatalog $capabilityCatalog,
+        private readonly ImpersonationLifecycleManager $impersonationManager,
     ) {}
 
     public function record(
@@ -34,6 +36,8 @@ class PolicyTelemetryLogger
         $middlewareCapability = $this->capabilityCatalog->resolveFromMiddleware($middleware);
         $middlewarePermissionAllowed = $middlewareCapability !== null ? $user->can($middlewareCapability) : null;
 
+        $impersonationActive = $this->impersonationManager->hasActiveImpersonation($this->request);
+
         Log::info('authorization.policy.decision', [
             'policy' => $policyClass,
             'ability' => $ability,
@@ -47,6 +51,7 @@ class PolicyTelemetryLogger
             'result' => $allowed ? 'allow' : 'deny',
             'actor_id' => (int) $user->id,
             'actor_context' => $user->getActorContext()->value,
+            'impersonation_active' => $impersonationActive,
             'store_context' => $store ? [
                 'id' => (int) $store->id,
                 'owner_id' => (int) $store->owner_id,

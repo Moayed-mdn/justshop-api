@@ -53,8 +53,8 @@ This document defines the explicit architectural guarantees of the SaaS platform
 ### G3.1: Queue Job Isolation
 - **Description:** Queue workers MUST NOT retain tenant or user state between job executions. Every job must initialize its own context and clear it upon completion.
 - **Affected Systems:** All queued Jobs and Listeners.
-- **Enforcement Layers:** Job constructors requiring `storeId`, manual context clearing (future).
-- **Current Status:** **Not Enforced** (Relies on developer discipline; global state leakage is possible).
+- **Enforcement Layers:** `Queue::after` context clearing, Job constructors requiring `storeId`.
+- **Current Status:** **Enforced** (Context reset in `AppServiceProvider`).
 
 ### G3.2: Cache Key Scoping
 - **Description:** All tenant-specific data stored in shared cache MUST use a key prefixed with the `store_id`.

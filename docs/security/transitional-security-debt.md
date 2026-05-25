@@ -30,9 +30,9 @@ This document tracks known architectural security risks and "debt" items that ex
 
 ### D2.2: Guard Split Not Enforced
 - **Origin:** Wave 5 transitional period.
-- **Current Risk:** High. Fallback to shared `web` guard is still active (`AUTH_GUARD_SPLIT_ENFORCE=false`).
-- **Migration Difficulty:** Medium. Requires verifying all telemetry before activation.
-- **Status:** **Dangerous Now**.
+- **Current Risk:** Low. Enforced in Step 3.
+- **Migration Difficulty:** Complete.
+- **Status:** **Remediated**.
 
 ---
 
@@ -46,6 +46,6 @@ This document tracks known architectural security risks and "debt" items that ex
 
 ### D3.2: Static Store Context
 - **Origin:** Usage of `app('currentStore')` singleton.
-- **Current Risk:** High. Potential for context leakage in long-running processes or queue workers.
+- **Current Risk:** Low. Context is now explicitly cleared in `Queue::after` during Step 3.
 - **Migration Difficulty:** Medium. Requires refactoring to explicit context passing.
-- **Status:** **Dangerous Now**.
+- **Status:** **Mitigated**.

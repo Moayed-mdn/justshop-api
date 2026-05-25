@@ -148,8 +148,8 @@ The system is partitioned into four primary authority domains, resolved dynamica
 ### MIGRATION DIRECTION: Hardening Phase
 - **Step 1:** Freeze behavior and document guarantees (Complete).
 - **Step 2:** Normalize all Policies to remove `before()` bypasses (Complete).
-- **Step 3:** Enforce strict guard separation (`AUTH_GUARD_SPLIT_ENFORCE=true`).
-- **Step 4:** Migrate legacy routes to explicit authority middleware (Complete).
+- **Step 3:** Enforce strict guard separation and runtime hardening (Complete).
+- **Step 4:** Implement automated CI/CD security scanning.
 
 ---
 
@@ -161,20 +161,17 @@ The system is partitioned into four primary authority domains, resolved dynamica
 | `support` | Restricted (Read) | Read-Only (unless Impersonating) | Read-Only | LOW |
 | `merchant_admin` | Denied | **Strictly Scoped** | Denied | LOW |
 | `customer` | Denied | Denied | **Strictly Scoped** | LOW |
-| `impersonated` | N/A | Governed & Audited | Governed & Audited | MEDIUM |
+| `impersonated` | N/A | Governed & Audited | Governed & Audited | **LOW** (Step 3) |
 
 ---
 
 ## SECTION 9 — TOP ARCHITECTURAL RISKS
 
-1. **Session Contamination:** Shared `web` guard across Merchant and Customer domains (Isolation Danger: Medium).
-2. **Context Leakage:** Potential `currentStore` persistence across Queue Job executions (Regression Likelihood: High).
-3. **Manual Scoping:** Reliance on manual `where('store_id', ...)` in Repositories instead of Global Scopes (Exploitability: Medium).
-4. **Mixed Bootstrap:** `/v1/me` handling all actor types in a single controller (Impact: Medium).
-5. **Impersonation Rotation:** Lack of session regeneration upon impersonation activation (Exploitability: Medium).
-6. **Transitional Guard Enforce:** `AUTH_GUARD_SPLIT_ENFORCE` set to false, allowing fallback to shared guard (Isolation Danger: High).
-7. **Membership Immutability:** Owner cannot be changed, leading to potential "Forever Admin" risks (Impact: Low).
-8. **Shared User Provider:** All guards use the same `users` table (Future Risk).
+1. **Manual Scoping:** Reliance on manual `where('store_id', ...)` in Repositories instead of Global Scopes (Exploitability: Medium).
+2. **Mixed Bootstrap:** `/v1/me` handling all actor types in a single controller (Impact: Medium).
+3. **Shared User Provider:** All guards use the same `users` table (Future Risk).
+4. **Onboarding Context:** Potential for incomplete onboarding states to allow partial resource access (Impact: Low).
+5. **Telemetry Noise:** High volume of security events may mask real attacks (Operational Risk).
 
 ---
 

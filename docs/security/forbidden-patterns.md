@@ -51,11 +51,12 @@ This document identifies architectural anti-patterns that violate the security p
 
 ### P2.2: Global Mutable Tenant State
 - **Risk:** High. Leads to context leakage in async jobs (Queues) or long-running processes (Octane).
+- **Status:** **Mitigated** (Step 3: Runtime Cleanup).
 - **Bad Example:**
   ```php
   Tenant::set($storeId); // Static/Global setter
   ```
-- **Preferred Pattern:** Pass the `storeId` explicitly through DTOs and Actions.
+- **Preferred Pattern:** Pass the `storeId` explicitly through DTOs and Actions, and rely on `Queue::after` cleanup.
   ```php
   public function execute(UpdateProductDTO $dto) {
       $storeId = $dto->storeId;

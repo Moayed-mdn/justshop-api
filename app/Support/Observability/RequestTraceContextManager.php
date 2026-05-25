@@ -55,6 +55,11 @@ class RequestTraceContextManager
         return $context;
     }
 
+    public function reset(): RequestTraceContext
+    {
+        return $this->replace($this->current()->reset());
+    }
+
     public function enrichActor(?int $actorId, ?string $actorType): RequestTraceContext
     {
         return $this->replace(

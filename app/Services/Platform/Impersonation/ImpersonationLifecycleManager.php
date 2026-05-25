@@ -74,6 +74,9 @@ class ImpersonationLifecycleManager
         }
 
         DB::transaction(function () use ($request, $impersonation) {
+            // Step 3 Hardening: Regenerate session upon activation to prevent fixation.
+            $request->session()->regenerate();
+
             $impersonation->update([
                 'status' => ImpersonationStatusEnum::ACTIVE->value,
                 'activated_at' => now(),

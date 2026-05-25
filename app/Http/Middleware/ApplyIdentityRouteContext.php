@@ -79,11 +79,10 @@ class ApplyIdentityRouteContext
         $this->sessionGuardTelemetry->logGuardShadowResolved($request, $sessionOwnership, $guardShadow);
         $this->sessionGuardTelemetry->logContaminationSignals($request, $sessionOwnership, $guardShadow);
 
-        // Wave 5: Guard Authority Activation + Session Isolation Enforcement (single call)
-        if (config('features.auth.guard_split.enabled.default')) {
-            \Illuminate\Support\Facades\Auth::shouldUse($guardResolution->guard);
-            $this->enforceSessionOwnership($request, $sessionOwnership, $guardResolution);
-        }
+        // Wave 6: Guard Authority Activation + Session Isolation Enforcement (single call)
+        // Step 3 Hardening: Enforce guard split and isolation strictly.
+        \Illuminate\Support\Facades\Auth::shouldUse($guardResolution->guard);
+        $this->enforceSessionOwnership($request, $sessionOwnership, $guardResolution);
 
         if ($routeDomainContext->ownerAuthDomain === AuthDomainEnum::CUSTOMER) {
             $this->telemetry->logCustomerRouteAccess($request, $routeDomainContext, $identityContext);
@@ -165,13 +164,13 @@ class ApplyIdentityRouteContext
                 'domain_mismatch'
             );
 
-            if (config('features.auth.guard_split.enforce.default')) {
-                throw new InvalidIdentityDomainAccessException('Session contamination detected: domain mismatch.');
-            }
+            // Step 3 Hardening: Strict Enforcement of session ownership.
+            throw new InvalidIdentityDomainAccessException('Session contamination detected: domain mismatch.');
         }
 
         // Enforce guard authority
-        if ($guardResolution->isFallback && config('features.auth.guard_split.enforce.default')) {
+        // Step 3 Hardening: Strict Enforcement of guard authority.
+        if ($guardResolution->isFallback) {
             throw new InvalidIdentityDomainAccessException('Explicit guard authority required for this domain.');
         }
     }

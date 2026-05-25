@@ -19,6 +19,7 @@ use App\Support\Security\SecurityEventLoggerInterface;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -148,6 +149,16 @@ class AppServiceProvider extends ServiceProvider
     {
         // Model::unguard() intentionally removed — all models use explicit $fillable arrays.
         // Mass assignment protection is active platform-wide.
+
+        // Step 3 Hardening: Queue Isolation
+          // Automatically clear tenant context after every job execution to prevent state leakage.
+          Queue::after(function () {
+              app()->forgetInstance('storeId');
+              app()->forgetInstance('currentStore');
+
+              // Re-initialize RequestTraceContextManager for the next job
+              app(RequestTraceContextManager::class)->reset();
+          });
 
         Event::listen(
             LeadSubmitted::class,

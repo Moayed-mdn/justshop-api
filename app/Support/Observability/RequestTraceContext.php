@@ -60,6 +60,19 @@ final readonly class RequestTraceContext
         );
     }
 
+    public function reset(): self
+    {
+        return new self(
+            correlationId: $this->correlationId,
+            actorId: null,
+            actorType: null,
+            membershipId: null,
+            storeId: null,
+            apiDomain: $this->apiDomain,
+            releaseVersion: $this->releaseVersion,
+        );
+    }
+
     public function withActor(?int $actorId, ?string $actorType): self
     {
         return new self(

@@ -18,13 +18,11 @@ class TransitionalGuardResolver
     public function resolve(SessionOwnershipContext $context): GuardResolutionResult
     {
         $intendedGuard = $this->determineIntendedGuard($context);
-        $isEnforced = config('features.auth.guard_split.enforce.default');
         
-        // If enforcement is on, we don't allow falling back to 'web' 
-        // unless it's truly a shared transitional route.
+        // Step 3 Hardening: All routes except SHARED_TRANSITIONAL MUST use explicit guards.
         $isFallback = $intendedGuard === 'web' && $context->routeDomain !== \App\Enums\Auth\RouteDomainEnum::SHARED_TRANSITIONAL;
 
-        if ($isFallback && $isEnforced) {
+        if ($isFallback) {
             Log::error('auth.guard.illegal_fallback_detected', [
                 'intended_guard' => $intendedGuard,
                 'auth_domain' => $context->authDomain,
@@ -41,7 +39,7 @@ class TransitionalGuardResolver
                 'intended_guard_future' => $context->intendedGuardFuture,
                 'session_origin' => $context->sessionOrigin,
                 'route_domain' => $context->routeDomain,
-                'enforcement_active' => $isEnforced,
+                'enforcement_active' => true,
             ]
         );
 
