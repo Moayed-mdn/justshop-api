@@ -1,6 +1,6 @@
 # Architectural Security Inventory: Authority Boundaries & Tenant Isolation
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Status:** COMPLETE  
 **Date:** 2026-05-25  
 **Domain:** SaaS Security Architecture
@@ -131,14 +131,25 @@ The system is partitioned into four primary authority domains, resolved dynamica
 
 ---
 
-## SECTION 7 — LEGACY VS MODERN SECURITY PATTERNS
+## SECTION 7 — CURRENT VS TARGET SECURITY MODEL
 
-| Pattern Type | Legacy Pattern | Modern Pattern | Migration Risk |
-| :--- | :--- | :--- | :--- |
-| **Route Protection** | `identity.route` (Observe/Enforce) | `platform.authority` / `support.authority` | Unauthorized platform access |
-| **Auth Enforcement** | Inline Role/Permission checks | Centralized Policies (Wave 2 Law) | Authorization drift |
-| **Identity** | Shared `web` guard everywhere | Identity Domains (Merchant vs Customer) | Session contamination |
-| **Tenant Scoping** | `app('currentStore')` global | Explicit `store_id` in DTOs/Actions | Data leakage in async jobs |
+### CURRENT MODEL: Mixed Legacy + Modern Authority
+- **Authority:** Fragmented between implicit role checks and modern domain-aware policies.
+- **Isolation:** Relies on developer discipline for `store_id` scoping in repositories.
+- **Platform Access:** `super_admin` retains implicit bypasses in several key policies.
+- **Middleware:** Dual enforcement using legacy `identity.route` and modern `platform.authority`.
+
+### TARGET MODEL: Explicit Domain-Driven Security
+- **Authority:** 100% Policy-driven with zero `before()` bypasses.
+- **Isolation:** Enforced via Global Scopes or mandated Repository wrappers.
+- **Platform Access:** Zero implicit access to merchant resources; 100% governed via Impersonation.
+- **Middleware:** Unified authority enforcement per route domain.
+
+### MIGRATION DIRECTION: Hardening Phase
+- **Step 1:** Freeze behavior and document guarantees (Current Phase).
+- **Step 2:** Normalize all Policies to remove `before()` bypasses.
+- **Step 3:** Enforce strict guard separation (`AUTH_GUARD_SPLIT_ENFORCE=true`).
+- **Step 4:** Migrate legacy routes to explicit authority middleware.
 
 ---
 
@@ -176,8 +187,6 @@ The system is partitioned into four primary authority domains, resolved dynamica
 - **Biggest Weakness:** Inconsistent "shortcuts" for `super_admin` that bypass the very boundaries the architecture was built to enforce.
 - **Transitional Debt:** Legacy admin routes and the shared user provider across all guards.
 - **Next Strategy:** Policy Normalization — remove all `before()` bypasses and move `super_admin` access to the governed Impersonation layer.
-
-**Conclusion:** The architecture is converging toward a robust SaaS isolation model, but "Platform Admin" shortcuts remain the primary threat to strict tenant isolation.
 
 ---
 **End of Inventory Report**
