@@ -8,7 +8,7 @@ This document identifies architectural anti-patterns that violate the security p
 
 ### P1.1: Implicit Super Admin Bypass in Policies
 - **Risk:** High. Allows platform admins to access merchant resources without an audit trail (impersonation). Violates authority domain separation.
-- **Status:** **Remediated** (Step 2).
+- **Status:** **Remediated & Monitored** (Step 4: Automated Scanner).
 - **Bad Example:**
   ```php
   public function before(User $user, string $ability) {

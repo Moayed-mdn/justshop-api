@@ -46,6 +46,6 @@ This document tracks known architectural security risks and "debt" items that ex
 
 ### D3.2: Static Store Context
 - **Origin:** Usage of `app('currentStore')` singleton.
-- **Current Risk:** Low. Context is now explicitly cleared in `Queue::after` during Step 3.
+- **Current Risk:** Low. Context is now explicitly cleared in `Queue::after` and monitored with telemetry in Step 4.
 - **Migration Difficulty:** Medium. Requires refactoring to explicit context passing.
-- **Status:** **Mitigated**.
+- **Status:** **Mitigated & Monitored**.

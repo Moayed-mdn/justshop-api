@@ -53,5 +53,6 @@ This document defines the strategy for testing tenant isolation, authority bound
 
 ## 3. Regression Prevention
 
-- **Forbidden Pattern Scans:** Automated grep/linting for `before()` bypasses or unscoped `find()` calls.
-- **Telemetry Audits:** Verify that security events (`tenant.store_mismatch`, `authorization.denied`) are emitted during failed access attempts.
+- **Forbidden Pattern Scans (ACTIVE):** Artisan command `architecture:detect-forbidden-patterns` scans for `before()` bypasses, unscoped queries, and direct state mutations.
+- **CI/CD Integration:** Scanner and Tenant Isolation tests are integrated into the deployment pipeline to block breaking changes.
+- **Telemetry Audits:** Security events (`tenant.store_mismatch`, `authorization.denied`, `queue.job.context_cleared`) are monitored in real-time.

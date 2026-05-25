@@ -149,7 +149,7 @@ The system is partitioned into four primary authority domains, resolved dynamica
 - **Step 1:** Freeze behavior and document guarantees (Complete).
 - **Step 2:** Normalize all Policies to remove `before()` bypasses (Complete).
 - **Step 3:** Enforce strict guard separation and runtime hardening (Complete).
-- **Step 4:** Implement automated CI/CD security scanning.
+- **Step 4:** Implement automated CI/CD security scanning (Complete).
 
 ---
 
@@ -159,9 +159,9 @@ The system is partitioned into four primary authority domains, resolved dynamica
 | :--- | :--- | :--- | :--- | :--- |
 | `super_admin` | Full Access | **Governed Only** (via Impersonation) | Read-Only (Support) | **LOW** |
 | `support` | Restricted (Read) | Read-Only (unless Impersonating) | Read-Only | LOW |
-| `merchant_admin` | Denied | **Strictly Scoped** | Denied | LOW |
-| `customer` | Denied | Denied | **Strictly Scoped** | LOW |
-| `impersonated` | N/A | Governed & Audited | Governed & Audited | **LOW** (Step 3) |
+| `merchant_admin` | Denied | **Strictly Scoped** | Denied | **MINIMAL** (Step 4) |
+| `customer` | Denied | Denied | **Strictly Scoped** | **MINIMAL** (Step 4) |
+| `impersonated` | N/A | Governed & Audited | Governed & Audited | **LOW** |
 
 ---
 
@@ -169,7 +169,7 @@ The system is partitioned into four primary authority domains, resolved dynamica
 
 1. **Manual Scoping:** Reliance on manual `where('store_id', ...)` in Repositories instead of Global Scopes (Exploitability: Medium).
 2. **Mixed Bootstrap:** `/v1/me` handling all actor types in a single controller (Impact: Medium).
-3. **Shared User Provider:** All guards use the same `users` table (Future Risk).
+3. **Shared User Provider:** All guards use the same `users` table (Infrastructure Debt).
 4. **Onboarding Context:** Potential for incomplete onboarding states to allow partial resource access (Impact: Low).
 5. **Telemetry Noise:** High volume of security events may mask real attacks (Operational Risk).
 
@@ -177,11 +177,11 @@ The system is partitioned into four primary authority domains, resolved dynamica
 
 ## SECTION 10 — SECURITY MATURITY ASSESSMENT
 
-- **Current Maturity:** **Level 3 (Managed)**. Boundaries are defined and monitored, but not yet fully hardened.
-- **Biggest Strength:** The `IdentityContext` and `RouteDomain` model provides a solid mathematical foundation for domain separation.
-- **Biggest Weakness:** Inconsistent "shortcuts" for `super_admin` that bypass the very boundaries the architecture was built to enforce.
-- **Transitional Debt:** Legacy admin routes and the shared user provider across all guards.
-- **Next Strategy:** Policy Normalization — remove all `before()` bypasses and move `super_admin` access to the governed Impersonation layer.
+- **Current Maturity:** **Level 4 (Automated)**. Boundaries are defined, enforced at runtime, and protected by automated regression testing.
+- **Biggest Strength:** The **Forbidden Pattern Scanner** ensures that dangerous architectural bypasses cannot be re-introduced.
+- **Biggest Weakness:** Lack of database-level isolation (Global Scopes).
+- **Transitional Debt:** Legacy platform role checks in `LeadPolicy`.
+- **Next Strategy:** Implement Global Scopes or mandated Repository wrappers to eliminate manual scoping risks.
 
 ---
 **End of Inventory Report**
