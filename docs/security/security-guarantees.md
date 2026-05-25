@@ -30,9 +30,9 @@ This document defines the explicit architectural guarantees of the SaaS platform
 
 ### G2.1: Platform vs Merchant Boundary
 - **Description:** Platform actors (Super Admins) MUST NOT implicitly access or mutate merchant resources. Access to merchant resources MUST require explicit store membership or a governed impersonation flow.
-- **Affected Systems:** `TagPolicy`, `LeadPolicy`, `StoreRepository`.
-- **Enforcement Layers:** `platform.authority` middleware, `IdentityContextResolver`.
-- **Current Status:** **Transitional** (Some policies still contain implicit `before()` bypasses).
+- **Affected Systems:** `TagPolicy`, `LeadPolicy`, `StoreRepository`, `StorePolicy`.
+- **Enforcement Layers:** `platform.authority` middleware, `IdentityContextResolver`, Policy membership checks (with impersonation bypass).
+- **Current Status:** **Enforced** (Implicit bypasses removed; governed impersonation required).
 
 ### G2.2: Support Actor Restriction
 - **Description:** Support actors are restricted to read-only operations on merchant/customer data unless they are in an active, governed impersonation session.

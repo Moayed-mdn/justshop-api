@@ -11,21 +11,11 @@ use App\Models\Store;
 use App\Models\User;
 use App\Policies\Concerns\InteractsWithPolicyTelemetry;
 
+use App\Policies\Concerns\HasStoreMembership;
+
 class TagPolicy
 {
-    use InteractsWithPolicyTelemetry;
-
-    public function before(User $user, string $ability, mixed $store = null): ?bool
-    {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return $this->decision($user, $ability, true, $store, [
-                'authorization_domain' => 'tag',
-                'fallback_path_used' => false,
-            ]);
-        }
-
-        return null;
-    }
+    use HasStoreMembership;
 
     public function viewAny(User $user, Store $store): bool
     {
@@ -69,24 +59,11 @@ class TagPolicy
 
     private function canView(User $user, Store $store): bool
     {
-        return $this->isStoreMember($user, $store) && $user->can(PermissionEnum::TAG_VIEW);
+        return $this->isMember($user, $store) && $user->can(PermissionEnum::TAG_VIEW);
     }
 
     private function canManage(User $user, Store $store, string $permission): bool
     {
-        return $this->isStoreAdmin($user, $store) && $user->can($permission);
-    }
-
-    private function isStoreMember(User $user, Store $store): bool
-    {
-        return $user->stores()->where('store_id', $store->id)->exists();
-    }
-
-    private function isStoreAdmin(User $user, Store $store): bool
-    {
-        return $user->stores()
-            ->where('store_id', $store->id)
-            ->wherePivotIn('role', [StoreRoleEnum::STORE_ADMIN->value])
-            ->exists();
+        return $this->isAdmin($user, $store) && $user->can($permission);
     }
 }

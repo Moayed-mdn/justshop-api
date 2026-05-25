@@ -8,15 +8,15 @@ This document tracks known architectural security risks and "debt" items that ex
 
 ### D1.1: Policy `before()` Bypasses
 - **Origin:** Early development phase where Super Admin was a "Global God" actor.
-- **Current Risk:** High. Bypasses domain isolation without an audit trail.
-- **Migration Difficulty:** Medium. Requires updating all policies and ensuring `super_admin` has a valid path (membership or impersonation) for every action.
-- **Status:** **Dangerous Now**.
+- **Current Risk:** Low. Implicit bypasses removed in Step 2.
+- **Migration Difficulty:** Complete.
+- **Status:** **Remediated**.
 
 ### D1.2: Legacy Admin Route Enforcement
 - **Origin:** Routes created before the `platform.authority` middleware was introduced.
-- **Current Risk:** High. Relies on less granular `identity.route` enforcement.
-- **Migration Difficulty:** Low. Requires re-grouping routes under new middleware.
-- **Status:** **Dangerous Now**.
+- **Current Risk:** Low. Migrated to explicit `platform.authority` in Step 2.
+- **Migration Difficulty:** Complete.
+- **Status:** **Remediated**.
 
 ---
 

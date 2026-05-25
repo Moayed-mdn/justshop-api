@@ -17,8 +17,14 @@ class StoreRepository
      */
     public function getAccessibleStores(User $user): Collection
     {
+        // Wave 6: Governed impersonation allows platform actors to access all active stores
         if ($user->hasRole(\App\Enums\RoleEnum::SUPER_ADMIN->value)) {
-            return Store::where('is_active', true)->get();
+            $isImpersonating = app(\App\Services\Platform\Impersonation\ImpersonationLifecycleManager::class)
+                ->hasActiveImpersonation(request());
+
+            if ($isImpersonating) {
+                return Store::where('is_active', true)->get();
+            }
         }
 
         return $user->stores;

@@ -28,9 +28,18 @@ class TenantIsolationTest extends TestCase
      */
     public function test_merchant_cannot_access_other_store_products(): void
     {
-        // TODO: Implement cross-tenant product access test
-        // Scenario: Merchant A -> GET /api/v1/admin/stores/{storeB}/products
-        $this->markTestIncomplete('Pending implementation of cross-tenant dataset');
+        /** @var User $merchantA */
+        $merchantA = User::factory()->merchant()->create();
+        $storeA = Store::factory()->create(['owner_id' => $merchantA->id]);
+        $merchantA->stores()->attach($storeA->id, ['role' => \App\Enums\Store\StoreRoleEnum::STORE_ADMIN->value]);
+
+        $storeB = Store::factory()->create();
+        $productB = Product::factory()->create(['store_id' => $storeB->id]);
+
+        // Attempt to access Store B product via Store A context (should be denied by route/policy)
+        $this->actingAs($merchantA)
+            ->getJson("/api/v1/admin/stores/{$storeB->id}/products")
+            ->assertStatus(403);
     }
 
     public function test_merchant_cannot_access_other_store_orders(): void

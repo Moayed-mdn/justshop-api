@@ -82,7 +82,11 @@ Route::prefix('/v1/support')
 // Legacy Platform Routes (TRANSITIONAL - to be migrated to /v1/platform)
 // These routes still use implicit platform authority via identity.route middleware.
 // Wave 6 Goal: Migrate these to explicit platform.authority middleware.
-Route::middleware('identity.route:platform,platform,enforce')->group(function (): void {
+Route::middleware([
+    'auth:sanctum',
+    'identity.route:platform,platform,enforce',
+    'platform.authority:platform_admin',
+])->group(function (): void {
     require 'api/v1/admin/leads.php';
     require 'api/v1/admin/cms/blog.php';
     require 'api/v1/admin/cms/marketing-pages.php';

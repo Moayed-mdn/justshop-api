@@ -8,9 +8,11 @@ use App\Models\Store;
 use App\Models\User;
 use App\Policies\Concerns\InteractsWithPolicyTelemetry;
 
+use App\Policies\Concerns\HasStoreMembership;
+
 class StorePolicy
 {
-    use InteractsWithPolicyTelemetry;
+    use HasStoreMembership;
 
     /**
      * Determine whether the user can view any models.
@@ -26,12 +28,11 @@ class StorePolicy
     public function view(User $user, Store $store): bool
     {
         // Rule: Merchant-only operation (customer actors denied)
-        if ($user->getActorContext() === \App\Enums\Auth\ActorContextEnum::CUSTOMER) {
+        if ($this->isCustomer($user)) {
             return $this->decision($user, 'view', false, $store);
         }
 
-        $isAccessibleStore = $store->owner_id === $user->id
-            || $user->stores()->where('store_id', $store->id)->exists();
+        $isAccessibleStore = $store->owner_id === $user->id || $this->isMember($user, $store);
 
         return $this->decision(
             $user,
@@ -47,7 +48,7 @@ class StorePolicy
     public function create(User $user): bool
     {
         // Rule: Merchant-only operation (customer actors denied)
-        if ($user->getActorContext() === \App\Enums\Auth\ActorContextEnum::CUSTOMER) {
+        if ($this->isCustomer($user)) {
             return $this->decision($user, 'create', false);
         }
 
@@ -60,19 +61,16 @@ class StorePolicy
     public function update(User $user, Store $store): bool
     {
         // Rule: Merchant-only operation (customer actors denied)
-        if ($user->getActorContext() === \App\Enums\Auth\ActorContextEnum::CUSTOMER) {
+        if ($this->isCustomer($user)) {
             return $this->decision($user, 'update', false, $store);
         }
+
+        $canUpdate = $user->id === $store->owner_id || $this->isAdmin($user, $store);
 
         return $this->decision(
             $user,
             'update',
-            $user->stores()
-                ->where('store_id', $store->id)
-                ->wherePivotIn('role', [
-                    StoreRoleEnum::STORE_ADMIN->value,
-                ])
-                ->exists(),
+            $canUpdate,
             $store,
         );
     }
@@ -83,11 +81,14 @@ class StorePolicy
     public function delete(User $user, Store $store): bool
     {
         // Rule: Merchant-only operation (customer actors denied)
-        if ($user->getActorContext() === \App\Enums\Auth\ActorContextEnum::CUSTOMER) {
+        if ($this->isCustomer($user)) {
             return $this->decision($user, 'delete', false, $store);
         }
 
-        return $this->decision($user, 'delete', $user->id === $store->owner_id, $store);
+        // Only owner or platform admin (via impersonation) can delete
+        $canDelete = $user->id === $store->owner_id || $this->isGovernedImpersonationActive($user);
+
+        return $this->decision($user, 'delete', $canDelete, $store);
     }
 
     /**
@@ -112,7 +113,7 @@ class StorePolicy
      * Wave 2 Remediation: Authorization moved from UpdateActiveStoreAction to explicit policy.
      * 
      * Authorization Rules:
-     * - Super Admin: always allowed (handled in before())
+     * - Super Admin: allowed via governed impersonation
      * - Merchant actors: must be a member of the store
      * - Customer actors: explicitly denied (merchant-only operation)
      * - Store must be active
@@ -120,7 +121,7 @@ class StorePolicy
     public function switchStore(User $user, Store $store): bool
     {
         // Rule 1: Merchant-only operation (customer actors denied)
-        if ($user->getActorContext() === \App\Enums\Auth\ActorContextEnum::CUSTOMER) {
+        if ($this->isCustomer($user)) {
             return $this->decision($user, 'switchStore', false, $store);
         }
 
@@ -129,11 +130,8 @@ class StorePolicy
             return $this->decision($user, 'switchStore', false, $store);
         }
 
-        // Rule 3: User must be a member of the store (super_admin bypassed in before())
-        $isMember = $store->owner_id === $user->id
-            || $user->stores()
-                ->where('store_id', $store->id)
-                ->exists();
+        // Rule 3: User must be a member of the store or platform admin (via impersonation)
+        $isMember = $store->owner_id === $user->id || $this->isMember($user, $store);
 
         return $this->decision($user, 'switchStore', $isMember, $store);
     }

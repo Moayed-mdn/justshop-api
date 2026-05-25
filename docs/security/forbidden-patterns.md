@@ -8,6 +8,7 @@ This document identifies architectural anti-patterns that violate the security p
 
 ### P1.1: Implicit Super Admin Bypass in Policies
 - **Risk:** High. Allows platform admins to access merchant resources without an audit trail (impersonation). Violates authority domain separation.
+- **Status:** **Remediated** (Step 2).
 - **Bad Example:**
   ```php
   public function before(User $user, string $ability) {
@@ -16,9 +17,9 @@ This document identifies architectural anti-patterns that violate the security p
   ```
 - **Preferred Pattern:** Use the `ImpersonationGovernanceService` or explicit store membership.
   ```php
-  // No before() method. Membership or Impersonation is required.
+  // No before() method. Membership or Governed Impersonation is required.
   public function view(User $user, Store $store) {
-      return $this->isMember($user, $store);
+      return $this->isMember($user, $store); // isMember accounts for impersonation
   }
   ```
 

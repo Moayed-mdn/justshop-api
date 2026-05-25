@@ -20,23 +20,11 @@ class LeadPolicy
     use InteractsWithPolicyTelemetry;
 
     /**
-     * Perform pre-authorization checks.
-     */
-    public function before(User $user, string $ability): ?bool
-    {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return $this->decision($user, $ability, true);
-        }
-
-        return null;
-    }
-
-    /**
      * Determine whether the user can view any leads.
      */
     public function viewAny(User $user): bool
     {
-        return $this->decision($user, 'viewAny', false);
+        return $this->decision($user, 'viewAny', $user->hasRole(RoleEnum::SUPER_ADMIN->value));
     }
 
     /**
@@ -44,7 +32,7 @@ class LeadPolicy
      */
     public function view(User $user, Lead $lead): bool
     {
-        return $this->decision($user, 'view', false, $lead);
+        return $this->decision($user, 'view', $user->hasRole(RoleEnum::SUPER_ADMIN->value), $lead);
     }
 
     /**
@@ -52,7 +40,7 @@ class LeadPolicy
      */
     public function update(User $user, Lead $lead): bool
     {
-        return $this->decision($user, 'update', false, $lead);
+        return $this->decision($user, 'update', $user->hasRole(RoleEnum::SUPER_ADMIN->value), $lead);
     }
 
     /**
@@ -60,6 +48,6 @@ class LeadPolicy
      */
     public function delete(User $user, Lead $lead): bool
     {
-        return $this->decision($user, 'delete', false, $lead);
+        return $this->decision($user, 'delete', $user->hasRole(RoleEnum::SUPER_ADMIN->value), $lead);
     }
 }

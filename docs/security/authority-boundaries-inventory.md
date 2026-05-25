@@ -146,10 +146,10 @@ The system is partitioned into four primary authority domains, resolved dynamica
 - **Middleware:** Unified authority enforcement per route domain.
 
 ### MIGRATION DIRECTION: Hardening Phase
-- **Step 1:** Freeze behavior and document guarantees (Current Phase).
-- **Step 2:** Normalize all Policies to remove `before()` bypasses.
+- **Step 1:** Freeze behavior and document guarantees (Complete).
+- **Step 2:** Normalize all Policies to remove `before()` bypasses (Complete).
 - **Step 3:** Enforce strict guard separation (`AUTH_GUARD_SPLIT_ENFORCE=true`).
-- **Step 4:** Migrate legacy routes to explicit authority middleware.
+- **Step 4:** Migrate legacy routes to explicit authority middleware (Complete).
 
 ---
 
@@ -157,7 +157,7 @@ The system is partitioned into four primary authority domains, resolved dynamica
 
 | Actor Type | Platform Resources | Merchant Resources | Customer Resources | Cross-Tenant Risk |
 | :--- | :--- | :--- | :--- | :--- |
-| `super_admin` | Full Access | **Full Bypass** (via Policies) | Read-Only (Support) | **CRITICAL** |
+| `super_admin` | Full Access | **Governed Only** (via Impersonation) | Read-Only (Support) | **LOW** |
 | `support` | Restricted (Read) | Read-Only (unless Impersonating) | Read-Only | LOW |
 | `merchant_admin` | Denied | **Strictly Scoped** | Denied | LOW |
 | `customer` | Denied | Denied | **Strictly Scoped** | LOW |
@@ -167,16 +167,14 @@ The system is partitioned into four primary authority domains, resolved dynamica
 
 ## SECTION 9 — TOP ARCHITECTURAL RISKS
 
-1. **Policy Bypass (`before`):** Inconsistent `super_admin` bypasses in `TagPolicy` and `LeadPolicy` (Exploitability: High).
-2. **Legacy Platform Routes:** Admin CMS and Leads routes lack explicit authority enforcement (Impact: High).
-3. **Session Contamination:** Shared `web` guard across Merchant and Customer domains (Isolation Danger: Medium).
-4. **Repository Global Access:** `StoreRepository` allows `super_admin` to fetch all stores without context (Impact: High).
-5. **Context Leakage:** Potential `currentStore` persistence across Queue Job executions (Regression Likelihood: High).
-6. **Manual Scoping:** Reliance on manual `where('store_id', ...)` in Repositories instead of Global Scopes (Exploitability: Medium).
-7. **Mixed Bootstrap:** `/v1/me` handling all actor types in a single controller (Impact: Medium).
-8. **Impersonation Rotation:** Lack of session regeneration upon impersonation activation (Exploitability: Medium).
-9. **Transitional Guard Enforce:** `AUTH_GUARD_SPLIT_ENFORCE` set to false, allowing fallback to shared guard (Isolation Danger: High).
-10. **Membership Immutability:** Owner cannot be changed, leading to potential "Forever Admin" risks (Impact: Low).
+1. **Session Contamination:** Shared `web` guard across Merchant and Customer domains (Isolation Danger: Medium).
+2. **Context Leakage:** Potential `currentStore` persistence across Queue Job executions (Regression Likelihood: High).
+3. **Manual Scoping:** Reliance on manual `where('store_id', ...)` in Repositories instead of Global Scopes (Exploitability: Medium).
+4. **Mixed Bootstrap:** `/v1/me` handling all actor types in a single controller (Impact: Medium).
+5. **Impersonation Rotation:** Lack of session regeneration upon impersonation activation (Exploitability: Medium).
+6. **Transitional Guard Enforce:** `AUTH_GUARD_SPLIT_ENFORCE` set to false, allowing fallback to shared guard (Isolation Danger: High).
+7. **Membership Immutability:** Owner cannot be changed, leading to potential "Forever Admin" risks (Impact: Low).
+8. **Shared User Provider:** All guards use the same `users` table (Future Risk).
 
 ---
 
