@@ -2122,4 +2122,4 @@ export interface BootstrapPayload {
 }
 ```
 
-This document is the single source of truth for Dashboard auth, onboarding, first-store creation, provisioning, bootstrap synchronization, permission rendering, store switching, and logout.
+This document is the canonical consumer guide for dashboard auth, onboarding, first-store creation, provisioning, bootstrap synchronization, permission rendering, store switching, and logout. For auth doctrine and route-domain rules, prefer `docs/AUTH_ROUTING.md`.

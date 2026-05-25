@@ -1,36 +1,61 @@
-# Wave 3A Auth & Routing Doctrine
+# Auth Routing Doctrine
 
 ## Purpose
 
-This document records the **Wave 3A identity context normalization** rules.
-It is a boundary-clarification phase only.
+This document is the canonical auth doctrine for route ownership, identity domains, guard resolution, and shared-session constraints.
 
-Wave 3A does **not** change runtime auth authority.
+Use this file for current runtime truth.
+Use narrower docs under `docs/auth/` for focused references, payload contracts, governance details, and guides.
 
-Still authoritative:
+## Current Verified Runtime
 
-- shared `users` table
-- shared Sanctum session model
-- merchant auth routes under `/api/v1/users/*`
-- existing merchant bootstrap contract
-- existing checkout auth model
+The codebase currently runs in a mixed hardening state:
 
-Still forbidden in Wave 3A:
+- authentication still enters through `auth:sanctum` and a shared browser session cookie
+- the shared user provider and shared `users` table remain authoritative
+- explicit session guards exist for `web`, `merchant`, and `customer`
+- `identity.route` middleware resolves route ownership, identity context, session ownership, and the intended guard on annotated routes
+- `ApplyIdentityRouteContext` calls `Auth::shouldUse($guard)` and rejects illegal fallback on non-transitional annotated routes
+- logout is still globally scoped because `LogoutUserAction` falls back to `Auth::guard('web')->logout()` while `AUTH_GUARD_SPLIT_ENABLED` is disabled by default, and `SessionOwnershipManager::invalidate()` invalidates the full Laravel session
 
-- guard split
-- cookie split
-- customer-only sessions
-- merchant-only sessions
-- `customer_accounts` table
-- `merchant_accounts` table
-- checkout auth rewrite
-- bootstrap slimming
+This means route-level guard activation is active, but cookie/session persistence and logout semantics are still shared.
 
-## Identity-Context Doctrine
+## Auth Domains
 
-Identity is now normalized through `App\Services\Auth\IdentityContextResolver` and represented by `App\DTOs\Auth\Identity\IdentityContext`.
+| Auth Domain | Primary Actor Types | Current Runtime Notes |
+|-------------|---------------------|-----------------------|
+| `merchant` | `merchant` | Merchant auth and admin surfaces resolve to the `merchant` guard on annotated routes. |
+| `customer` | `customer` | Customer account surface resolves to the `customer` guard on annotated routes. |
+| `platform` | `super_admin`, `support_agent` | Platform routes are enforced as platform-owned, but the intended guard still resolves to `merchant`. |
+| `shared_transitional` | mixed or guest | Transitional endpoints stay exempt from strict ownership and fallback rejection. |
 
-The normalized context carries:
+## Route Ownership Doctrine
+
+Current route families are owned as follows:
+
+| Route Family | Owner Domain | Enforcement | Notes |
+|--------------|--------------|-------------|-------|
+| `/api/v1/users/*` | `merchant` | `enforce` | Includes merchant auth/bootstrap/profile surfaces. |
+| `/api/v1/admin/stores/{store}/*` | `merchant` | `enforce` | Merchant-admin store operations remain merchant-owned. |
+| `/api/v1/storefront/account/*` | `customer` | `enforce` | Dedicated customer account namespace. |
+| `/api/v1/stores/{store}/*` | `customer` | `observe` | Storefront commerce remains customer-facing but still transitional in places. |
+| `/api/v1/platform/*` | `platform` | `enforce` | Explicit platform authority is required. |
+| legacy platform admin CMS/leads under `/api/v1/admin/*` | `platform` | `enforce` | These routes currently include both `identity.route:platform` and explicit `platform.authority:platform_admin` middleware. |
+| `/api/v1/public/*` | `customer` | `observe` | Public content is guest-safe and non-authenticated. |
+| `/sanctum/csrf-cookie` and other shared handoff endpoints | `shared_transitional` | `observe` | Shared browser bootstrap still exists. |
+
+## Identity Context Doctrine
+
+`IdentityContextResolver` is the canonical resolver for actor classification.
+
+Supported runtime actor types are:
+
+- `merchant`
+- `customer`
+- `super_admin`
+- `support_agent`
+
+The resolved identity context carries:
 
 - `actor_type`
 - `actor_id`
@@ -38,244 +63,116 @@ The normalized context carries:
 - `operational_context`
 - `auth_domain`
 
-Supported explicit actor classes:
+Current guarantees:
 
-- `merchant`
-- `customer`
-- `super_admin`
-
-Wave 3A intent:
-
-- actor boundaries are explicit and observable
-- onboarding applicability is explicit instead of indirectly inferred
-- session-boundary preparation metadata is available without changing sessions
-
-## Route-Domain Ownership Doctrine
-
-Wave 3A introduces explicit ownership metadata through `identity.route` middleware.
-
-### Merchant-owned domains
-
-- `/api/v1/users/*`
-- `/api/v1/admin/*`
-
-### Customer-owned domain
-
-- `/api/v1/storefront/account/*`
-
-### Enforcement model
-
-- merchant `/api/v1/users/*` routes are annotated in **observe** mode because they remain authoritative and backward-compatible
-- merchant `/api/v1/admin/*` routes are annotated in **enforce** mode
-- customer `/api/v1/storefront/account/*` routes are annotated in **enforce** mode
-
-Route ownership is additive metadata. It exists to support telemetry, boundary checks, and future guard preparation.
-
-## Onboarding Isolation Doctrine
-
-Merchant onboarding semantics are now isolated through `App\Services\Auth\OnboardingApplicabilityResolver`.
-
-Rules:
-
-- customer actors explicitly bypass onboarding
-- super-admin actors explicitly bypass onboarding
-- merchant actors are explicitly evaluated
-- onboarding remains merchant-only
-- onboarding state machine is unchanged in Wave 3A
-
-## Storefront Identity Doctrine
-
-Wave 3A introduces an additive customer account namespace:
-
-- `POST /api/v1/storefront/account/register`
-- `POST /api/v1/storefront/account/login`
-- `POST /api/v1/storefront/account/logout`
-- `GET /api/v1/storefront/account/me`
-- `GET /api/v1/storefront/account/bootstrap`
-
-Characteristics:
-
-- shared `users` table for now
-- same session/guard topology for now
-- no merchant bootstrap reuse
-- no onboarding payload
-- no store-management payload
-- no merchant operational state
-
-The storefront bootstrap is intentionally minimal and customer-safe.
+- customer actors bypass merchant onboarding
+- merchant actors retain merchant onboarding semantics
+- platform actors remain outside merchant onboarding
+- route-domain mismatches on enforced routes return `403`
 
 ## Session Ownership Doctrine
 
-Wave 3B extends Wave 3A session preparation with explicit request-scoped ownership modeling through `App\Services\Auth\SessionOwnershipResolver` and `App\DTOs\Auth\Session\SessionOwnershipContext`.
+`SessionOwnershipManager` persists the active session domain with:
 
-Tracked fields:
-
-- `auth_domain`
-- `actor_type`
-- `route_domain`
-- `session_origin`
-- `intended_guard_future`
-- `onboarding_applicable`
-
-This model is:
-
-- request-scoped only
-- telemetry-safe only
-- non-authoritative
-- not a session isolation mechanism
-
-## Future Guard Topology
-
-Wave 3B introduces shadow-only future guard hints.
-
-Current future hints:
-
-- `merchant_guard`
-- `customer_guard`
-- `ambiguous_guard`
-- `shared_guard`
-
-These are not active guards. They are preparatory signals for future cutover analysis.
-
-## Guard Shadow Semantics
-
-Wave 3B adds:
-
-- `App\Services\Auth\MerchantGuardShadowResolver`
-- `App\Services\Auth\CustomerGuardShadowResolver`
-- `App\Services\Auth\GuardShadowAnalyzer`
-
-Rules:
-
-- shadow resolvers are observe-only
-- shadow resolvers do not authenticate requests
-- shadow resolvers do not change sessions
-- shadow resolvers do not change cookies
-- shadow resolvers only answer which guard **would** own the request in a future topology
-
-## Contamination Detection Doctrine
-
-Wave 3B adds contamination telemetry for:
-
-- cross-domain session usage
-- bootstrap misuse across domains
-- onboarding leakage into customer-owned domains
-- logout ambiguity
-- guard ambiguity
-- guard mismatch anomalies
-
-These signals are for readiness evidence only. They do not enforce guard separation.
-
-## Session Boundary Preparation Metadata
-
-Wave 3A adds non-authoritative session annotations through `App\Services\Auth\SessionBoundaryMetadataResolver`.
-
-Current metadata includes:
-
-- `session_id`
 - `auth_domain`
 - `actor_type`
 - `actor_id`
-- `authority_model` = `shared_sanctum_session`
-- `isolation_state` = `shared_until_guard_split`
-- `ownership_key`
 
-This is preparation metadata only. It does not introduce isolation.
+`SessionOwnershipResolver` and `SessionBoundaryMetadataResolver` enrich each request with:
 
-## Guard Split Readiness Doctrine
+- route ownership
+- session origin
+- future intended guard
+- authority model `shared_sanctum_session`
+- isolation state `shared_until_guard_split`
 
-Wave 3C introduces non-authoritative readiness validation for future guard split work.
+This metadata is authoritative for telemetry and contamination detection, but it does not create separate browser cookies or separate persistent session stores.
 
-Rules:
+## Guard Resolution Doctrine
 
-- simulation may model future split ownership
-- simulation may not activate real guards
-- simulation may not activate isolated session cookies
-- simulation output is evidence only, never runtime authority
+`TransitionalGuardResolver` currently maps domains as follows:
 
-## Concurrent Session Doctrine
+| Session/Auth Domain | Intended Guard |
+|---------------------|----------------|
+| `merchant` | `merchant` |
+| `customer` | `customer` |
+| `platform` | `merchant` |
+| unknown or shared transitional fallback | `web` |
 
-Wave 3C validates future concurrent-session behavior through simulation only.
+Current runtime behavior:
 
-Target scenarios include:
+- `ApplyIdentityRouteContext` resolves the intended guard on annotated routes
+- `Auth::shouldUse($guard)` is applied before controller execution
+- non-`shared_transitional` annotated routes reject fallback guard resolution
+- shared-transitional routes remain exempt so shared bootstrap/csrf handoff behavior keeps working
 
-- merchant and storefront tabs open simultaneously
-- merchant login while storefront is authenticated
-- storefront login while merchant is authenticated
-- logout in one context while the other should remain active
-- csrf refresh during mixed-context usage
+This is stronger than shadow-only preparation, but it is still not a full browser-session cutover.
 
-Current doctrine: all such scenarios remain shared-session behavior in production, and readiness analysis exists only to score the future split blast radius.
+## Merchant Surface Doctrine
 
-## CSRF Ownership Doctrine
+Merchant-auth authoritative routes remain under `/api/v1/users/auth/*` and `/api/v1/users/*`.
 
-Wave 3C validates CSRF ownership readiness by domain.
+Current merchant login flow:
 
-Rules:
+- `AuthController::login()` authenticates the user
+- `Auth::login($user)` creates the Laravel session
+- the session is regenerated
+- `SessionOwnershipManager::tag(..., 'merchant')` marks the session domain
 
-- shared csrf behavior remains authoritative
-- ownership validation may add telemetry and headers only
-- no csrf lifecycle changes are allowed in Wave 3C
-- simulated split scenarios may identify stale-refresh or mismatch risks
+Merchant bootstrap remains the larger operational payload and still includes stores, onboarding, permissions, config, and session metadata.
 
-## Logout Ownership Doctrine
+## Customer Surface Doctrine
 
-Wave 3C validates logout semantics for future split-safe invalidation.
+Customer account routes live under `/api/v1/storefront/account/*`.
 
-Rules:
+Current customer login flow:
 
-- current logout behavior remains globally shared
-- simulation may model future merchant-only or customer-only invalidation scopes
-- runtime logout behavior must not change in Wave 3C
+- `StorefrontAccountController::login()` authenticates a customer-only actor
+- `Auth::login($user)` creates the Laravel session
+- the session is regenerated
+- `SessionOwnershipManager::tag(..., 'customer')` marks the session domain
 
-## Split-Readiness Scoring Doctrine
+Current customer bootstrap contract is intentionally minimal:
 
-Wave 3C produces formal readiness scoring with explicit status classification.
+- `user`
+- `identity_context`
+- `session`
+- response `meta.session` for frontend session metadata
 
-Allowed statuses:
+It does not reuse the merchant bootstrap payload.
 
-- `READY`
-- `PARTIALLY_READY`
-- `BLOCKED`
+## Logout Doctrine
 
-Scoring dimensions:
+Current logout behavior is intentionally mixed:
 
-- guard split readiness
-- csrf isolation readiness
-- logout isolation readiness
-- frontend readiness
-- session contamination score
-- auth-domain stability score
+- logout resolves session ownership and intended guard
+- if `AUTH_GUARD_SPLIT_ENABLED` is `false` (the default), `LogoutUserAction` logs out the `web` guard for compatibility
+- `SessionOwnershipManager::invalidate()` clears ownership keys and invalidates the full Laravel session
+- CSRF token regeneration still happens globally
 
-## Readiness Reporting
+Therefore:
 
-Wave 3A readiness evidence is generated with:
+- logout intent is actor-aware
+- route protection is actor-aware
+- persistent browser logout remains globally scoped
 
-```bash
-php artisan architecture:wave3a-readiness-report --output=storage/app/testing/wave3a-readiness-report.json
-```
+## Browser Coexistence Doctrine
 
-Wave 3B readiness evidence is generated with:
+The browser still uses a shared session cookie, so mixed merchant/customer activity can still contend with the same underlying browser session.
 
-```bash
-php artisan architecture:wave3b-guard-readiness-report --output=storage/app/testing/wave3b-guard-readiness-report.json
-```
+Current known truth:
 
-Current expected readiness outcome:
+- multi-tab merchant/customer coexistence is monitored, not fully isolated
+- shared-cookie overwrite risk still exists
+- shared CSRF bootstrap still exists
+- readiness and simulation layers are still used to evaluate future split safety
 
-- identity context health should be healthy
-- onboarding isolation health should be healthy
-- route-domain metadata coverage should be healthy
-- guard split gate should remain in preparation-only status
+## Not Yet Completed
 
-## Remaining Wave 4 Blockers
+The following are not yet true in the live runtime:
 
-Wave 3A does **not** remove the following blockers:
-
-- shared user authority
-- shared Sanctum authority
-- shared session ownership
-- no cookie split
-- no guard split
-- merchant auth route authority still active
-- checkout auth model still shared
+- separate browser cookies per actor domain
+- per-guard persistent session isolation
+- split-safe logout that only invalidates one actor domain
+- separate providers or separate account tables
+- full removal of shared-session assumptions from SPA/browser flows

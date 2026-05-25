@@ -1,6 +1,10 @@
 # Multi-Tenant Commerce Platform: Onboarding, Authentication, and Store Lifecycle Documentation
 
-This document serves as the single canonical source of truth for the backend architecture regarding authentication, onboarding, store lifecycle, and related flows in the Laravel API-first backend. It is based solely on the current implementation verified from the codebase as of 2026-05-23. All claims are referenced to actual classes, methods, enums, and tests. No invented flows or assumptions are included.
+> Guide note:
+> This file is an implementation guide and architecture reference for onboarding, auth, and store lifecycle behavior.
+> It is not the sole auth doctrine. For auth routing and boundary rules, prefer `docs/AUTH_ROUTING.md`. For navigation across auth documents, prefer `docs/auth/README.md`.
+
+This document serves as a backend implementation guide for authentication, onboarding, store lifecycle, and related flows in the Laravel API-first backend. It is based solely on the current implementation verified from the codebase as of 2026-05-23. All claims are referenced to actual classes, methods, enums, and tests. No invented flows or assumptions are included.
 
 ## System Overview
 
@@ -26,14 +30,16 @@ Architecture principles (from `docs/ARCHITECTURE.md`):
 
 ## Authentication Architecture
 
-Authentication uses Sanctum with web guard. Shared sessions for now, with metadata for future splits (from `SessionOwnershipResolver`).
+Authentication still enters through `auth:sanctum` and a shared Laravel browser session, but route ownership and intended guard selection are now explicit. Merchant login/register in `AuthController` tag the regenerated session as `merchant`; customer login/register in `StorefrontAccountController` tag it as `customer`. `ApplyIdentityRouteContext` resolves and applies the intended `merchant` or `customer` guard on annotated routes, while browser-session persistence and logout remain shared by default.
 
 ### Sanctum Session Lifecycle
 
-- **Creation**: On login/register, `Auth::login($user)`; session regenerated (`$request->session()->regenerate()` in `AuthController`).
-- **Validation**: Middleware `auth:sanctum` checks sessions.
-- **Invalidation**: On logout, `Auth::guard('web')->logout()`; session invalidated (`$request->session()->invalidate()` in `AuthService`).
-- **Revocation**: `LogoutAllDevicesAction` revokes tokens (from `LogoutAllDevicesRequest`).
+- **Creation**: On merchant or customer login/register, `Auth::login($user)` creates the session and the controller regenerates it.
+- **Tagging**: `SessionOwnershipManager` stores `auth_domain`, `actor_type`, and `actor_id` in the session.
+- **Validation**: `auth:sanctum` authenticates the request and `identity.route` enforces route ownership.
+- **Guard Selection**: `ApplyIdentityRouteContext` calls `Auth::shouldUse()` with the intended guard on annotated routes.
+- **Invalidation**: `LogoutUserAction` still invalidates the full Laravel session by default because guard-split logout is not enabled by default.
+- **Revocation**: `LogoutAllDevicesAction` deletes other rows from the `sessions` table for the authenticated user.
 
 Sequence Diagram for Session Creation:
 ```
@@ -52,24 +58,26 @@ sequenceDiagram
 
 ## Registration Flow
 
-- Endpoint: `POST /api/v1/register` (merchant) or `POST /api/v1/storefront/account/register` (customer).
-- Implementation: `RegisterUserAction` creates user, fires `Registered` event, logs in (from `AuthController`).
-- Email verification required (implements `MustVerifyEmail` in `User` model).
+- Merchant endpoint: `POST /api/v1/users/auth/register`.
+- Customer endpoint: `POST /api/v1/storefront/account/register`.
+- Implementation: merchant registration goes through `AuthController`; customer registration goes through `StorefrontAccountController`. Both create the user, log them in, regenerate the session, and tag the session domain.
 
 ## Login Flow
 
-- Endpoint: `POST /api/v1/login` (merchant) or `POST /api/v1/storefront/account/login` (customer).
-- Implementation: `LoginUserAction` checks credentials, verifies email (from `AuthService`).
+- Merchant endpoint: `POST /api/v1/users/auth/login`.
+- Customer endpoint: `POST /api/v1/storefront/account/login`.
+- Implementation: merchant login uses `LoginUserAction`; customer login uses `LoginCustomerAction`. Both controllers call `Auth::login($user)`, regenerate the session, and tag the actor domain.
 
 ## Logout Flow
 
-- Endpoint: `POST /api/v1/logout`.
-- Implementation: `LogoutUserAction` invalidates session (from `AuthController`).
+- Merchant endpoint: `POST /api/v1/users/auth/logout`.
+- Customer endpoint: `POST /api/v1/storefront/account/logout`.
+- Implementation: both surfaces use `LogoutUserAction`, which resolves actor/session metadata first and then invalidates the full Laravel session by default.
 
 ## Session Revocation Flow
 
-- Endpoint: `POST /api/v1/logout-all` (requires password confirmation except Google users).
-- Implementation: Revokes all tokens except current (in `LogoutAllDevicesAction`).
+- Endpoint: `DELETE /api/v1/users/sessions` (password confirmation enforced by the request layer).
+- Implementation: `LogoutAllDevicesAction` deletes the authenticated user's other session rows and preserves the current session when requested.
 
 ## Email Verification Flow
 

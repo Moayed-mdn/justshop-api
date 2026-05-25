@@ -5,15 +5,16 @@ This directory is the canonical home for authentication, identity, session, brow
 ## Canonical Reading Order
 
 1. [../AUTH_ROUTING.md](../AUTH_ROUTING.md) - Primary route ownership and identity routing contract.
-2. [core/identity-context-model.md](./core/identity-context-model.md) - Authoritative actor classification model.
-3. [core/merchant-customer-runtime-boundaries.md](./core/merchant-customer-runtime-boundaries.md) - Runtime separation between merchant and customer surfaces.
-4. [core/storefront-account-bootstrap-contract.md](./core/storefront-account-bootstrap-contract.md) - Storefront-safe bootstrap contract.
+2. [core/identity-context-model.md](./core/identity-context-model.md) - Actor classification reference for `IdentityContext`.
+3. [core/merchant-customer-runtime-boundaries.md](./core/merchant-customer-runtime-boundaries.md) - High-level boundary summary across merchant and customer surfaces.
+4. [core/storefront-account-bootstrap-contract.md](./core/storefront-account-bootstrap-contract.md) - Storefront-safe bootstrap payload reference.
 5. [sessions/actor-bound-session-ownership.md](./sessions/actor-bound-session-ownership.md) - Session ownership tagging model.
 6. [governance/sanctum-authority-governance.md](./governance/sanctum-authority-governance.md) - Sanctum governance and transitional guard posture.
 
 ## Topic Areas
 
 - `core/` - Canonical identity, namespace, bootstrap, and runtime-boundary docs.
+- `core/` documents are focused references under the broader doctrine defined in `AUTH_ROUTING.md`.
 - `sessions/` - Session ownership, session lifecycle, and guard-isolation preparation.
 - `browser/` - Browser coexistence behavior and validation docs.
 - `governance/` - Authority governance, transitional rules, rollback, and dependency mapping.

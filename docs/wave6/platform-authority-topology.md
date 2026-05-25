@@ -8,7 +8,14 @@
 
 ## Overview
 
-Wave 6 extracts platform/support authority into a true independent domain. Platform is NOT "merchant admin with extra permissions." It is its own authority model with its own route topology, guard ownership, actor ownership, and telemetry domain.
+Wave 6 extracts platform/support authority into a true independent domain. Platform is NOT "merchant admin with extra permissions." It is its own authority model with its own route topology, actor ownership, middleware, and telemetry domain.
+
+Current runtime nuance:
+
+- platform and support routes use `AuthDomainEnum::PLATFORM`
+- platform and support authority are enforced by dedicated middleware
+- the current session guard still resolves to `merchant` for `platform` auth-domain requests
+- authority isolation is active even though guard persistence has not split into a dedicated platform guard yet
 
 ---
 
@@ -37,6 +44,8 @@ identity.route:platform,platform,enforce
 platform.authority:platform_admin
 ```
 
+**Current guard runtime:** `merchant`
+
 ### Support Domain — `/api/v1/support/*`
 
 | Route | Method | Actor | Authority |
@@ -63,6 +72,8 @@ auth:sanctum
 identity.route:support,platform,enforce
 support.authority
 ```
+
+**Current guard runtime:** `merchant`
 
 ---
 
@@ -135,13 +146,13 @@ Resolution flow:
 
 ## Transitional Legacy Routes
 
-The following routes still use `identity.route:platform,platform,enforce` without explicit `platform.authority` middleware. These are **transitional** and must be migrated in a future wave:
+The following routes are still transitional because they keep legacy `/v1/admin/*` URLs, even though the current route registration already applies both `identity.route:platform,platform,enforce` and explicit `platform.authority:platform_admin` middleware:
 
 - `/v1/admin/stores/{store}/*` — merchant admin routes (legacy platform)
 - `/v1/admin/leads` — lead management
 - `/v1/admin/cms/*` — CMS management
 
-**Wave 6 Goal:** These routes are documented as transitional debt. Migration to explicit `platform.authority` middleware is tracked in `transitional-authority-reduction.md`.
+**Wave 6 Goal:** These routes remain documented as transitional debt because of their URL placement and ownership history. Further migration work focuses on topology cleanup, not on adding `platform.authority` to the current route group.
 
 ---
 

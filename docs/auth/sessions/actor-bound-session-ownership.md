@@ -20,7 +20,7 @@ The **[SessionOwnershipManager.php](file:///home/leader/projects/laravel/laraten
 
 ## Logout Semantics
 
-`LogoutUserAction` uses the `SessionOwnershipManager` to perform actor-aware invalidation. While currently invalidating the global session to ensure compatibility, it prepares the platform for future concurrent session isolation.
+`LogoutUserAction` uses the `SessionOwnershipManager` to perform actor-aware invalidation. To ensure security and compatibility in the current transitional state, **logout still invalidates the full Laravel session globally** and regenerates the CSRF token. This prevents cross-actor session leakage while the platform prepares for future concurrent session isolation.
 
 ## Contamination Detection
 

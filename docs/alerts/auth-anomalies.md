@@ -176,6 +176,7 @@ WHERE time_window = 5 minutes
 **Status:** DRAFT (Wave 3B)
 
 **Data Source:**
+- Guard split simulation: `auth.guard.split_mismatch_detected`
 - Session guard telemetry: `guard.shadow.mismatch_detected`
 - Metric: `guard.shadow.mismatch`
 

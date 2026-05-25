@@ -8,7 +8,7 @@ This platform provides a robust infrastructure for multi-tenant e-commerce and C
 
 ### Key Domains
 - **Commerce**: Products, Orders, Cart, Payments (Store-scoped)
-- **CMS Blog**: Store-scoped blog system with JSON-based localization.
+- **CMS Blog**: Platform-level blog system with JSON-based localization.
 - **CMS Documentation**: Platform-level documentation system.
 - **Marketing CMS**: Platform-level landing page management.
 - **Admin**: Multi-tenant management and platform administration.
@@ -30,7 +30,7 @@ This project follows a strict **Action-DTO-Repository** pattern.
 
 - **Framework**: Laravel 11 (PHP 8.3)
 - **Database**: MySQL 8.0 / SQLite (Testing)
-- **Auth**: Laravel Sanctum (Token-based)
+- **Auth**: Laravel Sanctum (stateful SPA sessions with shared browser cookie and multi-guard preparation)
 - **Permissions**: Spatie Permission (Team-scoped)
 - **Testing**: PHPUnit
 

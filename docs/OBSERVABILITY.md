@@ -230,6 +230,10 @@ Wave 3A extends observability with identity-bound structured events.
 
 - `identity.session_boundary.annotated`
 - `session.ownership.resolved`
+- `auth.guard.transitional_resolution`
+- `auth.guard.split_simulation`
+- `auth.guard.split_mismatch_detected`
+- `auth.guard.illegal_fallback_detected`
 - `guard.shadow.resolved`
 - `guard.shadow.ambiguity_detected`
 - `guard.shadow.mismatch_detected`
@@ -245,7 +249,7 @@ Wave 3A extends observability with identity-bound structured events.
 - `session.logout.ownership_traced`
 - `session.csrf.ownership_traced`
 
-These events are additive and observability-only. They prepare later guard and session separation work without changing authority.
+These events remain diagnostic telemetry, but the runtime now also enforces explicit guard selection and session-contamination rejection on enforced non-transitional routes. Treat the logs as evidence of the active ownership model, not as the enforcement mechanism itself.
 
 ## Wave 3C Guard Split Validation Signals
 

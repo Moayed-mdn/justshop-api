@@ -4,9 +4,13 @@
 **Status:** VERIFIED_COMPLETE  
 **Wave:** 3
 
+> Scope note:
+> `docs/AUTH_ROUTING.md` is the primary auth doctrine for identity routing and route ownership.
+> This file is a focused reference for the `IdentityContext` model, actor classes, and related telemetry fields.
+
 ## Overview
 
-The Identity Context Model defines the authoritative actor type and domain for every request. It eliminates shared-runtime ambiguity by explicitly resolving the user's role and domain before any authorization logic is executed.
+The Identity Context Model documents the resolved actor type and auth domain attached to a request. It eliminates shared-runtime ambiguity by explicitly resolving the user's role and domain before authorization and telemetry logic run.
 
 ## Actor Types
 

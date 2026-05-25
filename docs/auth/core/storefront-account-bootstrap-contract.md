@@ -1,28 +1,53 @@
 # Storefront Account Bootstrap Contract
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Status:** VERIFIED_COMPLETE  
-**Wave:** 3
+**Wave:** 6
+
+> Scope note:
+> `docs/AUTH_ROUTING.md` defines the auth and route-boundary doctrine.
+> This file documents the actual customer bootstrap payload returned by `/api/v1/storefront/account/bootstrap`.
 
 ## Overview
 
-The Storefront Account Bootstrap contract defines the initial payload provided to the frontend when a customer logs in. It is designed to be "customer-safe," containing only the data necessary for commerce flows.
+The storefront account bootstrap is intentionally smaller than the merchant bootstrap.
+It returns only customer-safe identity and session information needed for the storefront account experience.
 
-## Payload Structure
+## Endpoint
 
-| Field | Description | Actor Coupling |
-|-------|-------------|----------------|
-| `user` | Basic customer profile | Customer-safe |
-| `stores` | Empty for customers | Merchant-coupled (isolated) |
-| `active_store` | Null for customers | Merchant-coupled (isolated) |
-| `permissions` | Customer-specific capabilities | Context-aware |
-| `onboarding` | Disabled for customers | Merchant-coupled (isolated) |
-| `config` | Public platform configuration | Shared |
-| `actor_context` | Explicitly `customer` | Explicit |
+- `GET /api/v1/storefront/account/bootstrap`
+- middleware: `identity.route:customer_account,customer,enforce`
+- authenticated with `auth:sanctum`
 
-## Readiness Telemetry
+## Resource Payload
 
-Bootstrap resolution includes dependency profiling to detect:
-- `actor_coupling_anomaly`: When a customer payload contains merchant-coupled data.
-- `payload_size_growth`: Monitoring the impact of additive metadata.
-- `resolver_timing`: Performance impact of decomposed authority resolution.
+`StorefrontAccountBootstrapResource` returns this body shape:
+
+| Field | Description |
+|-------|-------------|
+| `user.id` | Customer user id |
+| `user.name` | Customer display name |
+| `user.email` | Customer email |
+| `user.avatar_url` | Customer avatar URL |
+| `user.is_email_verified` | Email verification flag |
+| `identity_context` | Resolved customer identity context |
+| `session` | Session boundary metadata for the current request |
+
+## Response Meta
+
+The controller also returns frontend session metadata in `meta.session` through `FrontendSessionMetadataResolver`.
+That meta block is additive and supports frontend session-awareness without reusing the merchant bootstrap envelope.
+
+## What This Contract Does Not Include
+
+Current verified omissions:
+
+- merchant store list
+- `active_store`
+- merchant permissions or capabilities payloads
+- merchant onboarding payloads
+- merchant operational config sections
+
+## Isolation Intent
+
+This contract exists so customer account bootstrap remains customer-safe even while the browser still uses a shared underlying session cookie.

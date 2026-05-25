@@ -1,5 +1,9 @@
 # Membership Semantic Governance Document
 
+> [!IMPORTANT]
+> This document defines the baseline membership semantics for Wave 2.
+> For the current enterprise-scale authority model, expanded lifecycle vocabulary, and inheritance readiness, see **[enterprise-membership-authority-model.md](../wave6/enterprise-membership-authority-model.md)** (Wave 6).
+
 **Version:** 1.0  
 **Status:** APPROVED  
 **Wave:** 2  

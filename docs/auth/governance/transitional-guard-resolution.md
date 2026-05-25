@@ -1,30 +1,48 @@
 # Transitional Guard Resolution
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Status:** VERIFIED_COMPLETE  
-**Wave:** 4
+**Wave:** 6
 
 ## Overview
 
-The transitional guard resolution system allows the platform to resolve the intended actor-specific guard without immediately cutting over from the legacy shared authority.
+The transitional guard resolver is no longer just a planning artifact.
+It actively determines the intended guard for annotated routes and is consumed by `ApplyIdentityRouteContext` before controller execution.
 
 ## Components
 
-- **[TransitionalGuardResolver.php](file:///home/leader/projects/laravel/laratenant-backend/app/Services/Auth/TransitionalGuardResolver.php)**: Resolves the intended guard (`merchant`, `customer`, or `web`) based on the `SessionOwnershipContext`.
-- **[GuardResolutionResult.php](file:///home/leader/projects/laravel/laratenant-backend/app/DTOs/Auth/Session/GuardResolutionResult.php)**: DTO containing the resolved guard and fallback status.
+- **[TransitionalGuardResolver.php](file:///home/leader/projects/laravel/laratenant-backend/app/Services/Auth/TransitionalGuardResolver.php)** resolves the intended guard from `SessionOwnershipContext`.
+- **[ApplyIdentityRouteContext.php](file:///home/leader/projects/laravel/laratenant-backend/app/Http/Middleware/ApplyIdentityRouteContext.php)** applies `Auth::shouldUse($guard)` and rejects illegal fallback on non-transitional annotated routes.
+- **[GuardResolutionResult.php](file:///home/leader/projects/laravel/laratenant-backend/app/DTOs/Auth/Session/GuardResolutionResult.php)** carries the resolved guard, fallback state, and telemetry fields.
 
 ## Guard Mapping
 
-| Auth Domain | Intended Guard | Fallback Guard |
-|-------------|----------------|----------------|
-| `merchant`  | `merchant`     | `web`          |
-| `customer`  | `customer`     | `web`          |
-| `platform`  | `merchant`     | `web`          |
-| `unknown`   | `web`          | `web`          |
+| Auth Domain | Intended Guard | Current Meaning |
+|-------------|----------------|-----------------|
+| `merchant` | `merchant` | Merchant-owned routes should execute under the merchant guard. |
+| `customer` | `customer` | Customer-owned routes should execute under the customer guard. |
+| `platform` | `merchant` | Platform actors still resolve through the merchant session guard path today. |
+| unknown/shared transitional | `web` | Allowed only for explicitly transitional/shared flows. |
 
-## Telemetry
+## Runtime Behavior
 
-Every resolution is enriched into the `RequestTraceContext` and logged with:
-- `guard_resolved`
-- `is_guard_fallback`
-- `intended_guard_future`
+Current verified behavior:
+
+- route annotations drive guard resolution
+- `Auth::shouldUse($guard)` is called for annotated routes
+- non-`shared_transitional` routes reject fallback resolution
+- contamination and fallback findings are logged into request telemetry
+
+This is active runtime hardening, not shadow-only analysis.
+
+## Important Constraint
+
+Guard resolution and route enforcement are ahead of logout/session persistence.
+`LogoutUserAction` still chooses `web` when `AUTH_GUARD_SPLIT_ENABLED` is disabled, and `SessionOwnershipManager::invalidate()` still invalidates the full Laravel session.
+
+So the current state is:
+
+- explicit route-level guard intent: active
+- explicit route-level guard application: active
+- browser-session isolation: not complete
+- per-domain logout isolation: not complete

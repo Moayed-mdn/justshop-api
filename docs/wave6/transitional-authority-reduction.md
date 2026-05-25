@@ -22,7 +22,7 @@ Wave 6 measures and reduces transitional compatibility debt. Isolation must beco
 
 | Factor | Max Points | Condition |
 |---|---|---|
-| Web guard fallback enabled | 30 | `auth.guard_split.enforce.default = false` |
+| Web guard fallback debt present | 30 | `auth.guard_split.enforce.default = false` still leaves compatibility paths and analyzer debt, even though enforced routes now resolve explicit guards in middleware |
 | Shared transitional routes | 25 | 5 points per route (max 5 routes) |
 | Shadow-only mode | 20 | Shadow enabled but split not enabled |
 | Legacy dependencies | 25 | 6 points per active legacy dependency |
@@ -49,9 +49,9 @@ Routes using `identity.route:platform,platform,enforce` WITHOUT explicit `platfo
 
 ### 3. Guard Split Not Enforced
 
-`AUTH_GUARD_SPLIT_ENFORCE=false` — the web guard fallback is still active. This is the largest single debt item (30 points).
+`AUTH_GUARD_SPLIT_ENFORCE=false` still registers transitional debt in the analyzer and leaves compatibility behavior in places like logout, but enforced request routes already resolve explicit guards and reject illegal fallback in `ApplyIdentityRouteContext`.
 
-**Migration path:** Wave 5 completion — activate `AUTH_GUARD_SPLIT_ENFORCE=true` after telemetry proves readiness.
+**Migration path:** Normalize the remaining flag-governed compatibility paths so the feature-flag state matches the already-active route middleware behavior.
 
 ### 4. Shared User Provider
 
@@ -76,7 +76,7 @@ Domains ready for normalization (telemetry proven):
 
 Even normalized domains remain reversible:
 - Feature flags provide kill switches for all enforcement modes
-- `auth.guard_split.enforce` can be disabled to revert to shadow mode
+- `auth.guard_split.enforce` still governs transitional compatibility paths, but request-route guard enforcement is already active in middleware
 - `platform.authority.enabled` can be disabled to remove platform enforcement
 - All telemetry is preserved regardless of enforcement state
 
@@ -86,7 +86,7 @@ Even normalized domains remain reversible:
 
 | Wave | Action | Expected Debt Reduction |
 |---|---|---|
-| Wave 5 completion | Activate `AUTH_GUARD_SPLIT_ENFORCE=true` | -30 points |
+| Guard-split normalization | Align feature-flag state with active middleware enforcement and remove remaining compatibility fallbacks | -30 points |
 | Wave 6 admin migration | Add `platform.authority` to admin routes | -5 points |
 | Wave 7 | Provider separation preparation | -10 points |
 | Wave 8 | CSRF ownership finalization | -5 points |

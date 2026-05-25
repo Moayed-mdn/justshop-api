@@ -80,8 +80,9 @@ Route::prefix('/v1/support')
     });
 
 // Legacy Platform Routes (TRANSITIONAL - to be migrated to /v1/platform)
-// These routes still use implicit platform authority via identity.route middleware.
-// Wave 6 Goal: Migrate these to explicit platform.authority middleware.
+// These routes still use legacy /v1/admin/* URLs, but now include both
+// identity.route platform ownership and explicit platform.authority middleware.
+// Wave 6 Goal: complete the topology migration away from the legacy URL space.
 Route::middleware([
     'auth:sanctum',
     'identity.route:platform,platform,enforce',

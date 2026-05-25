@@ -15,7 +15,12 @@ The Guard Shadow Parity System is a "Dark Launch" infrastructure that evaluates 
 
 ## Parity Telemetry
 
-Mismatches are logged with `auth.guard.split_mismatch_detected`. A "mismatch" occurs if the intended guard for a route does not align with the current shared authority model.
+The codebase currently emits two related mismatch signals:
+
+- `auth.guard.split_mismatch_detected` from `GuardSplitSimulationService` when the simulation compares the intended guard against the legacy `web` baseline
+- `guard.shadow.mismatch_detected` from `SessionGuardTelemetry` when request-level guard shadow analysis detects a mismatch anomaly
+
+A "mismatch" occurs when the intended guard for a route does not align with the current shared authority model.
 
 ## Success Criteria
 

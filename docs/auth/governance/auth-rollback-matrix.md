@@ -23,11 +23,11 @@ This matrix defines the rollback procedures for various authentication and autho
 - **Rollback**: Disable all session tagging and clear Redis/Cookie session store.
 
 ### Scenario B: Guard Split Mismatch
-- **Indicator**: High volume of `auth.guard.split_mismatch_detected` logs.
+- **Indicator**: High volume of `auth.guard.split_mismatch_detected` simulation logs or `guard.shadow.mismatch_detected` request-telemetry logs.
 - **Rollback**: Adjust `TransitionalGuardResolver` logic to align with legacy assumptions.
 
 ## 3. Dark-Launch Rollback Plan
 
 1. Disable `auth.guard_split.shadow` flag.
 2. Disable `auth.guard_split.enabled` flag.
-3. Verify `web` guard remains authoritative via telemetry.
+3. Verify explicit route guard resolution remains stable and no `auth.guard.illegal_fallback_detected` events are emitted on enforced routes.

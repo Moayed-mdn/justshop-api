@@ -4,6 +4,10 @@
 **Status:** VERIFIED_COMPLETE  
 **Wave:** 3
 
+> Scope note:
+> `docs/AUTH_ROUTING.md` defines the route-domain doctrine.
+> This file is a narrow reference for the customer-facing `/api/v1/storefront/account/*` surface and its isolation rules.
+
 ## Overview
 
 The Customer Account Namespace (`/api/v1/storefront/account/*`) is an isolated route family dedicated to customer actors. It provides a clean boundary from the merchant-authoritative `/api/v1/users/auth/*` routes.

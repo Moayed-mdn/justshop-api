@@ -55,15 +55,15 @@ The system is partitioned into four primary authority domains, resolved dynamica
 | :--- | :--- | :--- | :--- | :--- |
 | `/v1/platform` | `auth:sanctum`, `identity.route:platform`, `platform.authority` | Platform | N/A | No |
 | `/v1/support` | `auth:sanctum`, `identity.route:support`, `support.authority` | Support | N/A | Entry Point |
-| `/v1/admin/stores/{store}` | `auth:sanctum`, `verified`, `onboarding.completed`, `store.context` | Merchant Admin | Route Param | Yes (via Target) |
-| `/v1/me` | `auth:sanctum`, `identity.route:merchant_users` | Merchant/Platform | `last_active_store_id` | Yes |
+| `/v1/admin/stores/{store}` | `identity.route:merchant_admin`, `auth:sanctum`, `verified`, `onboarding.completed`, `store.context` | Merchant Admin | Route Param | Yes (via Target) |
+| `/v1/me` | `identity.route:merchant_users`, `auth:sanctum` | Merchant/Platform | `last_active_store_id` | Yes |
 | `/v1/stores/*` | `identity.route:storefront_commerce` | Customer | Route Param/Header | No |
-| `/v1/admin/leads` | `identity.route:platform` (Legacy) | Platform | N/A | No |
-| `/v1/admin/cms/*` | `identity.route:platform` (Legacy) | Platform | N/A | No |
+| `/v1/admin/leads` | `auth:sanctum`, `identity.route:platform`, `platform.authority` | Platform | N/A | No |
+| `/v1/admin/cms/*` | `auth:sanctum`, `identity.route:platform`, `platform.authority` | Platform | N/A | No |
 
 **Inconsistencies & Risks:**
-- **Legacy Platform Routes:** `/v1/admin/leads` and `/v1/admin/cms/*` lack explicit `platform.authority` middleware, relying on legacy `identity.route` enforcement.
-- **Mixed Identity Domains:** `/v1/me` serves as a bootstrap for all actors, creating a shared surface that must handle Platform, Merchant, and Customer logic simultaneously.
+- **Legacy Platform URLs:** `/v1/admin/leads` and `/v1/admin/cms/*` still live under `/v1/admin/*`, but they now include explicit `platform.authority` middleware. The remaining debt is URL topology, not missing authority enforcement.
+- **Mixed Merchant/Platform Bootstrap:** `/v1/me` serves merchant and super-admin users through the merchant-users route domain. Customer bootstrap is isolated under `/v1/storefront/account/bootstrap`.
 
 ---
 
@@ -74,14 +74,14 @@ The system is partitioned into four primary authority domains, resolved dynamica
 | `StorePolicy` | `Store` | Yes | No | Yes (Implicit) | Yes | MEDIUM |
 | `ProductPolicy` | `Product` | Yes | No | No (Explicit) | Yes | LOW |
 | `OrderPolicy` | `Order` | Yes | No | No (Explicit) | Yes | LOW |
-| `TagPolicy` | `Tag` | Yes/Global | Yes | Yes (Explicit) | No | **HIGH** |
-| `LeadPolicy` | `Lead` | No | Yes | Yes (Explicit) | No | **HIGH** |
+| `TagPolicy` | `Tag` | Yes/Global | No | No (Permissions) | No | LOW |
+| `LeadPolicy` | `Lead` | No | No | No (Role Check) | No | LOW |
 | `BlogPostPolicy` | `BlogPost` | No | No | No | No (Permissions) | LOW |
 | `AddressPolicy` | `Address` | No | No | No | No (Ownership) | LOW |
 | `StoreMarketingPagePolicy`| `MarketingPage` | Yes | No | No | Yes | LOW |
 
-**Inconsistency Highlights:**
-- **Bypass Fragmentation:** `TagPolicy` and `LeadPolicy` use `before()` for `super_admin` bypass, while `ProductPolicy` and `OrderPolicy` do not, creating inconsistent authority for platform admins.
+**Authorization Normalization:**
+- **Normalized Policies:** `TagPolicy` and `LeadPolicy` have been normalized to remove `before()` bypasses, relying instead on explicit permission or role checks.
 - **Membership vs Permissions:** `BlogPostPolicy` relies entirely on permissions, while `StorePolicy` requires explicit membership.
 
 ---
@@ -92,9 +92,9 @@ The system is partitioned into four primary authority domains, resolved dynamica
 | :--- | :--- | :--- | :--- | :--- |
 | `IdentityContextResolver` | Grants `PLATFORM_ADMIN` context. | N/A | N/A | Yes (via `matchesOwnership`) |
 | `ApplyIdentityRouteContext` | Allows access to both Platform and Merchant domains. | Yes | No | Yes |
-| `TagPolicy::before` | Grants all abilities on all Tags. | **YES** | **YES** | N/A |
-| `LeadPolicy::before` | Grants all abilities on all Leads. | **YES** | **YES** | N/A |
-| `StoreRepository` | `getAccessibleStores` returns ALL active stores. | **YES** | N/A | N/A |
+| `TagPolicy` | Evaluates permissions without implicit bypass. | NO | No | N/A |
+| `LeadPolicy` | Evaluates `super_admin` role explicitly. | NO | No | N/A |
+| `StoreRepository` | `getAccessibleStores` returns ALL active stores for platform actors. | **YES** | N/A | N/A |
 | `OnboardingApplicability` | Bypasses onboarding requirements. | N/A | N/A | Yes |
 
 **Authority Separation Violations:**

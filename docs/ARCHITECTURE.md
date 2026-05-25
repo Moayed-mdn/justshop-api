@@ -117,7 +117,7 @@ Required fields:
 - `intendedGuardFuture`
 - `onboardingApplicable`
 
-This model is observability-only and must not become the runtime auth authority.
+This model is emitted for observability and is also consulted by middleware to enforce explicit guard selection and session-contamination rejection on enforced non-transitional routes. It still does not replace policy or platform-authority authorization.
 
 ### Guard Shadow Doctrine
 
@@ -128,7 +128,7 @@ Rules:
 - shadow guards must never authenticate requests
 - shadow guards must never change session or cookie behavior
 - shadow guards may only report which guard would own the request in a future split topology
-- ambiguity and mismatch findings must remain telemetry-only in Wave 3B
+- guard shadow findings remain telemetry-only; runtime enforcement happens separately through explicit guard resolution and session-ownership checks
 
 ### Wave 3C Guard Split Readiness Validation Addendum
 

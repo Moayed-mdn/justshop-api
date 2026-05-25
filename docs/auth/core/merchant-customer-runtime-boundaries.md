@@ -4,9 +4,13 @@
 **Status:** VERIFIED_COMPLETE  
 **Wave:** 5
 
+> Scope note:
+> This file summarizes the merchant/customer boundary model at a high level.
+> For current-state authority posture and route classification, prefer `docs/auth/governance/auth-surface-classification.md` and `docs/AUTH_ROUTING.md`.
+
 ## Overview
 
-This document defines the hardened boundaries between merchant and customer runtime environments.
+This document summarizes the enforced and intended boundaries between merchant and customer runtime environments. Some layers are actively enforced today, while others remain part of the transitional shared-session model.
 
 ## Boundary Definition
 
