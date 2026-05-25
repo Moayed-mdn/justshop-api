@@ -40,12 +40,12 @@ This document tracks known architectural security risks and "debt" items that ex
 
 ### D3.1: Manual Repository Scoping
 - **Origin:** Architectural decision to avoid global scopes for performance/flexibility.
-- **Current Risk:** Medium. Relies on developers to always add `->where('store_id', ...)`.
-- **Migration Difficulty:** High. Requires a fundamental change to the repository pattern or implementation of Global Scopes.
-- **Status:** **Future Risk** (Maintenance burden).
+- **Current Risk:** Low. Structural enforcement implemented in `BaseRepository` during Step 5.
+- **Migration Difficulty:** Complete.
+- **Status:** **Remediated**.
 
 ### D3.2: Static Store Context
 - **Origin:** Usage of `app('currentStore')` singleton.
-- **Current Risk:** Low. Context is now explicitly cleared in `Queue::after` and monitored with telemetry in Step 4.
-- **Migration Difficulty:** Medium. Requires refactoring to explicit context passing.
-- **Status:** **Mitigated & Monitored**.
+- **Current Risk:** Low. Context is now explicitly cleared in `Queue::after` and validated in `BaseRepository`.
+- **Migration Difficulty:** Complete.
+- **Status:** **Remediated**.

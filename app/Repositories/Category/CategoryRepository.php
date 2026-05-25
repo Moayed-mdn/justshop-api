@@ -5,20 +5,25 @@ declare(strict_types=1);
 namespace App\Repositories\Category;
 
 use App\Models\Category;
+use App\Repositories\BaseRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
-class CategoryRepository
+class CategoryRepository extends BaseRepository
 {
+    protected function modelClass(): string
+    {
+        return Category::class;
+    }
+
     // ── Queries ────────────────────────────────────────────────
 
     public function getRootCategories(
         int $storeId,
         ?string $type = null,
     ): Collection {
-        $query = Category::query()
-            ->where('store_id', $storeId)
+        $query = $this->scopedQuery()
             ->whereNull('parent_id')
             ->with(['translations', 'children.translations'])
             ->withCount(['products' => fn(Builder $q) => $q
@@ -38,8 +43,7 @@ class CategoryRepository
         int $parentId,
         int $storeId,
     ): Collection {
-        return Category::query()
-            ->where('store_id', $storeId)
+        return $this->scopedQuery()
             ->where('parent_id', $parentId)
             ->with(['translations', 'children.translations'])
             ->withCount(['products' => fn(Builder $q) => $q
@@ -121,7 +125,14 @@ class CategoryRepository
         string $slug,
         int $storeId,
     ): ?Category {
-        return Category::findByLocalizedSlug($slug, $storeId);
+        return $this->scopedQuery()
+            ->where('slug', $slug)
+            ->with(['translations', 'children.translations', 'brand'])
+            ->withCount(['products' => fn(Builder $q) => $q
+                ->where('is_active', true)
+                ->where('store_id', $storeId),
+            ])
+            ->first();
     }
 
     public function findBySlugOrFail(

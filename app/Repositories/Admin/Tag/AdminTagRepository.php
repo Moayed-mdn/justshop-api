@@ -5,11 +5,17 @@ namespace App\Repositories\Admin\Tag;
 use App\Exceptions\Tag\TagNotFoundException;
 use App\Models\Tag;
 use App\Models\TagTranslation;
+use App\Repositories\BaseRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
-class AdminTagRepository
+class AdminTagRepository extends BaseRepository
 {
+    protected function modelClass(): string
+    {
+        return Tag::class;
+    }
+
     // ── Eager-load Definitions ─────────────────────────────────
 
     /**
@@ -45,14 +51,13 @@ class AdminTagRepository
         bool    $includeGlobal = true,
         int     $perPage = 15,
     ): LengthAwarePaginator {
-        $query = Tag::query()
-            ->with($this->editorRelations())
-            ->where(function ($q) use ($storeId, $includeGlobal) {
-                $q->where('store_id', $storeId);
-                if ($includeGlobal) {
-                    $q->orWhereNull('store_id');
-                }
-            });
+        $query = $this->scopedQuery()
+            ->with($this->editorRelations());
+
+        if ($includeGlobal) {
+            // Step 5 Hardening: Explicitly allow global tags if requested
+            $query->orWhereNull('store_id');
+        }
 
         if ($search) {
             $query->whereHas('translations', function ($q) use ($search) {
@@ -82,16 +87,13 @@ class AdminTagRepository
      */
     public function findInStore(int $tagId, int $storeId): Tag
     {
-        $tag = Tag::query()
+        $tag = $this->scopedQuery()
             ->with($this->editorRelations())
             ->where('id', $tagId)
-            ->where(function ($q) use ($storeId) {
-                $q->where('store_id', $storeId)
-                  ->orWhereNull('store_id');
-            })
+            ->orWhereNull('store_id')
             ->first();
 
-        if (!$tag) {
+        if ($tag === null) {
             throw new TagNotFoundException();
         }
 
@@ -107,10 +109,9 @@ class AdminTagRepository
      */
     public function findStoreOwnedTag(int $tagId, int $storeId): Tag
     {
-        $tag = Tag::query()
+        $tag = $this->scopedQuery()
             ->with($this->editorRelations())
             ->where('id', $tagId)
-            ->where('store_id', $storeId)
             ->first();
 
         if (!$tag) {
@@ -135,12 +136,9 @@ class AdminTagRepository
             return [];
         }
 
-        $accessibleIds = Tag::query()
+        $accessibleIds = $this->scopedQuery()
             ->whereIn('id', $tagIds)
-            ->where(function ($q) use ($storeId) {
-                $q->where('store_id', $storeId)
-                  ->orWhereNull('store_id');
-            })
+            ->orWhereNull('store_id')
             ->pluck('id')
             ->toArray();
 

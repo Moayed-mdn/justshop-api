@@ -7,15 +7,20 @@ namespace App\Repositories\Order;
 use App\Enums\Order\OrderStatusEnum;
 use App\Enums\Order\PaymentStatusEnum;
 use App\Models\Order;
+use App\Repositories\BaseRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
-class OrderRepository
+class OrderRepository extends BaseRepository
 {
+    protected function modelClass(): string
+    {
+        return Order::class;
+    }
+
     public function getUserOrders(int $userId, int $storeId): LengthAwarePaginator
     {
-        return Order::query()
+        return $this->scopedQuery()
             ->where('user_id', $userId)
-            ->where('store_id', $storeId)
             ->with(['items', 'shippingAddress', 'billingAddress', 'paymentMethod'])
             ->latest()
             ->paginate(10);
@@ -23,8 +28,7 @@ class OrderRepository
 
     public function findById(int $id, int $storeId): ?Order
     {
-        return Order::query()
-            ->where('store_id', $storeId)
+        return $this->scopedQuery()
             ->with([
                 'items.productVariant.product.images',
                 'shippingAddress',
@@ -36,7 +40,7 @@ class OrderRepository
 
     public function create(array $data, int $storeId): Order
     {
-        $data['store_id'] = $storeId;
+        $data['store_id'] = $this->getCurrentStoreId() ?? $storeId;
         return Order::create($data);
     }
 

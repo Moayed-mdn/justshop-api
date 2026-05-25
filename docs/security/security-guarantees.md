@@ -9,8 +9,14 @@ This document defines the explicit architectural guarantees of the SaaS platform
 ### G1.1: Merchant Cross-Store Isolation
 - **Description:** A Merchant actor authenticated in one store MUST NOT be able to access, modify, or view resources belonging to another store.
 - **Affected Systems:** All Merchant Admin APIs, Repositories, Policies.
-- **Enforcement Layers:** `store.context` middleware, Policy membership checks, Repository `store_id` scoping.
-- **Current Status:** **Enforced** (via manual repository scoping and policies).
+- **Enforcement Layers:** `store.context` middleware, Policy membership checks, `BaseRepository` structural isolation.
+- **Current Status:** **Structurally Enforced** (Step 5).
+
+### G1.4: Repository Layer Scoping
+- **Description:** All data access through the Repository layer MUST be automatically scoped by the active tenant context.
+- **Affected Systems:** All repositories extending `BaseRepository`.
+- **Enforcement Layers:** `BaseRepository::scopedQuery()`, `HasStoreScoping` model trait.
+- **Current Status:** **Enforced**.
 
 ### G1.2: Customer Identity Isolation
 - **Description:** A Customer actor MUST NOT be able to access other customers' personal data (addresses, payment methods, orders) even within the same store.

@@ -5,10 +5,16 @@ declare(strict_types=1);
 namespace App\Repositories\Brand;
 
 use App\Models\Brand;
+use App\Repositories\BaseRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
-class BrandRepository
+class BrandRepository extends BaseRepository
 {
+    protected function modelClass(): string
+    {
+        return Brand::class;
+    }
+
     // ── Queries ────────────────────────────────────────────────
 
     public function paginate(
@@ -16,8 +22,7 @@ class BrandRepository
         ?bool $isActive,
         int $perPage,
     ): LengthAwarePaginator {
-        $query = Brand::query()
-            ->where('store_id', $storeId)
+        $query = $this->scopedQuery()
             ->withCount(['products'])
             ->orderBy('sort_order');
 
@@ -32,8 +37,7 @@ class BrandRepository
         int $id,
         int $storeId,
     ): ?Brand {
-        return Brand::query()
-            ->where('store_id', $storeId)
+        return $this->scopedQuery()
             ->where('id', $id)
             ->withCount('products')
             ->first();

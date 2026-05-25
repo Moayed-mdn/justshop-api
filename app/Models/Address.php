@@ -2,6 +2,7 @@
 // app/Models/Address.php
 namespace App\Models;
 
+use App\Models\Concerns\HasStoreScoping;
 use App\Enums\Address\AddressTypeEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -9,10 +10,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Address extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, HasStoreScoping;
 
     protected $fillable = [
-        'user_id', 'type', 'is_default', 'first_name', 'last_name', 'company',
+        'store_id', 'user_id', 'type', 'is_default', 'first_name', 'last_name', 'company',
         'address_line_1', 'address_line_2', 'city', 'state', 'postal_code', 
         'country', 'phone'
     ];

@@ -150,6 +150,7 @@ The system is partitioned into four primary authority domains, resolved dynamica
 - **Step 2:** Normalize all Policies to remove `before()` bypasses (Complete).
 - **Step 3:** Enforce strict guard separation and runtime hardening (Complete).
 - **Step 4:** Implement automated CI/CD security scanning (Complete).
+- **Step 5:** Implement infrastructure-level structural isolation (Complete).
 
 ---
 
@@ -159,29 +160,28 @@ The system is partitioned into four primary authority domains, resolved dynamica
 | :--- | :--- | :--- | :--- | :--- |
 | `super_admin` | Full Access | **Governed Only** (via Impersonation) | Read-Only (Support) | **LOW** |
 | `support` | Restricted (Read) | Read-Only (unless Impersonating) | Read-Only | LOW |
-| `merchant_admin` | Denied | **Strictly Scoped** | Denied | **MINIMAL** (Step 4) |
-| `customer` | Denied | Denied | **Strictly Scoped** | **MINIMAL** (Step 4) |
+| `merchant_admin` | Denied | **Structurally Scoped** | Denied | **MINIMAL** |
+| `customer` | Denied | Denied | **Structurally Scoped** | **MINIMAL** |
 | `impersonated` | N/A | Governed & Audited | Governed & Audited | **LOW** |
 
 ---
 
 ## SECTION 9 — TOP ARCHITECTURAL RISKS
 
-1. **Manual Scoping:** Reliance on manual `where('store_id', ...)` in Repositories instead of Global Scopes (Exploitability: Medium).
-2. **Mixed Bootstrap:** `/v1/me` handling all actor types in a single controller (Impact: Medium).
-3. **Shared User Provider:** All guards use the same `users` table (Infrastructure Debt).
-4. **Onboarding Context:** Potential for incomplete onboarding states to allow partial resource access (Impact: Low).
-5. **Telemetry Noise:** High volume of security events may mask real attacks (Operational Risk).
+1. **Mixed Bootstrap:** `/v1/me` handling all actor types in a single controller (Impact: Medium).
+2. **Shared User Provider:** All guards use the same `users` table (Infrastructure Debt).
+3. **Onboarding Context:** Potential for incomplete onboarding states to allow partial resource access (Impact: Low).
+4. **Telemetry Noise:** High volume of security events may mask real attacks (Operational Risk).
 
 ---
 
 ## SECTION 10 — SECURITY MATURITY ASSESSMENT
 
-- **Current Maturity:** **Level 4 (Automated)**. Boundaries are defined, enforced at runtime, and protected by automated regression testing.
-- **Biggest Strength:** The **Forbidden Pattern Scanner** ensures that dangerous architectural bypasses cannot be re-introduced.
-- **Biggest Weakness:** Lack of database-level isolation (Global Scopes).
+- **Current Maturity:** **Level 5 (Structural)**. Boundaries are defined, enforced at runtime, protected by automation, and structurally baked into the data access layer.
+- **Biggest Strength:** The **BaseRepository Structural Isolation** eliminates the risk of manual scoping errors.
+- **Biggest Weakness:** Single database instance for all tenants (Infrastructure risk).
 - **Transitional Debt:** Legacy platform role checks in `LeadPolicy`.
-- **Next Strategy:** Implement Global Scopes or mandated Repository wrappers to eliminate manual scoping risks.
+- **Next Strategy:** Production Readiness Checklist and final security audit before "Hard Enforcement" mode.
 
 ---
 **End of Inventory Report**

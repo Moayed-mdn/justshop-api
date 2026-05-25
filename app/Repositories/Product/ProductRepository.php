@@ -5,18 +5,24 @@ declare(strict_types=1);
 namespace App\Repositories\Product;
 
 use App\Models\Product;
+use App\Repositories\BaseRepository;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
-class ProductRepository
+class ProductRepository extends BaseRepository
 {
+    protected function modelClass(): string
+    {
+        return Product::class;
+    }
+
     public function buildBaseQuery(int $storeId): Builder
     {
         $locale = app()->getLocale();
 
-        return Product::active()
-            ->where('store_id', $storeId)
+        return $this->scopedQuery()
+            ->active()
             ->leftJoin('product_translations', function ($join) use ($locale) {
                 $join->on('products.id', '=', 'product_translations.product_id')
                     ->where('product_translations.locale', $locale);

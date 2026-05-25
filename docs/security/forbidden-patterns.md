@@ -40,13 +40,14 @@ This document identifies architectural anti-patterns that violate the security p
 
 ### P2.1: Unscoped Database Queries
 - **Risk:** Critical. Leads to cross-tenant data leakage.
+- **Status:** **Mitigated & Structurally Prevented** (Step 5: BaseRepository Enforcement).
 - **Bad Example:**
   ```php
-  $product = Product::find($id); // Missing store_id check
+  $product = Product::find($id); // Manual query bypass
   ```
-- **Preferred Pattern:** Always scope by `store_id` at the repository level.
+- **Preferred Pattern:** Always use `scopedQuery()` or `findScoped()` in Repositories.
   ```php
-  $product = Product::where('store_id', $storeId)->find($id);
+  $product = $this->findScoped($id); // Automatically scoped by context
   ```
 
 ### P2.2: Global Mutable Tenant State

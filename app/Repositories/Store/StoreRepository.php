@@ -56,6 +56,18 @@ class StoreRepository
 
     public function findById(int $storeId): Store
     {
+        // Step 5 Hardening: Structural isolation for Store access
+        /** @var \App\Models\User|null $user */
+        $user = \Illuminate\Support\Facades\Auth::user();
+        
+        if ($user) {
+            $accessibleStoreIds = $this->getAccessibleStores($user)->pluck('id')->toArray();
+            
+            if (!in_array($storeId, $accessibleStoreIds, true)) {
+                throw new StoreNotFoundException('Access denied to store or store does not exist.');
+            }
+        }
+
         $store = Store::find($storeId);
 
         if (!$store) {
