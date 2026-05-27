@@ -9,6 +9,9 @@ return [
     'page_updated' => 'تم تحديث صفحة التسويق بنجاح.',
     'page_deleted' => 'تم حذف صفحة التسويق بنجاح.',
     'page_published' => 'تم نشر صفحة التسويق بنجاح.',
+    'page_unpublished' => 'تم إلغاء نشر صفحة التسويق بنجاح.',
+    'page_already_published' => 'هذه الصفحة منشورة بالفعل.',
+    'page_already_draft' => 'هذه الصفحة في حالة مسودة بالفعل.',
 
     // SEO / Sitemap
     'sitemap_generated' => 'تم توليد بيانات الخريطة بنجاح.',

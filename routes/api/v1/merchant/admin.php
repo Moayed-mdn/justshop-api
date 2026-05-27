@@ -189,12 +189,17 @@ Route::name('merchant.')
                 ->name('tags.destroy');
         });
 
-        // ── Store Marketing ────────────────────────────────────
-        Route::prefix('cms/pages')->group(function () {
-            Route::get('/', [AdminStoreMarketingPageController::class, 'index'])->name('cms.pages.index');
-            Route::post('/', [AdminStoreMarketingPageController::class, 'store'])->name('cms.pages.store');
-            Route::get('/{id}', [AdminStoreMarketingPageController::class, 'show'])->name('cms.pages.show');
-            Route::put('/{id}', [AdminStoreMarketingPageController::class, 'update'])->name('cms.pages.update');
-            Route::delete('/{id}', [AdminStoreMarketingPageController::class, 'destroy'])->name('cms.pages.destroy');
-        });
+        // ── Store Marketing CMS ────────────────────────────────
+        Route::prefix('cms/pages')
+            ->controller(AdminStoreMarketingPageController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('cms.pages.index');
+                Route::post('/', 'store')->name('cms.pages.store');
+                Route::get('/{id}', 'show')->name('cms.pages.show');
+                Route::put('/{id}', 'update')->name('cms.pages.update');
+                Route::delete('/{id}', 'destroy')->name('cms.pages.destroy');
+                // Publish workflow
+                Route::post('/{id}/publish', 'publish')->name('cms.pages.publish');
+                Route::post('/{id}/unpublish', 'unpublish')->name('cms.pages.unpublish');
+            });
     });

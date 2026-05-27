@@ -9,6 +9,9 @@ return [
     'page_updated' => 'Marketing page updated successfully.',
     'page_deleted' => 'Marketing page deleted successfully.',
     'page_published' => 'Marketing page published successfully.',
+    'page_unpublished' => 'Marketing page unpublished successfully.',
+    'page_already_published' => 'This page is already published.',
+    'page_already_draft' => 'This page is already in draft status.',
 
     // SEO / Sitemap
     'sitemap_generated' => 'Sitemap data generated successfully.',

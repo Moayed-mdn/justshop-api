@@ -42,12 +42,9 @@ class UpdatePlatformMarketingPageAction
             ]);
         });
 
-        // Use a compatible wrapper for invalidation if the service expects legacy MarketingPage
-        // For now, I'll manually invalidate or update the service later.
-        // The current MarketingPageCacheService expects MarketingPage model.
-        // I might need to refactor it to accept a generic model or an interface.
-        
-        $this->cacheService->invalidateAll();
+        // Targeted invalidation: flush previous slugs + new slugs so stale
+        // cache entries are evicted regardless of which locale changed.
+        $this->cacheService->invalidateForSlugMap($page->slug ?? [], $previousSlugs);
 
         return $page;
     }
