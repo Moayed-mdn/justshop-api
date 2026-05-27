@@ -19,6 +19,11 @@ return [
     'stripe_webhook_error' => 'Stripe webhook error.',
     'stripe_checkout_failed' => 'Failed to create payment session.',
     'stripe_session_retrieve_failed' => 'Failed to retrieve payment session.',
+    'operation_failed' => 'Operation failed.',
+    'resource_not_found' => 'Resource not found.',
+    'duplicate_entry' => 'Duplicate entry detected.',
+    'insufficient_permissions' => 'Insufficient permissions.',
+    'service_unavailable' => 'Service temporarily unavailable.',
     
     // Cart
     'cart_cleared' => 'Cart cleared',

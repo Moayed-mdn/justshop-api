@@ -17,6 +17,11 @@ return [
     'payment_failed' => 'فشلت عملية الدفع.',
     'stripe_service_error' => 'حدث خطأ في خدمة Stripe.',
     'stripe_webhook_error' => 'خطأ في webhook الخاص بـ Stripe.',
+    'stripe_checkout_failed' => 'فشل إنشاء جلسة الدفع.',
+    'stripe_session_retrieve_failed' => 'فشل استرجاع جلسة الدفع.',
+    'cart_empty' => 'سلة التسوق الخاصة بك فارغة.',
+    'variant_no_longer_available' => 'قطعة الغيار رقم #(:id) لم تعد متوفرة.',
+    'not_enough_stock_for_product' => 'الكمية المتوفرة لا تكفي لـ ":product". المتوفر: :available.',
     
     // General Service Messages
     'operation_failed' => 'فشلت العملية.',
