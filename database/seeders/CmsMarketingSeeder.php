@@ -11,6 +11,7 @@ use App\Models\Cms\CmsDocument;
 use App\Models\Cms\CmsDocumentSection;
 use App\Models\Cms\MarketingPage;
 use App\Models\User;
+use App\Support\System\FrontendUrlBuilder;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -907,26 +908,25 @@ class CmsMarketingSeeder extends Seeder
             'subtitle' => $subtitle ?? ['en' => 'Join thousands of satisfied customers.', 'ar' => 'انضم إلى آلاف العملاء الراضين.'],
             'primary_label' => ['en' => 'Get Started', 'ar' => 'ابدأ الآن'],
             'secondary_label' => ['en' => 'Contact Us', 'ar' => 'اتصل بنا'],
-            'primary_url' => '/register',
-            'secondary_url' => '/contact',
+            'primary_url' => FrontendUrlBuilder::build('/register'),
+            'secondary_url' => FrontendUrlBuilder::build('/contact'),
         ];
     }
 
     private function buildSeo(array $title, array $description, string $slug, string $type = 'website'): array
     {
-        $baseUrl = config('app.url');
         return [
             'meta_title' => [
                 'en' => "{$title['en']} | Commerce Platform",
                 'ar' => "{$title['ar']} | منصة التجارة",
             ],
             'meta_description' => $description,
-            'canonical_url' => "{$baseUrl}/{$slug}",
+            'canonical_url' => FrontendUrlBuilder::build("/{$slug}"),
             'robots' => 'index, follow',
             'og' => [
                 'title' => $title,
                 'description' => $description,
-                'image' => "{$baseUrl}/og-image.jpg",
+                'image' => FrontendUrlBuilder::build('/og-image.jpg'),
                 'type' => $type,
             ],
             'twitter' => [
@@ -934,8 +934,8 @@ class CmsMarketingSeeder extends Seeder
                 'site' => '@commerce_platform',
             ],
             'alternates' => [
-                'en' => "{$baseUrl}/en/{$slug}",
-                'ar' => "{$baseUrl}/ar/{$slug}",
+                'en' => FrontendUrlBuilder::build("/en/{$slug}"),
+                'ar' => FrontendUrlBuilder::build("/ar/{$slug}"),
             ],
             'structured_data' => [
                 '@context' => 'https://schema.org',

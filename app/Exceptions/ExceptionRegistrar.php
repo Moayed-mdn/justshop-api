@@ -65,7 +65,7 @@ class ExceptionRegistrar
             if ($e instanceof AuthorizationException || $e instanceof \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException) {
                 return $this->attachTraceHeaders(response()->json([
                     'success' => false,
-                    'code' => ErrorCode::STORE_ACCESS_DENIED->value,
+                    'code' => ErrorCode::ACCESS_DENIED->value,
                     'message' => $e->getMessage(),
                     'redirect' => '/dashboard',
                     'errors' => new \stdClass(),
@@ -75,7 +75,7 @@ class ExceptionRegistrar
             if ($e instanceof UnauthorizedStoreAccessException) {
                 return $this->attachTraceHeaders(response()->json([
                     'success' => false,
-                    'code' => ErrorCode::STORE_ACCESS_DENIED->value,
+                    'code' => ErrorCode::IDENTITY_DOMAIN_MISMATCH->value,
                     'message' => $e->getMessage(),
                     'redirect' => '/dashboard',
                     'errors' => new \stdClass(),

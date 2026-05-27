@@ -11,6 +11,7 @@ use App\Enums\Auth\RouteDomainEnforcementModeEnum;
 use App\Enums\Auth\RouteDomainEnum;
 use App\Exceptions\Domain\InvalidIdentityDomainAccessException;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use App\Services\Auth\GuardShadowAnalyzer;
 use App\Services\Auth\GuardSplitSimulationService;
 use App\Services\Auth\IdentityContextResolver;
@@ -81,7 +82,11 @@ class ApplyIdentityRouteContext
 
         // Wave 6: Guard Authority Activation + Session Isolation Enforcement (single call)
         // Step 3 Hardening: Enforce guard split and isolation strictly.
-        \Illuminate\Support\Facades\Auth::shouldUse($guardResolution->guard);
+        if (Auth::check() && !Auth::guard($guardResolution->guard)->check()) {
+            Auth::guard($guardResolution->guard)->setUser(Auth::user());
+        }
+
+        Auth::shouldUse($guardResolution->guard);
         $this->enforceSessionOwnership($request, $sessionOwnership, $guardResolution);
 
         if ($routeDomainContext->ownerAuthDomain === AuthDomainEnum::CUSTOMER) {
@@ -158,6 +163,19 @@ class ApplyIdentityRouteContext
 
         // Detect contamination: session auth domain does not match route domain
         if ($sessionOwnership->sessionAuthDomain !== null && $sessionOwnership->sessionAuthDomain !== $sessionOwnership->authDomain) {
+
+            // Guest Auth Exemption: Allow login/register/reset even if session is contaminated.
+            // This allows users to "fix" their session by signing into the correct domain.
+            if ($request->routeIs('*.auth.*')) {
+                // If it's a POST request (login/register), we automatically invalidate 
+                // the contaminated session to start fresh.
+                if ($request->isMethod('POST')) {
+                    $request->session()->invalidate();
+                    $request->session()->regenerateToken();
+                }
+                return;
+            }
+
             $this->sessionGuardTelemetry->logSessionContamination(
                 $request,
                 $sessionOwnership,

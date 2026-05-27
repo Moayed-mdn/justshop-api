@@ -12,11 +12,13 @@ use App\Models\User;
 use App\Policies\BrandPolicy;
 use App\Policies\CategoryPolicy;
 use App\Policies\DashboardPolicy;
+use App\Policies\MembershipPolicy;
 use App\Policies\TagPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Sanctum;
 use Mockery;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -38,7 +40,6 @@ class SafeDomainPolicyNormalizationTest extends TestCase
                 PermissionEnum::TAG_VIEW,
                 PermissionEnum::DASHBOARD_VIEW,
             ],
-            pivotRole: StoreRoleEnum::STORE_ADMIN->value,
         );
 
         $accessibleStore = Store::factory()->for($storeAdmin, 'owner')->create();
@@ -78,6 +79,33 @@ class SafeDomainPolicyNormalizationTest extends TestCase
         $this->assertTrue(Gate::forUser($superAdmin)->check('viewTopProducts', [\App\Support\Auth\DashboardAuthorization::class, $store]));
     }
 
+    public function test_membership_admin_route_uses_user_model_policy_owner_for_store_scoped_access(): void
+    {
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        Permission::findOrCreate(PermissionEnum::USER_VIEW, 'web');
+        $storeAdminRole = Role::findOrCreate(StoreRoleEnum::STORE_ADMIN->value, 'web');
+        $storeAdminRole->syncPermissions([PermissionEnum::USER_VIEW]);
+
+        $storeAdmin = User::factory()->merchant()->create();
+        $managedUser = User::factory()->merchant()->create();
+
+        $store = Store::factory()->for($storeAdmin, 'owner')->create();
+        $storeAdmin->stores()->attach($store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
+        $managedUser->stores()->attach($store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
+
+        $this->assertTrue(app(MembershipPolicy::class)->viewAny($storeAdmin, $store));
+        $this->assertTrue(Gate::forUser($storeAdmin)->check('viewAny', [User::class, $store]));
+
+        Sanctum::actingAs($storeAdmin, ['*'], 'merchant');
+
+        $this->getJson("/api/v1/merchant/stores/{$store->id}/users")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonMissing(['id' => $storeAdmin->id])
+            ->assertJsonPath('data.0.id', $managedUser->id)
+            ->assertJsonPath('data.0.role', StoreRoleEnum::STORE_ADMIN->value);
+    }
+
     public function test_policy_telemetry_records_middleware_vs_policy_parity_for_normalized_brand_route(): void
     {
         Log::spy();
@@ -85,7 +113,6 @@ class SafeDomainPolicyNormalizationTest extends TestCase
         $user = $this->createStoreUser(
             roleName: RoleEnum::STORE_ADMIN->value,
             permissions: [PermissionEnum::BRAND_VIEW],
-            pivotRole: StoreRoleEnum::STORE_ADMIN->value,
         );
 
         $store = Store::factory()->for($user, 'owner')->create();
@@ -116,7 +143,7 @@ class SafeDomainPolicyNormalizationTest extends TestCase
         )->atLeast()->once();
     }
 
-    private function createStoreUser(string $roleName, array $permissions, string $pivotRole): User
+    private function createStoreUser(string $roleName, array $permissions): User
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 

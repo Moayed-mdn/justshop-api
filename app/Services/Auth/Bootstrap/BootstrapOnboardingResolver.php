@@ -39,7 +39,7 @@ class BootstrapOnboardingResolver
         return BootstrapOnboardingDTO::fromData(
             $step,
             $completedSteps,
-            true, // Assuming can_resume is true if onboarding is not completed
+            !$user->isOnboardingCompleted(),
             $storeId !== null ? (string) $storeId : null,
             $user->isOnboardingCompleted(),
         );

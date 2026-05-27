@@ -19,7 +19,7 @@ class AdminUserDetailResource extends JsonResource
             'name'              => $this->name,
             'email'             => $this->email,
             'phone'             => $this->phone ?? null,
-            'role'              => $this->whenLoaded('roles',
+            'role'              => $this->store_role ?? $this->whenLoaded('roles',
                 fn() => $this->roles->first()?->name ?? 'customer'
             ),
             'store_id'          => $this->when(

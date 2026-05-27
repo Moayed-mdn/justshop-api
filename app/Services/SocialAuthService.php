@@ -7,6 +7,7 @@ use App\Services\Auth\GuardShadowAnalyzer;
 use App\Services\Auth\IdentityContextResolver;
 use App\Services\Auth\SessionGuardTelemetry;
 use App\Services\Auth\SessionOwnershipResolver;
+use App\Support\System\FrontendUrlBuilder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -43,8 +44,7 @@ class SocialAuthService
         } catch (\Exception $e) {
             Log::error('Google OAuth failed', ['error' => $e->getMessage()]);
             
-            $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
-            return redirect($frontendUrl . '/auth/google/callback?error=google_auth_failed');
+            return redirect(FrontendUrlBuilder::build('/auth/google/callback', ['error' => 'google_auth_failed']));
         }
 
         $user = $this->findOrCreateUser($googleUser);
@@ -58,9 +58,7 @@ class SocialAuthService
 
         $request->session()->regenerate();
 
-        $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
-
-        return redirect($frontendUrl . '/auth/google/callback?user_id=' . $user->id);
+        return redirect(FrontendUrlBuilder::build('/auth/google/callback', ['user_id' => $user->id]));
     }
 
     /**

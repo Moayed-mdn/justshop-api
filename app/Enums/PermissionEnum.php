@@ -8,6 +8,7 @@ class PermissionEnum
 {
     // --- User ---
     public const USER_VIEW    = 'user.view';
+    public const USER_CREATE  = 'user.create';
     public const USER_BLOCK   = 'user.block';
     public const USER_DELETE  = 'user.delete';
     public const USER_RESTORE = 'user.restore';

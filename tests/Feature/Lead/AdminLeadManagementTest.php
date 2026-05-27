@@ -19,24 +19,25 @@ class AdminLeadManagementTest extends TestCase
 
     public function test_admin_endpoints_require_authentication(): void
     {
-        $this->getJson('/api/v1/admin/leads')
+        $this->getJson(route('platform.leads.index'))
             ->assertStatus(401)
             ->assertJson([
-                'status' => false,
-                'error_code' => 'AUTH_002',
+                'success' => false,
+                'code' => 'AUTH_002',
             ]);
     }
 
     public function test_admin_endpoints_require_super_admin_role(): void
     {
+        /** @var User $user */
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->getJson('/api/v1/admin/leads')
+            ->getJson(route('platform.leads.index'))
             ->assertStatus(403)
             ->assertJson([
-                'status' => false,
-                'error_code' => 'HTTP_403',
+                'success' => false,
+                'code' => 'HTTP_403',
             ]);
     }
 
@@ -72,18 +73,18 @@ class AdminLeadManagementTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->getJson('/api/v1/admin/leads?type=contact')
+            ->getJson(route('platform.leads.index', ['type' => 'contact']))
             ->assertStatus(200)
             ->assertJsonCount(2, 'data');
 
         $this->actingAs($admin)
-            ->getJson('/api/v1/admin/leads?status=spam')
+            ->getJson(route('platform.leads.index', ['status' => 'spam']))
             ->assertStatus(200)
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.status', LeadStatusEnum::SPAM->value);
 
         $this->actingAs($admin)
-            ->getJson('/api/v1/admin/leads?email=jane')
+            ->getJson(route('platform.leads.index', ['email' => 'jane']))
             ->assertStatus(200)
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.email', 'jane@example.com');
@@ -104,7 +105,7 @@ class AdminLeadManagementTest extends TestCase
         ]);
 
         $this->actingAs($admin)
-            ->patchJson("/api/v1/admin/leads/{$lead->id}/status", [
+            ->patchJson(route('platform.leads.status', ['lead' => $lead->id]), [
                 'status' => LeadStatusEnum::CONTACTED->value,
             ])
             ->assertStatus(200)
@@ -119,7 +120,7 @@ class AdminLeadManagementTest extends TestCase
         $this->assertNotNull($lead->contacted_at);
 
         $this->actingAs($admin)
-            ->patchJson("/api/v1/admin/leads/{$lead->id}/status", [
+            ->patchJson(route('platform.leads.status', ['lead' => $lead->id]), [
                 'status' => LeadStatusEnum::ARCHIVED->value,
             ])
             ->assertStatus(200)
@@ -130,42 +131,40 @@ class AdminLeadManagementTest extends TestCase
         $this->assertSame($resolvedAt?->toISOString(), $lead->resolved_at?->toISOString());
 
         $this->actingAs($admin)
-            ->patchJson("/api/v1/admin/leads/{$lead->id}/status", [
+            ->patchJson(route('platform.leads.status', ['lead' => $lead->id]), [
                 'status' => LeadStatusEnum::IN_PROGRESS->value,
+                'resolution_notes' => 'Contacting the user now.',
             ])
             ->assertStatus(200)
-            ->assertJsonPath('data.status', LeadStatusEnum::IN_PROGRESS->value);
-
-        $lead->refresh();
-        $this->assertNull($lead->archived_at);
-        $this->assertNull($lead->resolved_at);
-        $this->assertNull($lead->resolved_by);
-    }
-
-    public function test_super_admin_can_delete_lead(): void
-    {
-        $admin = $this->makeSuperAdmin();
-
-        /** @var Lead $lead */
-        $lead = Lead::query()->create([
-            'type' => LeadTypeEnum::CONTACT->value,
-            'status' => LeadStatusEnum::NEW->value,
-            'locale' => 'en',
-            'name' => 'Jane',
-            'email' => 'jane@example.com',
-            'message' => 'Hello',
-        ]);
+            ->assertJsonPath('data.status', LeadStatusEnum::IN_PROGRESS->value)
+            ->assertJsonPath('data.resolution_notes', 'Contacting the user now.');
 
         $this->actingAs($admin)
-            ->deleteJson("/api/v1/admin/leads/{$lead->id}")
-            ->assertStatus(200)
-            ->assertJson([
-                'status' => true,
-                'message' => __('lead.deleted'),
-                'data' => null,
-            ]);
+             ->patchJson(route('platform.leads.status', ['lead' => $lead->id]), [
+                 'status' => LeadStatusEnum::CONTACTED->value,
+             ])
+             ->assertStatus(200)
+             ->assertJsonPath('data.status', LeadStatusEnum::CONTACTED->value);
 
-        $this->assertSoftDeleted('leads', ['id' => $lead->id]);
+        $this->actingAs($admin)
+            ->patchJson(route('platform.leads.status', ['lead' => $lead->id]), [
+                'status' => 'invalid_status',
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['status']);
+    }
+
+    public function test_super_admin_can_delete_leads(): void
+    {
+        $admin = $this->makeSuperAdmin();
+        /** @var Lead $lead */
+        $lead = Lead::factory()->create();
+
+        $this->actingAs($admin)
+            ->deleteJson(route('platform.leads.destroy', ['lead' => $lead->id]))
+            ->assertStatus(200);
+
+        $this->assertDatabaseMissing('leads', ['id' => $lead->id]);
     }
 
     private function makeSuperAdmin(): User

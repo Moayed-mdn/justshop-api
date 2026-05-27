@@ -56,7 +56,7 @@ class PolicyCapabilityCatalog
             MembershipPolicy::class => [
                 'viewAny' => 'membership.view',
                 'view' => 'membership.view',
-                'create' => 'membership.invite',
+                'create' => 'user.create',
                 'update' => 'membership.update',
                 'delete' => 'membership.revoke',
             ][$ability] ?? null,

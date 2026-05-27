@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Notifications\Auth;
 
+use App\Support\System\FrontendUrlBuilder;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -27,8 +28,7 @@ class WelcomeMerchantNotification extends Notification implements ShouldQueue
 
     public function toMail(mixed $notifiable): MailMessage
     {
-        $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
-        $dashboardUrl = $frontendUrl . '/dashboard';
+        $dashboardUrl = FrontendUrlBuilder::build('/dashboard');
 
         return (new MailMessage())
             ->subject('Welcome to ' . config('app.name') . ' — Let\'s build your store')

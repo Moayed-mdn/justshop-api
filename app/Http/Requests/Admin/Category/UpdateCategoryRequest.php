@@ -19,7 +19,13 @@ class UpdateCategoryRequest extends FormRequest
         $categoryId = (int) $this->route('category');
 
         return [
-            'slug'                       => ['required', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/'],
+            'slug'                       => [
+                'required',
+                'string',
+                'max:255',
+                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                Rule::unique('categories', 'slug')->ignore($categoryId),
+            ],
             'parent_id'                  => ['sometimes', 'nullable', 'integer', 'exists:categories,id', Rule::notIn([$categoryId])],
             'sort_order'                 => ['sometimes', 'integer', 'min:0'],
             'is_active'                  => ['sometimes', 'boolean'],
@@ -31,6 +37,7 @@ class UpdateCategoryRequest extends FormRequest
                 'string',
                 'max:255',
                 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                'distinct',
                 Rule::unique('category_translations', 'slug')
                     ->where(fn($q) => $q->whereNot('category_id', $categoryId)),
             ],

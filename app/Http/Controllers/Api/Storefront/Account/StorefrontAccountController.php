@@ -5,12 +5,18 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\Storefront\Account;
 
 use App\Actions\Auth\LogoutUserAction;
+use App\Actions\Auth\ResendVerificationEmailAction;
+use App\Actions\Auth\VerifyEmailAction;
 use App\Actions\Storefront\Account\GetStorefrontAccountBootstrapAction;
 use App\Actions\Storefront\Account\LoginCustomerAction;
 use App\Actions\Storefront\Account\RegisterCustomerAction;
+use App\DTOs\Auth\ResendVerificationEmailDTO;
+use App\DTOs\Auth\VerifyEmailDTO;
 use App\DTOs\Storefront\Account\LoginCustomerDTO;
 use App\DTOs\Storefront\Account\RegisterCustomerDTO;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ResendVerificationEmailRequest;
+use App\Http\Requests\Auth\VerifyEmailRequest;
 use App\Http\Requests\Storefront\Account\LoginCustomerRequest;
 use App\Http\Requests\Storefront\Account\RegisterCustomerRequest;
 use App\Http\Resources\Storefront\Account\StorefrontAccountBootstrapResource;
@@ -29,6 +35,8 @@ class StorefrontAccountController extends Controller
         private readonly RegisterCustomerAction $registerCustomerAction,
         private readonly LoginCustomerAction $loginCustomerAction,
         private readonly LogoutUserAction $logoutUserAction,
+        private readonly VerifyEmailAction $verifyEmailAction,
+        private readonly ResendVerificationEmailAction $resendVerificationEmailAction,
         private readonly GetStorefrontAccountBootstrapAction $getStorefrontAccountBootstrapAction,
         private readonly FrontendSessionMetadataResolver $frontendSessionMetadataResolver,
         private readonly IdentityContextResolver $identityContextResolver,
@@ -82,6 +90,32 @@ class StorefrontAccountController extends Controller
         $this->logoutUserAction->execute($request);
 
         return $this->successWithMeta(null, $meta, __('auth.customer_logout_successful'));
+    }
+
+    public function verifyEmail(VerifyEmailRequest $request): JsonResponse
+    {
+        $result = $this->verifyEmailAction->execute(
+            VerifyEmailDTO::fromRequest($request)
+        );
+
+        if ($result['already_verified']) {
+            return $this->success(null, __('auth.email_already_verified'));
+        }
+
+        return $this->success(null, __('auth.email_verified'));
+    }
+
+    public function resendVerificationEmail(ResendVerificationEmailRequest $request): JsonResponse
+    {
+        $result = $this->resendVerificationEmailAction->execute(
+            ResendVerificationEmailDTO::fromRequest($request)
+        );
+
+        if ($result['already_verified']) {
+            return $this->success(null, __('auth.email_already_verified'));
+        }
+
+        return $this->success(null, __('auth.verification_email_sent'));
     }
 
     public function me(Request $request): JsonResponse

@@ -1,38 +1,48 @@
 <?php
 
-use App\Http\Controllers\Api\Cms\Blog\PublicBlogController;
-use App\Http\Controllers\Api\Cms\Documentation\PublicDocumentController;
-use App\Http\Controllers\Api\Cms\Marketing\PublicMarketingController;
-use App\Http\Controllers\Api\Cms\Seo\PublicCmsSeoController;
+use App\Http\Controllers\Api\Public\PublicBlogController;
+use App\Http\Controllers\Api\Public\PublicDocumentController;
+use App\Http\Controllers\Api\Public\PublicMarketingController;
+use App\Http\Controllers\Api\Public\PublicCmsSeoController;
 use Illuminate\Support\Facades\Route;
 
 /**
  * Public Marketing CMS Routes
- * Prefix: /api/v1/public/cms
  */
-Route::prefix('v1/public/cms')->group(function () {
+Route::prefix('cms')
+    ->name('public.cms.')
+    ->group(function () {
     
     // ── Marketing Pages ───────────────────────────────────
-    Route::get('/pages/{slug}', [PublicMarketingController::class, 'show']);
+    Route::get('/pages/{slug}', [PublicMarketingController::class, 'show'])->name('pages.show');
 
     // ── Blog ──────────────────────────────────────────────
-    Route::prefix('blog')->controller(PublicBlogController::class)->group(function () {
-        Route::get('/', 'index')->name('public.blog.index');
-        Route::get('/{slug}', 'show')->name('public.blog.show');
-    });
+    Route::prefix('blog')
+        ->name('blog.')
+        ->controller(PublicBlogController::class)
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{slug}', 'show')->name('show');
+        });
 
     // ── Documentation ─────────────────────────────────────
-    Route::prefix('docs')->controller(PublicDocumentController::class)->group(function () {
-        Route::get('/sidebar', 'sidebar');
-        Route::get('/{slugPath}/navigation', 'navigation')->where('slugPath', '.*');
-        Route::get('/{slugPath}', 'show')->where('slugPath', '.*');
-    });
+    Route::prefix('docs')
+        ->name('docs.')
+        ->controller(PublicDocumentController::class)
+        ->group(function () {
+            Route::get('/sidebar', 'sidebar')->name('sidebar');
+            Route::get('/{slugPath}/navigation', 'navigation')->where('slugPath', '.*')->name('navigation');
+            Route::get('/{slugPath}', 'show')->where('slugPath', '.*')->name('show');
+        });
 
     // ── SEO & Sitemap ─────────────────────────────────────
-    Route::prefix('seo')->controller(PublicCmsSeoController::class)->group(function () {
-        Route::get('/sitemap/marketing', 'marketing');
-        Route::get('/sitemap/blog', 'blog');
-        Route::get('/sitemap/docs', 'docs');
-        Route::get('/robots.txt', 'robots');
-    });
+    Route::prefix('seo')
+        ->name('seo.')
+        ->controller(PublicCmsSeoController::class)
+        ->group(function () {
+            Route::get('/sitemap/marketing', 'marketing')->name('sitemap.marketing');
+            Route::get('/sitemap/blog', 'blog')->name('sitemap.blog');
+            Route::get('/sitemap/docs', 'docs')->name('sitemap.docs');
+            Route::get('/robots.txt', 'robots')->name('robots');
+        });
 });

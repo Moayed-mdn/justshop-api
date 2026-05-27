@@ -54,7 +54,7 @@ class OnboardingIsolationTest extends TestCase
         $response = $this->actingAs($merchant)->getJson('/api/v1/test-auth/onboarding-enforced');
 
         $response->assertForbidden()
-            ->assertJsonPath('error_code', 'AUTH_002');
+            ->assertJsonPath('code', 'AUTH_002');
 
         Log::shouldHaveReceived('info')->with(
             'identity.onboarding.evaluated',

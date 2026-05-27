@@ -86,6 +86,7 @@ class RequestTraceContextTest extends TestCase
 
     public function test_identity_route_context_enriches_trace_with_route_and_session_annotations(): void
     {
+        /** @var User $user */
         $user = User::factory()->customer()->create();
 
         Route::middleware(['api', 'auth:sanctum', 'identity.route:customer_account,customer,enforce'])
@@ -95,7 +96,7 @@ class RequestTraceContextTest extends TestCase
                 return response()->json($traceContext->current()->toLogContext());
             });
 
-        $response = $this->actingAs($user)->getJson('/api/v1/storefront/account/test-observability/trace');
+        $response = $this->actingAs($user, 'sanctum')->getJson('/api/v1/storefront/account/test-observability/trace');
 
         $response->assertOk()
             ->assertJsonPath('actor_id', $user->id)
@@ -121,7 +122,7 @@ class RequestTraceContextTest extends TestCase
         $response->assertStatus(500)
             ->assertHeader('X-Correlation-ID')
             ->assertJson([
-                'status' => false,
+                'success' => false,
                 'message' => 'Custom server error message',
             ]);
     }

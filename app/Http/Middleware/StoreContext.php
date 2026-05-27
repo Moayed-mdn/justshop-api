@@ -21,13 +21,15 @@ class StoreContext
 
     public function handle(Request $request, Closure $next): mixed
     {
-        $storeId = $request->route('store');
+        $store = $request->route('store');
         $user = $request->user();
 
-        $store = Store::find($storeId);
+        if (!($store instanceof Store)) {
+            $store = Store::find($store);
+        }
 
-        if (!$store) {
-            if ($user && $user->last_active_store_id == $storeId) {
+        if (!$store instanceof Store) {
+            if ($user && $user->last_active_store_id == $request->route('store')) {
                 $user->update(['last_active_store_id' => null]);
             }
 
@@ -39,7 +41,7 @@ class StoreContext
         }
 
         if (!$store->isOperational()) {
-            if ($user && $user->last_active_store_id == $storeId) {
+            if ($user && $user->last_active_store_id == $request->route('store')) {
                 $user->update(['last_active_store_id' => null]);
             }
 

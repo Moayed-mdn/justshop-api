@@ -23,13 +23,13 @@ class ApiContractTest extends TestCase
             'email_verified_at' => now(),
             'onboarding_step' => OnboardingStepEnum::COMPLETED,
         ]);
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ["*"], "merchant");
 
         $store = Store::factory()->create(['owner_id' => $user->id]);
         $user->stores()->attach($store, ['role' => 'owner']);
         $user->update(['last_active_store_id' => $store->id]);
 
-        $response = $this->getJson('/api/v1/me');
+        $response = $this->getJson('/api/v1/merchant/me');
 
         $response->assertOk()
             ->assertJsonStructure([
@@ -88,7 +88,7 @@ class ApiContractTest extends TestCase
         ]);
         $this->actingAs($user);
 
-        $response = $this->getJson('/api/v1/me');
+        $response = $this->getJson('/api/v1/merchant/me');
 
         $response->assertOk()
             ->assertJsonPath('data.active_store_id', null)
@@ -97,6 +97,21 @@ class ApiContractTest extends TestCase
             ->assertJsonPath('data.onboarding.can_resume', true)
             ->assertJsonPath('data.onboarding.is_completed', false)
             ->assertJsonCount(0, 'data.stores');
+    }
+
+    public function test_legacy_me_endpoint_still_works_but_is_deprecated(): void
+    {
+        $user = User::factory()->create([
+            'email_verified_at' => now(),
+            'onboarding_step' => OnboardingStepEnum::COMPLETED,
+        ]);
+        Sanctum::actingAs($user, ["*"], "merchant");
+
+        $response = $this->getJson('/api/v1/me');
+
+        $response->assertOk()
+            ->assertHeader('X-API-Deprecated', 'true')
+            ->assertHeader('X-API-Suggested-New-Route', '/v1/merchant/me');
     }
 
     private function getExpectedFeaturesStructure(): array
@@ -115,7 +130,7 @@ class ApiContractTest extends TestCase
             'email_verified_at' => now(),
             'onboarding_step' => OnboardingStepEnum::COMPLETED,
         ]);
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ["*"], "merchant");
 
         $store = Store::factory()->create([
             'owner_id' => $user->id,
@@ -128,7 +143,7 @@ class ApiContractTest extends TestCase
         ]);
         $user->stores()->attach($store, ['role' => 'owner']);
 
-        $response = $this->getJson("/api/v1/stores/{$store->id}/provisioning-status");
+        $response = $this->getJson("/api/v1/merchant/stores/{$store->id}/provisioning-status");
 
         $response->assertOk()
             ->assertJsonStructure([
@@ -168,12 +183,12 @@ class ApiContractTest extends TestCase
         ]);
         $owner->stores()->attach($store, ['role' => 'owner']);
 
-        $response = $this->getJson("/api/v1/stores/{$store->id}/provisioning-status");
+        $response = $this->getJson("/api/v1/merchant/stores/{$store->id}/provisioning-status");
 
         $response->assertForbidden()
             ->assertJson([
                 'success' => false,
-                'code' => ErrorCode::STORE_ACCESS_DENIED->value,
+                'code' => ErrorCode::IDENTITY_DOMAIN_MISMATCH->value,
                 'redirect' => '/dashboard',
             ]);
     }
@@ -182,7 +197,7 @@ class ApiContractTest extends TestCase
     {
         /** @var User $user */
         $user = User::factory()->create();
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ["*"], "merchant");
 
         // Create some sessions for the user
         \Illuminate\Support\Facades\DB::table('sessions')->insert([
@@ -204,7 +219,7 @@ class ApiContractTest extends TestCase
             ],
         ]);
 
-        $response = $this->actingAs($user)->getJson('/api/v1/users/sessions');
+        $response = $this->actingAs($user)->getJson('/api/v1/merchant/sessions');
 
         $response->assertOk()
             ->assertJsonCount(2, 'data')
@@ -249,7 +264,7 @@ class ApiContractTest extends TestCase
             ],
         ]);
 
-        $response = $this->deleteJson('/api/v1/users/sessions/session_to_revoke');
+        $response = $this->deleteJson('/api/v1/merchant/sessions/session_to_revoke');
 
         $response->assertOk()
             ->assertJson([
@@ -278,7 +293,7 @@ class ApiContractTest extends TestCase
             'last_activity' => now()->timestamp,
         ]);
 
-        $response = $this->deleteJson('/api/v1/users/sessions/foreign_session');
+        $response = $this->deleteJson('/api/v1/merchant/sessions/foreign_session');
 
         $response->assertOk()
             ->assertJson([
@@ -327,7 +342,7 @@ class ApiContractTest extends TestCase
             ],
         ]);
 
-        $response = $this->deleteJson('/api/v1/users/sessions', [
+        $response = $this->deleteJson('/api/v1/merchant/sessions', [
             'password' => 'password', // Assuming password confirmation is required
         ]);
 
@@ -390,9 +405,9 @@ class ApiContractTest extends TestCase
         $user = User::factory()->create([
             'email_verified_at' => now(),
         ]);
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ["*"], "merchant");
 
-        $response = $this->getJson('/api/v1/users/auth/email/status');
+        $response = $this->getJson('/api/v1/merchant/auth/email/status');
 
         $response->assertOk()
             ->assertJson([
@@ -405,12 +420,10 @@ class ApiContractTest extends TestCase
 
     public function test_email_verification_status_returns_unverified(): void
     {
-        $user = User::factory()->create([
-            'email_verified_at' => null,
-        ]);
-        Sanctum::actingAs($user);
+        $user = User::factory()->unverified()->create();
+        Sanctum::actingAs($user, ["*"], "merchant");
 
-        $response = $this->getJson('/api/v1/users/auth/email/status');
+        $response = $this->getJson('/api/v1/merchant/auth/email/status');
 
         $response->assertOk()
             ->assertJson([
@@ -427,9 +440,9 @@ class ApiContractTest extends TestCase
             'email_verified_at' => now(),
             'onboarding_step' => OnboardingStepEnum::COMPLETED,
         ]);
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ["*"], "merchant");
 
-        $response = $this->getJson('/api/v1/store-slug/check?slug=new-unique-slug');
+        $response = $this->getJson('/api/v1/merchant/stores/slug-check?slug=new-unique-slug');
 
         $response->assertOk()
             ->assertJson([
@@ -446,11 +459,11 @@ class ApiContractTest extends TestCase
             'email_verified_at' => now(),
             'onboarding_step' => OnboardingStepEnum::COMPLETED,
         ]);
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ["*"], "merchant");
 
         Store::factory()->create(['slug' => 'existing-slug', 'owner_id' => $user->id]);
 
-        $response = $this->getJson('/api/v1/store-slug/check?slug=existing-slug');
+        $response = $this->getJson('/api/v1/merchant/stores/slug-check?slug=existing-slug');
 
         $response->assertOk()
             ->assertJson([
@@ -467,9 +480,9 @@ class ApiContractTest extends TestCase
             'email_verified_at' => now(),
             'onboarding_step' => OnboardingStepEnum::COMPLETED,
         ]);
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ["*"], "merchant");
 
-        $response = $this->getJson('/api/v1/store-slug/check?slug=admin');
+        $response = $this->getJson('/api/v1/merchant/stores/slug-check?slug=admin');
 
         $response->assertOk()
             ->assertJson([
@@ -486,9 +499,9 @@ class ApiContractTest extends TestCase
             'email_verified_at' => now(),
             'onboarding_step' => OnboardingStepEnum::COMPLETED,
         ]);
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ["*"], "merchant");
 
-        $response = $this->getJson('/api/v1/store-slug/check?slug=my-shit-store');
+        $response = $this->getJson('/api/v1/merchant/stores/slug-check?slug=my-shit-store');
 
         $response->assertOk()
             ->assertJson([
@@ -505,7 +518,6 @@ class ApiContractTest extends TestCase
             'email_verified_at' => now(),
             'onboarding_step' => OnboardingStepEnum::COMPLETED,
         ]);
-        Sanctum::actingAs($user);
 
         $store = Store::factory()->create([
             'owner_id' => $user->id,
@@ -513,8 +525,9 @@ class ApiContractTest extends TestCase
         ]);
         $user->stores()->attach($store, ['role' => 'owner']);
         $user->update(['last_active_store_id' => $store->id]);
+        Sanctum::actingAs($user, ["*"], "merchant");
 
-        $response = $this->getJson('/api/v1/me');
+        $response = $this->getJson('/api/v1/merchant/me');
 
         $response->assertOk()
             ->assertJsonPath('data.stores.0.status', StoreStatusEnum::PENDING_SETUP->value)
@@ -527,7 +540,7 @@ class ApiContractTest extends TestCase
             'email_verified_at' => now(),
             'onboarding_step' => OnboardingStepEnum::COMPLETED,
         ]);
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ["*"], "merchant");
 
         $store = Store::factory()->create([
             'owner_id' => $user->id,
@@ -538,7 +551,7 @@ class ApiContractTest extends TestCase
 
         // This route assumes a store is present in the URL path, e.g., /v1/stores/{store}/some-endpoint
         // The middleware 'store.context' will resolve the store and throw exceptions based on its status.
-        $response = $this->getJson("/api/v1/stores/{$store->id}/products");
+        $response = $this->getJson("/api/v1/merchant/stores/{$store->id}/products");
 
         $response->assertForbidden()
             ->assertJson([
@@ -554,11 +567,11 @@ class ApiContractTest extends TestCase
             'email_verified_at' => now(),
             'onboarding_step' => OnboardingStepEnum::COMPLETED,
         ]);
-        Sanctum::actingAs($user);
+        Sanctum::actingAs($user, ["*"], "merchant");
 
         $nonExistentStoreId = 99999;
 
-        $response = $this->getJson("/api/v1/stores/{$nonExistentStoreId}/products");
+        $response = $this->getJson("/api/v1/merchant/stores/{$nonExistentStoreId}/products");
 
         $response->assertNotFound()
             ->assertJson([

@@ -593,7 +593,7 @@ Verified alternate running example:
 
 Error shape:
 
-- wrong store access: `403`, `code: "STORE_ACCESS_DENIED"`, `redirect: "/dashboard"`
+- wrong store access: `403`, `code: "IDENTITY_DOMAIN_MISMATCH"`, `redirect: "/dashboard"`
 - store missing: `404`, `code: "STR_001"`
 
 Frontend usage:
@@ -1570,7 +1570,7 @@ Verified store access denial:
 ```json
 {
   "success": false,
-  "code": "STORE_ACCESS_DENIED",
+  "code": "IDENTITY_DOMAIN_MISMATCH",
   "message": "This action is unauthorized.",
   "redirect": "/dashboard",
   "errors": {}
@@ -1830,7 +1830,7 @@ Verified store access denial:
 ```json
 {
   "success": false,
-  "code": "STORE_ACCESS_DENIED",
+  "code": "IDENTITY_DOMAIN_MISMATCH",
   "message": "This action is unauthorized.",
   "redirect": "/dashboard",
   "errors": {}

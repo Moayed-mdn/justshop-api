@@ -32,13 +32,13 @@ class PolicyOwnershipVisibilityReportTest extends TestCase
         $this->assertArrayHasKey('entries', $report);
         $this->assertNotEmpty($report['entries']);
 
-        $target = collect($report['entries'])->first(fn (array $entry): bool => ($entry['controller'] ?? null) === 'App\\Http\\Controllers\\Api\\Admin\\User\\AdminUserController'
+        $target = collect($report['entries'])->first(fn (array $entry): bool => ($entry['controller'] ?? null) === 'App\\Http\\Controllers\\Api\\Merchant\\AdminUserController'
             && ($entry['controller_method'] ?? null) === 'index');
 
         $this->assertNotNull($target);
         $this->assertSame(MembershipPolicy::class, $target['policy_used']);
         $this->assertTrue($target['store_aware']);
-        $this->assertTrue($target['generic_currentStore']);
+        $this->assertFalse($target['generic_currentStore']);
         $this->assertFalse($target['hidden_fallback']);
     }
 
@@ -54,8 +54,11 @@ class PolicyOwnershipVisibilityReportTest extends TestCase
         $report = json_decode((string) File::get($outputPath), true);
         $entries = collect($report['entries']);
 
-        $brandIndex = $entries->first(fn (array $entry): bool => ($entry['controller'] ?? null) === 'App\\Http\\Controllers\\Api\\Admin\\Brand\\AdminBrandController'
+        $brandIndex = $entries->first(fn (array $entry): bool => ($entry['controller'] ?? null) === 'App\\Http\\Controllers\\Api\\Merchant\\AdminBrandController'
             && ($entry['controller_method'] ?? null) === 'index');
+
+        $categoryShow = $entries->first(fn (array $entry): bool => ($entry['controller'] ?? null) === 'App\\Http\\Controllers\\Api\\Merchant\\AdminCategoryController'
+            && ($entry['controller_method'] ?? null) === 'show');
 
         $this->assertNotNull($brandIndex);
         $this->assertSame(BrandPolicy::class, $brandIndex['policy_used']);
@@ -65,7 +68,7 @@ class PolicyOwnershipVisibilityReportTest extends TestCase
         $this->assertFalse($brandIndex['generic_currentStore']);
         $this->assertFalse($brandIndex['hidden_fallback']);
 
-        $blogIndex = $entries->first(fn (array $entry): bool => ($entry['controller'] ?? null) === 'App\\Http\\Controllers\\Api\\Cms\\Blog\\AdminBlogController'
+        $blogIndex = $entries->first(fn (array $entry): bool => ($entry['controller'] ?? null) === 'App\\Http\\Controllers\\Api\\Platform\\AdminBlogController'
             && ($entry['controller_method'] ?? null) === 'index');
 
         $this->assertNotNull($blogIndex);

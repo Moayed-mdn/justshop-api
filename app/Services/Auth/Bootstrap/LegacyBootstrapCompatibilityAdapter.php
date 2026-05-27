@@ -12,6 +12,7 @@ use App\DTOs\Auth\Bootstrap\GetBootstrapResponseDTO;
 use App\Models\Store;
 use App\Models\User;
 use App\Repositories\Store\StoreRepository;
+use App\Services\Auth\OnboardingApplicabilityResolver;
 use App\Services\Auth\Permission\LegacyPermissionAuthority;
 
 class LegacyBootstrapCompatibilityAdapter
@@ -19,6 +20,7 @@ class LegacyBootstrapCompatibilityAdapter
     public function __construct(
         private readonly LegacyPermissionAuthority $legacyPermissionAuthority,
         private readonly StoreRepository $storeRepository,
+        private readonly OnboardingApplicabilityResolver $onboardingApplicabilityResolver,
     ) {}
 
     public function adapt(User $user, array $session = []): GetBootstrapResponseDTO
@@ -48,10 +50,18 @@ class LegacyBootstrapCompatibilityAdapter
             $activeStoreDTO = BootstrapStoreDTO::fromModel($activeStoreModel, $activeRole, $activePermissions);
         }
 
+        $applicability = $this->onboardingApplicabilityResolver->resolve($user);
         $step = $user->onboarding_step ?? \App\Enums\Auth\OnboardingStepEnum::COMPLETED;
         $steps = \App\Enums\Auth\OnboardingStepEnum::values();
         $currentStepIndex = array_search($step->value, $steps, true);
-        $completedSteps = $currentStepIndex !== false ? array_slice($steps, 0, $currentStepIndex) : [];
+        
+        if (!$applicability->applies) {
+            $completedSteps = [];
+            $step = \App\Enums\Auth\OnboardingStepEnum::COMPLETED;
+        } else {
+            $completedSteps = $currentStepIndex !== false ? array_slice($steps, 0, $currentStepIndex) : [];
+        }
+        
         $storeId = $user->stores()->first()?->id;
 
         $activePermissions = $activeStoreModel ? $this->legacyPermissionAuthority->resolve($user, $activeStoreModel)->permissions() : [];

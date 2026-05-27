@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Support\System\FrontendUrlBuilder;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -37,25 +38,13 @@ class CustomResetPassword extends Notification
      */
     public function toMail($notifiable)
     {
-
         $token = $this->token;
         $email = $notifiable->getEmailForPasswordReset();
 
-        $frontendUrl = config('app.frontend_url') . '/reset-password?' . http_build_query([
+        $frontendUrl = FrontendUrlBuilder::build('/reset-password', [
             'token' => $token,
             'email' => $email
         ]);
-
-        // Option 2: If you want a signed URL for extra security , only works for Laravel's internal routes, not external frontend URLs. 
-        // OR You have to manually create the signed parameters for frontend URLs.
-
-
-        // $frontendUrl = URL::temporarySignedRoute(
-        //     'password.reset', 
-        //     now()->addMinutes(60),
-        //     ['token' => $token, 'email' => $email]
-        // );
-
 
         return (new MailMessage)
         ->subject('Reset Your Password - ' . config('app.name'))

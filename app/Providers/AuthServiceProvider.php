@@ -10,6 +10,7 @@ use App\Models\Order;
 use App\Models\PaymentMethod;
 use App\Models\Store;
 use App\Models\Tag;
+use App\Models\User;
 use App\Policies\AddressPolicy;
 use App\Policies\BlogPostPolicy;
 use App\Policies\BrandPolicy;
@@ -42,6 +43,7 @@ class AuthServiceProvider extends ServiceProvider
         PaymentMethod::class => PaymentMethodPolicy::class,
         Store::class => StorePolicy::class,
         Tag::class => TagPolicy::class,
+        User::class => \App\Policies\MembershipPolicy::class,
         MarketingPage::class => MarketingPagePolicy::class,
         PlatformMarketingPage::class => PlatformMarketingPagePolicy::class,
         StoreMarketingPage::class => StoreMarketingPagePolicy::class,

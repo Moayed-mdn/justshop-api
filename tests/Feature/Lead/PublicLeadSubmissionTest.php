@@ -20,11 +20,11 @@ class PublicLeadSubmissionTest extends TestCase
         Event::fake([LeadSubmitted::class]);
 
         $response = $this->withHeader('User-Agent', 'LeadTestAgent/1.0')
-            ->postJson('/api/v1/leads/contact', $this->validPayload());
+            ->postJson(route('public.leads.contact'), $this->validPayload());
 
         $response->assertStatus(201)
             ->assertJson([
-                'status' => true,
+                'success' => true,
                 'message' => __('lead.submitted'),
                 'data' => null,
             ]);
@@ -52,13 +52,13 @@ class PublicLeadSubmissionTest extends TestCase
 
     public function test_validation_failure_returns_project_error_structure(): void
     {
-        $response = $this->postJson('/api/v1/leads/contact', []);
+        $response = $this->postJson(route('public.leads.contact'), []);
 
         $response->assertStatus(422)
             ->assertJson([
-                'status' => false,
+                'success' => false,
                 'message' => __('error.validation_failed'),
-                'error_code' => 'VAL_001',
+                'code' => 'VAL_001',
             ])
             ->assertJsonStructure([
                 'errors' => ['name', 'email', 'message'],
@@ -70,7 +70,7 @@ class PublicLeadSubmissionTest extends TestCase
         $payload = $this->validPayload();
         $payload['website'] = 'https://spam.example.com';
 
-        $response = $this->postJson('/api/v1/leads/contact', $payload);
+        $response = $this->postJson(route('public.leads.contact'), $payload);
 
         $response->assertStatus(422)
             ->assertJsonPath('errors.website.0', 'The selected website is invalid.');
@@ -83,18 +83,18 @@ class PublicLeadSubmissionTest extends TestCase
         Config::set('lead.spam.throttle_max_attempts', 1);
         Config::set('lead.spam.throttle_decay_minutes', 1);
 
-        $this->postJson('/api/v1/leads/contact', $this->validPayload(message: 'First message'))
+        $this->postJson(route('public.leads.contact'), $this->validPayload(message: 'First message'))
             ->assertStatus(201);
 
-        $response = $this->postJson('/api/v1/leads/contact', $this->validPayload(
+        $response = $this->postJson(route('public.leads.contact'), $this->validPayload(
             email: 'other@example.com',
             message: 'Second message'
         ));
 
         $response->assertStatus(429)
             ->assertJson([
-                'status' => false,
-                'error_code' => 'AUTH_008',
+                'success' => false,
+                'code' => 'AUTH_008',
             ]);
     }
 

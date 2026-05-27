@@ -19,6 +19,7 @@ use App\Services\Auth\Bootstrap\BootstrapStoreResolver;
 use App\Services\Auth\Bootstrap\BootstrapTelemetry;
 use App\Services\Auth\Bootstrap\LegacyBootstrapCompatibilityAdapter;
 use App\Services\Auth\FrontendSessionMetadataResolver;
+use App\Services\Auth\Permission\PermissionTransformer;
 
 class GetBootstrapAction
 {
@@ -132,7 +133,7 @@ class GetBootstrapAction
             activeStore: $stores['value']->activeStore,
             onboarding: $onboarding['value'],
             permissions: $permissions['value']->permissions,
-            capabilities: [],
+            capabilities: PermissionTransformer::toFrontendFlags($permissions['value']->permissions),
             config: $config['value'],
             actorContext: $actorContext,
             session: $session,

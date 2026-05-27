@@ -3,8 +3,6 @@
 namespace App\Actions\Admin\User;
 
 use App\DTOs\Admin\User\ListUsersDTO;
-use App\Enums\RoleEnum;
-use App\Exceptions\Store\UnauthorizedStoreAccessException;
 use App\Repositories\Admin\User\AdminUserRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -23,6 +21,7 @@ class ListUsersAction
             status: $dto->status,
             role: $dto->role,
             perPage: $dto->perPage,
+            excludeUserId: Auth::id(),
         );
     }
 }

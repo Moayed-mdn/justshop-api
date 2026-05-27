@@ -1,76 +1,89 @@
 <?php
 
-use App\Http\Controllers\Api\Auth\Preparation\CsrfOwnershipPreparationController;
+use App\Http\Controllers\Api\Shared\Auth\Preparation\CsrfOwnershipPreparationController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('identity.route:merchant_users,merchant,enforce')->group(function (): void {
-    // Canonical bootstrap endpoint
-    Route::get('/v1/me', [\App\Http\Controllers\Api\Auth\AuthController::class, 'bootstrap'])
-        ->middleware('auth:sanctum')
-        ->name('v1.me');
+/*
+|--------------------------------------------------------------------------
+| API Context-Based Architecture (v1)
+|--------------------------------------------------------------------------
+|
+| The API is organized into explicit application contexts based on the actor
+| and their intent. Each context has its own middleware, authentication,
+| and identity boundaries.
+|
+*/
 
-    // Auth (merchant-authoritative; no store context)
-    require 'api/v1/users/auth.php';
-
-    // Merchant-owned legacy /users surface (no store context)
-    require 'api/v1/users/category.php';
-    require 'api/v1/users/profile.php';
-
-    // Guest checkout status (no auth, no store context)
-    Route::prefix('/v1/users/checkout')
-        ->controller(\App\Http\Controllers\Api\Payment\CheckoutController::class)
-        ->withoutMiddleware(['auth:sanctum'])
-        ->group(function (): void {
-            Route::get('/status/{sessionId}', 'status');
-        });
-});
-
-// Public (no store context)
-Route::middleware('identity.route:public,customer,observe')->group(function (): void {
-    require 'api/v1/public/cms.php';
-    require 'api/v1/public/leads.php';
-});
-
-// Stripe webhook (no store context)
-Route::middleware('identity.route:shared_transitional,merchant,observe')->group(function (): void {
-    require 'api/v1/stripe/webhook.php';
-});
-
-// Store-scoped routes
-Route::middleware('identity.route:storefront_commerce,customer,observe')->group(function (): void {
-    require 'api/v1/stores/cart.php';
-    require 'api/v1/stores/orders.php';
-    require 'api/v1/stores/products.php';
-    require 'api/v1/stores/addresses.php';
-    require 'api/v1/stores/checkout.php';
-    require 'api/v1/stores/search.php';
-    require 'api/v1/stores/homepage.php';
-});
-
-// Store management routes (outside {store} group - POST has no store context yet)
-Route::middleware('identity.route:merchant_admin,merchant,enforce')->group(function (): void {
-    require 'api/v1/admin/admin.php';
-    require 'api/v1/stores/store-management.php';
-});
-
-// Wave 6: Platform Authority Domain (SUPER_ADMIN only)
-// Platform authority is INDEPENDENT from merchant authority.
-// Platform routes MUST NOT inherit merchant authority implicitly.
+// ── 1. PLATFORM CONTEXT ──────────────────────────────────────────────────
+// Internal SaaS operator tooling (SUPER_ADMIN only).
 Route::prefix('/v1/platform')
     ->middleware([
+        'web',
         'auth:sanctum',
         'identity.route:platform,platform,enforce',
         'platform.authority:platform_admin',
     ])
     ->group(function (): void {
         require 'api/v1/platform/platform.php';
+        require 'api/v1/platform/leads.php';
+        require 'api/v1/platform/cms/blog.php';
+        require 'api/v1/platform/cms/marketing-pages.php';
+        require 'api/v1/platform/cms/documentation.php';
     });
 
-// Wave 6: Support Authority Domain (SUPPORT_AGENT, SUPER_ADMIN)
-// Support authority is a SUBSET of platform authority.
-// Support actors have LIMITED platform access.
+// ── 2. MERCHANT CONTEXT ──────────────────────────────────────────────────
+// Tenant/store administration (Store owners and staff).
+Route::prefix('/v1/merchant')
+    ->middleware([
+        'web',
+        'identity.route:merchant_users,merchant,enforce',
+    ])
+    ->group(function (): void {
+        // Canonical bootstrap endpoint
+        Route::get('/me', [\App\Http\Controllers\Api\Merchant\AuthController::class, 'bootstrap'])
+            ->middleware(['auth:sanctum','identity.route:merchant_users,merchant,enforce']) // disabled temporarily, use 'identity.route:merchant_users,merchant,enforce'
+            ->name('merchant.me');
+
+        require 'api/v1/merchant/auth.php';
+        require 'api/v1/merchant/profile.php';
+        require 'api/v1/merchant/category.php';
+        require 'api/v1/merchant/admin.php';
+        require 'api/v1/merchant/stores.php';
+    });
+
+// ── 3. STOREFRONT CONTEXT ────────────────────────────────────────────────
+// Public ecommerce APIs (Customers and guests browsing stores).
+Route::prefix('/v1/storefront')
+    ->middleware([
+        'web',
+        'identity.route:storefront_commerce,customer,enforce',
+    ])
+    ->group(function (): void {
+        require 'api/v1/storefront/products.php';
+        require 'api/v1/storefront/cart.php';
+        require 'api/v1/storefront/orders.php';
+        require 'api/v1/storefront/addresses.php';
+        require 'api/v1/storefront/checkout.php';
+        require 'api/v1/storefront/search.php';
+        require 'api/v1/storefront/homepage.php';
+    });
+
+// ── 4. CUSTOMER CONTEXT ──────────────────────────────────────────────────
+// Customer identity and account management.
+Route::prefix('/v1/customer')
+    ->middleware([
+        'web',
+        'identity.route:customer_account,customer,enforce',
+    ])
+    ->group(function (): void {
+        require 'api/v1/customer/account.php';
+    });
+
+// ── 5. SUPPORT CONTEXT ───────────────────────────────────────────────────
+// Internal support operations (SUPPORT_AGENT, SUPER_ADMIN).
 Route::prefix('/v1/support')
     ->middleware([
+        'web',
         'auth:sanctum',
         'identity.route:support,platform,enforce',
         'support.authority',
@@ -79,24 +92,24 @@ Route::prefix('/v1/support')
         require 'api/v1/support/support.php';
     });
 
-// Legacy Platform Routes (TRANSITIONAL - to be migrated to /v1/platform)
-// These routes still use legacy /v1/admin/* URLs, but now include both
-// identity.route platform ownership and explicit platform.authority middleware.
-// Wave 6 Goal: complete the topology migration away from the legacy URL space.
-Route::middleware([
-    'auth:sanctum',
-    'identity.route:platform,platform,enforce',
-    'platform.authority:platform_admin',
-])->group(function (): void {
-    require 'api/v1/admin/leads.php';
-    require 'api/v1/admin/cms/blog.php';
-    require 'api/v1/admin/cms/marketing-pages.php';
-    require 'api/v1/admin/cms/documentation.php';
-});
+// ── 6. PUBLIC CONTEXT ────────────────────────────────────────────────────
+// Marketing site, CMS, docs, and SEO (Unauthenticated public access).
+Route::prefix('/v1/public')
+    ->group(function (): void {
+        require 'api/v1/public/cms.php';
+        require 'api/v1/public/leads.php';
+    });
 
-// Additive customer account namespace
-require 'api/v1/storefront/account.php';
+// ── 7. SYSTEM & SHARED ───────────────────────────────────────────────────
+// Routes that cross context boundaries or serve infrastructure needs.
 
+// Stripe webhooks
+Route::middleware('identity.route:shared_transitional,merchant,observe')
+    ->group(function (): void {
+        require 'api/v1/stripe/webhook.php';
+    });
 
+// CSRF Ownership Preparation
 Route::get('/sanctum/csrf-cookie', [CsrfOwnershipPreparationController::class, 'show'])
     ->middleware(['web', 'identity.route:shared_transitional,merchant,observe']);
+

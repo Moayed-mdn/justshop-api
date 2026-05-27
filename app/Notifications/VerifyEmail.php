@@ -1,6 +1,7 @@
 <?php
 namespace App\Notifications;
 
+use App\Support\System\FrontendUrlBuilder;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -34,8 +35,15 @@ class VerifyEmail extends Notification implements ShouldQueue
     
     protected function verificationUrl($notifiable)
     {
+        $actorContext = $notifiable->getActorContext();
+        
+        $routeName = match($actorContext) {
+             \App\Enums\Auth\ActorContextEnum::CUSTOMER => 'customer.auth.verification.verify',
+             default => 'merchant.auth.verification.verify',
+         };
+
         $backendUrl = URL::temporarySignedRoute( 
-            'v1.users.auth.verification.verify', 
+            $routeName, 
             now()->addMinutes(60),
             [
                 'id' => $notifiable->getKey(),
@@ -43,14 +51,10 @@ class VerifyEmail extends Notification implements ShouldQueue
             ]
         );
 
-        // Get the frontend URL from config
-        $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
-
-        // Extract the query parameters (expires, signature) from the backend URL
-        $query = parse_url($backendUrl, PHP_URL_QUERY);
-        
-        // Construct the final Frontend URL
-        return $frontendUrl . '/verify-email/' . $notifiable->getKey() . '/' . sha1($notifiable->getEmailForVerification()) . '?' . $query;
+        return FrontendUrlBuilder::buildSigned(
+            '/verify-email/' . $notifiable->getKey() . '/' . sha1($notifiable->getEmailForVerification()),
+            $backendUrl
+        );
     }
 
     public function failed(\Exception $exception)

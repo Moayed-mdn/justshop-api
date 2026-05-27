@@ -8,6 +8,7 @@ use App\Enums\Auth\ActorContextEnum;
 use App\Enums\Auth\AuthDomainEnum;
 use App\Enums\Auth\OperationalContextEnum;
 use App\Enums\Auth\OnboardingStepEnum;
+use App\Enums\ErrorCode;
 use App\Enums\RoleEnum;
 use App\Services\Auth\IdentityContextResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -82,7 +83,10 @@ class IdentityContextNormalizationTest extends TestCase
 
         $response = $this->actingAs($user)->getJson('/api/v1/me');
 
-        $response->assertStatus(403);
-        $response->assertJsonPath('code', 'STORE_ACCESS_DENIED');
+        $response->assertForbidden()
+             ->assertJson([
+                 'success' => false,
+                 'code' => ErrorCode::IDENTITY_DOMAIN_MISMATCH->value,
+             ]);
     }
 }

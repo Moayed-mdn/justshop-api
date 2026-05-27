@@ -94,7 +94,7 @@ class PlatformTelemetry
     private function context(Request $request, array $context): array
     {
         return [
-            ...$this->traceContext->current()->toArray(),
+            ...$this->traceContext->current()->toLogContext(),
             'request_id' => $request->header('X-Request-ID'),
             'ip' => $request->ip(),
             'user_agent' => $request->userAgent(),

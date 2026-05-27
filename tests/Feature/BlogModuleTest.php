@@ -116,7 +116,7 @@ class BlogModuleTest extends TestCase
         ];
 
         $response = $this->actingAs($this->admin)
-            ->postJson('/api/v1/admin/cms/blog', $payload);
+            ->postJson(route('platform.cms.blog.store'), $payload);
 
         $response->assertStatus(201);
         $this->assertDatabaseHas('blog_posts', [
@@ -152,7 +152,7 @@ class BlogModuleTest extends TestCase
         ];
 
         $response = $this->actingAs($this->admin)
-            ->putJson("/api/v1/admin/cms/blog/{$post->id}", $payload);
+            ->putJson(route('platform.cms.blog.update', ['blogPost' => $post->id]), $payload);
 
         $response->assertStatus(200);
         $this->assertDatabaseHas('blog_posts', [
@@ -172,7 +172,7 @@ class BlogModuleTest extends TestCase
         ]);
 
         $response = $this->actingAs($this->admin)
-            ->postJson("/api/v1/admin/cms/blog/{$post->id}/publish");
+            ->postJson(route('platform.cms.blog.publish', ['blogPost' => $post->id]));
 
         $response->assertStatus(200);
         $this->assertTrue($post->fresh()->is_published);
@@ -181,6 +181,7 @@ class BlogModuleTest extends TestCase
 
     public function test_non_super_admin_cannot_create_blog_post(): void
     {
+        /** @var User $user */
         $user = User::factory()->create();
 
         $payload = [
@@ -201,7 +202,7 @@ class BlogModuleTest extends TestCase
         ];
 
         $this->actingAs($user)
-            ->postJson('/api/v1/admin/cms/blog', $payload)
+            ->postJson(route('platform.cms.blog.store'), $payload)
             ->assertForbidden();
     }
 }

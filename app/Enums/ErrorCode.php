@@ -43,6 +43,8 @@ enum ErrorCode: string
     case STR_002 = 'STR_002'; // Store Disabled
     case STR_003 = 'STR_003'; // Invalid store lifecycle transition
     case STORE_ACCESS_DENIED = 'STORE_ACCESS_DENIED';
+    case IDENTITY_DOMAIN_MISMATCH = 'IDENTITY_DOMAIN_MISMATCH';
+    case ACCESS_DENIED = 'ACCESS_DENIED';
 
     // --- Category (CAT) ---
     case CAT_001 = 'CAT_001'; // Category not found

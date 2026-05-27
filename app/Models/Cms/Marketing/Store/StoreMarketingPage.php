@@ -104,22 +104,39 @@ class StoreMarketingPage extends Model implements HasLocalizedContent, HasSeoMet
             ->where('published_at', '>', now());
     }
 
-    // ── SEO ──────────────────────────────────────────────────
+    // ── SEO Contract ───────────────────────────────────────────
 
     public function getSeoMetadata(): SeoMetaDTO
     {
-        $seo = $this->seo ?? [];
+        return SeoMetaDTO::fromArray($this->seo ?? []);
+    }
 
-        return new SeoMetaDTO(
-            title: (string) ($seo['title'] ?? $this->getLocalized('title')),
-            description: (string) ($seo['description'] ?? $this->getLocalized('excerpt')),
-            keywords: (string) ($seo['keywords'] ?? ''),
-            ogTitle: (string) ($seo['og_title'] ?? $seo['title'] ?? $this->getLocalized('title')),
-            ogDescription: (string) ($seo['og_description'] ?? $seo['description'] ?? $this->getLocalized('excerpt')),
-            ogImage: (string) ($seo['og_image'] ?? ''),
-            canonicalUrl: (string) ($seo['canonical_url'] ?? ''),
-            noindex: (bool) ($seo['noindex'] ?? false),
-            nofollow: (bool) ($seo['nofollow'] ?? false),
-        );
+    public function getSlugMap(): array
+    {
+        return $this->slug ?? [];
+    }
+
+    public function getRoutePrefix(): string
+    {
+        return ''; // Store marketing pages are typically at root or handled via tenant routing
+    }
+
+    // ── Helpers ────────────────────────────────────────────────
+
+    public function isPublished(): bool
+    {
+        return $this->status === MarketingPageStatusEnum::PUBLISHED
+            && ($this->published_at === null || $this->published_at->isPast());
+    }
+
+    public function isDraft(): bool
+    {
+        return $this->status === MarketingPageStatusEnum::DRAFT;
+    }
+
+    public function isScheduled(): bool
+    {
+        return $this->status === MarketingPageStatusEnum::SCHEDULED
+            && $this->published_at?->isFuture();
     }
 }

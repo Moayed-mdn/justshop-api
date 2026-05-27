@@ -138,9 +138,15 @@ class AuthorizationDriftReportService
     private function detectRoutePermissionMiddlewareDrift(): array
     {
         $findings = [];
-        $adminRoutePath = base_path('routes/api/v1/admin');
+        $merchantRoutePath = base_path('routes/api/v1/merchant');
+        $platformRoutePath = base_path('routes/api/v1/platform');
 
-        foreach ($this->phpFiles($adminRoutePath) as $file) {
+        foreach ([$merchantRoutePath, $platformRoutePath] as $routePath) {
+            if (!File::exists($routePath)) {
+                continue;
+            }
+
+            foreach ($this->phpFiles($routePath) as $file) {
             $lines = preg_split('/\R/', File::get($file)) ?: [];
             $statement = '';
             $statementStartLine = 1;
@@ -179,6 +185,7 @@ class AuthorizationDriftReportService
                 );
             }
         }
+    }
 
         return $findings;
     }
@@ -192,7 +199,8 @@ class AuthorizationDriftReportService
         $allowedPaths = [
             'app/Actions/Auth/',
             'app/DTOs/Auth/Bootstrap/',
-            'app/Http/Controllers/Api/Auth/AuthController.php',
+            'app/Http/Controllers/Api/Merchant/AuthController.php',
+            'app/Http/Controllers/Api/Storefront/Account/StorefrontAccountController.php',
             'app/Http/Resources/Auth/BootstrapResource.php',
             'app/Services/Auth/Bootstrap/',
             'app/Services/Auth/Drift/',

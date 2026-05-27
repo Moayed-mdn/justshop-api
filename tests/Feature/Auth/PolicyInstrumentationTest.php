@@ -21,7 +21,8 @@ class PolicyInstrumentationTest extends TestCase
         Log::spy();
 
         $user = User::factory()->merchant()->create();
-        $store = Store::factory()->for($user, 'owner')->create();
+        $otherUser = User::factory()->merchant()->create();
+        $store = Store::factory()->for($otherUser, 'owner')->create();
 
         $allowed = app(StorePolicy::class)->update($user, $store);
 

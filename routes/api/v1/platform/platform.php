@@ -17,33 +17,33 @@ use Illuminate\Support\Facades\Route;
  */
 
 // Platform dashboard & analytics
-Route::get('/dashboard', [\App\Http\Controllers\Api\Platform\PlatformDashboardController::class, 'index']);
-Route::get('/analytics', [\App\Http\Controllers\Api\Platform\PlatformAnalyticsController::class, 'index']);
+Route::get('/dashboard', [\App\Http\Controllers\Api\Platform\PlatformDashboardController::class, 'index'])->name('platform.dashboard');
+Route::get('/analytics', [\App\Http\Controllers\Api\Platform\PlatformAnalyticsController::class, 'index'])->name('platform.analytics');
 
 // Platform user management (NOT merchant user management)
-Route::prefix('/users')->group(function (): void {
-    Route::get('/', [\App\Http\Controllers\Api\Platform\PlatformUserController::class, 'index']);
-    Route::get('/{user}', [\App\Http\Controllers\Api\Platform\PlatformUserController::class, 'show']);
-    Route::patch('/{user}/suspend', [\App\Http\Controllers\Api\Platform\PlatformUserController::class, 'suspend']);
-    Route::patch('/{user}/activate', [\App\Http\Controllers\Api\Platform\PlatformUserController::class, 'activate']);
+Route::prefix('/users')->name('platform.users.')->group(function (): void {
+    Route::get('/', [\App\Http\Controllers\Api\Platform\PlatformUserController::class, 'index'])->name('index');
+    Route::get('/{user}', [\App\Http\Controllers\Api\Platform\PlatformUserController::class, 'show'])->name('show');
+    Route::patch('/{user}/suspend', [\App\Http\Controllers\Api\Platform\PlatformUserController::class, 'suspend'])->name('suspend');
+    Route::patch('/{user}/activate', [\App\Http\Controllers\Api\Platform\PlatformUserController::class, 'activate'])->name('activate');
 });
 
 // Platform store management (NOT merchant store management)
-Route::prefix('/stores')->group(function (): void {
-    Route::get('/', [\App\Http\Controllers\Api\Platform\PlatformStoreController::class, 'index']);
-    Route::get('/{store}', [\App\Http\Controllers\Api\Platform\PlatformStoreController::class, 'show']);
-    Route::patch('/{store}/suspend', [\App\Http\Controllers\Api\Platform\PlatformStoreController::class, 'suspend']);
-    Route::patch('/{store}/activate', [\App\Http\Controllers\Api\Platform\PlatformStoreController::class, 'activate']);
+Route::prefix('/stores')->name('platform.stores.')->group(function (): void {
+    Route::get('/', [\App\Http\Controllers\Api\Platform\PlatformStoreController::class, 'index'])->name('index');
+    Route::get('/{store}', [\App\Http\Controllers\Api\Platform\PlatformStoreController::class, 'show'])->name('show');
+    Route::patch('/{store}/suspend', [\App\Http\Controllers\Api\Platform\PlatformStoreController::class, 'suspend'])->name('suspend');
+    Route::patch('/{store}/activate', [\App\Http\Controllers\Api\Platform\PlatformStoreController::class, 'activate'])->name('activate');
 });
 
 // Platform audit logs
-Route::prefix('/audit')->group(function (): void {
-    Route::get('/logs', [\App\Http\Controllers\Api\Platform\PlatformAuditController::class, 'index']);
-    Route::get('/logs/{log}', [\App\Http\Controllers\Api\Platform\PlatformAuditController::class, 'show']);
+Route::prefix('/audit')->name('platform.audit.')->group(function (): void {
+    Route::get('/logs', [\App\Http\Controllers\Api\Platform\PlatformAuditController::class, 'index'])->name('index');
+    Route::get('/logs/{log}', [\App\Http\Controllers\Api\Platform\PlatformAuditController::class, 'show'])->name('show');
 });
 
 // Platform feature flags
-Route::prefix('/features')->group(function (): void {
-    Route::get('/', [\App\Http\Controllers\Api\Platform\PlatformFeatureController::class, 'index']);
-    Route::patch('/{feature}', [\App\Http\Controllers\Api\Platform\PlatformFeatureController::class, 'update']);
+Route::prefix('/features')->name('platform.features.')->group(function (): void {
+    Route::get('/', [\App\Http\Controllers\Api\Platform\PlatformFeatureController::class, 'index'])->name('index');
+    Route::patch('/{feature}', [\App\Http\Controllers\Api\Platform\PlatformFeatureController::class, 'update'])->name('update');
 });

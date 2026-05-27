@@ -262,7 +262,7 @@ class FrontendContractTest extends TestCase
         $response->assertStatus(403)
             ->assertJson([
                 'success' => false,
-                'code' => ErrorCode::STORE_ACCESS_DENIED->value,
+                'code' => ErrorCode::IDENTITY_DOMAIN_MISMATCH->value,
                 'redirect' => '/dashboard',
             ]);
     }

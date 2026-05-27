@@ -87,20 +87,20 @@ class AuthorityNormalizationTest extends TestCase
     /**
      * Verify that legacy platform routes now require platform.authority (which requires SUPER_ADMIN).
      */
-    public function test_legacy_platform_routes_require_authentication_and_authority(): void
+    public function test_platform_routes_require_authentication_and_authority(): void
     {
         // 1. Unauthenticated -> 401
-        $this->getJson('/api/v1/admin/leads')->assertStatus(401);
+        $this->getJson(route('platform.leads.index'))->assertStatus(401);
 
         // 2. Merchant (No platform authority) -> 403
         /** @var User $merchant */
         $merchant = User::factory()->merchant()->create();
-        $this->actingAs($merchant)->getJson('/api/v1/admin/leads')->assertStatus(403);
+        $this->actingAs($merchant)->getJson(route('platform.leads.index'))->assertStatus(403);
 
         // 3. Super Admin -> 200
         /** @var User $admin */
         $admin = User::factory()->superAdmin()->create();
-        $this->actingAs($admin)->getJson('/api/v1/admin/leads')->assertStatus(200);
+        $this->actingAs($admin)->getJson(route('platform.leads.index'))->assertStatus(200);
     }
 
     /**
@@ -113,7 +113,7 @@ class AuthorityNormalizationTest extends TestCase
 
         // Merchant authenticated via 'merchant' guard should NOT be allowed on platform routes
         $response = $this->actingAs($merchant, 'merchant')
-            ->getJson('/api/v1/admin/leads');
+            ->getJson(route('platform.leads.index'));
 
         $response->assertStatus(403);
     }

@@ -12,6 +12,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Support\System\FrontendUrlBuilder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Stripe\Checkout\Session;
@@ -221,8 +222,8 @@ class CheckoutService
             $sessionParams = [
                 'mode'        => 'payment',
                 'line_items'  => $lineItems,
-                'success_url' => config('app.frontend_url') . '/checkout/success?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url'  => config('app.frontend_url') . '/checkout/cancel',
+                'success_url' => FrontendUrlBuilder::build('/checkout/success', ['session_id' => '{CHECKOUT_SESSION_ID}']),
+                'cancel_url'  => FrontendUrlBuilder::build('/checkout/cancel'),
 
                 'shipping_address_collection' => [
                     'allowed_countries' => ['US', 'CA', 'GB', 'DE', 'FR', 'SA', 'AE', 'EG', 'JO'],

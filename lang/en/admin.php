@@ -2,6 +2,7 @@
 
 return [
     // User Management Messages
+    'user_created'   => 'User has been created and attached to the store.',
     'user_blocked'   => 'User has been blocked.',
     'user_unblocked' => 'User has been unblocked.',
     'user_deleted'   => 'User has been deleted.',

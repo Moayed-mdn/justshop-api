@@ -20,7 +20,7 @@ class EmailVerificationTest extends TestCase
         $user = User::factory()->pendingVerification()->create();
         
         $verificationUrl = URL::temporarySignedRoute(
-            'v1.users.auth.verification.verify',
+            'merchant.auth.verification.verify',
             now()->addMinutes(60),
             ['id' => $user->id, 'hash' => sha1($user->getEmailForVerification())]
         );
