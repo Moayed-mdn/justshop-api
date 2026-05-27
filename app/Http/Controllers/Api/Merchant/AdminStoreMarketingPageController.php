@@ -43,14 +43,26 @@ class AdminStoreMarketingPageController extends Controller
     {
         $this->authorize('create', [\App\Models\Cms\Marketing\Store\StoreMarketingPage::class, $store]);
 
-        // Basic implementation for now
-        $page = $this->repository->create(array_merge($request->all(), [
-            'store_id' => $store->id,
-            'created_by' => $request->user()?->id,
-            'updated_by' => $request->user()?->id,
-        ]));
+        $page = $this->repository->create(array_merge(
+            $request->except('sections'),
+            [
+                'store_id'   => $store->id,
+                'content'    => $request->input('content'),
+                'created_by' => $request->user()?->id,
+                'updated_by' => $request->user()?->id,
+            ]
+        ));
 
-        return $this->success($page, 'cms.page_created', 201);
+        $sections = $request->input('sections', []);
+        if (!empty($sections) && is_array($sections)) {
+            $this->repository->syncSections($page, $store->id, $sections);
+        }
+
+        return $this->success(
+            $this->repository->findByIdOrFail((int) $store->id, $page->id),
+            'cms.page_created',
+            201
+        );
     }
 
     public function update(Request $request, Store $store, int $id): JsonResponse

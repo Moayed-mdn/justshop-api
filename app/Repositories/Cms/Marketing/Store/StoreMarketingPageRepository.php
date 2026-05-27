@@ -6,6 +6,7 @@ namespace App\Repositories\Cms\Marketing\Store;
 
 use App\Exceptions\NotFoundException;
 use App\Models\Cms\Marketing\Store\StoreMarketingPage;
+use App\Models\Cms\Marketing\Store\StoreMarketingSection;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -93,6 +94,50 @@ class StoreMarketingPageRepository
     public function delete(StoreMarketingPage $page): void
     {
         $page->delete();
+    }
+
+    /**
+     * Sync sections for a page.
+     * Replaces all existing sections with the provided array.
+     */
+    public function syncSections(StoreMarketingPage $page, int $storeId, array $sections): void
+    {
+        $page->sections()->delete();
+
+        $allowed = ['section_type', 'identifier', 'sort_order', 'title', 'subtitle', 'content', 'settings', 'is_active'];
+
+        $now     = now()->toDateTimeString();
+        $records = [];
+
+        foreach ($sections as $index => $section) {
+            // Normalise: frontend may send 'type' instead of 'section_type'
+            if (!isset($section['section_type']) && isset($section['type'])) {
+                $section['section_type'] = $section['type'];
+            }
+            unset($section['type']);
+
+            // Cast JSON fields to strings for raw insert
+            foreach (['title', 'subtitle', 'content', 'settings'] as $jsonField) {
+                if (isset($section[$jsonField]) && is_array($section[$jsonField])) {
+                    $section[$jsonField] = json_encode($section[$jsonField]);
+                }
+            }
+
+            $records[] = array_merge(
+                array_intersect_key($section, array_flip($allowed)),
+                [
+                    'store_id'                => $storeId,
+                    'store_marketing_page_id' => $page->id,
+                    'sort_order'              => $section['sort_order'] ?? $index,
+                    'created_at'              => $now,
+                    'updated_at'              => $now,
+                ]
+            );
+        }
+
+        if (!empty($records)) {
+            StoreMarketingSection::insert($records);
+        }
     }
 
     public function slugExists(int $storeId, string $locale, string $slug, ?int $ignoreId = null): bool
