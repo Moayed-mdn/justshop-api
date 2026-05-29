@@ -120,3 +120,4 @@ Detailed project documentation is available in the `docs/` directory:
 - [EXECUTION_GOVERNANCE.md](./docs/EXECUTION_GOVERNANCE.md) - Governance and rollout rules.
 - [OBSERVABILITY.md](./docs/OBSERVABILITY.md) - Observability and telemetry guidance.
 - [exception-system.md](./docs/exception-system.md) - Error handling standards.
+- [reference/storefront-runtime.md](./docs/reference/storefront-runtime.md) - Storefront runtime API examples and integration notes.

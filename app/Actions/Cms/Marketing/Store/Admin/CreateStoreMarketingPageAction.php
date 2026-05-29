@@ -8,12 +8,14 @@ use App\DTOs\Cms\Marketing\Store\Admin\CreateStoreMarketingPageDTO;
 use App\Enums\Cms\Marketing\MarketingPageStatusEnum;
 use App\Models\Cms\Marketing\Store\StoreMarketingPage;
 use App\Repositories\Cms\Marketing\Store\StoreMarketingPageRepository;
+use App\Services\Storefront\Runtime\RuntimeCacheService;
 use Illuminate\Support\Facades\DB;
 
 class CreateStoreMarketingPageAction
 {
     public function __construct(
         private readonly StoreMarketingPageRepository $repository,
+        private readonly RuntimeCacheService $runtimeCacheService,
     ) {}
 
     public function execute(CreateStoreMarketingPageDTO $dto): StoreMarketingPage
@@ -42,6 +44,9 @@ class CreateStoreMarketingPageAction
 
             return $page;
         });
+
+        $page->loadMissing('store');
+        $this->runtimeCacheService->invalidateTenantArtifacts($page->store);
 
         return $this->repository->findByIdOrFail($dto->storeId, $page->id);
     }

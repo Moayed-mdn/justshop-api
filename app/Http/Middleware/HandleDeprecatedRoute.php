@@ -34,6 +34,24 @@ class HandleDeprecatedRoute
                 $suggestedRoute = str_replace('v1/admin/stores/', '/v1/merchant/stores/', $normalizedPath);
             } elseif (str_starts_with($normalizedPath, 'v1/admin/')) {
                 $suggestedRoute = str_replace('v1/admin/', '/v1/platform/', $normalizedPath);
+            } elseif ($normalizedPath === 'v1/store-slug/check') {
+                $suggestedRoute = '/v1/merchant/stores/slug-check';
+            } elseif ($normalizedPath === 'v1/stores') {
+                $suggestedRoute = '/v1/merchant/stores';
+            } elseif (preg_match('#^v1/stores/\d+(?:/provisioning-status)?$#', $normalizedPath) === 1) {
+                $suggestedRoute = str_replace('v1/stores/', '/v1/merchant/stores/', $normalizedPath);
+            } elseif ($normalizedPath === 'v1/users/bootstrap' || $normalizedPath === 'v1/users/auth/bootstrap') {
+                $suggestedRoute = '/v1/merchant/me';
+            } elseif ($normalizedPath === 'v1/users/sessions') {
+                $suggestedRoute = '/v1/merchant/sessions';
+            } elseif (preg_match('#^v1/users/sessions/[^/]+$#', $normalizedPath) === 1) {
+                $suggestedRoute = str_replace('v1/users/sessions/', '/v1/merchant/sessions/', $normalizedPath);
+            } elseif (str_starts_with($normalizedPath, 'v1/users/auth/')) {
+                $suggestedRoute = str_replace('v1/users/auth/', '/v1/merchant/auth/', $normalizedPath);
+            } elseif ($normalizedPath === 'v1/storefront/account/bootstrap') {
+                $suggestedRoute = '/v1/customer/bootstrap';
+            } elseif ($normalizedPath === 'v1/storefront/account/logout') {
+                $suggestedRoute = '/v1/customer/auth/logout';
             } elseif (str_starts_with($normalizedPath, 'v1/stores/')) {
                 $suggestedRoute = str_replace('v1/stores/', '/v1/storefront/stores/', $normalizedPath);
             } elseif (str_starts_with($normalizedPath, 'v1/storefront/account/')) {

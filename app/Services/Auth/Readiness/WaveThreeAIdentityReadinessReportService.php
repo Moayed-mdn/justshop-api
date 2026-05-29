@@ -37,9 +37,6 @@ class WaveThreeAIdentityReadinessReportService
             $hasIdentityRouteMetadata = collect($middleware)->contains(
                 fn (string $entry): bool => str_starts_with($entry, 'identity.route:'),
             );
-            $isEnforced = collect($middleware)->contains(
-                fn (string $entry): bool => str_ends_with($entry, ',enforce'),
-            );
 
             if (str_starts_with($uri, 'api/v1/users/')) {
                 $merchantUsersRoutes++;
@@ -136,9 +133,9 @@ class WaveThreeAIdentityReadinessReportService
                 'checkout_auth_model_remains_shared',
             ],
             'guard_split_preparation' => [
-                'status' => 'normalization_in_progress',
+                'status' => 'more_normalization_required',
                 'next_gate' => 'wave4_guard_split_preparation',
-                'reason' => 'Wave 3A has normalized identity context, route ownership, and session metadata. Phase 1 escalation hardening and Phase 2 storefront normalization are complete.',
+                'reason' => 'Wave 3A identity normalization has improved, but shared user authority, shared sessions, and guard split blockers still prevent Wave 4 readiness.',
             ],
         ];
     }

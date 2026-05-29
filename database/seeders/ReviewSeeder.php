@@ -6,14 +6,18 @@ namespace Database\Seeders;
 use App\Models\Product;
 use App\Models\Review;
 use App\Models\User;
+use Database\Seeders\Concerns\SeedsDemoStore;
 use Illuminate\Database\Seeder;
 
 class ReviewSeeder extends Seeder
 {
+    use SeedsDemoStore;
+
     public function run(): void
     {
+        $storeId = $this->demoStoreId();
         $users    = User::all();
-        $products = Product::all();
+        $products = Product::query()->where('store_id', $storeId)->get();
 
         if ($users->isEmpty() || $products->isEmpty()) {
             $this->command->info('❌ Need users and products seeded first!');

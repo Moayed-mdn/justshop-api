@@ -17,6 +17,7 @@ This directory is the canonical home for project documentation.
 - `auth/guides/onboarding-auth-store-lifecycle.md` - Backend lifecycle reference for auth, onboarding, and store flows.
 - `production-hardening-checklist.md` - Production readiness checklist.
 - `admin-api.md` - Admin API overview.
+- `reference/storefront-runtime.md` - Storefront runtime endpoint reference and example payloads for frontend integration.
 
 ## Organized Areas
 

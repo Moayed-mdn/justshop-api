@@ -19,8 +19,14 @@ class SetLocale
     {
         $supported = config('app.supported_locales', ['en', 'ar']);
         
-        // Priority: 1. Query Param (?locale=) 2. Header (locale:) 3. Accept-Language header
-        $locale = $request->query('locale') ?: $request->header('locale');
+        // Priority:
+        // 1. Query param (?locale=)
+        // 2. Runtime contract header (X-Storefront-Locale)
+        // 3. Legacy locale header
+        // 4. Accept-Language negotiation
+        $locale = $request->query('locale')
+            ?: $request->header('X-Storefront-Locale')
+            ?: $request->header('locale');
 
         if (!$locale || !in_array($locale, $supported)) {
             $locale = $request->getPreferredLanguage($supported);

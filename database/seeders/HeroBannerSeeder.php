@@ -2,15 +2,22 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\HeroBanner;
+use App\Models\Store;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class HeroBannerSeeder extends Seeder
 {
     public function run(): void
     {
         $now = Carbon::now();
+        $store = Store::query()->where('slug', 'merchant-store')->first();
+
+        if (!$store) {
+            $this->command?->warn('HeroBannerSeeder skipped because the default merchant store is missing.');
+            return;
+        }
 
         /*
         |--------------------------------------------------------------------------
@@ -18,7 +25,8 @@ class HeroBannerSeeder extends Seeder
         |--------------------------------------------------------------------------
         */
         $banner0 = HeroBanner::create([
-            'cat_url'       => '#',
+            'store_id'      => $store->id,
+            'cat_url'       => '/shop',
             'position'      => 0,
             'visual_type'   => 'image',
             'image_path'    => 'hero/hero-banner.jpg',
@@ -51,7 +59,8 @@ class HeroBannerSeeder extends Seeder
         |--------------------------------------------------------------------------
         */
         $banner1 = HeroBanner::create([
-            'cat_url'       => '/category/smartphones',
+            'store_id'      => $store->id,
+            'cat_url'       => '/shop',
             'position'      => 1,
             'visual_type'   => 'image',
             'image_path'    => 'hero/smartphones.jpg',
@@ -84,7 +93,8 @@ class HeroBannerSeeder extends Seeder
         |--------------------------------------------------------------------------
         */
         $banner2 = HeroBanner::create([
-            'cat_url'       => '/category/laptops',
+            'store_id'      => $store->id,
+            'cat_url'       => '/shop',
             'position'      => 2,
             'visual_type'   => 'gradient',
             'image_path'    => null,
@@ -117,7 +127,8 @@ class HeroBannerSeeder extends Seeder
         |--------------------------------------------------------------------------
         */
         $banner3 = HeroBanner::create([
-            'cat_url'       => '/category/accessories',
+            'store_id'      => $store->id,
+            'cat_url'       => '/shop',
             'position'      => 3,
             'visual_type'   => 'image',
             'image_path'    => 'hero/accessories.jpg',

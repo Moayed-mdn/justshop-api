@@ -33,6 +33,152 @@ Route::prefix('/v1/platform')
 
 // ── 2. MERCHANT CONTEXT ──────────────────────────────────────────────────
 // Tenant/store administration (Store owners and staff).
+Route::get('/v1/me', [\App\Http\Controllers\Api\Merchant\AuthController::class, 'bootstrap'])
+    ->middleware([
+        'web',
+        'auth:sanctum',
+        'identity.route:merchant_users,merchant,enforce',
+        'api.deprecated',
+    ])
+    ->name('merchant.me.legacy');
+
+Route::prefix('/v1/stores')
+    ->middleware([
+        'web',
+        'api.deprecated',
+    ])
+    ->group(function (): void {
+        Route::post('/', [\App\Http\Controllers\Api\Merchant\StoreController::class, 'create'])
+            ->middleware(['auth:sanctum', 'identity.route:merchant_users,merchant,enforce'])
+            ->name('merchant.stores.legacy.create');
+
+        Route::get('/{store}/provisioning-status', [\App\Http\Controllers\Api\Merchant\ProvisioningStatusController::class, '__invoke'])
+            ->middleware(['auth:sanctum', 'identity.route:merchant_users,merchant,enforce'])
+            ->name('merchant.stores.legacy.provisioning-status');
+
+        Route::middleware(['auth:sanctum', 'identity.route:merchant_admin,merchant,enforce', 'store.context'])
+            ->group(function (): void {
+                Route::get('/{store}', [\App\Http\Controllers\Api\Merchant\StoreController::class, 'show'])
+                    ->name('merchant.stores.legacy.show');
+
+                Route::put('/{store}', [\App\Http\Controllers\Api\Merchant\StoreController::class, 'update'])
+                    ->name('merchant.stores.legacy.update');
+            });
+    });
+
+Route::prefix('/v1/admin/stores/{store}')
+    ->middleware([
+        'web',
+        'api.deprecated',
+        'auth:sanctum',
+        'identity.route:merchant_admin,merchant,enforce',
+        'store.context',
+    ])
+    ->group(function (): void {
+        Route::prefix('/dashboard')->group(function (): void {
+            Route::get('/stats', [\App\Http\Controllers\Api\Merchant\AdminDashboardController::class, 'stats'])
+                ->middleware('permission:' . \App\Enums\PermissionEnum::DASHBOARD_VIEW)
+                ->name('merchant.admin.legacy.dashboard.stats');
+
+            Route::get('/recent-orders', [\App\Http\Controllers\Api\Merchant\AdminDashboardController::class, 'recentOrders'])
+                ->middleware('permission:' . \App\Enums\PermissionEnum::DASHBOARD_VIEW)
+                ->name('merchant.admin.legacy.dashboard.recent-orders');
+
+            Route::get('/top-products', [\App\Http\Controllers\Api\Merchant\AdminDashboardController::class, 'topProducts'])
+                ->middleware('permission:' . \App\Enums\PermissionEnum::DASHBOARD_VIEW)
+                ->name('merchant.admin.legacy.dashboard.top-products');
+        });
+
+        Route::prefix('/products')->group(function (): void {
+            Route::get('/', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'index'])
+                ->middleware('permission:' . \App\Enums\PermissionEnum::PRODUCT_VIEW)
+                ->name('merchant.admin.legacy.products.index');
+
+            Route::get('/{product}', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'show'])
+                ->middleware('permission:' . \App\Enums\PermissionEnum::PRODUCT_VIEW)
+                ->name('merchant.admin.legacy.products.show');
+
+            Route::post('/', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'store'])
+                ->middleware('permission:' . \App\Enums\PermissionEnum::PRODUCT_CREATE)
+                ->name('merchant.admin.legacy.products.store');
+
+            Route::patch('/{product}', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'update'])
+                ->middleware('permission:' . \App\Enums\PermissionEnum::PRODUCT_UPDATE)
+                ->name('merchant.admin.legacy.products.update');
+
+            Route::delete('/{product}', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'destroy'])
+                ->middleware('permission:' . \App\Enums\PermissionEnum::PRODUCT_DELETE)
+                ->name('merchant.admin.legacy.products.destroy');
+
+            Route::patch('/{product}/restore', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'restore'])
+                ->middleware('permission:' . \App\Enums\PermissionEnum::PRODUCT_RESTORE)
+                ->name('merchant.admin.legacy.products.restore');
+        });
+    });
+
+Route::prefix('/v1')
+    ->middleware([
+        'web',
+        'api.deprecated',
+    ])
+    ->group(function (): void {
+        Route::get('/store-slug/check', [\App\Http\Controllers\Api\Merchant\StoreSlugController::class, '__invoke'])
+            ->middleware(['auth:sanctum', 'identity.route:merchant_users,merchant,enforce'])
+            ->name('merchant.stores.legacy.slug-check');
+    });
+
+Route::prefix('/v1/users')
+    ->middleware([
+        'web',
+        'identity.route:merchant_users,merchant,observe',
+        'api.deprecated',
+    ])
+    ->group(function (): void {
+        Route::get('/bootstrap', [\App\Http\Controllers\Api\Merchant\AuthController::class, 'bootstrap'])
+            ->middleware(['auth:sanctum'])
+            ->name('merchant.users.legacy.bootstrap');
+
+        Route::prefix('/auth')
+            ->name('merchant.users.legacy.auth.')
+            ->group(function (): void {
+                Route::get('/bootstrap', [\App\Http\Controllers\Api\Merchant\AuthController::class, 'bootstrap'])
+                    ->middleware(['auth:sanctum'])
+                    ->name('bootstrap');
+
+                Route::post('/register', [\App\Http\Controllers\Api\Merchant\AuthController::class, 'register'])
+                    ->name('register');
+
+                Route::post('/login', [\App\Http\Controllers\Api\Merchant\AuthController::class, 'login'])
+                    ->middleware('throttle:login')
+                    ->name('login');
+
+                Route::post('/logout', [\App\Http\Controllers\Api\Merchant\AuthController::class, 'logout'])
+                    ->middleware(['auth:sanctum'])
+                    ->name('logout');
+
+                Route::post('/password/validate-token', [\App\Http\Controllers\Api\Merchant\PasswordResetController::class, 'validateToken'])
+                    ->name('password.validate-token');
+
+                Route::patch('/active-store', [\App\Http\Controllers\Api\Merchant\AuthController::class, 'updateActiveStore'])
+                    ->middleware(['auth:sanctum', 'verified'])
+                    ->name('active-store.update');
+            });
+
+        Route::prefix('/sessions')
+            ->middleware(['auth:sanctum'])
+            ->name('merchant.users.legacy.sessions.')
+            ->group(function (): void {
+                Route::get('/', [\App\Http\Controllers\Api\Merchant\SessionController::class, 'index'])
+                    ->name('index');
+
+                Route::delete('/', [\App\Http\Controllers\Api\Merchant\SessionController::class, 'destroyAll'])
+                    ->name('destroy-all');
+
+                Route::delete('/{id}', [\App\Http\Controllers\Api\Merchant\SessionController::class, 'destroy'])
+                    ->name('destroy');
+            });
+    });
+
 Route::prefix('/v1/merchant')
     ->middleware([
         'web',
@@ -59,6 +205,7 @@ Route::prefix('/v1/storefront')
         'identity.route:storefront_commerce,customer,enforce',
     ])
     ->group(function (): void {
+        require 'api/v1/storefront/runtime.php';
         require 'api/v1/storefront/products.php';
         require 'api/v1/storefront/cart.php';
         require 'api/v1/storefront/orders.php';
@@ -66,6 +213,22 @@ Route::prefix('/v1/storefront')
         require 'api/v1/storefront/checkout.php';
         require 'api/v1/storefront/search.php';
         require 'api/v1/storefront/homepage.php';
+    });
+
+Route::prefix('/v1/storefront/account')
+    ->middleware([
+        'web',
+        'api.deprecated',
+        'identity.route:customer_account,customer,enforce',
+    ])
+    ->group(function (): void {
+        Route::get('/bootstrap', [\App\Http\Controllers\Api\Storefront\Account\StorefrontAccountController::class, 'bootstrap'])
+            ->middleware(['auth:sanctum'])
+            ->name('customer.storefront.legacy.bootstrap');
+
+        Route::post('/logout', [\App\Http\Controllers\Api\Storefront\Account\StorefrontAccountController::class, 'logout'])
+            ->middleware(['auth:sanctum'])
+            ->name('customer.storefront.legacy.logout');
     });
 
 // ── 4. CUSTOMER CONTEXT ──────────────────────────────────────────────────
@@ -112,4 +275,3 @@ Route::middleware('identity.route:shared_transitional,merchant,observe')
 // CSRF Ownership Preparation
 Route::get('/sanctum/csrf-cookie', [CsrfOwnershipPreparationController::class, 'show'])
     ->middleware(['web', 'identity.route:shared_transitional,merchant,observe']);
-

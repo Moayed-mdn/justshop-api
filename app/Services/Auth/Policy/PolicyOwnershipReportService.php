@@ -179,9 +179,14 @@ class PolicyOwnershipReportService
         preg_match_all('/^use\s+([^;]+);$/m', $contents, $matches, PREG_SET_ORDER);
 
         foreach ($matches as $match) {
-            $fqcn = trim($match[1]);
-            $alias = class_basename(str_replace('\\\\', '\\', $fqcn));
-            $map[$alias] = str_replace('\\\\', '\\', $fqcn);
+            $import = trim($match[1]);
+            $parts = preg_split('/\s+as\s+/i', $import);
+            $fqcn = str_replace('\\\\', '\\', trim((string) $parts[0]));
+            $alias = isset($parts[1])
+                ? trim((string) $parts[1])
+                : class_basename($fqcn);
+
+            $map[$alias] = $fqcn;
         }
 
         return $map;
@@ -338,14 +343,22 @@ class PolicyOwnershipReportService
     {
         return match (true) {
             str_contains($controllerClass, '\\Admin\\Brand\\') => BrandPolicy::class,
+            str_ends_with($controllerClass, '\\AdminBrandController') => BrandPolicy::class,
             str_contains($controllerClass, '\\Admin\\Category\\') => CategoryPolicy::class,
+            str_ends_with($controllerClass, '\\AdminCategoryController') => CategoryPolicy::class,
             str_contains($controllerClass, '\\Admin\\Dashboard\\') => DashboardPolicy::class,
+            str_ends_with($controllerClass, '\\AdminDashboardController') => DashboardPolicy::class,
             str_contains($controllerClass, '\\Admin\\Order\\') => OrderPolicy::class,
+            str_ends_with($controllerClass, '\\AdminOrderController') => OrderPolicy::class,
             str_contains($controllerClass, '\\Admin\\Product\\') => ProductPolicy::class,
+            str_ends_with($controllerClass, '\\AdminProductController') => ProductPolicy::class,
             str_contains($controllerClass, '\\Admin\\Tag\\') => TagPolicy::class,
+            str_ends_with($controllerClass, '\\AdminTagController') => TagPolicy::class,
             str_contains($controllerClass, '\\Admin\\User\\') => MembershipPolicy::class,
+            str_ends_with($controllerClass, '\\AdminUserController') => MembershipPolicy::class,
             str_contains($controllerClass, '\\Api\\Address\\') => AddressPolicy::class,
             str_contains($controllerClass, '\\Cms\\Blog\\AdminBlogController') => BlogPostPolicy::class,
+            str_ends_with($controllerClass, '\\AdminBlogController') => BlogPostPolicy::class,
             str_contains($controllerClass, '\\PaymentMethod\\') => PaymentMethodPolicy::class,
             str_contains($controllerClass, '\\Store\\StoreController') => StorePolicy::class,
             default => null,
@@ -356,13 +369,21 @@ class PolicyOwnershipReportService
     {
         return match (true) {
             str_contains($controllerClass, '\\Admin\\Brand\\') => 'brand',
+            str_ends_with($controllerClass, '\\AdminBrandController') => 'brand',
             str_contains($controllerClass, '\\Admin\\Category\\') => 'category',
+            str_ends_with($controllerClass, '\\AdminCategoryController') => 'category',
             str_contains($controllerClass, '\\Admin\\Dashboard\\') => 'dashboard',
+            str_ends_with($controllerClass, '\\AdminDashboardController') => 'dashboard',
             str_contains($controllerClass, '\\Admin\\Order\\') => 'order',
+            str_ends_with($controllerClass, '\\AdminOrderController') => 'order',
             str_contains($controllerClass, '\\Admin\\Product\\') => 'product',
+            str_ends_with($controllerClass, '\\AdminProductController') => 'product',
             str_contains($controllerClass, '\\Admin\\Tag\\') => 'tag',
+            str_ends_with($controllerClass, '\\AdminTagController') => 'tag',
             str_contains($controllerClass, '\\Admin\\User\\') => 'membership_admin',
+            str_ends_with($controllerClass, '\\AdminUserController') => 'membership_admin',
             str_contains($controllerClass, '\\Cms\\Blog\\AdminBlogController') => 'cms_blog',
+            str_ends_with($controllerClass, '\\AdminBlogController') => 'cms_blog',
             str_contains($controllerClass, '\\Store\\StoreController') => 'store',
             default => null,
         };

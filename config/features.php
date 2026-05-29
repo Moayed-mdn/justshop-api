@@ -448,4 +448,22 @@ return [
         'introduced_wave' => 'wave6',
         'kill_switch' => true,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Storefront Runtime Rollout (Phase 7)
+    |--------------------------------------------------------------------------
+    */
+    'storefront.runtime.rollout.kill' => [
+        'default' => filter_var(env('STOREFRONT_RUNTIME_KILL_SWITCH', false), FILTER_VALIDATE_BOOL),
+        'owner' => 'frontend-team',
+        'business_owner' => 'product',
+        'description' => 'Instantly disable storefront runtime APIs for all tenants',
+        'blast_radius' => 'storefront-runtime',
+        'rollback_effect' => 'runtime APIs return runtime.rollout_disabled; catch-all routes 404',
+        'expiry_milestone' => 'storefront-runtime-rollout-complete',
+        'category' => 'storefront',
+        'introduced_wave' => 'storefront-runtime-phase7',
+        'kill_switch' => true,
+    ],
 ];

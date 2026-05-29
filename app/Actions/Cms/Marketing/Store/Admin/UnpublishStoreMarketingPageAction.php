@@ -8,6 +8,7 @@ use App\DTOs\Cms\Marketing\Store\Admin\PublishStoreMarketingPageDTO;
 use App\Enums\Cms\Marketing\MarketingPageStatusEnum;
 use App\Models\Cms\Marketing\Store\StoreMarketingPage;
 use App\Repositories\Cms\Marketing\Store\StoreMarketingPageRepository;
+use App\Services\Storefront\Runtime\RuntimeCacheService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -15,6 +16,7 @@ class UnpublishStoreMarketingPageAction
 {
     public function __construct(
         private readonly StoreMarketingPageRepository $repository,
+        private readonly RuntimeCacheService $runtimeCacheService,
     ) {}
 
     /**
@@ -38,6 +40,9 @@ class UnpublishStoreMarketingPageAction
                 'updated_by'   => $dto->updatedBy,
             ]);
         });
+
+        $page->loadMissing('store');
+        $this->runtimeCacheService->invalidateTenantArtifacts($page->store);
 
         return $page;
     }

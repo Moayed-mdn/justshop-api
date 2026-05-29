@@ -4,13 +4,17 @@
 namespace Database\Seeders;
 
 use App\Models\Brand;
+use Database\Seeders\Concerns\SeedsDemoStore;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 class BrandSeeder extends Seeder
 {
+    use SeedsDemoStore;
+
     public function run(): void
     {
+        $storeId = $this->demoStoreId();
         $brands = [
             ['name' => 'Apple',   'description' => 'Think different.'],
             ['name' => 'Samsung', 'description' => 'Inspire the world, create the future.'],
@@ -27,12 +31,14 @@ class BrandSeeder extends Seeder
 
         foreach ($brands as $brand) {
             Brand::firstOrCreate(
-                ['slug' => Str::slug($brand['name'])],
+                [
+                    'slug' => Str::slug($brand['name']),
+                    'store_id' => $storeId,
+                ],
                 [
                     'name'        => $brand['name'],
                     'description' => $brand['description'],
                     'is_active'   => true,
-                    'store_id'    => 1,
                 ]
             );
         }

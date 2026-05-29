@@ -63,7 +63,13 @@ class StoreSeeder extends Seeder
             ['slug' => 'merchant-store'],
             [
                 'name' => 'Merchant Store',
+                'domain' => 'demo.justshop.test',
                 'owner_id' => $merchantUser->id,
+                'currency' => 'USD',
+                'timezone' => 'UTC',
+                'is_active' => true,
+                'status' => 'active',
+                'setup_completed_at' => now(),
             ]
         );
 

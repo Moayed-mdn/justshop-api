@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Concerns\SeedsDemoStore;
 use App\Enums\Order\OrderStatusEnum;
 use App\Enums\Order\PaymentStatusEnum;
 use Illuminate\Database\Seeder;
@@ -13,14 +14,20 @@ use Illuminate\Support\Str;
 
 class FakeSalesSeeder extends Seeder
 {
+    use SeedsDemoStore;
+
     public function run(): void
     {
+        $storeId = $this->demoStoreId();
         // ===== CREATE USERS =====
         $userCount = 20;
         User::factory()->count($userCount)->create();
 
         // ===== GET ALL VARIANTS =====
-        $variants = ProductVariant::with('product')->get();
+        $variants = ProductVariant::query()
+            ->whereHas('product', fn ($query) => $query->where('store_id', $storeId))
+            ->with('product')
+            ->get();
 
         if ($variants->count() === 0) {
             $this->command->info('❌ No product variants found! Seed products first.');
@@ -40,7 +47,7 @@ class FakeSalesSeeder extends Seeder
                 'shipping_address_id' => null,
                 'billing_address_id'  => null,
                 'payment_method_id'   => null,
-                'store_id'            => 1,
+                'store_id'            => $storeId,
 
                 // totals are calculated later
                 'subtotal'            => 0,

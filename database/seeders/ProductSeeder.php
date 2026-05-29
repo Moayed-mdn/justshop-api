@@ -3,6 +3,7 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Concerns\SeedsDemoStore;
 use App\Models\Product;
 use App\Models\Brand;
 use App\Models\Category;
@@ -18,6 +19,8 @@ use Illuminate\Support\Str;
 
 class ProductSeeder extends Seeder
 {
+    use SeedsDemoStore;
+
     /**
      * Product name → Brand name mapping.
      */
@@ -188,13 +191,17 @@ class ProductSeeder extends Seeder
 
     public function run()
     {
+        $storeId = $this->demoStoreId();
         DB::beginTransaction();
 
         foreach ($this->productsConfig as $categoryName => $products) {
             $categoryName = trim($categoryName);
-            $category = Category::whereHas('translations', function ($query) use ($categoryName) {
-                $query->where('name', $categoryName);
-            })->first();
+            $category = Category::query()
+                ->where('store_id', $storeId)
+                ->whereHas('translations', function ($query) use ($categoryName) {
+                    $query->where('name', $categoryName)->where('locale', 'en');
+                })
+                ->first();
 
             if (!$category) {
                 $this->command->error("❌ Category '{$categoryName}' not found!");
@@ -209,23 +216,32 @@ class ProductSeeder extends Seeder
                 if (isset($this->productBrands[$productName])) {
                     $brand =$brandName = $this->productBrands[$productName];
                     $brand = Brand::updateOrCreate(
-                        ['name' => $brandName],
-                        ['slug' => Str::slug($brandName)]
+                        [
+                            'slug' => Str::slug($brandName),
+                            'store_id' => $storeId,
+                        ],
+                        [
+                            'name' => $brandName,
+                            'is_active' => true,
+                        ],
                     );
                     $brandId = $brand->id;
                 }
 
                 // ── Create product ─────────────────────────────
                 $productSlug = Str::slug($productName);
-                $product = Product::whereHas('translations', function ($query) use ($productSlug) {
-                    $query->where('slug', $productSlug)->where('locale', 'en');
-                })->first();
+                $product = Product::query()
+                    ->where('store_id', $storeId)
+                    ->whereHas('translations', function ($query) use ($productSlug) {
+                        $query->where('slug', $productSlug)->where('locale', 'en');
+                    })
+                    ->first();
 
                 if (!$product) {
                     $product = Product::create([
                         'category_id' => $category->id,
                         'brand_id'    => $brandId,
-                        'store_id'    => Store::first()->id,
+                        'store_id'    => $storeId,
                         'is_active'   => true,
                     ]);
 

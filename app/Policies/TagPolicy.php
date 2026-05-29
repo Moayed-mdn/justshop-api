@@ -6,11 +6,8 @@ namespace App\Policies;
 
 use App\Enums\PermissionEnum;
 use App\Enums\RoleEnum;
-use App\Enums\Store\StoreRoleEnum;
 use App\Models\Store;
 use App\Models\User;
-use App\Policies\Concerns\InteractsWithPolicyTelemetry;
-
 use App\Policies\Concerns\HasStoreMembership;
 
 class TagPolicy
@@ -59,11 +56,19 @@ class TagPolicy
 
     private function canView(User $user, Store $store): bool
     {
+        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
+            return true;
+        }
+
         return $this->isMember($user, $store) && $user->can(PermissionEnum::TAG_VIEW);
     }
 
     private function canManage(User $user, Store $store, string $permission): bool
     {
+        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
+            return true;
+        }
+
         return $this->isAdmin($user, $store) && $user->can($permission);
     }
 }

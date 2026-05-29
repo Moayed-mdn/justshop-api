@@ -2,15 +2,19 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Category;
+use Database\Seeders\Concerns\SeedsDemoStore;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
 
 class CategorySeeder extends Seeder
 {
+    use SeedsDemoStore;
+
     public function run()
     {
+        $storeId = $this->demoStoreId();
+        $sortOrder = 0;
         $tree = [
             'Electronics' => [
                 'en' => 'Electronics',
@@ -63,21 +67,24 @@ class CategorySeeder extends Seeder
             // Create parent category
             $parentCategory = Category::create([
                 'parent_id' => null,
-                'slug' => str::slug($parentData['en']),
-                'store_id' => 1
+                'slug' => Str::slug($parentData['en']),
+                'store_id' => $storeId,
+                'sort_order' => $sortOrder,
+                'is_active' => true,
             ]);
+            $sortOrder++;
 
             // Add translations for parent category
             $parentCategory->translations()->createMany([
                 [
                     'locale' => 'en',
                     'name' => $parentData['en'],
-                    'slug' => str::slug($parentData['en'])
+                    'slug' => Str::slug($parentData['en'])
                 ],
                 [
                     'locale' => 'ar',
                     'name' => $parentData['ar'],
-                    'slug' => str::slug($parentData['ar'])
+                    'slug' => Str::slug($parentData['ar'])
                 ]
             ]);
 
@@ -85,7 +92,9 @@ class CategorySeeder extends Seeder
             foreach ($parentData['children'] as $childKey => $childData) {
                 $childCategory = Category::create([
                     'parent_id' => $parentCategory->id,
-                    'slug' => str::slug($childData['en'])
+                    'slug' => Str::slug($childData['en']),
+                    'store_id' => $storeId,
+                    'is_active' => true,
                 ]);
 
                 // Add translations for child category
@@ -93,12 +102,12 @@ class CategorySeeder extends Seeder
                     [
                         'locale' => 'en',
                         'name' => $childData['en'],
-                        'slug' => str::slug($childData['en'])
+                        'slug' => Str::slug($childData['en'])
                     ],
                     [
                         'locale' => 'ar',
                         'name' => $childData['ar'],
-                        'slug' => str::slug($childData['ar'])
+                        'slug' => Str::slug($childData['ar'])
                     ]
                 ]);
             }

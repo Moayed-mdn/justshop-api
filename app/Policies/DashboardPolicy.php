@@ -40,6 +40,10 @@ class DashboardPolicy
 
     private function canView(User $user, Store $store): bool
     {
+        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
+            return true;
+        }
+
         return $user->stores()->where('store_id', $store->id)->exists()
             && $user->can(PermissionEnum::DASHBOARD_VIEW);
     }

@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::name('merchant.')
     ->prefix('stores/{store}')
+    ->withoutMiddleware(['identity.route:merchant_users,merchant,enforce'])
     ->middleware(['auth:sanctum', 'identity.route:merchant_admin,merchant,enforce', 'store.context'])
     ->group(function () {
 

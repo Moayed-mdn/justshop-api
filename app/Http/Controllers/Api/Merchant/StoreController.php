@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\Merchant;
 
 use App\Http\Controllers\Controller;
+use App\Exceptions\Store\UnauthorizedStoreAccessException;
 use App\Http\Requests\Store\CreateStoreRequest;
 use App\Http\Requests\Store\UpdateStoreRequest;
 use App\Http\Requests\Store\ValidateSlugRequest;
@@ -53,6 +54,7 @@ class StoreController extends Controller
     public function show(Request $request, int $store): JsonResponse
     {
         $storeModel = app('currentStore');
+        $this->guardStoreAccess($request, $storeModel);
         $this->authorize('view', $storeModel);
 
         return $this->success(new StoreResource($storeModel), 'Store retrieved successfully');
@@ -61,11 +63,28 @@ class StoreController extends Controller
     public function update(UpdateStoreRequest $request, int $store): JsonResponse
     {
         $storeModel = app('currentStore');
+        $this->guardStoreAccess($request, $storeModel);
         $this->authorize('update', $storeModel);
 
         $dto = UpdateStoreDTO::fromRequest($request, $store);
         $storeModel = $this->updateStoreAction->execute($dto);
 
         return $this->success(new StoreResource($storeModel), 'Store updated successfully');
+    }
+
+    private function guardStoreAccess(Request $request, Store $store): void
+    {
+        $user = $request->user();
+
+        if ($user === null) {
+            throw new UnauthorizedStoreAccessException();
+        }
+
+        $hasAccess = $store->owner_id === $user->id
+            || $user->stores()->whereKey($store->id)->exists();
+
+        if (!$hasAccess) {
+            throw new UnauthorizedStoreAccessException();
+        }
     }
 }
