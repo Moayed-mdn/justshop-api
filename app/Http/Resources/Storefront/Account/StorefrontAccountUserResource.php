@@ -19,8 +19,12 @@ class StorefrontAccountUserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
-            'avatar_url' => $this->getAvatarUrl(),
-            'is_email_verified' => $this->hasVerifiedEmail(),
+            'phone' => $this->phone,
+            'avatar' => $this->getAvatarUrl(),
+            'has_password' => !is_null($this->password),
+            'has_google_linked' => !is_null($this->google_id),
+            'email_verified_at' => $this->email_verified_at,
+            'created_at' => $this->created_at,
         ];
     }
 }
