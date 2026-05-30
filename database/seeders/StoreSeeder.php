@@ -62,7 +62,7 @@ class StoreSeeder extends Seeder
         $store = Store::updateOrCreate(
             ['slug' => 'merchant-store'],
             [
-                'name' => 'Merchant Store',
+                'name' => 'JustShop Demo',
                 'domain' => 'demo.justshop.test',
                 'owner_id' => $merchantUser->id,
                 'currency' => 'USD',

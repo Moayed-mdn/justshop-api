@@ -17,10 +17,21 @@ Route::name('customer.')
 
             Route::get('/email/verify/{id}/{hash}', 'verifyEmail')->name('verification.verify');
             Route::post('/email/resend', 'resendVerificationEmail')->name('email.resend')->middleware('throttle:verification-resend');
+
+            Route::prefix('password')
+                ->name('password.')
+                ->group(function (): void {
+                Route::post('/forgot', 'forgotPassword')->name('forgot');
+                Route::post('/reset', 'resetPassword')->name('reset');
+            });
         });
 
         Route::middleware(['auth:sanctum', 'identity.route:customer_account,customer,enforce'])->group(function (): void {
             Route::get('/me', 'me')->name('me');
             Route::get('/bootstrap', 'bootstrap')->name('bootstrap');
+            Route::put('/me/info', 'updateInfo')->name('me.update-info');
+            Route::put('/me/password', 'updatePassword')->name('me.update-password');
+            Route::post('/me/avatar', 'updateAvatar')->name('me.update-avatar');
+            Route::delete('/me', 'destroy')->name('me.destroy');
         });
     });

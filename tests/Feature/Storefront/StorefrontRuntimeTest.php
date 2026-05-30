@@ -120,6 +120,19 @@ class StorefrontRuntimeTest extends TestCase
             ->assertJsonPath('cache.tags.4', 'path:/about-us');
     }
 
+    public function test_category_page_payload_includes_product_grid_for_branch_categories(): void
+    {
+        [$store, $page, $category, $product] = $this->seedRuntimeCatalog();
+
+        $this->runtimeGet($store, '/api/v1/storefront/runtime/page/cat_' . $category->id, ['path' => '/products/category/shoes'])
+            ->assertOk()
+            ->assertJsonPath('data.page.pageType', 'category_page')
+            ->assertJsonPath('data.page.sections.1.type', 'product_grid')
+            ->assertJsonPath('data.page.sections.1.component', 'ProductGridSection')
+            ->assertJsonPath('data.page.sections.1.props.products.0.slug', 'red-shoe')
+            ->assertJsonPath('data.page.sections.1.props.products.0.name', 'Red Shoe');
+    }
+
     public function test_resolve_endpoint_supports_locale_prefixed_arabic_paths(): void
     {
         [$store, $page, $category, $product] = $this->seedRuntimeCatalog();
@@ -169,7 +182,7 @@ class StorefrontRuntimeTest extends TestCase
         $this->runtimeGet($store, '/api/v1/storefront/runtime/theme', ['path' => '/'])
             ->assertOk()
             ->assertJsonPath('data.branding.storeName', $store->name)
-            ->assertJsonPath('data.branding.tagline', 'Seeded tenant storefront powered by the runtime API');
+            ->assertJsonPath('data.branding.tagline', 'Electronics, fashion, and home essentials — curated for everyday shopping.');
     }
 
     public function test_preview_validation_and_preview_page_fetch_work_with_cache_bypass(): void

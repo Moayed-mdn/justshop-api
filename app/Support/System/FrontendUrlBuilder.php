@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Support\System;
 
+use Illuminate\Http\Request;
+
 /**
  * FrontendUrlBuilder
  * 
@@ -12,17 +14,20 @@ namespace App\Support\System;
  */
 class FrontendUrlBuilder
 {
+    private const SOCIAL_AUTH_FRONTEND_URL_SESSION_KEY = 'auth.social.frontend_url';
+
     /**
      * Build a full frontend URL.
      *
      * @param string $path The frontend path (e.g., '/dashboard' or 'reset-password')
      * @param array $query Optional query parameters
+     * @param string|null $baseUrl Optional frontend base URL override
      * @return string
      */
-    public static function build(string $path, array $query = []): string
+    public static function build(string $path, array $query = [], ?string $baseUrl = null): string
     {
-        $baseUrl = config('app.frontend_url', 'http://localhost:3000');
-        $url = rtrim($baseUrl, '/') . '/' . ltrim($path, '/');
+        $resolvedBaseUrl = self::normalizeBaseUrl($baseUrl);
+        $url = $resolvedBaseUrl . '/' . ltrim($path, '/');
         
         if (!empty($query)) {
             $url .= '?' . http_build_query($query);
@@ -45,5 +50,83 @@ class FrontendUrlBuilder
         $url = self::build($path);
         
         return $url . ($query ? '?' . $query : '');
+    }
+
+    /**
+     * Remember the originating storefront base URL for the social-auth flow.
+     */
+    public static function rememberSocialAuthFrontendUrl(Request $request): ?string
+    {
+        $frontendUrl = self::resolveRequestFrontendUrl($request);
+
+        if ($frontendUrl !== null && $request->hasSession()) {
+            $request->session()->put(self::SOCIAL_AUTH_FRONTEND_URL_SESSION_KEY, $frontendUrl);
+        }
+
+        return $frontendUrl;
+    }
+
+    /**
+     * Pull the previously remembered storefront base URL for the social-auth flow.
+     */
+    public static function pullSocialAuthFrontendUrl(Request $request): ?string
+    {
+        if (!$request->hasSession()) {
+            return null;
+        }
+
+        $frontendUrl = $request->session()->pull(self::SOCIAL_AUTH_FRONTEND_URL_SESSION_KEY);
+
+        return is_string($frontendUrl) ? self::normalizeAbsoluteUrl($frontendUrl) : null;
+    }
+
+    /**
+     * Resolve a storefront base URL from request headers.
+     */
+    public static function resolveRequestFrontendUrl(Request $request): ?string
+    {
+        $candidates = [
+            $request->headers->get('origin'),
+            $request->headers->get('referer'),
+        ];
+
+        foreach ($candidates as $candidate) {
+            $normalized = self::normalizeAbsoluteUrl($candidate);
+
+            if ($normalized !== null) {
+                return $normalized;
+            }
+        }
+
+        return null;
+    }
+
+    private static function normalizeBaseUrl(?string $baseUrl): string
+    {
+        return self::normalizeAbsoluteUrl($baseUrl)
+            ?? self::normalizeAbsoluteUrl((string) config('app.frontend_url', 'http://localhost:3000'))
+            ?? 'http://localhost:3000';
+    }
+
+    private static function normalizeAbsoluteUrl(?string $url): ?string
+    {
+        if (!is_string($url) || trim($url) === '') {
+            return null;
+        }
+
+        $trimmed = trim($url);
+        if (filter_var($trimmed, FILTER_VALIDATE_URL) === false) {
+            return null;
+        }
+
+        $scheme = parse_url($trimmed, PHP_URL_SCHEME);
+        $host = parse_url($trimmed, PHP_URL_HOST);
+        $port = parse_url($trimmed, PHP_URL_PORT);
+
+        if (!is_string($scheme) || !in_array($scheme, ['http', 'https'], true) || !is_string($host) || $host === '') {
+            return null;
+        }
+
+        return sprintf('%s://%s%s', $scheme, $host, $port !== null ? ':' . $port : '');
     }
 }

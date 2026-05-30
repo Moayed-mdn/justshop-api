@@ -10,6 +10,7 @@ Route::middleware(['auth:sanctum', 'store.context'])
     ->group(function () {
         Route::get('/', 'show')->name('show');
         Route::post('/items', 'addItem')->name('items.add');
+        Route::post('/bulk', 'bulkAdd')->name('bulk');
         Route::patch('/items/{itemId}', 'updateItem')->name('items.update');
         Route::delete('/items/{itemId}', 'removeItem')->name('items.remove');
         Route::delete('/clear', 'clear')->name('clear');

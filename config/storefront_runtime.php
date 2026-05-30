@@ -25,16 +25,20 @@ return [
         'theme' => 3600,
     ],
 
+    'category_product_limit' => 48,
+
     'theme' => [
         'tokens' => [
-            'color_primary' => '#2563eb',
+            'color_primary' => '#003D29',
             'color_surface' => '#ffffff',
-            'color_text' => '#111827',
-            'font_body' => 'Inter, sans-serif',
-            'font_heading' => 'Inter, sans-serif',
+            'color_text' => '#231F1E',
+            'font_body' => 'Inter, system-ui, sans-serif',
+            'font_heading' => 'Inter, system-ui, sans-serif',
         ],
         'radius' => 'md',
     ],
+
+    'home_featured_product_limit' => 8,
 
     'preview' => [
         'ttl_minutes' => 30,

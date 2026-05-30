@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             BrandSeeder::class,
             ProductSeeder::class,
             DemoStoreVolumeSeeder::class,
+            DemoStorePresentationSeeder::class,
             FakeSalesSeeder::class,
             ReviewSeeder::class,
             HeroBannerSeeder::class,

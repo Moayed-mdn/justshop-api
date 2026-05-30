@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api\Storefront;
 
 use App\Actions\Cart\AddToCartAction;
+use App\Actions\Cart\BulkAddToCartAction;
 use App\Actions\Cart\ClearCartAction;
 use App\Actions\Cart\GetCartAction;
 use App\Actions\Cart\RemoveCartItemAction;
 use App\Actions\Cart\UpdateCartItemAction;
 use App\DTOs\Cart\AddToCartDTO;
+use App\DTOs\Cart\BulkAddToCartDTO;
 use App\DTOs\Cart\ClearCartDTO;
 use App\DTOs\Cart\GetCartDTO;
 use App\DTOs\Cart\RemoveCartItemDTO;
@@ -26,6 +28,7 @@ class CartController extends Controller
     public function __construct(
         private GetCartAction $getCartAction,
         private AddToCartAction $addToCartAction,
+        private BulkAddToCartAction $bulkAddToCartAction,
         private UpdateCartItemAction $updateCartItemAction,
         private RemoveCartItemAction $removeCartItemAction,
         private ClearCartAction $clearCartAction,
@@ -46,6 +49,15 @@ class CartController extends Controller
     {
         $cart = $this->addToCartAction->execute(
             AddToCartDTO::fromRequest($request, $store)
+        );
+
+        return $this->success(new CartResource($cart));
+    }
+
+    public function bulkAdd(Request $request, int $store): JsonResponse
+    {
+        $cart = $this->bulkAddToCartAction->execute(
+            BulkAddToCartDTO::fromRequest($request, $store)
         );
 
         return $this->success(new CartResource($cart));

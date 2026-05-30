@@ -43,6 +43,8 @@ type ProductSearchResult {
     reviews_count: Int!
     category_name: String
     brand_name: String
+    product_variant_id: Int
+    max_quantity: Int
 }
 
 type CategorySearchResult {

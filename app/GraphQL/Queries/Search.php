@@ -82,6 +82,8 @@ class Search
                 'reviews_count' => $product->reviews_count,
                 'category_name' => $product->category?->translation($locale)?->name,
                 'brand_name'    => $product->brand?->name,
+                'product_variant_id' => $variant?->id,
+                'max_quantity' => $variant?->quantity,
                 '_relevance'    => $this->scoreProduct($product, $term, $locale),
             ];
         })

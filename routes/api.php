@@ -145,12 +145,23 @@ Route::prefix('/v1/users')
                     ->middleware(['auth:sanctum'])
                     ->name('bootstrap');
 
+                Route::get('/me', [\App\Http\Controllers\Api\Merchant\AuthController::class, 'me'])
+                    ->middleware(['auth:sanctum'])
+                    ->name('me');
+
                 Route::post('/register', [\App\Http\Controllers\Api\Merchant\AuthController::class, 'register'])
                     ->name('register');
 
                 Route::post('/login', [\App\Http\Controllers\Api\Merchant\AuthController::class, 'login'])
                     ->middleware('throttle:login')
                     ->name('login');
+
+                // Keep the legacy Google OAuth callback URL working for existing provider config.
+                Route::get('/google/redirect', [\App\Http\Controllers\Api\Merchant\SocialAuthController::class, 'redirect'])
+                    ->name('google.redirect');
+
+                Route::get('/google/callback', [\App\Http\Controllers\Api\Merchant\SocialAuthController::class, 'callback'])
+                    ->name('google.callback');
 
                 Route::post('/logout', [\App\Http\Controllers\Api\Merchant\AuthController::class, 'logout'])
                     ->middleware(['auth:sanctum'])

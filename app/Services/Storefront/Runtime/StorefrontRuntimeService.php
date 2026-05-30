@@ -203,8 +203,8 @@ class StorefrontRuntimeService
                 'branding' => [
                     'storeName' => $store->name,
                     'tagline' => $locale === 'ar'
-                        ? 'متجر تجريبي يعمل عبر واجهة تشغيل المتجر'
-                        : 'Seeded tenant storefront powered by the runtime API',
+                        ? 'تسوق الإلكترونيات والأزياء والمنزل — توصيل سريع وأسعار واضحة.'
+                        : 'Electronics, fashion, and home essentials — curated for everyday shopping.',
                 ],
                 'tokens' => [
                     'colorPrimary' => (string) config('storefront_runtime.theme.tokens.color_primary'),
@@ -382,7 +382,7 @@ class StorefrontRuntimeService
             ];
         }
 
-        if (preg_match('#^/products/category/(?P<slug>[^/]+)$#', $lookupPath, $matches) === 1) {
+        if (preg_match('#^/shop/category/(?P<slug>[^/]+)$#', $lookupPath, $matches) === 1) {
             $category = Category::findByLocalizedSlug($matches['slug'], $store->id, $locale);
 
             if ($category instanceof Category) {
@@ -404,7 +404,7 @@ class StorefrontRuntimeService
             return $this->notFoundRoute($path, $locale, 'category_page');
         }
 
-        if (preg_match('#^/products/(?P<slug>[^/]+)$#', $lookupPath, $matches) === 1) {
+        if (preg_match('#^/shop/product/(?P<slug>[^/]+)$#', $lookupPath, $matches) === 1) {
             $product = Product::query()
                 ->where('store_id', $store->id)
                 ->active()
@@ -686,6 +686,9 @@ class StorefrontRuntimeService
             ->orderBy('position')
             ->get();
 
+        $categoryGrid = $this->mapCategoryGridItems($store, $locale);
+        $featuredProducts = $this->mapFeaturedProductsForStore($store, $locale);
+
         return [
             'id' => 'home',
             'pageType' => 'home',
@@ -694,23 +697,53 @@ class StorefrontRuntimeService
             'locale' => $locale,
             'layout' => 'default',
             'status' => 'published',
-            'sections' => [[
-                'id' => 'home_hero',
-                'type' => 'hero_banner',
-                'component' => 'HeroSection',
-                'props' => [
-                    'items' => $heroBanners->map(fn (HeroBanner $banner): array => [
-                        'id' => (string) $banner->id,
-                        'headline' => (string) ($banner->getTranslation($locale)?->title ?? ''),
-                        'subheadline' => (string) ($banner->getTranslation($locale)?->subtitle ?? ''),
-                        'ctaText' => (string) ($banner->getTranslation($locale)?->cta_text ?? ''),
-                        'ctaUrl' => $banner->link_url ?? $banner->cat_url,
-                        'imageUrl' => $banner->image_url,
-                    ])->values()->all(),
+            'sections' => [
+                [
+                    'id' => 'home_hero',
+                    'type' => 'hero_banner',
+                    'component' => 'HeroSection',
+                    'props' => [
+                        'items' => $heroBanners->map(fn (HeroBanner $banner): array => [
+                            'id' => (string) $banner->id,
+                            'headline' => (string) ($banner->getTranslation($locale)?->title ?? ''),
+                            'subheadline' => (string) ($banner->getTranslation($locale)?->subtitle ?? ''),
+                            'ctaText' => (string) ($banner->getTranslation($locale)?->cta_text ?? ''),
+                            'ctaUrl' => $banner->link_url ?? $banner->cat_url,
+                            'imageUrl' => $banner->image_url,
+                        ])->values()->all(),
+                    ],
+                    'version' => '1',
+                    'dataState' => $heroBanners->isEmpty() ? 'empty' : 'ready',
                 ],
-                'version' => '1',
-                'dataState' => $heroBanners->isEmpty() ? 'empty' : 'ready',
-            ]],
+                [
+                    'id' => 'home_categories',
+                    'type' => 'category_grid',
+                    'component' => 'CategoryGridSection',
+                    'props' => [
+                        'title' => $locale === 'ar' ? 'تسوق حسب القسم' : 'Shop by department',
+                        'subtitle' => $locale === 'ar'
+                            ? 'اكتشف آلاف المنتجات عبر أقسام الإلكترونيات والأزياء والمنزل.'
+                            : 'Browse electronics, fashion, home, beauty, and sports in one place.',
+                        'categories' => $categoryGrid,
+                    ],
+                    'version' => '1',
+                    'dataState' => count($categoryGrid) > 0 ? 'ready' : 'empty',
+                ],
+                [
+                    'id' => 'home_featured',
+                    'type' => 'product_grid',
+                    'component' => 'ProductGridSection',
+                    'props' => [
+                        'title' => $locale === 'ar' ? 'منتجات مميزة' : 'Featured picks',
+                        'subtitle' => $locale === 'ar'
+                            ? 'أفضل العروض المختارة لهذا الأسبوع.'
+                            : 'Hand-picked bestsellers and new arrivals for this week.',
+                        'products' => $featuredProducts,
+                    ],
+                    'version' => '1',
+                    'dataState' => count($featuredProducts) > 0 ? 'ready' : 'empty',
+                ],
+            ],
             'seo' => $this->buildBasicSeo(
                 store: $store,
                 path: '/',
@@ -732,6 +765,8 @@ class StorefrontRuntimeService
         $title = (string) ($translation?->name ?? $category->slug);
         $path = $this->categoryPath($category, $locale);
 
+        $products = $this->mapRuntimeProductCardsForCategory($store, $category, $locale);
+
         return [
             'id' => $pageId,
             'pageType' => 'category_page',
@@ -740,19 +775,31 @@ class StorefrontRuntimeService
             'locale' => $locale,
             'layout' => 'catalog',
             'status' => 'published',
-            'sections' => [[
-                'id' => 'category_summary_' . $category->id,
-                'type' => 'category_summary',
-                'component' => 'CategorySummarySection',
-                'props' => [
-                    'categoryId' => $category->id,
-                    'name' => $title,
-                    'slug' => (string) ($translation?->slug ?? $category->slug),
-                    'breadcrumb' => $category->breadcrumb->values()->all(),
+            'sections' => [
+                [
+                    'id' => 'category_summary_' . $category->id,
+                    'type' => 'category_summary',
+                    'component' => 'CategorySummarySection',
+                    'props' => [
+                        'categoryId' => $category->id,
+                        'name' => $title,
+                        'slug' => (string) ($translation?->slug ?? $category->slug),
+                        'breadcrumb' => $category->breadcrumb->values()->all(),
+                    ],
+                    'version' => '1',
+                    'dataState' => 'ready',
                 ],
-                'version' => '1',
-                'dataState' => 'ready',
-            ]],
+                [
+                    'id' => 'category_products_' . $category->id,
+                    'type' => 'product_grid',
+                    'component' => 'ProductGridSection',
+                    'props' => [
+                        'products' => $products,
+                    ],
+                    'version' => '1',
+                    'dataState' => 'ready',
+                ],
+            ],
             'seo' => $this->buildBasicSeo(
                 store: $store,
                 path: $path,
@@ -774,6 +821,20 @@ class StorefrontRuntimeService
         $title = (string) ($translation?->name ?? 'Product');
         $path = $this->productPath($product, $locale);
 
+        $activeVariants = $product->activeVariants;
+        $allImages = $this->mapProductGallery($product);
+        
+        $attributes = [];
+        foreach ($activeVariants as $variant) {
+            foreach ($variant->optionValues as $optionValue) {
+                $optionName = $optionValue->option->name;
+                $attributes[$optionName][] = $optionValue->value;
+            }
+        }
+        foreach ($attributes as $key => $values) {
+            $attributes[$key] = array_values(array_unique($values));
+        }
+
         return [
             'id' => $pageId,
             'pageType' => 'product_page',
@@ -788,11 +849,29 @@ class StorefrontRuntimeService
                 'component' => 'ProductSummarySection',
                 'props' => [
                     'productId' => $product->id,
+                    'productVariantId' => $product->primaryVariant()?->id,
                     'name' => $title,
                     'slug' => (string) ($translation?->slug ?? ''),
                     'description' => (string) ($translation?->description ?? ''),
                     'price' => $product->primaryVariant()?->price,
                     'primaryImage' => $product->primary_image_url,
+                    'maxQuantity' => $product->primaryVariant()?->quantity,
+                    'attributes' => $attributes,
+                    'images' => $allImages,
+                    'variants' => $activeVariants->map(fn ($v) => [
+                        'id' => $v->id,
+                        'sku' => $v->sku,
+                        'price' => $v->price,
+                        'stock' => $v->quantity,
+                        'is_active' => $v->is_active ? 1 : 0,
+                        'attribute_map' => $v->optionValues->mapWithKeys(fn ($ov) => [$ov->option->name => $ov->value])->all(),
+                        'images' => $v->images->map(fn ($img) => [
+                            'id' => $img->id,
+                            'url' => $img->full_url,
+                            'alt_text' => $img->alt_text,
+                            'is_primary' => $img->is_primary ? 1 : 0,
+                        ])->all(),
+                    ])->all(),
                 ],
                 'version' => '1',
                 'dataState' => 'ready',
@@ -807,6 +886,41 @@ class StorefrontRuntimeService
             'publishedAt' => null,
             'updatedAt' => $product->updated_at?->toIso8601String() ?? now()->toIso8601String(),
         ];
+    }
+
+    private function mapProductGallery(Product $product): array
+    {
+        $images = collect();
+
+        // 1. Product-level images
+        if ($product->relationLoaded('images')) {
+            foreach ($product->images as $img) {
+                $images->push([
+                    'id' => $img->id,
+                    'url' => $img->full_url,
+                    'alt_text' => $img->alt_text,
+                    'is_primary' => $img->is_primary ? 1 : 0,
+                ]);
+            }
+        }
+
+        // 2. Variant-level images (if product images are empty)
+        if ($images->isEmpty() && $product->relationLoaded('activeVariants')) {
+            foreach ($product->activeVariants as $variant) {
+                if ($variant->relationLoaded('images')) {
+                    foreach ($variant->images as $img) {
+                        $images->push([
+                            'id' => $img->id,
+                            'url' => $img->full_url,
+                            'alt_text' => $img->alt_text,
+                            'is_primary' => $img->is_primary ? 1 : 0,
+                        ]);
+                    }
+                }
+            }
+        }
+
+        return $images->unique('url')->values()->all();
     }
 
     /**
@@ -996,19 +1110,124 @@ class StorefrontRuntimeService
 
     private function productCountForCategoryBranch(Store $store, Category $category): int
     {
-        $categoryIds = Category::query()
-            ->where('store_id', $store->id)
-            ->where(function ($query) use ($category): void {
-                $query->where('id', $category->id)
-                    ->orWhere('parent_id', $category->id);
-            })
-            ->pluck('id');
+        $category->loadMissing('descendants');
 
         return Product::query()
             ->where('store_id', $store->id)
             ->active()
-            ->whereIn('category_id', $categoryIds)
+            ->whereIn('category_id', $category->allDescendantIds())
             ->count();
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function mapRuntimeProductCardsForCategory(Store $store, Category $category, string $locale): array
+    {
+        $category->loadMissing('descendants');
+        $categoryIds = $category->allDescendantIds();
+        $previousLocale = app()->getLocale();
+
+        app()->setLocale($locale);
+
+        try {
+            $products = Product::query()
+                ->where('store_id', $store->id)
+                ->whereIn('category_id', $categoryIds)
+                ->active()
+                ->with(['translations', 'defaultVariant', 'images'])
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->limit((int) config('storefront_runtime.category_product_limit', 48))
+                ->get();
+        } finally {
+            app()->setLocale($previousLocale);
+        }
+
+        return $this->mapRuntimeProductCards($products, $store, $locale);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function mapFeaturedProductsForStore(Store $store, string $locale): array
+    {
+        $limit = (int) config('storefront_runtime.home_featured_product_limit', 8);
+        $previousLocale = app()->getLocale();
+
+        app()->setLocale($locale);
+
+        try {
+            $featured = Product::query()
+                ->where('store_id', $store->id)
+                ->active()
+                ->where('is_featured', true)
+                ->with(['translations', 'defaultVariant', 'images'])
+                ->orderBy('sort_order')
+                ->orderByDesc('id')
+                ->limit($limit)
+                ->get();
+
+            if ($featured->count() < min(4, $limit)) {
+                $featured = Product::query()
+                    ->where('store_id', $store->id)
+                    ->active()
+                    ->with(['translations', 'defaultVariant', 'images'])
+                    ->orderBy('sort_order')
+                    ->orderByDesc('id')
+                    ->limit($limit)
+                    ->get();
+            }
+        } finally {
+            app()->setLocale($previousLocale);
+        }
+
+        return $this->mapRuntimeProductCards($featured, $store, $locale);
+    }
+
+    /**
+     * @param \Illuminate\Support\Collection<int, Product>|\Illuminate\Database\Eloquent\Collection<int, Product> $products
+     * @return array<int, array<string, mixed>>
+     */
+    private function mapRuntimeProductCards($products, Store $store, string $locale): array
+    {
+        return $products->map(fn (Product $product): array => $this->mapRuntimeProductCard($product, $store, $locale))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function mapRuntimeProductCard(Product $product, Store $store, string $locale): array
+    {
+        $translation = $product->translation($locale);
+        $variant = $product->primaryVariant();
+
+        return [
+            'id' => $product->id,
+            'variantId' => $variant?->id ?? 0,
+            'name' => (string) ($translation?->name ?? ''),
+            'slug' => (string) ($translation?->slug ?? ''),
+            'image' => $this->resolvePublicImageUrl((string) ($product->primary_image_url ?? '')),
+            'price' => (float) ($variant?->price ?? 0),
+            'currency' => (string) ($store->currency ?? 'USD'),
+            'description' => (string) ($translation?->description ?? ''),
+            'categoryId' => $product->category_id,
+        ];
+    }
+
+    private function resolvePublicImageUrl(string $path): string
+    {
+        if ($path === '') {
+            return '';
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        return asset($path);
     }
 
     private function normalizeSectionType(string $type): string
@@ -1149,7 +1368,7 @@ class StorefrontRuntimeService
         $slug = $translation?->slug ?? $category->slug;
         $prefix = $locale === 'ar' ? '/ar' : '';
 
-        return $prefix . '/products/category/' . ltrim($slug, '/');
+        return $prefix . '/shop/category/' . ltrim($slug, '/');
     }
 
     private function productPath(Product $product, string $locale): string
@@ -1158,7 +1377,7 @@ class StorefrontRuntimeService
         $slug = $translation?->slug ?? '';
         $prefix = $locale === 'ar' ? '/ar' : '';
 
-        return $prefix . '/products/' . ltrim($slug, '/');
+        return $prefix . '/shop/product/' . ltrim($slug, '/');
     }
 
     private function tenantUrl(Store $store, string $path): string
@@ -1253,8 +1472,34 @@ class StorefrontRuntimeService
      */
     private function resolveRedirect(string $path, string $locale): ?array
     {
+        $prefix = $locale === 'ar' ? '/ar' : '';
+
+        // Legacy Category
+        if (preg_match('#^/products/category/(?P<slug>[^/]+)$#', $path, $matches) === 1) {
+            return [
+                'to' => $prefix . '/shop/category/' . ltrim($matches['slug'], '/'),
+                'status' => 301,
+            ];
+        }
+
+        // Legacy Product Detail (Deeply nested)
+        if (preg_match('#^/products/product/(?P<slug>[^/]+)$#', $path, $matches) === 1) {
+            return [
+                'to' => $prefix . '/shop/product/' . ltrim($matches['slug'], '/'),
+                'status' => 301,
+            ];
+        }
+
+        // Legacy Product Detail (Simple)
+        if (preg_match('#^/products/(?P<slug>[^/]+)$#', $path, $matches) === 1) {
+            return [
+                'to' => $prefix . '/shop/product/' . ltrim($matches['slug'], '/'),
+                'status' => 301,
+            ];
+        }
+
         return match ($path) {
-            '/old-about' => ['to' => $this->localizedRuntimePath('/about-us', $locale), 'status' => 301],
+            '/old-about' => ['to' => $prefix . '/about-us', 'status' => 301],
             '/products' => ['to' => $this->shopPath($locale), 'status' => 301],
             default => null,
         };
