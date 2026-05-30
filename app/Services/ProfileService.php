@@ -55,6 +55,12 @@ class ProfileService
     public function deleteAccount(User $user): void
     {
         $user->tokens()->delete();
+
+        // Release unique constraints so the user can re-register.
+        $user->email = 'deleted_' . $user->id . '_' . time() . '@deleted.local';
+        $user->google_id = null;
+        $user->save();
+
         $user->delete();
     }
 }
