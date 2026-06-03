@@ -21,7 +21,13 @@ class OrderRepository extends BaseRepository
     {
         return $this->scopedQuery()
             ->where('user_id', $userId)
-            ->with(['items', 'shippingAddress', 'billingAddress', 'paymentMethod'])
+            ->with([
+                'items.productVariant.product.translations',
+                'items.productVariant.images',
+                'shippingAddress',
+                'billingAddress',
+                'paymentMethod',
+            ])
             ->latest()
             ->paginate(10);
     }

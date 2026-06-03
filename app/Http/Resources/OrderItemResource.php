@@ -4,6 +4,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Resources\MissingValue;
 
 class OrderItemResource extends JsonResource
 {
@@ -12,10 +13,11 @@ class OrderItemResource extends JsonResource
         $variant = $this->whenLoaded('productVariant', function () {
             return $this->productVariant;
         });
+        $variantLoaded = !($variant instanceof MissingValue);
 
         // Get variant image if loaded
         $imageUrl = null;
-        if ($variant && $variant->relationLoaded('images')) {
+        if ($variantLoaded && $variant->relationLoaded('images')) {
             $primaryImage = $variant->images->where('is_primary', true)->first()
                 ?? $variant->images->first();
             $imageUrl = $primaryImage ? $primaryImage->full_url : null;
@@ -23,7 +25,7 @@ class OrderItemResource extends JsonResource
 
         // Get product slug if loaded
         $slug = null;
-        if ($variant && $variant->relationLoaded('product')) {
+        if ($variantLoaded && $variant->relationLoaded('product')) {
             $product = $variant->product;
             if ($product && $product->relationLoaded('translations')) {
                 $locale = app()->getLocale();
@@ -48,7 +50,7 @@ class OrderItemResource extends JsonResource
             'attributes'              => $this->attributes,
 
             // For reorder: is the variant still available?
-            'is_available'            => $variant ? ($variant->is_active && $variant->quantity > 0) : false,
+            'is_available'            => $variantLoaded ? ($variant->is_active && $variant->quantity > 0) : false,
         ];
     }
 }
