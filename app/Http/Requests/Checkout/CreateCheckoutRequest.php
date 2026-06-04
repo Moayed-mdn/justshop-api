@@ -15,7 +15,8 @@ class CreateCheckoutRequest extends FormRequest
     public function rules(): array
     {
         // If the user is logged in, cart is read from DB — no items needed
-        if ($this->user()) {
+        // Explicitly use 'sanctum' guard to handle both SPA session and Bearer token auth
+        if ($this->user('sanctum')) {
             return [];
         }
 

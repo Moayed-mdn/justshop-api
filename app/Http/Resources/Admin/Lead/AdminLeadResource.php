@@ -21,6 +21,7 @@ class AdminLeadResource extends JsonResource
             'message' => $this->message,
             'source_page' => $this->source_page,
             'metadata' => $this->metadata ?? [],
+            'resolution_notes' => $this->resolution_notes,
             'resolved_at' => $this->resolved_at?->toISOString(),
             'resolved_by' => $this->when(
                 $this->resolvedByUser !== null,

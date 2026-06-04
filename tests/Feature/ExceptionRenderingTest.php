@@ -20,7 +20,7 @@ class ExceptionRenderingTest extends TestCase
 
         // 3. Assert: Check your custom structure
         $response->assertStatus(422)
-            ->assertJson(['status' => false])
+            ->assertJson(['success' => false])
             ->assertJsonPath('message', fn ($message) => !empty($message))
             ->assertJsonStructure(['errors']);
     }
@@ -38,7 +38,7 @@ class ExceptionRenderingTest extends TestCase
         // 3. Assert: Verify the response matches your Throwable closure
         $response->assertStatus(500)
             ->assertJson([
-                'status' => false,
+                'success' => false,
                 'message' => 'Custom server error message',
             ]);
     }
@@ -50,7 +50,7 @@ class ExceptionRenderingTest extends TestCase
 
         $response->assertStatus(404)
             ->assertJson([
-                'status' => false,
+                'success' => false,
             ]);
     }
 }

@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::controller(CheckoutController::class)
     ->group(function () {
-        Route::middleware(['auth:sanctum', 'store.context'])
+        Route::middleware(['store.context'])
             ->prefix('stores/{store}/checkout')
             ->name('storefront.checkout.')
             ->group(function () {

@@ -63,13 +63,13 @@ class StorefrontRuntimeTest extends TestCase
             ->assertJsonPath('data.status', 'redirect')
             ->assertJsonPath('data.redirectTo', '/shop');
 
-        $this->runtimeGet($store, '/api/v1/storefront/runtime/resolve', ['path' => '/products/category/shoes'])
+        $this->runtimeGet($store, '/api/v1/storefront/runtime/resolve', ['path' => '/shop/category/shoes'])
             ->assertOk()
             ->assertJsonPath('data.status', 'matched')
             ->assertJsonPath('data.routeType', 'category_page')
             ->assertJsonPath('data.pageId', 'cat_' . $category->id);
 
-        $this->runtimeGet($store, '/api/v1/storefront/runtime/resolve', ['path' => '/products/red-shoe'])
+        $this->runtimeGet($store, '/api/v1/storefront/runtime/resolve', ['path' => '/shop/product/red-shoe'])
             ->assertOk()
             ->assertJsonPath('data.status', 'matched')
             ->assertJsonPath('data.routeType', 'product_page')
@@ -150,13 +150,13 @@ class StorefrontRuntimeTest extends TestCase
             ->assertJsonPath('data.routeType', 'marketing_page')
             ->assertJsonPath('data.pageId', 'mkt_' . $page->id);
 
-        $this->runtimeGet($store, '/api/v1/storefront/runtime/resolve', ['path' => '/ar/products/category/shoes-ar', 'locale' => 'ar'], 'ar')
+        $this->runtimeGet($store, '/api/v1/storefront/runtime/resolve', ['path' => '/ar/shop/category/shoes-ar', 'locale' => 'ar'], 'ar')
             ->assertOk()
             ->assertJsonPath('data.status', 'matched')
             ->assertJsonPath('data.routeType', 'category_page')
             ->assertJsonPath('data.pageId', 'cat_' . $category->id);
 
-        $this->runtimeGet($store, '/api/v1/storefront/runtime/resolve', ['path' => '/ar/products/red-shoe-ar', 'locale' => 'ar'], 'ar')
+        $this->runtimeGet($store, '/api/v1/storefront/runtime/resolve', ['path' => '/ar/shop/product/red-shoe-ar', 'locale' => 'ar'], 'ar')
             ->assertOk()
             ->assertJsonPath('data.status', 'matched')
             ->assertJsonPath('data.routeType', 'product_page')
@@ -622,8 +622,8 @@ class StorefrontRuntimeTest extends TestCase
         $cases = [
             ['pageId' => 'home', 'path' => '/', 'canonical' => 'https://' . $store->domain . '/'],
             ['pageId' => 'mkt_' . $page->id, 'path' => '/about-us', 'canonical' => 'https://' . $store->domain . '/about-us'],
-            ['pageId' => 'cat_' . $category->id, 'path' => '/products/category/shoes', 'canonical' => 'https://' . $store->domain . '/products/category/shoes'],
-            ['pageId' => 'prd_' . $product->id, 'path' => '/products/red-shoe', 'canonical' => 'https://' . $store->domain . '/products/red-shoe'],
+            ['pageId' => 'cat_' . $category->id, 'path' => '/shop/category/shoes', 'canonical' => 'https://' . $store->domain . '/shop/category/shoes'],
+            ['pageId' => 'prd_' . $product->id, 'path' => '/shop/product/red-shoe', 'canonical' => 'https://' . $store->domain . '/shop/product/red-shoe'],
         ];
 
         foreach ($cases as $case) {

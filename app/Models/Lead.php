@@ -32,6 +32,7 @@ class Lead extends Model
         'archived_at',
         'resolved_at',
         'resolved_by',
+        'resolution_notes',
     ];
 
     protected function casts(): array
@@ -43,6 +44,7 @@ class Lead extends Model
             'contacted_at' => 'datetime',
             'archived_at' => 'datetime',
             'resolved_at' => 'datetime',
+            'resolution_notes' => 'string',
         ];
     }
 

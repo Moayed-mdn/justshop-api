@@ -28,6 +28,7 @@ return [
     'email_already_verified' => 'Email is already verified.',
     'verification_email_sent' => 'Verification email sent.',
     'verification_link_invalid' => 'The verification link is invalid or has expired.',
+    'email_not_yet_verified' => 'Your email hasn\'t been verified yet. Please check your inbox and click the verification link.',
     'too_many_attempts' => 'Too many attempts. Please wait :seconds seconds.',
 
     // Bootstrap

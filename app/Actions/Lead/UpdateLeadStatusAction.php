@@ -27,6 +27,7 @@ class UpdateLeadStatusAction
                     ? ($lead->contacted_at ?? now())
                     : $lead->contacted_at,
                 'archived_at' => $dto->status === LeadStatusEnum::ARCHIVED ? now() : null,
+                'resolution_notes' => $dto->resolutionNotes ?? $lead->resolution_notes,
                 ...$this->resolveResolutionAttributes($lead, $dto->status, $dto->actorUserId),
             ]);
         });

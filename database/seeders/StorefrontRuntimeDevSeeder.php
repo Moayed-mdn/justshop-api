@@ -64,14 +64,26 @@ class StorefrontRuntimeDevSeeder extends Seeder
             [
                 'section_type' => 'hero',
                 'sort_order' => 0,
-                'title' => ['en' => 'Built for modern merchants', 'ar' => 'مصمم للتجار العصريين'],
+                'title' => ['en' => 'We exist to make great products accessible to everyone', 'ar' => 'نحن هنا لنجعل المنتجات الرائعة في متناول الجميع'],
                 'subtitle' => [
-                    'en' => 'This seeded storefront proves the Laravel runtime can render tenant-aware pages locally.',
-                    'ar' => 'يوضح هذا المتجر التجريبي أن واجهة لارافيل تستطيع عرض صفحات خاصة بالمستأجر محليًا.',
+                    'en' => 'Founded in 2019, JustShop started in a small warehouse with one obsession: deliver premium-quality goods at honest prices, fast.',
+                    'ar' => 'تأسست JustShop عام 2019 في مستودع صغير بهاجس واحد: تقديم منتجات عالية الجودة بأسعار عادلة وبسرعة.',
                 ],
                 'content' => [
-                    'en' => ['headline' => 'Built for modern merchants', 'subheadline' => 'Seeded runtime content for local development.'],
-                    'ar' => ['headline' => 'مصمم للتجار العصريين', 'subheadline' => 'محتوى تشغيل تجريبي للتطوير المحلي.'],
+                    'en' => [
+                        'headline' => 'We exist to make great products accessible to everyone',
+                        'subheadline' => 'Founded in 2019, JustShop started in a small warehouse with one obsession: deliver premium-quality goods at honest prices, fast.',
+                        'mission' => 'Our mission is simple — remove the gap between quality and affordability, and put the customer at the center of everything we do.',
+                        'cta_primary' => ['label' => 'Shop Best Sellers', 'url' => '/'],
+                        'cta_secondary' => ['label' => 'New Arrivals', 'url' => '/'],
+                    ],
+                    'ar' => [
+                        'headline' => 'نحن هنا لنجعل المنتجات الرائعة في متناول الجميع',
+                        'subheadline' => 'تأسست JustShop عام 2019 في مستودع صغير بهاجس واحد: تقديم منتجات عالية الجودة بأسعار عادلة وبسرعة.',
+                        'mission' => 'مهمتنا بسيطة — إزالة الفجوة بين الجودة والقدرة على تحمّل التكاليف، ووضع العميل في مركز كل ما نفعله.',
+                        'cta_primary' => ['label' => 'تسوق الأكثر مبيعًا', 'url' => '/'],
+                        'cta_secondary' => ['label' => 'وصل حديثًا', 'url' => '/'],
+                    ],
                 ],
                 'settings' => ['layout' => 'full'],
                 'is_active' => true,
@@ -81,29 +93,193 @@ class StorefrontRuntimeDevSeeder extends Seeder
         $aboutPage->sections()->updateOrCreate(
             [
                 'store_id' => $store->id,
-                'identifier' => 'features_about',
+                'identifier' => 'story_about',
             ],
             [
-                'section_type' => 'features',
+                'section_type' => 'content',
                 'sort_order' => 1,
-                'title' => ['en' => 'Runtime features', 'ar' => 'ميزات واجهة التشغيل'],
+                'title' => ['en' => 'Our Story', 'ar' => 'قصتنا'],
                 'subtitle' => [
-                    'en' => 'A minimal feature list that renders through the storefront runtime section registry.',
-                    'ar' => 'قائمة ميزات بسيطة يتم عرضها عبر سجل أقسام واجهة التشغيل.',
+                    'en' => 'From a garage idea to thousands of happy customers.',
+                    'ar' => 'من فكرة في مرآب إلى آلاف العملاء السعداء.',
                 ],
                 'content' => [
                     'en' => [
-                        'Tenant-aware routing',
-                        'SSR page payload delivery',
-                        'Runtime navigation and SEO',
+                        'body' => 'Our founders Sara and Khalid were tired of choosing between cheap products that break and expensive ones that drain your wallet. In 2019 they packed their savings, sourced directly from ethical manufacturers, and shipped their first 50 orders from a shared warehouse in Austin. Five years later JustShop ships over 8,000 orders a month across North America — still obsessing over every detail from material sourcing to the last-mile delivery experience.',
+                        'stats' => [
+                            ['value' => '8,000+', 'label' => 'Orders per month'],
+                            ['value' => '4.8★', 'label' => 'Average review score'],
+                            ['value' => '96%', 'label' => 'On-time delivery rate'],
+                            ['value' => '60-day', 'label' => 'Hassle-free returns'],
+                        ],
                     ],
                     'ar' => [
-                        'توجيه خاص بالمستأجر',
-                        'تسليم حمولة الصفحات عبر SSR',
-                        'تنقل وتهيئة SEO عبر واجهة التشغيل',
+                        'body' => 'سئم مؤسسانا سارة وخالد من الاختيار بين منتجات رخيصة تتكسر ومنتجات باهظة تستنزف الميزانية. في 2019 جمعا مدخراتهما وتعاقدا مباشرة مع مصنّعين أخلاقيين وأرسلا أول 50 طلب من مستودع مشترك في أوستن. بعد خمس سنوات، يشحن JustShop أكثر من 8,000 طلب شهريًا عبر أمريكا الشمالية.',
+                        'stats' => [
+                            ['value' => '+8,000', 'label' => 'طلب شهريًا'],
+                            ['value' => '4.8★', 'label' => 'متوسط تقييم العملاء'],
+                            ['value' => '96%', 'label' => 'معدل التوصيل في الموعد'],
+                            ['value' => '60 يومًا', 'label' => 'إرجاع بدون متاعب'],
+                        ],
                     ],
                 ],
-                'settings' => ['layout' => 'grid'],
+                'settings' => ['layout' => 'split'],
+                'is_active' => true,
+            ],
+        );
+
+        $aboutPage->sections()->updateOrCreate(
+            [
+                'store_id' => $store->id,
+                'identifier' => 'quality_about',
+            ],
+            [
+                'section_type' => 'features',
+                'sort_order' => 2,
+                'title' => ['en' => 'Quality you can verify', 'ar' => 'جودة يمكنك التحقق منها'],
+                'subtitle' => [
+                    'en' => 'We do not just say our products are great — we prove it.',
+                    'ar' => 'لا نقول فحسب إن منتجاتنا رائعة — بل نثبت ذلك.',
+                ],
+                'content' => [
+                    'en' => [
+                        ['icon' => 'shield-check', 'title' => 'Direct-source manufacturing', 'body' => 'Every product is sourced directly from ISO-certified factories. No middlemen, no markups, no compromises.'],
+                        ['icon' => 'flask', 'title' => '3-stage quality testing', 'body' => 'Products go through factory QC, an independent third-party lab, and a final in-house inspection before they ship.'],
+                        ['icon' => 'certificate', 'title' => 'Safety certified', 'body' => 'All applicable products carry CE, FCC, or ASTM certifications depending on category.'],
+                        ['icon' => 'leaf', 'title' => 'Sustainable packaging', 'body' => '100% recyclable packaging since 2022. We offset remaining carbon through verified reforestation credits.'],
+                        ['icon' => 'cpu', 'title' => 'AI-assisted fit & match', 'body' => 'Our AI tools help you find the right size, style, or spec — transparently, with no personal data stored.'],
+                        ['icon' => 'users', 'title' => 'Real customer reviews', 'body' => 'Every review is from a verified purchaser. We do not filter negatives — you see everything.'],
+                    ],
+                    'ar' => [
+                        ['icon' => 'shield-check', 'title' => 'تصنيع من المصدر المباشر', 'body' => 'كل منتج مصدره مباشرة من مصانع معتمدة بـ ISO. بلا وسطاء، بلا هوامش مبالغ فيها.'],
+                        ['icon' => 'flask', 'title' => 'اختبار جودة بثلاث مراحل', 'body' => 'تخضع المنتجات لمراقبة جودة المصنع، ومختبر طرف ثالث مستقل، وفحص داخلي نهائي.'],
+                        ['icon' => 'certificate', 'title' => 'معتمد سلامة', 'body' => 'جميع المنتجات المعنية تحمل شهادات CE أو FCC أو ASTM حسب الفئة.'],
+                        ['icon' => 'leaf', 'title' => 'تغليف مستدام', 'body' => 'تغليف قابل للتدوير 100% منذ 2022. نعوّض الكربون المتبقي عبر ائتمانات إعادة التشجير.'],
+                        ['icon' => 'cpu', 'title' => 'مطابقة بمساعدة الذكاء الاصطناعي', 'body' => 'تساعدك أدواتنا الذكية على اختيار المقاس أو الطراز المناسب — بشفافية كاملة ودون حفظ بيانات شخصية.'],
+                        ['icon' => 'users', 'title' => 'تقييمات حقيقية من عملاء موثّقين', 'body' => 'كل تقييم صادر من مشترٍ موثّق. لا نحذف السلبيات — ترى كل شيء.'],
+                    ],
+                ],
+                'settings' => ['layout' => 'grid', 'columns' => 3],
+                'is_active' => true,
+            ],
+        );
+
+        $aboutPage->sections()->updateOrCreate(
+            [
+                'store_id' => $store->id,
+                'identifier' => 'customer_promise_about',
+            ],
+            [
+                'section_type' => 'content',
+                'sort_order' => 3,
+                'title' => ['en' => 'Our promise to you', 'ar' => 'وعدنا لك'],
+                'subtitle' => [
+                    'en' => 'Customer service is not a department — it is our entire company.',
+                    'ar' => 'خدمة العملاء ليست قسمًا — إنها شركتنا بأكملها.',
+                ],
+                'content' => [
+                    'en' => [
+                        'promises' => [
+                            ['title' => '< 2 hr response time', 'body' => 'Our support team replies within 2 hours on business days, and within 6 hours on weekends.'],
+                            ['title' => '60-day no-questions returns', 'body' => 'Changed your mind? Received a defect? Ship it back within 60 days for a full refund — no forms, no arguing.'],
+                            ['title' => 'Price match guarantee', 'body' => 'Find the same product cheaper on Amazon or any major retailer? We will match it, same day.'],
+                            ['title' => 'Order protection', 'body' => 'Every order is insured against loss, damage, or delay. If something goes wrong we reship or refund — automatically.'],
+                        ],
+                    ],
+                    'ar' => [
+                        'promises' => [
+                            ['title' => 'وقت استجابة أقل من ساعتين', 'body' => 'يرد فريق الدعم خلال ساعتين في أيام العمل، وخلال 6 ساعات في عطلات نهاية الأسبوع.'],
+                            ['title' => 'إرجاع 60 يومًا بلا أسئلة', 'body' => 'غيّرت رأيك؟ استلمت منتجًا معيبًا؟ أعده خلال 60 يومًا لاسترداد كامل المبلغ.'],
+                            ['title' => 'ضمان مطابقة السعر', 'body' => 'وجدت المنتج بسعر أرخص في أمازون أو أي متجر كبير؟ سنطابق السعر في نفس اليوم.'],
+                            ['title' => 'حماية الطلبات', 'body' => 'كل طلب مؤمّن ضد الفقدان والتلف والتأخير. إذا حدث خطأ نعيد الشحن أو نسترد المبلغ تلقائيًا.'],
+                        ],
+                    ],
+                ],
+                'settings' => ['layout' => 'list'],
+                'is_active' => true,
+            ],
+        );
+
+        $aboutPage->sections()->updateOrCreate(
+            [
+                'store_id' => $store->id,
+                'identifier' => 'sustainability_about',
+            ],
+            [
+                'section_type' => 'content',
+                'sort_order' => 4,
+                'title' => ['en' => 'Sustainability — verified, not vague', 'ar' => 'الاستدامة — موثّقة لا مجرد شعار'],
+                'subtitle' => [
+                    'en' => '2026 shoppers deserve real data, not marketing copy.',
+                    'ar' => 'يستحق المتسوقون في 2026 بيانات حقيقية، لا نصوصًا تسويقية.',
+                ],
+                'content' => [
+                    'en' => [
+                        'metrics' => [
+                            ['label' => 'Carbon offset', 'value' => '100%', 'note' => 'Verified via Gold Standard credits'],
+                            ['label' => 'Recyclable packaging', 'value' => '100%', 'note' => 'FSC-certified materials since 2022'],
+                            ['label' => 'Ethical factories', 'value' => '34', 'note' => 'All SA8000-audited suppliers'],
+                            ['label' => 'Trees planted in 2025', 'value' => '12,400', 'note' => 'Via One Tree Planted partnership'],
+                        ],
+                        'disclosure' => 'We use AI to optimise delivery routes (reducing fuel use by ~18%) and for personalised product recommendations. No biometric data is ever collected or stored.',
+                    ],
+                    'ar' => [
+                        'metrics' => [
+                            ['label' => 'تعويض الكربون', 'value' => '100%', 'note' => 'موثّق عبر ائتمانات Gold Standard'],
+                            ['label' => 'تغليف قابل للتدوير', 'value' => '100%', 'note' => 'مواد معتمدة FSC منذ 2022'],
+                            ['label' => 'مصانع أخلاقية', 'value' => '34', 'note' => 'جميع الموردين خاضعون لتدقيق SA8000'],
+                            ['label' => 'شجرة مزروعة في 2025', 'value' => '12,400', 'note' => 'عبر شراكة One Tree Planted'],
+                        ],
+                        'disclosure' => 'نستخدم الذكاء الاصطناعي لتحسين مسارات التوصيل (تخفيض استهلاك الوقود ~18%) وللتوصيات المخصصة. لا يتم جمع أي بيانات بيومترية أو تخزينها.',
+                    ],
+                ],
+                'settings' => ['layout' => 'metrics'],
+                'is_active' => true,
+            ],
+        );
+
+        $aboutPage->sections()->updateOrCreate(
+            [
+                'store_id' => $store->id,
+                'identifier' => 'cta_about',
+            ],
+            [
+                'section_type' => 'cta',
+                'sort_order' => 5,
+                'title' => ['en' => 'Ready to shop smarter?', 'ar' => 'مستعد للتسوق بذكاء؟'],
+                'subtitle' => [
+                    'en' => 'Join 200,000+ customers who switched to JustShop. Follow our store for VIP-only deals and early access to new drops.',
+                    'ar' => 'انضم إلى أكثر من 200,000 عميل اختاروا JustShop. تابع متجرنا للحصول على عروض VIP وأسبقية الوصول إلى المنتجات الجديدة.',
+                ],
+                'content' => [
+                    'en' => [
+                        'ctas' => [
+                            ['label' => 'Shop Best Sellers', 'url' => '/', 'style' => 'primary'],
+                            ['label' => 'New Arrivals', 'url' => '/', 'style' => 'secondary'],
+                            ['label' => 'Follow Our Store', 'url' => '/', 'style' => 'outline'],
+                        ],
+                        'trust_badges' => [
+                            'Free shipping over $49',
+                            '60-day returns',
+                            'Price match guarantee',
+                            'Secure checkout',
+                        ],
+                    ],
+                    'ar' => [
+                        'ctas' => [
+                            ['label' => 'تسوق الأكثر مبيعًا', 'url' => '/', 'style' => 'primary'],
+                            ['label' => 'وصل حديثًا', 'url' => '/', 'style' => 'secondary'],
+                            ['label' => 'تابع متجرنا', 'url' => '/', 'style' => 'outline'],
+                        ],
+                        'trust_badges' => [
+                            'شحن مجاني فوق $49',
+                            'إرجاع 60 يومًا',
+                            'ضمان مطابقة السعر',
+                            'دفع آمن',
+                        ],
+                    ],
+                ],
+                'settings' => ['layout' => 'centered'],
                 'is_active' => true,
             ],
         );

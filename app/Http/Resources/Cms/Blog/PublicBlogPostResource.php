@@ -19,7 +19,7 @@ class PublicBlogPostResource extends JsonResource
 
         $locale = app()->getLocale();
         $fallback = config('content.default_locale', 'en');
-        $isShowRoute = $request->route()?->getName() === 'public.blog.show';
+        $isShowRoute = $request->route()?->getName() === 'public.cms.blog.show';
 
         /** @var SeoResolutionService $seoService */
         $seoService = app(SeoResolutionService::class);

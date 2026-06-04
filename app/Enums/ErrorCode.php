@@ -60,4 +60,7 @@ enum ErrorCode: string
 
     // --- Lead (LED) ---
     case LED_001 = 'LED_001'; // Lead not found
+
+    // --- User (USR) ---
+    case USR_001 = 'USR_001'; // User not found
 }

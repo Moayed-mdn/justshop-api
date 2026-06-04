@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Repositories\Product;
 
 use App\Models\Product;
+use App\Models\ProductTranslation;
 use App\Repositories\BaseRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -114,6 +115,70 @@ class ProductRepository extends BaseRepository
     public function paginate(Builder $query, int $perPage): LengthAwarePaginator
     {
         return $query->paginate($perPage);
+    }
+
+    public function search(string $term, int $limit): Collection
+    {
+        return $this->scopedQuery()
+            ->active()
+            ->where(function (Builder $q) use ($term) {
+                $q->whereHas('translations', function (Builder $q2) use ($term) {
+                    $q2->where('name', 'LIKE', "%{$term}%")
+                       ->orWhere('description', 'LIKE', "%{$term}%");
+                })
+                ->orWhereHas('brand', function (Builder $q2) use ($term) {
+                    $q2->where('name', 'LIKE', "%{$term}%");
+                })
+                ->orWhereHas('tags', function (Builder $q2) use ($term) {
+                    $q2->where('name', 'LIKE', "%{$term}%");
+                });
+            })
+            ->with([
+                'translations',
+                'defaultVariant.images',
+                'variants' => fn ($q) => $q->where('is_active', true)->with('images'),
+                'brand',
+                'category.translations',
+                'approvedReviews',
+            ])
+            ->limit($limit)
+            ->get();
+    }
+
+    public function searchForAutocomplete(string $query, string $locale, int $limit): Collection
+    {
+        $storeId = $this->getCurrentStoreId();
+        $term = str_replace(['%', '_', '\\'], ['\\%', '\\_', '\\\\'], $query);
+
+        $productIds = ProductTranslation::where('locale', $locale)
+            ->where('name', 'LIKE', "%{$term}%")
+            ->whereHas('product', fn (Builder $q) => $q
+                ->where('store_id', $storeId)
+                ->active()
+            )
+            ->orderByRaw("
+                CASE
+                    WHEN name = ? THEN 1
+                    WHEN name LIKE ? THEN 2
+                    ELSE 3
+                END
+            ", [$query, "{$query}%"])
+            ->limit($limit)
+            ->pluck('product_id');
+
+        if ($productIds->isEmpty()) {
+            return new Collection();
+        }
+
+        return $this->scopedQuery()
+            ->whereIn('id', $productIds)
+            ->with([
+                'translations',
+                'defaultVariant.images',
+                'variants' => fn ($q) => $q->where('is_active', true)->with('images'),
+                'approvedReviews',
+            ])
+            ->get();
     }
 
     public function findById(int $id, int $storeId): ?Product

@@ -34,6 +34,10 @@ return [
             // Always set the `Accept: application/json` header.
             Nuwave\Lighthouse\Http\Middleware\AcceptJson::class,
 
+            // Resolves tenant from X-Tenant-Id header and binds app('storeId')
+            // for store-scoped queries. Silently passes through if header is absent.
+            \App\Http\Middleware\ResolveStoreFromHeader::class,
+
             // Logs in a user if they are authenticated. In contrast to Laravel's 'auth'
             // middleware, this delegates auth and permission checks to the field level.
             Nuwave\Lighthouse\Http\Middleware\AttemptAuthentication::class,

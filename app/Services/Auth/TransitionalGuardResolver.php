@@ -20,7 +20,7 @@ class TransitionalGuardResolver
         $intendedGuard = $this->determineIntendedGuard($context);
         
         // Step 3 Hardening: All routes except SHARED_TRANSITIONAL MUST use explicit guards.
-        $isFallback = $intendedGuard === 'web' && $context->routeDomain !== \App\Enums\Auth\RouteDomainEnum::SHARED_TRANSITIONAL;
+        $isFallback = $intendedGuard === 'web' && $context->routeDomain !== \App\Enums\Auth\RouteDomainEnum::SHARED_TRANSITIONAL->value;
 
         if ($isFallback) {
             Log::error('auth.guard.illegal_fallback_detected', [

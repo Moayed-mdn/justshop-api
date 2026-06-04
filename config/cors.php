@@ -18,9 +18,13 @@ return [
         'https://app.laratenant.local',
         'http://my-store.laratenant.local',
         'https://my-store.laratenant.local',
+        'http://demo.justshop.test:3000',
+        'https://demo.justshop.test:3000',
     ],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '#^https?://[a-z0-9-]+\.justshop\.test(:\d+)?$#',
+    ],
 
     'allowed_headers' => ['*'],
 

@@ -1243,16 +1243,17 @@ class StorefrontRuntimeService
     private function componentForSection(string $type): string
     {
         return match ($type) {
-            'hero', 'hero_banner' => 'HeroSection',
-            'features', 'feature_list' => 'FeatureListSection',
-            'category_grid' => 'CategoryGridSection',
-            'products', 'product_grid' => 'ProductGridSection',
-            'cta' => 'CtaSection',
-            'faq' => 'FaqSection',
-            'gallery' => 'GallerySection',
-            'video' => 'VideoSection',
-            'testimonials' => 'TestimonialSection',
-            default => 'RuntimeFallbackSection',
+            'hero', 'hero_banner'           => 'HeroSection',
+            'features', 'feature_list'      => 'FeatureListSection',
+            'content', 'rich_text'          => 'ContentSection',
+            'cta', 'call_to_action'         => 'CtaSection',
+            'category_grid'                 => 'CategoryGridSection',
+            'products', 'product_grid'      => 'ProductGridSection',
+            'faq'                           => 'FaqSection',
+            'gallery'                       => 'GallerySection',
+            'video'                         => 'VideoSection',
+            'testimonials'                  => 'TestimonialSection',
+            default                         => 'RuntimeFallbackSection',
         };
     }
 

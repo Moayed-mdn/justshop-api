@@ -4,6 +4,7 @@ use App\Enums\PermissionEnum;
 use App\Http\Controllers\Api\Merchant\AdminBrandController;
 use App\Http\Controllers\Api\Merchant\AdminCategoryController;
 use App\Http\Controllers\Api\Merchant\AdminDashboardController;
+use App\Http\Controllers\Api\Merchant\AdminMarketingSectionTypeController;
 use App\Http\Controllers\Api\Merchant\AdminStoreMarketingPageController;
 use App\Http\Controllers\Api\Merchant\AdminOrderController;
 use App\Http\Controllers\Api\Merchant\AdminProductController;
@@ -203,4 +204,8 @@ Route::name('merchant.')
                 Route::post('/{id}/publish', 'publish')->name('cms.pages.publish');
                 Route::post('/{id}/unpublish', 'unpublish')->name('cms.pages.unpublish');
             });
+
+        // ── Marketing Section Types (backend-driven) ──────────
+        Route::get('cms/section-types', [AdminMarketingSectionTypeController::class, 'index'])
+            ->name('cms.section-types');
     });

@@ -7,6 +7,15 @@ return [
 
     'supported_locales' => ['en', 'ar'],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Storefront Base Domain
+    |--------------------------------------------------------------------------
+    | New stores get a subdomain derived from their slug: <slug>.<base_domain>
+    | e.g. test.justshop.test for a store with slug "test".
+    */
+    'base_domain' => env('STOREFRONT_BASE_DOMAIN', 'justshop.test'),
+
     'legacy_passthrough_prefixes' => [
         '/login',
         '/register',

@@ -77,6 +77,13 @@ class StoreInitializationService
             $defaults['timezone'] = 'UTC';
         }
 
+        // Auto-assign storefront domain from slug if not already set.
+        // Pattern: <slug>.<base_domain>  e.g. test.justshop.test
+        if (empty($store->domain)) {
+            $baseDomain = config('storefront_runtime.base_domain', env('STOREFRONT_BASE_DOMAIN', 'justshop.test'));
+            $defaults['domain'] = strtolower($store->slug) . '.' . $baseDomain;
+        }
+
         if (!empty($defaults)) {
             $store->update($defaults);
         }

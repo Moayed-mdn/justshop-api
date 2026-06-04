@@ -15,8 +15,11 @@ class ResendVerificationEmailDTO
 
     public static function fromRequest(ResendVerificationEmailRequest $request): self
     {
+        // Prefer the authenticated user's email (setup flow) over the request body (unauthenticated flow).
+        $email = $request->user()?->email ?? (string) $request->string('email');
+
         return new self(
-            (string) $request->string('email'),
+            $email,
             (string) $request->ip(),
         );
     }

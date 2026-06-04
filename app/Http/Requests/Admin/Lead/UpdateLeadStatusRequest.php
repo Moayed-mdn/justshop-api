@@ -20,6 +20,7 @@ class UpdateLeadStatusRequest extends FormRequest
     {
         return [
             'status' => ['required', new Enum(LeadStatusEnum::class)],
+            'resolution_notes' => ['nullable', 'string', 'max:5000'],
         ];
     }
 }

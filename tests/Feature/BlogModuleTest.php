@@ -3,13 +3,17 @@
 namespace Tests\Feature;
 
 use App\Enums\Cms\Blog\BlogPostPublishStateEnum;
+use App\Enums\PermissionEnum;
 use App\Enums\RoleEnum;
 use App\Models\BlogCategory;
 use App\Models\BlogPost;
 use App\Models\BlogTag;
 use App\Models\User;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class BlogModuleTest extends TestCase
@@ -23,6 +27,29 @@ class BlogModuleTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Seed all permissions/roles so grantPermissionTo() works
+        $this->seed(PermissionSeeder::class);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        // Platform routes use Auth::shouldUse('merchant') which changes
+        // config('auth.defaults.guard') to 'merchant'. Spatie looks up
+        // permissions by guard_name, so we must also create merchant-guard
+        // permissions and assign them to the admin's role.
+        $role = Role::firstOrCreate(['name' => RoleEnum::SUPER_ADMIN->value]);
+        $merchantPerms = [
+            PermissionEnum::CMS_BLOG_CREATE,
+            PermissionEnum::CMS_BLOG_UPDATE,
+            PermissionEnum::CMS_BLOG_PUBLISH,
+        ];
+        $merchantPermIds = [];
+        foreach ($merchantPerms as $perm) {
+            $p = Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'merchant']);
+            $merchantPermIds[] = $p->getKey();
+        }
+        // Directly attach merchant-guard permission IDs to the role
+        // bypassing Spatie's guard-aware resolution.
+        $role->permissions()->attach(array_diff($merchantPermIds, $role->permissions->pluck('id')->toArray()));
 
         // Setup Admin
         $this->admin = User::factory()->create();

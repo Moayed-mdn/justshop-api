@@ -102,16 +102,16 @@ class PublicLeadSubmissionTest extends TestCase
     {
         Config::set('lead.spam.duplicate_window_minutes', 30);
 
-        $this->postJson('/api/v1/leads/contact', $this->validPayload())
+        $this->postJson(route('public.leads.contact'), $this->validPayload())
             ->assertStatus(201);
 
-        $response = $this->postJson('/api/v1/leads/contact', $this->validPayload());
+        $response = $this->postJson(route('public.leads.contact'), $this->validPayload());
 
         $response->assertStatus(422)
             ->assertJson([
-                'status' => false,
+                'success' => false,
                 'message' => __('error.validation_failed'),
-                'error_code' => 'VAL_001',
+                'code' => 'VAL_001',
             ])
             ->assertJsonPath('errors.message.0', __('lead.duplicate_submission'));
 

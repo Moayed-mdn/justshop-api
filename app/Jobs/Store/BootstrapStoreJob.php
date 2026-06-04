@@ -175,11 +175,23 @@ class BootstrapStoreJob implements ShouldQueue
         // If this was part of the onboarding flow, mark onboarding as completed.
         $owner = $store->owner;
         if ($owner && $owner->onboarding_step !== OnboardingStepEnum::COMPLETED) {
-            $onboardingTransitionService->transition($owner, OnboardingStepEnum::COMPLETED);
-            
+            if ($owner->onboarding_step !== null && $owner->onboarding_step->canTransitionTo(OnboardingStepEnum::COMPLETED)) {
+                $onboardingTransitionService->transition($owner, OnboardingStepEnum::COMPLETED);
+            } else {
+                // The owner's step is in an unexpected state (e.g. pending_verification) —
+                // use forceSet so the store bootstrap never fails on an onboarding edge-case.
+                // This mirrors the recovery logic in OnboardingRecoveryService::recover().
+                $onboardingTransitionService->forceSet(
+                    $owner,
+                    OnboardingStepEnum::COMPLETED,
+                    'bootstrap_store_job_recovery',
+                );
+            }
+
             Log::info('BootstrapStoreJob: onboarding marked as completed for store owner', [
                 'store_id' => $store->id,
                 'owner_id' => $owner->id,
+                'previous_step' => $owner->onboarding_step?->value,
             ]);
         }
     }

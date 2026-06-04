@@ -26,6 +26,21 @@ class CheckoutService
     }
 
     /**
+     * Resolve the frontend origin from the current request.
+     * Falls back to null → FrontendUrlBuilder uses config('app.frontend_url').
+     */
+    private function resolveFrontendBaseUrl(): ?string
+    {
+        $request = request();
+
+        if ($request === null) {
+            return null;
+        }
+
+        return FrontendUrlBuilder::resolveRequestFrontendUrl($request);
+    }
+
+    /**
      * Create a Stripe Checkout Session for a logged-in user.
      * Reads cart from the database.
      * @throws Exception
@@ -53,10 +68,13 @@ class CheckoutService
             $cart->items->map(fn($item) => [
                 'product_variant_id' => $item->product_variant_id,
                 'quantity' => $item->quantity,
-            ])->toArray()
+            ])->toArray(),
+            $storeId
         );
 
-        return $this->createCheckoutSession($validatedItems, $storeId, $user);
+        $frontendBaseUrl = $this->resolveFrontendBaseUrl();
+
+        return $this->createCheckoutSession($validatedItems, $storeId, $user, null, $frontendBaseUrl);
     }
 
     /**
@@ -74,15 +92,16 @@ class CheckoutService
             );
         }
 
-        $validatedItems = $this->validateAndPrepareItems($items);
+        $validatedItems = $this->validateAndPrepareItems($items, $storeId);
+        $frontendBaseUrl = $this->resolveFrontendBaseUrl();
 
-        return $this->createCheckoutSession($validatedItems, $storeId, null, $email);
+        return $this->createCheckoutSession($validatedItems, $storeId, null, $email, $frontendBaseUrl);
     }
 
     /**
      * Validate stock, prices, and prepare item data for the order.
      */
-    private function validateAndPrepareItems(array $rawItems): array
+    private function validateAndPrepareItems(array $rawItems, int $storeId): array
     {
         $locale = app()->getLocale();
         $prepared = [];
@@ -93,6 +112,15 @@ class CheckoutService
                 'optionValues.option',
                 'images',
             ])->findOrFail($item['product_variant_id']);
+
+            // Cross-store guard: variant must belong to the current store
+            if ((int) $variant->product->store_id !== $storeId) {
+                throw new \App\Exceptions\BaseApiException(
+                    message: __('validation.variant_not_in_store'),
+                    statusCode: 422,
+                    errorCode: \App\Enums\ErrorCode::VAL_001->value,
+                );
+            }
 
             // Check active
             if (!$variant->is_active) {
@@ -152,9 +180,9 @@ class CheckoutService
     /**
      * Create the pending Order, then the Stripe Checkout Session.
      */
-    private function createCheckoutSession(array $validatedItems, int $storeId, ?User $user, ?string $guestEmail = null): array
+    private function createCheckoutSession(array $validatedItems, int $storeId, ?User $user, ?string $guestEmail = null, ?string $frontendBaseUrl = null): array
     {
-        return DB::transaction(function () use ($validatedItems, $storeId, $user, $guestEmail) {
+        return DB::transaction(function () use ($validatedItems, $storeId, $user, $guestEmail, $frontendBaseUrl) {
 
             // ── 1. Calculate totals ────────────────────────────
             $subtotal = collect($validatedItems)->sum(fn($i) => $i['unit_price'] * $i['quantity']);
@@ -222,8 +250,8 @@ class CheckoutService
             $sessionParams = [
                 'mode'        => 'payment',
                 'line_items'  => $lineItems,
-                'success_url' => FrontendUrlBuilder::build('/checkout/success', ['session_id' => '{CHECKOUT_SESSION_ID}']),
-                'cancel_url'  => FrontendUrlBuilder::build('/checkout/cancel'),
+                'success_url' => FrontendUrlBuilder::build('/checkout/success', [], $frontendBaseUrl) . '?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url'  => FrontendUrlBuilder::build('/checkout/cancel', [], $frontendBaseUrl),
 
                 'shipping_address_collection' => [
                     'allowed_countries' => ['US', 'CA', 'GB', 'DE', 'FR', 'SA', 'AE', 'EG', 'JO'],
@@ -255,11 +283,7 @@ class CheckoutService
             }
 
             // ── 7. Create Stripe Checkout Session ──────────────
-            try {
-                $session = Session::create($sessionParams);
-            } catch (\Stripe\Exception\ApiErrorException $e) {
-                throw new StripeServiceException(__('payment.stripe_checkout_failed'));
-            }
+            $session = $this->createStripeSession($sessionParams);
 
             // ── 8. Store session ID on order ───────────────────
             $order->update([
@@ -271,6 +295,19 @@ class CheckoutService
                 'session_url' => $session->url,
             ];
         });
+    }
+
+    /**
+     * Create a Stripe Checkout Session.
+     * Extracted as a protected method so tests can override it without hitting Stripe.
+     */
+    protected function createStripeSession(array $sessionParams): \Stripe\Checkout\Session
+    {
+        try {
+            return Session::create($sessionParams);
+        } catch (\Stripe\Exception\ApiErrorException $e) {
+            throw new StripeServiceException(__('payment.stripe_checkout_failed'));
+        }
     }
 
     /**
@@ -291,20 +328,23 @@ class CheckoutService
             return;
         }
 
-        $order = Order::with('items')->find($orderId);
+        DB::transaction(function () use ($session, $orderId) {
 
-        if (!$order) {
-            Log::warning('Stripe webhook: order not found', ['order_id' => $orderId]);
-            return;
-        }
+            // ── 0. Lock order row and check for double processing ──
+            $order = Order::with('items')
+                ->where('id', $orderId)
+                ->lockForUpdate()
+                ->first();
 
-        // Prevent double processing
-        if ($order->payment_status === PaymentStatusEnum::PAID) {
-            Log::info('Stripe webhook: order already paid', ['order_id' => $orderId]);
-            return;
-        }
+            if (!$order) {
+                Log::warning('Stripe webhook: order not found', ['order_id' => $orderId]);
+                return;
+            }
 
-        DB::transaction(function () use ($order, $session) {
+            if ($order->payment_status === PaymentStatusEnum::PAID) {
+                Log::info('Stripe webhook: order already paid', ['order_id' => $orderId]);
+                return;
+            }
 
             // ── 1. Mark order as paid ──────────────────────────
             $order->markAsPaid($session->payment_intent);
@@ -352,16 +392,17 @@ class CheckoutService
 
             // ── 5. Clear cart (for logged-in users) ────────────
             if ($order->user_id) {
-                $cart = Cart::where('user_id', $order->user_id)->first();
+                $cart = Cart::where('user_id', $order->user_id)
+                    ->where('store_id', $order->store_id)
+                    ->first();
                 if ($cart) {
-                    $cart->items()->delete();
+                    $cart->items()->forceDelete();
                 }
             }
         });
 
         Log::info('Order completed successfully', [
-            'order_id'     => $order->id,
-            'order_number' => $order->order_number,
+            'order_id'     => $orderId,
         ]);
     }
 
@@ -375,15 +416,19 @@ class CheckoutService
 
         if (!$orderId) return;
 
-        $order = Order::find($orderId);
+        DB::transaction(function () use ($orderId) {
+            $order = Order::where('id', $orderId)
+                ->lockForUpdate()
+                ->first();
 
-        if ($order && $order->payment_status === PaymentStatusEnum::PENDING) {
-            $order->markAsFailed();
+            if ($order && $order->payment_status === PaymentStatusEnum::PENDING) {
+                $order->markAsFailed();
 
-            Log::info('Checkout session expired, order cancelled', [
-                'order_id' => $order->id,
-            ]);
-        }
+                Log::info('Checkout session expired, order cancelled', [
+                    'order_id' => $order->id,
+                ]);
+            }
+        });
     }
 
     /**

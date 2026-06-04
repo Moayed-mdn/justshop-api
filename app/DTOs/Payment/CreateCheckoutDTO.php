@@ -20,7 +20,7 @@ class CreateCheckoutDTO
     {
         return new self(
             $storeId,
-            $request->user(),
+            $request->user('sanctum'),
             $request->input('items', []),
             $request->input('email'),
         );

@@ -19,6 +19,23 @@ class CategoryRepository extends BaseRepository
 
     // ── Queries ────────────────────────────────────────────────
 
+    public function search(string $term, int $limit): Collection
+    {
+        $storeId = $this->getCurrentStoreId();
+
+        return $this->scopedQuery()
+            ->whereHas('translations', function (Builder $q) use ($term) {
+                $q->where('name', 'LIKE', "%{$term}%");
+            })
+            ->withCount(['products' => fn (Builder $q) => $q
+                ->where('store_id', $storeId)
+                ->where('is_active', true),
+            ])
+            ->with('translations')
+            ->limit($limit)
+            ->get();
+    }
+
     public function getRootCategories(
         int $storeId,
         ?string $type = null,
@@ -156,6 +173,36 @@ class CategoryRepository extends BaseRepository
         }
 
         return $query->exists();
+    }
+
+    public function searchForAutocomplete(string $query, string $locale, int $limit): Collection
+    {
+        $storeId = $this->getCurrentStoreId();
+        $term = str_replace(['%', '_', '\\'], ['\\%', '\\_', '\\\\'], $query);
+
+        $categoryIds = \DB::table('category_translations')
+            ->join('categories', 'categories.id', '=', 'category_translations.category_id')
+            ->where('category_translations.locale', $locale)
+            ->where('category_translations.name', 'LIKE', "%{$term}%")
+            ->where('categories.store_id', $storeId)
+            ->orderByRaw("
+                CASE
+                    WHEN category_translations.name = ? THEN 1
+                    WHEN category_translations.name LIKE ? THEN 2
+                    ELSE 3
+                END
+            ", [$query, "{$query}%"])
+            ->limit($limit)
+            ->pluck('categories.id');
+
+        if ($categoryIds->isEmpty()) {
+            return new Collection();
+        }
+
+        return $this->scopedQuery()
+            ->whereIn('id', $categoryIds)
+            ->with('translations')
+            ->get();
     }
 
     public function hasActiveChildren(int $id, int $storeId): bool

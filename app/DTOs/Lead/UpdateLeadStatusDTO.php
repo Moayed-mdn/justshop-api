@@ -13,6 +13,7 @@ class UpdateLeadStatusDTO
         public readonly int $id,
         public readonly LeadStatusEnum $status,
         public readonly int $actorUserId,
+        public readonly ?string $resolutionNotes = null,
     ) {}
 
     public static function fromRequest(
@@ -23,6 +24,9 @@ class UpdateLeadStatusDTO
             id: $id,
             status: LeadStatusEnum::from($request->string('status')->toString()),
             actorUserId: (int) $request->user()->id,
+            resolutionNotes: $request->string('resolution_notes')->toString() !== ''
+                ? $request->string('resolution_notes')->toString()
+                : null,
         );
     }
 }

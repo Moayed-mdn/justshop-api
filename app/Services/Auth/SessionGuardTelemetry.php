@@ -12,6 +12,12 @@ use Illuminate\Support\Facades\Log;
 
 class SessionGuardTelemetry
 {
+    public const METRIC_CSRF_OWNERSHIP_MERCHANT = 'csrf.ownership.merchant';
+    public const METRIC_CSRF_OWNERSHIP_CUSTOMER = 'csrf.ownership.customer';
+    public const METRIC_CSRF_OWNERSHIP_REFERER_MISSING = 'csrf.ownership.referer_missing';
+    public const METRIC_CSRF_OWNERSHIP_AMBIGUOUS = 'csrf.ownership.ambiguous';
+    public const METRIC_CSRF_OWNERSHIP_GUARD_MISMATCH = 'csrf.ownership.guard_mismatch';
+
     public function __construct(
         private readonly RequestTraceContextManager $traceContext,
     ) {}
@@ -115,6 +121,35 @@ class SessionGuardTelemetry
             'session_ownership' => $context->toArray(),
             'guard_shadow' => $summary->toArray(),
         ]));
+
+        $this->logCsrfOwnershipMetrics($request, $context, $summary);
+    }
+
+    public function logCsrfOwnershipMetrics(Request $request, SessionOwnershipContext $context, GuardShadowSummary $summary): void
+    {
+        $baseContext = $this->context($request, [
+            'session_ownership' => $context->toArray(),
+            'guard_shadow' => $summary->toArray(),
+        ]);
+
+        if ($context->authDomain === 'customer') {
+            Log::info(self::METRIC_CSRF_OWNERSHIP_CUSTOMER, $baseContext);
+        } elseif ($context->authDomain === 'merchant') {
+            Log::info(self::METRIC_CSRF_OWNERSHIP_MERCHANT, $baseContext);
+        }
+
+        $referer = (string) ($request->headers->get('referer') ?? $request->headers->get('origin') ?? '');
+        if ($referer === '') {
+            Log::info(self::METRIC_CSRF_OWNERSHIP_REFERER_MISSING, $baseContext);
+        }
+
+        if ($summary->ambiguousOwnershipPath) {
+            Log::info(self::METRIC_CSRF_OWNERSHIP_AMBIGUOUS, $baseContext);
+        }
+
+        if ($summary->guardMismatchAnomaly) {
+            Log::info(self::METRIC_CSRF_OWNERSHIP_GUARD_MISMATCH, $baseContext);
+        }
     }
 
     private function severityScore(SessionOwnershipContext $context, GuardShadowSummary $summary, bool $isCrossDomain): int

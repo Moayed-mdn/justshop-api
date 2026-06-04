@@ -6,9 +6,18 @@ namespace App\GraphQL\Queries;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Repositories\Brand\BrandRepository;
+use App\Repositories\Category\CategoryRepository;
+use App\Repositories\Product\ProductRepository;
 
 class Search
 {
+    public function __construct(
+        private readonly ProductRepository $productRepository,
+        private readonly CategoryRepository $categoryRepository,
+        private readonly BrandRepository $brandRepository,
+    ) {}
+
     public function __invoke($rootValue, array $args): array
     {
         $query  = trim($args['query']);
@@ -38,32 +47,7 @@ class Search
 
     private function searchProducts(string $term, string $locale, int $limit): array
     {
-        $products = Product::where('is_active', true)
-            ->where(function ($q) use ($term) {
-                // Search ALL locales (so "iPhone" works even in ar locale)
-                $q->whereHas('translations', function ($q2) use ($term) {
-                    $q2->where('name', 'LIKE', "%{$term}%")
-                       ->orWhere('description', 'LIKE', "%{$term}%");
-                })
-                // Also match by brand name
-                ->orWhereHas('brand', function ($q2) use ($term) {
-                    $q2->where('name', 'LIKE', "%{$term}%");
-                })
-                // Also match by tag name
-                ->orWhereHas('tags', function ($q2) use ($term) {
-                    $q2->where('name', 'LIKE', "%{$term}%");
-                });
-            })
-            ->with([
-                'translations',
-                'defaultVariant.images',
-                'variants' => fn ($q) => $q->where('is_active', true)->with('images'),
-                'brand',
-                'category.translations',
-                'approvedReviews',
-            ])
-            ->limit($limit)
-            ->get();
+        $products = $this->productRepository->search($term, $limit);
 
         // Map & score for relevance
         return $products->map(function (Product $product) use ($term, $locale) {
@@ -97,13 +81,7 @@ class Search
 
     private function searchCategories(string $term, string $locale, int $limit): array
     {
-        return Category::whereHas('translations', function ($q) use ($term) {
-                $q->where('name', 'LIKE', "%{$term}%");
-            })
-            ->withCount('products')
-            ->with('translations')
-            ->limit($limit)
-            ->get()
+        return $this->categoryRepository->search($term, $limit)
             ->map(function (Category $category) use ($locale) {
                 $translation = $category->translation($locale);
 
@@ -123,11 +101,7 @@ class Search
 
     private function searchBrands(string $term, int $limit): array
     {
-        return Brand::where('is_active', true)
-            ->where('name', 'LIKE', "%{$term}%")
-            ->withCount('products')
-            ->limit($limit)
-            ->get()
+        return $this->brandRepository->search($term, $limit)
             ->map(fn (Brand $brand) => [
                 'id'             => $brand->id,
                 'name'           => $brand->name,

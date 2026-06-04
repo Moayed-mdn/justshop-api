@@ -8,7 +8,7 @@ class GuardResolutionResult
 {
     public function __construct(
         public readonly string $guard,
-        public readonly string $authDomain,
+        public readonly ?string $authDomain,
         public readonly bool $isFallback,
         public readonly array $telemetry = [],
     ) {}

@@ -7,6 +7,8 @@ namespace App\Repositories\Brand;
 use App\Models\Brand;
 use App\Repositories\BaseRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 
 class BrandRepository extends BaseRepository
 {
@@ -16,6 +18,36 @@ class BrandRepository extends BaseRepository
     }
 
     // ── Queries ────────────────────────────────────────────────
+
+    public function search(string $term, int $limit): Collection
+    {
+        $storeId = $this->getCurrentStoreId();
+
+        return $this->scopedQuery()
+            ->active()
+            ->where('name', 'LIKE', "%{$term}%")
+            ->withCount(['products' => fn (Builder $q) => $q->where('store_id', $storeId)])
+            ->limit($limit)
+            ->get();
+    }
+
+    public function searchForAutocomplete(string $query, int $limit): Collection
+    {
+        $term = str_replace(['%', '_', '\\'], ['\\%', '\\_', '\\\\'], $query);
+
+        return $this->scopedQuery()
+            ->active()
+            ->where('name', 'LIKE', "%{$term}%")
+            ->orderByRaw("
+                CASE
+                    WHEN name = ? THEN 1
+                    WHEN name LIKE ? THEN 2
+                    ELSE 3
+                END
+            ", [$query, "{$query}%"])
+            ->limit($limit)
+            ->get();
+    }
 
     public function paginate(
         int $storeId,

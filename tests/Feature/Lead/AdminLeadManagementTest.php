@@ -37,7 +37,7 @@ class AdminLeadManagementTest extends TestCase
             ->assertStatus(403)
             ->assertJson([
                 'success' => false,
-                'code' => 'HTTP_403',
+                'code' => 'IDENTITY_DOMAIN_MISMATCH',
             ]);
     }
 
@@ -164,7 +164,7 @@ class AdminLeadManagementTest extends TestCase
             ->deleteJson(route('platform.leads.destroy', ['lead' => $lead->id]))
             ->assertStatus(200);
 
-        $this->assertDatabaseMissing('leads', ['id' => $lead->id]);
+        $this->assertSoftDeleted($lead);
     }
 
     private function makeSuperAdmin(): User

@@ -21,6 +21,12 @@ class ResendVerificationEmailRequest extends FormRequest
      */
     public function rules(): array
     {
+        // When the user is authenticated (e.g. from the /setup page),
+        // the email is resolved from the session — no body required.
+        if ($this->user()) {
+            return [];
+        }
+
         return [
             'email' => ['required', 'email'],
         ];

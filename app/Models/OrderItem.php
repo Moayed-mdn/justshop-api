@@ -19,6 +19,8 @@ class OrderItem extends Model
         'unit_price',
         'unit_discount_percentage',
         'quantity',
+        'subtotal',
+        'total',
         'attributes',
     ];
 
@@ -45,6 +47,6 @@ class OrderItem extends Model
 
     public function getSubtotalAttribute()
     {
-        return $this->price * $this->quantity;
+        return $this->unit_price * $this->quantity;
     }
 }
