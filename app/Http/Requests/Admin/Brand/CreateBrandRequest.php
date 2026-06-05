@@ -19,7 +19,7 @@ class CreateBrandRequest extends FormRequest
             'name'        => ['required', 'string', 'max:255'],
             'slug'        => ['required', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', 'unique:brands,slug'],
             'description' => ['sometimes', 'nullable', 'string'],
-            'logo_url'    => ['sometimes', 'nullable', 'string', 'url', 'max:2048'],
+            'logo_url'    => ['sometimes', 'nullable', 'string', 'max:2048'],
             'sort_order'  => ['sometimes', 'integer', 'min:0'],
             'is_active'   => ['sometimes', 'boolean'],
         ];

@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Merchant\AdminDashboardController;
 use App\Http\Controllers\Api\Merchant\AdminFileUploadController;
 use App\Http\Controllers\Api\Merchant\AdminHeroBannerController;
 use App\Http\Controllers\Api\Merchant\AdminMarketingSectionTypeController;
+use App\Http\Controllers\Api\Merchant\AdminMediaController;
 use App\Http\Controllers\Api\Merchant\AdminStoreMarketingPageController;
 use App\Http\Controllers\Api\Merchant\AdminOrderController;
 use App\Http\Controllers\Api\Merchant\AdminProductController;
@@ -238,4 +239,13 @@ Route::name('merchant.')
         // ── Marketing Section Types (backend-driven) ──────────
         Route::get('cms/section-types', [AdminMarketingSectionTypeController::class, 'index'])
             ->name('cms.section-types');
+
+        // ── Generic Media Upload ───────────────────────────────
+        Route::prefix('media')->group(function () {
+            Route::post('/upload', [AdminMediaController::class, 'upload'])
+                ->name('media.upload');
+            
+            Route::delete('/delete', [AdminMediaController::class, 'delete'])
+                ->name('media.delete');
+        });
     });

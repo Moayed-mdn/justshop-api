@@ -16,6 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
         $middleware->validateCsrfTokens(except: [
             'api/v1/storefront/runtime/preview/validate',
+            'api/v1/merchant/stores/*/media/upload',
+            'api/v1/merchant/stores/*/media/delete',
+            'api/v1/merchant/stores/*/hero-banners/upload-image',
+            'api/v1/merchant/stores/*/hero-banners/delete-image',
         ]);
 
         $middleware->api(prepend: [
