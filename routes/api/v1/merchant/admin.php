@@ -4,6 +4,8 @@ use App\Enums\PermissionEnum;
 use App\Http\Controllers\Api\Merchant\AdminBrandController;
 use App\Http\Controllers\Api\Merchant\AdminCategoryController;
 use App\Http\Controllers\Api\Merchant\AdminDashboardController;
+use App\Http\Controllers\Api\Merchant\AdminFileUploadController;
+use App\Http\Controllers\Api\Merchant\AdminHeroBannerController;
 use App\Http\Controllers\Api\Merchant\AdminMarketingSectionTypeController;
 use App\Http\Controllers\Api\Merchant\AdminStoreMarketingPageController;
 use App\Http\Controllers\Api\Merchant\AdminOrderController;
@@ -189,6 +191,34 @@ Route::name('merchant.')
             Route::delete('/{tag}', [AdminTagController::class, 'destroy'])
                 ->middleware('permission:' . PermissionEnum::TAG_DELETE)
                 ->name('tags.destroy');
+        });
+
+        // ── Hero Banner Management ─────────────────────────────
+        Route::prefix('hero-banners')->group(function () {
+            Route::get('/', [AdminHeroBannerController::class, 'index'])
+                ->name('hero-banners.index');
+
+            Route::post('/', [AdminHeroBannerController::class, 'store'])
+                ->name('hero-banners.store');
+
+            Route::get('/{id}', [AdminHeroBannerController::class, 'show'])
+                ->name('hero-banners.show');
+
+            Route::match(['put', 'patch'], '/{id}', [AdminHeroBannerController::class, 'update'])
+                ->name('hero-banners.update');
+
+            Route::delete('/{id}', [AdminHeroBannerController::class, 'destroy'])
+                ->name('hero-banners.destroy');
+
+            Route::patch('/{id}/restore', [AdminHeroBannerController::class, 'restore'])
+                ->name('hero-banners.restore');
+            
+            // File upload routes
+            Route::post('/upload-image', [AdminFileUploadController::class, 'uploadHeroBannerImage'])
+                ->name('hero-banners.upload-image');
+            
+            Route::delete('/delete-image', [AdminFileUploadController::class, 'deleteHeroBannerImage'])
+                ->name('hero-banners.delete-image');
         });
 
         // ── Store Marketing CMS ────────────────────────────────

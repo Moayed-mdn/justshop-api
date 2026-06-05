@@ -63,7 +63,13 @@ class HeroBanner extends Model
 
 
     public function getImageUrlAttribute(){
-        return $this->image_path? asset('storage/'.$this->image_path) : null;
+        if (!$this->image_path) {
+            return null;
+        }
+        
+        // Use APP_URL for multi-tenant setups to ensure assets are served from backend
+        $appUrl = rtrim(config('app.url'), '/');
+        return $appUrl . '/storage/' . $this->image_path;
     }
 
     // public function scopeDate($q){
