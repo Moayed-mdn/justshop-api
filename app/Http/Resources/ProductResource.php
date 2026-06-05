@@ -65,12 +65,12 @@ private function formatVariants($variants)
                     'images' => $v->images ? $v->images->map(function($image) {
                         return [
                             'id' => $image->id,
-                            'image_url' => $image->image_url,
+                            'image_url' => $image->full_url,
                             'alt_text' => $image->alt_text,
                             'is_primary' => $image->is_primary
                         ];
                     }) : [],
-                    'primary_image' => $v->images ? $v->images->where('is_primary', true)->first() : null
+                    'primary_image' => $v->images ? ($v->images->where('is_primary', true)->first()?->full_url ?? null) : null
                 ];
             })->values()
         ];

@@ -87,7 +87,7 @@ class ProductDetailResource extends JsonResource
         // Images
         $images = $variant->images->map(fn($img) => [
             'id'         => $img->id,
-            'url'        => asset($img->image_url),
+            'url'        => $img->full_url,
             'alt_text'   => $img->alt_text,
             'is_primary' => $img->is_primary,
         ])->values()->toArray();

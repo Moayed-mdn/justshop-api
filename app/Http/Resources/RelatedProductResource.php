@@ -22,7 +22,7 @@ class RelatedProductResource extends JsonResource
         if ($displayVariant && $displayVariant->relationLoaded('images')) {
             $img = $displayVariant->images->where('is_primary', true)->first()
                 ?? $displayVariant->images->first();
-            $primaryImage = $img ? asset($img->image_url) : null;
+            $primaryImage = $img ? $img->full_url : null;
         }
 
         return [

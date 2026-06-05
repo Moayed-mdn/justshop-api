@@ -142,7 +142,7 @@ class AdminProductDetailResource extends JsonResource
         ->sortBy('sort_order')
         ->map(fn($image) => [
             'id'         => $image->id,
-            'url'        => asset($image->image_url),
+            'url'        => $image->full_url,
             'alt'        => $image->alt_text ?? null,
             'position'   => $image->sort_order ?? 0,
             'is_primary' => (bool) $image->is_primary,
@@ -154,7 +154,7 @@ class AdminProductDetailResource extends JsonResource
             ->sortBy('sort_order')
             ->map(fn($image) => [
                 'id'         => $image->id,
-                'url'        => asset($image->image_url),
+                'url'        => $image->full_url,
                 'alt'        => $image->alt_text ?? null,
                 'position'   => $image->sort_order ?? 0,
                 'is_primary' => (bool) $image->is_primary,
@@ -268,7 +268,7 @@ class AdminProductDetailResource extends JsonResource
                 ->sortBy('sort_order')
                 ->map(fn($image) => [
                     'id'         => $image->id,
-                    'url'        => asset($image->image_url),
+                    'url'        => $image->full_url,
                     'alt'        => $image->alt_text ?? null,
                     'position'   => $image->sort_order ?? 0,
                     'is_primary' => (bool) $image->is_primary,

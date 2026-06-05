@@ -167,7 +167,7 @@ class Product extends Model
             $primary = $this->images->where('is_primary', true)->first()
                 ?? $this->images->first();
 
-            return $primary?->image_url;
+            return $primary?->full_url;
         }
 
         // ── 2. Variant-level fallback (bridge period) ──────────
@@ -183,7 +183,7 @@ class Product extends Model
             $primary = $variant->images->where('is_primary', true)->first()
                 ?? $variant->images->first();
 
-            return $primary?->image_url;
+            return $primary?->full_url;
         }
 
         return null;

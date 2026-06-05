@@ -28,7 +28,7 @@ class AdminProductResource extends JsonResource
                         ->first()
                         ?? $variant->images->first();
                     if ($img) {
-                        return asset($img->image_url);
+                        return $img->full_url;
                     }
                 }
             }

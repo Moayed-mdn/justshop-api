@@ -39,7 +39,7 @@ class ProductVariantResource extends JsonResource
                     ->sortBy('sort_order')
                     ->map(fn($img) => [
                         'id'         => $img->id,
-                        'url'        => asset($img->image_url),
+                        'url'        => $img->full_url,  // Use accessor instead of asset()
                         'alt'        => $img->alt_text ?? null,
                         'position'   => $img->sort_order ?? 0,
                         'is_primary' => (bool) $img->is_primary,
@@ -52,7 +52,7 @@ class ProductVariantResource extends JsonResource
             'images' => $this->whenLoaded('images', function () {
                 return $this->images->map(fn($img) => [
                     'id'         => $img->id,
-                    'url'        => asset($img->image_url),
+                    'url'        => $img->full_url,  // Use accessor instead of asset()
                     'alt_text'   => $img->alt_text,
                     'is_primary' => (bool) $img->is_primary,
                 ]);
