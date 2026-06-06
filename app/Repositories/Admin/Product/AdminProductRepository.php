@@ -251,7 +251,7 @@ class AdminProductRepository
     {
         foreach ($mediaItems as $index => $mediaData) {
             $product->images()->create([
-                'image_url'  => $mediaData['url'],
+                'image_url'  => $this->normalizeImagePath($mediaData['url']),
                 'alt_text'   => $mediaData['alt'] ?? null,
                 'sort_order' => $mediaData['position'] ?? $index,
                 'is_primary' => $index === 0,
@@ -274,12 +274,41 @@ class AdminProductRepository
     {
         foreach ($mediaItems as $index => $mediaData) {
             $variant->images()->create([
-                'image_url'  => $mediaData['url'],
+                'image_url'  => $this->normalizeImagePath($mediaData['url']),
                 'alt_text'   => $mediaData['alt'] ?? null,
                 'sort_order' => $mediaData['position'] ?? $index,
                 'is_primary' => $index === 0,
             ]);
         }
+    }
+
+    /**
+     * Normalize image path by stripping domain and /storage/ prefix.
+     * Ensures we always store relative paths in the database.
+     *
+     * Examples:
+     * - "http://localhost:8000/storage/variants/xyz.jpg" → "variants/xyz.jpg"
+     * - "/storage/variants/xyz.jpg" → "variants/xyz.jpg"
+     * - "variants/xyz.jpg" → "variants/xyz.jpg"
+     * - "https://example.com/image.jpg" → "https://example.com/image.jpg" (external URL preserved)
+     */
+    private function normalizeImagePath(string $url): string
+    {
+        // If it's an external URL (not from our storage), keep as-is
+        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+            $appUrl = config('app.url');
+            // Only normalize if it's from our own domain
+            if (!str_starts_with($url, $appUrl)) {
+                return $url;
+            }
+            // Strip our domain
+            $url = str_replace($appUrl, '', $url);
+        }
+
+        // Strip leading /storage/ prefix
+        $url = preg_replace('#^/?storage/#', '', $url);
+
+        return $url;
     }
 
     /**
