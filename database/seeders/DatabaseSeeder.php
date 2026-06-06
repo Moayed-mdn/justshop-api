@@ -5,6 +5,7 @@ namespace Database\Seeders;
 
 use App\Models\Store;
 use App\Services\Storefront\Runtime\RuntimeCacheService;
+use Database\Seeders\Theme\DefaultThemeSeeder;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -26,6 +27,7 @@ class DatabaseSeeder extends Seeder
             CmsBlogSeeder::class,
             CmsDocumentationSeeder::class,
             CmsMarketingSeeder::class,
+            DefaultThemeSeeder::class,
         ]);
 
         $store = Store::query()->where('slug', 'merchant-store')->first();

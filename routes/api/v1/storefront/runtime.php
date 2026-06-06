@@ -14,3 +14,12 @@ Route::prefix('runtime')
         Route::get('/theme', [StorefrontRuntimeController::class, 'theme']);
         Route::post('/preview/validate', [StorefrontRuntimeController::class, 'validatePreview']);
     });
+
+// Additional theme and navigation endpoints
+Route::prefix('theme')->group(function (): void {
+    Route::get('/', [\App\Http\Controllers\Api\Storefront\StorefrontThemeController::class, 'show']);
+});
+
+Route::prefix('navigation')->group(function (): void {
+    Route::get('/{handle}', [\App\Http\Controllers\Api\Storefront\StorefrontNavigationController::class, 'show']);
+});

@@ -4,6 +4,9 @@ namespace App\Models;
 
 use App\Enums\Store\StoreStatusEnum;
 use App\Enums\Store\ProvisioningStatusEnum;
+use App\Models\Asset\StoreAsset;
+use App\Models\Navigation\NavigationMenu;
+use App\Models\Theme\Theme;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -89,6 +92,26 @@ class Store extends Model
     public function carts(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Cart::class);
+    }
+
+    public function themes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Theme::class);
+    }
+
+    public function activeTheme(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Theme::class, 'active_theme_id');
+    }
+
+    public function navigationMenus(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(NavigationMenu::class);
+    }
+
+    public function assets(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(StoreAsset::class);
     }
 
     // ── Helpers ────────────────────────────────────────────────

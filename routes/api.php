@@ -206,6 +206,7 @@ Route::prefix('/v1/merchant')
         require 'api/v1/merchant/category.php';
         require 'api/v1/merchant/admin.php';
         require 'api/v1/merchant/stores.php';
+        require 'api/v1/merchant/theme.php';
     });
 
 // ── 3. STOREFRONT CONTEXT ────────────────────────────────────────────────

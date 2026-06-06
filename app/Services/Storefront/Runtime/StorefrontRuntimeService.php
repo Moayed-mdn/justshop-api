@@ -10,6 +10,8 @@ use App\Models\HeroBanner;
 use App\Models\Product;
 use App\Models\Store;
 use App\Repositories\Category\CategoryRepository;
+use App\Repositories\Navigation\NavigationMenuRepository;
+use App\Repositories\Theme\ThemeRepository;
 use App\Services\Cms\LocalizedContentResolver;
 use App\Services\Cms\Seo\SeoResolutionService;
 use Throwable;
@@ -24,6 +26,8 @@ class StorefrontRuntimeService
         private readonly CategoryRepository $categoryRepository,
         private readonly LocalizedContentResolver $localizedContentResolver,
         private readonly SeoResolutionService $seoResolutionService,
+        private readonly ThemeRepository $themeRepository,
+        private readonly NavigationMenuRepository $navigationMenuRepository,
     ) {}
 
     /**
@@ -154,7 +158,7 @@ class StorefrontRuntimeService
             path: $path,
             ttlSeconds: $ttl,
             bypass: $previewContext !== null,
-            callback: fn (): array => $this->resolveNavigationData($store, $locale),
+            callback: fn (): array => $this->resolveNavigationDataFromDatabase($store, $locale),
         );
 
         $this->runtimeLogger->info('runtime.navigation.loaded', [
@@ -181,6 +185,52 @@ class StorefrontRuntimeService
     }
 
     /**
+     * Resolve navigation data from database
+     * 
+     * @return array<string, mixed>
+     */
+    private function resolveNavigationDataFromDatabase(Store $store, string $locale): array
+    {
+        // Try to get main menu from database
+        $mainMenu = $this->navigationMenuRepository->getByHandle('main-menu', $store->id);
+        
+        if ($mainMenu) {
+            $items = $mainMenu->rootItems->map(fn ($item) => $this->transformNavigationItem($item));
+            
+            return [
+                'mainMenu' => [
+                    'id' => $mainMenu->id,
+                    'name' => $mainMenu->name,
+                    'handle' => $mainMenu->handle,
+                    'items' => $items->toArray(),
+                ],
+            ];
+        }
+
+        // Fallback to config-based navigation if no database menu exists
+        return $this->resolveNavigationData($store, $locale);
+    }
+
+    /**
+     * Transform navigation menu item
+     * 
+     * @return array<string, mixed>
+     */
+    private function transformNavigationItem($item): array
+    {
+        return [
+            'id' => $item->id,
+            'label' => $item->label,
+            'type' => $item->type,
+            'url' => $item->url,
+            'target' => $item->target,
+            'resourceId' => $item->resource_id,
+            'resourceType' => $item->resource_type,
+            'children' => $item->children->map(fn ($child) => $this->transformNavigationItem($child))->toArray(),
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function themePayload(): array
@@ -198,30 +248,7 @@ class StorefrontRuntimeService
             path: $path,
             ttlSeconds: $ttl,
             bypass: $previewContext !== null,
-            callback: fn (): array => [
-                'themeKey' => 'default-light',
-                'branding' => [
-                    'storeName' => $store->name,
-                    'tagline' => $locale === 'ar'
-                        ? 'تسوق الإلكترونيات والأزياء والمنزل — توصيل سريع وأسعار واضحة.'
-                        : 'Electronics, fashion, and home essentials — curated for everyday shopping.',
-                ],
-                'tokens' => [
-                    'colorPrimary' => (string) config('storefront_runtime.theme.tokens.color_primary'),
-                    'colorSurface' => (string) config('storefront_runtime.theme.tokens.color_surface'),
-                    'colorText' => (string) config('storefront_runtime.theme.tokens.color_text'),
-                    'fontBody' => (string) config('storefront_runtime.theme.tokens.font_body'),
-                    'fontHeading' => (string) config('storefront_runtime.theme.tokens.font_heading'),
-                ],
-                'assets' => [
-                    'logoUrl' => null,
-                    'faviconUrl' => null,
-                ],
-                'settings' => [
-                    'radius' => (string) config('storefront_runtime.theme.radius', 'md'),
-                    'direction' => $locale === 'ar' ? 'rtl' : 'ltr',
-                ],
-            ],
+            callback: fn (): array => $this->resolveThemeDataFromDatabase($store, $locale),
         );
 
         $this->runtimeLogger->info('runtime.theme.loaded', [
@@ -1594,6 +1621,74 @@ class StorefrontRuntimeService
             'redirectTo' => null,
             'redirectStatus' => null,
             'legacyPassthrough' => false,
+        ];
+    }
+
+    /**
+     * Resolve theme data from database
+     * 
+     * @return array<string, mixed>
+     */
+    private function resolveThemeDataFromDatabase(Store $store, string $locale): array
+    {
+        // Try to get active theme from database
+        $theme = $this->themeRepository->getActiveForStore($store->id);
+        
+        if ($theme) {
+            $settings = $theme->settings ?? [];
+            
+            return [
+                'themeKey' => $theme->slug ?? 'default',
+                'name' => $theme->name,
+                'version' => $theme->version,
+                'branding' => [
+                    'storeName' => $store->name,
+                    'tagline' => $settings['tagline'] ?? ($locale === 'ar'
+                        ? 'تسوق الإلكترونيات والأزياء والمنزل — توصيل سريع وأسعار واضحة.'
+                        : 'Electronics, fashion, and home essentials — curated for everyday shopping.'),
+                ],
+                'tokens' => [
+                    'colorPrimary' => $settings['color_primary'] ?? (string) config('storefront_runtime.theme.tokens.color_primary'),
+                    'colorSurface' => $settings['color_surface'] ?? (string) config('storefront_runtime.theme.tokens.color_surface'),
+                    'colorText' => $settings['color_text'] ?? (string) config('storefront_runtime.theme.tokens.color_text'),
+                    'fontBody' => $settings['font_body'] ?? (string) config('storefront_runtime.theme.tokens.font_body'),
+                    'fontHeading' => $settings['font_heading'] ?? (string) config('storefront_runtime.theme.tokens.font_heading'),
+                ],
+                'assets' => [
+                    'logoUrl' => $store->logo_url,
+                    'faviconUrl' => $store->favicon_url,
+                ],
+                'settings' => [
+                    'radius' => $settings['radius'] ?? (string) config('storefront_runtime.theme.radius', 'md'),
+                    'direction' => $locale === 'ar' ? 'rtl' : 'ltr',
+                ],
+            ];
+        }
+
+        // Fallback to config-based theme if no database theme exists
+        return [
+            'themeKey' => 'default-light',
+            'branding' => [
+                'storeName' => $store->name,
+                'tagline' => $locale === 'ar'
+                    ? 'تسوق الإلكترونيات والأزياء والمنزل — توصيل سريع وأسعار واضحة.'
+                    : 'Electronics, fashion, and home essentials — curated for everyday shopping.',
+            ],
+            'tokens' => [
+                'colorPrimary' => (string) config('storefront_runtime.theme.tokens.color_primary'),
+                'colorSurface' => (string) config('storefront_runtime.theme.tokens.color_surface'),
+                'colorText' => (string) config('storefront_runtime.theme.tokens.color_text'),
+                'fontBody' => (string) config('storefront_runtime.theme.tokens.font_body'),
+                'fontHeading' => (string) config('storefront_runtime.theme.tokens.font_heading'),
+            ],
+            'assets' => [
+                'logoUrl' => $store->logo_url,
+                'faviconUrl' => $store->favicon_url,
+            ],
+            'settings' => [
+                'radius' => (string) config('storefront_runtime.theme.radius', 'md'),
+                'direction' => $locale === 'ar' ? 'rtl' : 'ltr',
+            ],
         ];
     }
 }
