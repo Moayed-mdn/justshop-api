@@ -151,6 +151,9 @@ class AppServiceProvider extends ServiceProvider
         // Model::unguard() intentionally removed — all models use explicit $fillable arrays.
         // Mass assignment protection is active platform-wide.
 
+        // Register Theme observer for cache invalidation
+        \App\Models\Theme\Theme::observe(\App\Observers\ThemeObserver::class);
+
           // Step 4 Hardening: Queue Isolation with Safety Assertions
           // Automatically clear tenant context after every job execution to prevent state leakage.
           Queue::after(function (\Illuminate\Queue\Events\JobProcessed $event) {

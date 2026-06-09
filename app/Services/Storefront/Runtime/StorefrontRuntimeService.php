@@ -191,24 +191,28 @@ class StorefrontRuntimeService
      */
     private function resolveNavigationDataFromDatabase(Store $store, string $locale): array
     {
-        // Try to get main menu from database
+        $fallbackNavigation = $this->resolveNavigationData($store, $locale);
         $mainMenu = $this->navigationMenuRepository->getByHandle('main-menu', $store->id);
-        
-        if ($mainMenu) {
-            $items = $mainMenu->rootItems->map(fn ($item) => $this->transformNavigationItem($item));
-            
-            return [
-                'mainMenu' => [
-                    'id' => $mainMenu->id,
-                    'name' => $mainMenu->name,
-                    'handle' => $mainMenu->handle,
-                    'items' => $items->toArray(),
-                ],
-            ];
+        $footerMenu = $this->navigationMenuRepository->getByHandle('footer-menu', $store->id);
+
+        if (!$mainMenu && !$footerMenu) {
+            return $fallbackNavigation;
         }
 
-        // Fallback to config-based navigation if no database menu exists
-        return $this->resolveNavigationData($store, $locale);
+        return [
+            'header' => $mainMenu
+                ? $mainMenu->rootItems
+                    ->map(fn ($item) => $this->transformNavigationItem($item, $locale))
+                    ->values()
+                    ->all()
+                : ($fallbackNavigation['header'] ?? []),
+            'footer' => $footerMenu
+                ? $footerMenu->rootItems
+                    ->map(fn ($item) => $this->transformNavigationItem($item, $locale))
+                    ->values()
+                    ->all()
+                : ($fallbackNavigation['footer'] ?? []),
+        ];
     }
 
     /**
@@ -216,18 +220,64 @@ class StorefrontRuntimeService
      * 
      * @return array<string, mixed>
      */
-    private function transformNavigationItem($item): array
+    private function transformNavigationItem($item, string $locale): array
     {
+        $fallbackLocale = (string) config('app.fallback_locale', 'en');
+        $label = $this->resolveNavigationItemLabel($item->label, $locale, $fallbackLocale);
+        
+        // Use the model's resolved URL method with resource awareness
+        $path = $item->getResolvedUrl($locale);
+
         return [
             'id' => $item->id,
-            'label' => $item->label,
-            'type' => $item->type,
-            'url' => $item->url,
-            'target' => $item->target,
-            'resourceId' => $item->resource_id,
-            'resourceType' => $item->resource_type,
-            'children' => $item->children->map(fn ($child) => $this->transformNavigationItem($child))->toArray(),
+            'label' => $label,
+            'path' => $path,
+            'external' => $this->isExternalNavigationPath($path, $item->type),
+            'children' => $item->children
+                ->map(fn ($child) => $this->transformNavigationItem($child, $locale))
+                ->values()
+                ->all(),
         ];
+    }
+
+    private function resolveNavigationItemLabel(
+        mixed $label,
+        string $locale,
+        string $fallbackLocale,
+    ): string {
+        if (is_string($label)) {
+            $decoded = json_decode($label, true);
+
+            if (is_array($decoded)) {
+                $resolved = $this->localizedContentResolver->resolveLocalizedField(
+                    $decoded,
+                    $locale,
+                    $fallbackLocale,
+                );
+
+                return is_string($resolved) && $resolved !== ''
+                    ? $resolved
+                    : $label;
+            }
+
+            return $label;
+        }
+
+        $resolved = $this->localizedContentResolver->resolveLocalizedField(
+            $label,
+            $locale,
+            $fallbackLocale,
+        );
+
+        return is_string($resolved) ? $resolved : '';
+    }
+
+    private function isExternalNavigationPath(string $path, string $type): bool
+    {
+        return $type === 'external'
+            || str_starts_with($path, 'http://')
+            || str_starts_with($path, 'https://')
+            || str_starts_with($path, '//');
     }
 
     /**
@@ -1631,8 +1681,14 @@ class StorefrontRuntimeService
      */
     private function resolveThemeDataFromDatabase(Store $store, string $locale): array
     {
-        // Try to get active theme from database
-        $theme = $this->themeRepository->getActiveForStore($store->id);
+        // Try to get published theme first (for live storefront)
+        // If no published theme exists, fall back to active_theme_id (for development/preview)
+        $theme = $this->themeRepository->getPublishedForStore($store->id);
+        
+        if (!$theme && $store->active_theme_id) {
+            // Fallback to the theme set via active_theme_id
+            $theme = $store->activeTheme()->with(['sections.blocks', 'templates'])->first();
+        }
         
         if ($theme) {
             $settings = $theme->settings ?? [];
@@ -1648,11 +1704,13 @@ class StorefrontRuntimeService
                         : 'Electronics, fashion, and home essentials — curated for everyday shopping.'),
                 ],
                 'tokens' => [
-                    'colorPrimary' => $settings['color_primary'] ?? (string) config('storefront_runtime.theme.tokens.color_primary'),
-                    'colorSurface' => $settings['color_surface'] ?? (string) config('storefront_runtime.theme.tokens.color_surface'),
-                    'colorText' => $settings['color_text'] ?? (string) config('storefront_runtime.theme.tokens.color_text'),
-                    'fontBody' => $settings['font_body'] ?? (string) config('storefront_runtime.theme.tokens.font_body'),
-                    'fontHeading' => $settings['font_heading'] ?? (string) config('storefront_runtime.theme.tokens.font_heading'),
+                    'colorPrimary' => $settings['colors']['primary'] ?? (string) config('storefront_runtime.theme.tokens.color_primary'),
+                    'colorSecondary' => $settings['colors']['secondary'] ?? (string) config('storefront_runtime.theme.tokens.color_primary'),
+                    'colorAccent' => $settings['colors']['accent'] ?? (string) config('storefront_runtime.theme.tokens.color_primary'),
+                    'colorSurface' => $settings['colors']['background'] ?? (string) config('storefront_runtime.theme.tokens.color_surface'),
+                    'colorText' => $settings['colors']['text'] ?? (string) config('storefront_runtime.theme.tokens.color_text'),
+                    'fontBody' => $settings['fonts']['body'] ?? (string) config('storefront_runtime.theme.tokens.font_body'),
+                    'fontHeading' => $settings['fonts']['heading'] ?? (string) config('storefront_runtime.theme.tokens.font_heading'),
                 ],
                 'assets' => [
                     'logoUrl' => $store->logo_url,
@@ -1676,6 +1734,8 @@ class StorefrontRuntimeService
             ],
             'tokens' => [
                 'colorPrimary' => (string) config('storefront_runtime.theme.tokens.color_primary'),
+                'colorSecondary' => (string) config('storefront_runtime.theme.tokens.color_primary'),
+                'colorAccent' => (string) config('storefront_runtime.theme.tokens.color_primary'),
                 'colorSurface' => (string) config('storefront_runtime.theme.tokens.color_surface'),
                 'colorText' => (string) config('storefront_runtime.theme.tokens.color_text'),
                 'fontBody' => (string) config('storefront_runtime.theme.tokens.font_body'),
