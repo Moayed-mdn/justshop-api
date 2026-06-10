@@ -16,6 +16,7 @@ class CartItemRepository
     {
         return $cart->items()
             ->where('product_variant_id', $variantId)
+            ->lockForUpdate()
             ->first();
     }
 

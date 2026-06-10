@@ -9,7 +9,14 @@ class CartRepository
 {
     public function getOrCreate(User $user): Cart
     {
-        return $user->cart()->firstOrCreate([]);
+        // Use lockForUpdate to prevent race conditions
+        $cart = $user->cart()->lockForUpdate()->first();
+        
+        if (!$cart) {
+            $cart = $user->cart()->create([]);
+        }
+        
+        return $cart;
     }
 
     public function getWithItems(User $user): Cart

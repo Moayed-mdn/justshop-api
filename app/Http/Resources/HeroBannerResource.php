@@ -23,7 +23,7 @@ class HeroBannerResource extends JsonResource
             'id' => $this->id,
             'title' => $translation?->title,
             'subtitle' => $translation?->subtitle,
-            'cat_text' => $translation?->cat_text,
+            'cat_text' => $translation?->cta_text,
             'cat_url' => $this->cat_url,
             'position' => $this->position,
             'visual' => $this->visual_type === 'image'

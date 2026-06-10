@@ -26,13 +26,14 @@ class RelatedProductResource extends JsonResource
         }
 
         return [
-            'id'            => $this->id,
-            'name'          => $translation?->name ?? '',
-            'slug'          => $translation?->slug ?? '',
-            'description'   => $translation?->description ?? '',
-            'primary_image' => $primaryImage,
-            'price'         => $displayVariant ? (float) $displayVariant->price : null,
-            'category_id'   => $this->category_id,
+            'id'                 => $this->id,
+            'name'               => $translation?->name ?? '',
+            'slug'               => $translation?->slug ?? '',
+            'description'        => $translation?->description ?? '',
+            'primary_image'      => $primaryImage,
+            'price'              => $displayVariant ? (float) $displayVariant->price : null,
+            'category_id'        => $this->category_id,
+            'product_variant_id' => $displayVariant?->id,
         ];
     }
 }
