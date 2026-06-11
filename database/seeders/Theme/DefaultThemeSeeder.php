@@ -323,16 +323,50 @@ class DefaultThemeSeeder extends Seeder
             'description' => 'Footer navigation menu',
         ]);
 
-        // Create footer menu items
-        NavigationMenuItem::create([
+        // Create footer menu items with groups and flat links
+        
+        // Group 1: About Us
+        $aboutGroup = NavigationMenuItem::create([
             'menu_id' => $footerMenu->id,
             'parent_id' => null,
             'label' => json_encode([
-                'en' => 'Privacy Policy',
-                'ar' => 'سياسة الخصوصية',
-            ]),
-            'type' => 'page',
-            'url' => '/privacy',
+                'en' => 'About Us',
+                'ar' => 'من نحن',
+            ], JSON_UNESCAPED_UNICODE),
+            'type' => 'group',
+            'url' => null,
+            'target' => '_self',
+            'resource_type' => null,
+            'resource_id' => null,
+            'position' => 0,
+            'is_active' => true,
+        ]);
+
+        NavigationMenuItem::create([
+            'menu_id' => $footerMenu->id,
+            'parent_id' => $aboutGroup->id,
+            'label' => json_encode([
+                'en' => 'Our Story',
+                'ar' => 'قصتنا',
+            ], JSON_UNESCAPED_UNICODE),
+            'type' => 'link',
+            'url' => '/about',
+            'target' => '_self',
+            'resource_type' => null,
+            'resource_id' => null,
+            'position' => 0,
+            'is_active' => true,
+        ]);
+
+        NavigationMenuItem::create([
+            'menu_id' => $footerMenu->id,
+            'parent_id' => $aboutGroup->id,
+            'label' => json_encode([
+                'en' => 'Careers',
+                'ar' => 'الوظائف',
+            ], JSON_UNESCAPED_UNICODE),
+            'type' => 'link',
+            'url' => '/careers',
             'target' => '_self',
             'resource_type' => null,
             'resource_id' => null,
@@ -342,13 +376,13 @@ class DefaultThemeSeeder extends Seeder
 
         NavigationMenuItem::create([
             'menu_id' => $footerMenu->id,
-            'parent_id' => null,
+            'parent_id' => $aboutGroup->id,
             'label' => json_encode([
-                'en' => 'Terms of Service',
-                'ar' => 'شروط الخدمة',
-            ]),
-            'type' => 'page',
-            'url' => '/terms',
+                'en' => 'Press',
+                'ar' => 'الصحافة',
+            ], JSON_UNESCAPED_UNICODE),
+            'type' => 'link',
+            'url' => '/press',
             'target' => '_self',
             'resource_type' => null,
             'resource_id' => null,
@@ -356,15 +390,98 @@ class DefaultThemeSeeder extends Seeder
             'is_active' => true,
         ]);
 
+        // Group 2: Customer Service
+        $serviceGroup = NavigationMenuItem::create([
+            'menu_id' => $footerMenu->id,
+            'parent_id' => null,
+            'label' => json_encode([
+                'en' => 'Customer Service',
+                'ar' => 'خدمة العملاء',
+            ], JSON_UNESCAPED_UNICODE),
+            'type' => 'group',
+            'url' => null,
+            'target' => '_self',
+            'resource_type' => null,
+            'resource_id' => null,
+            'position' => 1,
+            'is_active' => true,
+        ]);
+
+        NavigationMenuItem::create([
+            'menu_id' => $footerMenu->id,
+            'parent_id' => $serviceGroup->id,
+            'label' => json_encode([
+                'en' => 'Contact Us',
+                'ar' => 'اتصل بنا',
+            ], JSON_UNESCAPED_UNICODE),
+            'type' => 'link',
+            'url' => '/contact',
+            'target' => '_self',
+            'resource_type' => null,
+            'resource_id' => null,
+            'position' => 0,
+            'is_active' => true,
+        ]);
+
+        NavigationMenuItem::create([
+            'menu_id' => $footerMenu->id,
+            'parent_id' => $serviceGroup->id,
+            'label' => json_encode([
+                'en' => 'Shipping & Returns',
+                'ar' => 'الشحن والاسترجاع',
+            ], JSON_UNESCAPED_UNICODE),
+            'type' => 'link',
+            'url' => '/shipping',
+            'target' => '_self',
+            'resource_type' => null,
+            'resource_id' => null,
+            'position' => 1,
+            'is_active' => true,
+        ]);
+
+        NavigationMenuItem::create([
+            'menu_id' => $footerMenu->id,
+            'parent_id' => $serviceGroup->id,
+            'label' => json_encode([
+                'en' => 'Track Order',
+                'ar' => 'تتبع الطلب',
+            ], JSON_UNESCAPED_UNICODE),
+            'type' => 'link',
+            'url' => '/track-order',
+            'target' => '_self',
+            'resource_type' => null,
+            'resource_id' => null,
+            'position' => 2,
+            'is_active' => true,
+        ]);
+
+        // Flat link: Privacy Policy (no children, renders as single link)
         NavigationMenuItem::create([
             'menu_id' => $footerMenu->id,
             'parent_id' => null,
             'label' => json_encode([
-                'en' => 'Shipping & Returns',
-                'ar' => 'الشحن والاسترجاع',
-            ]),
-            'type' => 'page',
-            'url' => '/shipping',
+                'en' => 'Privacy Policy',
+                'ar' => 'سياسة الخصوصية',
+            ], JSON_UNESCAPED_UNICODE),
+            'type' => 'link',
+            'url' => '/privacy',
+            'target' => '_self',
+            'resource_type' => null,
+            'resource_id' => null,
+            'position' => 2,
+            'is_active' => true,
+        ]);
+
+        // Flat link: Terms of Service (no children, renders as single link)
+        NavigationMenuItem::create([
+            'menu_id' => $footerMenu->id,
+            'parent_id' => null,
+            'label' => json_encode([
+                'en' => 'Terms of Service',
+                'ar' => 'شروط الخدمة',
+            ], JSON_UNESCAPED_UNICODE),
+            'type' => 'link',
+            'url' => '/terms',
             'target' => '_self',
             'resource_type' => null,
             'resource_id' => null,

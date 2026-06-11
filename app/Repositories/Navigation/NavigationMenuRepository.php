@@ -20,8 +20,8 @@ class NavigationMenuRepository
      */
     public function findWithItems(int $id): ?NavigationMenu
     {
-        return NavigationMenu::with(['items' => function ($query) {
-            $query->with('children')->whereNull('parent_id');
+        return NavigationMenu::with(['rootItems' => function ($query) {
+            $query->with('children');
         }])->find($id);
     }
 

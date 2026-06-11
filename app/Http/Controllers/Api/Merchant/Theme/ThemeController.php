@@ -34,11 +34,18 @@ class ThemeController extends Controller
     /**
      * Get all themes for a store
      */
-    public function index(Store $store): JsonResponse
+    public function index(Store $store, Request $request): JsonResponse
     {
-        $themes = $this->themeRepository->getAllForStore($store->id);
+        $perPage = (int) $request->input('per_page', 15);
+        
+        $themes = Theme::where('store_id', $store->id)
+            ->orderBy('created_at', 'desc')
+            ->paginate($perPage);
 
-        return $this->success(ThemeResource::collection($themes));
+        return $this->paginated(
+            $themes,
+            ThemeResource::collection($themes->items())->resolve()
+        );
     }
 
     /**

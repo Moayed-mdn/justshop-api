@@ -37,7 +37,7 @@ class BootstrapPayloadSerializer
      */
     public static function toArray(GetBootstrapResponseDTO $dto): array
     {
-        return [
+        $result = [
             'user' => [
                 'id' => $dto->user->id,
                 'name' => $dto->user->name,
@@ -73,6 +73,14 @@ class BootstrapPayloadSerializer
             ],
             'actor_context' => $dto->actorContext->value,
         ];
+
+        // Add billing data if present (Phase 2: Subscription & Billing)
+        if ($dto->billing !== null) {
+            $result['billing'] = $dto->billing['billing'] ?? null;
+            $result['active_store_entitlements'] = $dto->billing['active_store_entitlements'] ?? null;
+        }
+
+        return $result;
     }
 
     private static function resolveFeatureFlags(): array

@@ -1,8 +1,17 @@
 <?php
-// routes/api/v1/stripe/webhook.php
 
-use App\Http\Controllers\Api\Shared\Payment\StripeWebhookController;
+use App\Http\Controllers\Api\Billing\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
-// Stripe webhook — NO auth, NO CSRF
-Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle']);
+/*
+|--------------------------------------------------------------------------
+| Stripe Webhook Routes
+|--------------------------------------------------------------------------
+|
+| Stripe webhook endpoint for subscription lifecycle events.
+| No authentication - verified via Stripe signature.
+|
+*/
+
+Route::post('/webhooks/stripe', [StripeWebhookController::class, 'handle'])
+    ->name('stripe.webhook');

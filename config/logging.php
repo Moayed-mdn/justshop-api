@@ -85,6 +85,15 @@ return [
             'tap' => [App\Logging\SanitizeSensitiveLogData::class],
         ],
 
+        'billing' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/billing.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 90, // Keep billing logs for 90 days (audit requirement)
+            'replace_placeholders' => true,
+            'tap' => [App\Logging\SanitizeSensitiveLogData::class],
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),

@@ -39,6 +39,8 @@ class Store extends Model
         'provisioning_failed_at',
         'provisioning_attempts',
         'provisioning_last_error',
+        'is_grandfathered',
+        'grandfathered_until',
     ];
 
     protected function casts(): array
@@ -56,6 +58,8 @@ class Store extends Model
             'provisioning_completed_at' => 'datetime',
             'provisioning_failed_at' => 'datetime',
             'provisioning_attempts' => 'integer',
+            'is_grandfathered' => 'boolean',
+            'grandfathered_until' => 'datetime',
         ];
     }
 
@@ -124,5 +128,25 @@ class Store extends Model
     public function isOperational(): bool
     {
         return $this->is_active && $this->status === StoreStatusEnum::ACTIVE;
+    }
+
+    /**
+     * Check if store is grandfathered and grace period is still active.
+     */
+    public function isGrandfatheredAndActive(): bool
+    {
+        return $this->is_grandfathered 
+            && $this->grandfathered_until 
+            && $this->grandfathered_until->isFuture();
+    }
+
+    /**
+     * Check if store grandfathering has expired.
+     */
+    public function isGrandfatheringExpired(): bool
+    {
+        return $this->is_grandfathered
+            && $this->grandfathered_until
+            && $this->grandfathered_until->isPast();
     }
 }

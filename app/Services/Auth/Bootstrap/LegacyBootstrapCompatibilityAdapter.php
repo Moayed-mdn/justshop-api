@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Auth\Bootstrap;
 
+use App\Actions\Billing\GetBillingBootstrapAction;
 use App\DTOs\Auth\Bootstrap\BootstrapConfigDTO;
 use App\DTOs\Auth\Bootstrap\BootstrapOnboardingDTO;
 use App\DTOs\Auth\Bootstrap\BootstrapStoreDTO;
@@ -14,6 +15,7 @@ use App\Models\User;
 use App\Repositories\Store\StoreRepository;
 use App\Services\Auth\OnboardingApplicabilityResolver;
 use App\Services\Auth\Permission\LegacyPermissionAuthority;
+use Illuminate\Support\Facades\Log;
 
 class LegacyBootstrapCompatibilityAdapter
 {
@@ -21,6 +23,7 @@ class LegacyBootstrapCompatibilityAdapter
         private readonly LegacyPermissionAuthority $legacyPermissionAuthority,
         private readonly StoreRepository $storeRepository,
         private readonly OnboardingApplicabilityResolver $onboardingApplicabilityResolver,
+        private readonly GetBillingBootstrapAction $getBillingBootstrapAction,
     ) {}
 
     public function adapt(User $user, array $session = []): GetBootstrapResponseDTO
@@ -67,6 +70,19 @@ class LegacyBootstrapCompatibilityAdapter
         $activePermissions = $activeStoreModel ? $this->legacyPermissionAuthority->resolve($user, $activeStoreModel)->permissions() : [];
         $activeCapabilities = \App\Services\Auth\Permission\PermissionTransformer::toFrontendFlags($activePermissions);
 
+        // Phase 2: Get billing data for the user
+        $billing = null;
+        try {
+            $activeStoreId = $activeStoreModel?->id;
+            $billing = $this->getBillingBootstrapAction->execute($user, $activeStoreId);
+        } catch (\Exception $e) {
+            // Log error but don't fail bootstrap
+            Log::channel('billing')->error('billing.bootstrap.failed', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
+
         return new GetBootstrapResponseDTO(
             user: BootstrapUserDTO::fromModel($user),
             stores: $storeDTOs,
@@ -83,6 +99,7 @@ class LegacyBootstrapCompatibilityAdapter
             config: BootstrapConfigDTO::fromDefaults(),
             actorContext: $user->getActorContext(),
             session: $session,
+            billing: $billing,
         );
     }
 }

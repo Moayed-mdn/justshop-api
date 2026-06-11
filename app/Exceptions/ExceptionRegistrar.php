@@ -61,12 +61,20 @@ class ExceptionRegistrar
             }
 
             if ($e instanceof DomainException) {
-                return $this->attachTraceHeaders(response()->json([
+                $response = [
                     'success' => false,
                     'code' => $e->getErrorCode(),
                     'message' => $e->getMessage(),
                     'errors' => new \stdClass(),
-                ], $e->getStatus()));
+                ];
+
+                // Include logout URL for identity domain mismatch errors
+                if ($e instanceof \App\Exceptions\Domain\InvalidIdentityDomainAccessException && $e->getLogoutUrl()) {
+                    $response['logoutUrl'] = $e->getLogoutUrl();
+                    $response['action'] = 'logout_required';
+                }
+
+                return $this->attachTraceHeaders(response()->json($response, $e->getStatus()));
             }
 
             if ($e instanceof ValidationException) {

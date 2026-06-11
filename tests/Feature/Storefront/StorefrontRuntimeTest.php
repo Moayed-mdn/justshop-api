@@ -11,6 +11,8 @@ use App\Enums\Cms\Marketing\MarketingPageTemplateEnum;
 use App\Enums\Store\StoreStatusEnum;
 use App\Models\Category;
 use App\Models\Cms\Marketing\Store\StoreMarketingPage;
+use App\Models\Navigation\NavigationMenu;
+use App\Models\Navigation\NavigationMenuItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Store;
@@ -183,6 +185,61 @@ class StorefrontRuntimeTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.branding.storeName', $store->name)
             ->assertJsonPath('data.branding.tagline', 'Electronics, fashion, and home essentials — curated for everyday shopping.');
+    }
+
+    public function test_navigation_endpoint_uses_database_main_and_footer_menus_when_present(): void
+    {
+        [$store] = $this->seedRuntimeCatalog();
+
+        $mainMenu = NavigationMenu::query()->create([
+            'store_id' => $store->id,
+            'name' => 'Main Menu',
+            'handle' => 'main-menu',
+            'description' => 'Primary navigation',
+            'is_active' => true,
+        ]);
+
+        $footerMenu = NavigationMenu::query()->create([
+            'store_id' => $store->id,
+            'name' => 'Footer Menu',
+            'handle' => 'footer-menu',
+            'description' => 'Footer navigation',
+            'is_active' => true,
+        ]);
+
+        NavigationMenuItem::query()->create([
+            'menu_id' => $mainMenu->id,
+            'label' => json_encode(['en' => 'Home DB', 'ar' => 'الرئيسية من قاعدة البيانات'], JSON_UNESCAPED_UNICODE),
+            'type' => 'custom',
+            'url' => '/db-home',
+            'target' => '_self',
+            'position' => 0,
+            'is_active' => true,
+        ]);
+
+        NavigationMenuItem::query()->create([
+            'menu_id' => $footerMenu->id,
+            'label' => json_encode(['en' => 'About DB', 'ar' => 'من نحن من قاعدة البيانات'], JSON_UNESCAPED_UNICODE),
+            'type' => 'custom',
+            'url' => '/db-about',
+            'target' => '_self',
+            'position' => 0,
+            'is_active' => true,
+        ]);
+
+        $this->runtimeGet($store, '/api/v1/storefront/runtime/navigation', ['path' => '/'])
+            ->assertOk()
+            ->assertJsonPath('data.header.0.label', 'Home DB')
+            ->assertJsonPath('data.header.0.path', '/db-home')
+            ->assertJsonPath('data.header.0.external', false)
+            ->assertJsonPath('data.footer.0.label', 'About DB')
+            ->assertJsonPath('data.footer.0.path', '/db-about')
+            ->assertJsonPath('data.footer.0.external', false);
+
+        $this->runtimeGet($store, '/api/v1/storefront/runtime/navigation', ['path' => '/ar'], 'ar')
+            ->assertOk()
+            ->assertJsonPath('data.header.0.label', 'الرئيسية من قاعدة البيانات')
+            ->assertJsonPath('data.footer.0.label', 'من نحن من قاعدة البيانات');
     }
 
     public function test_preview_validation_and_preview_page_fetch_work_with_cache_bypass(): void

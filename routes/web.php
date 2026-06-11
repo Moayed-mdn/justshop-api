@@ -9,3 +9,7 @@ Route::get('/', function () {
 
 Route::get('/sanctum/csrf-cookie', [CsrfCookieController::class, 'show'])
     ->middleware('web');
+
+Route::get('/login', function () {
+    return response()->json(['message' => 'Unauthenticated'], 401);
+})->name('login')->middleware('web');

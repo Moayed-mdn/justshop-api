@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\Merchant\Asset\StoreAssetController;
 use App\Http\Controllers\Api\Merchant\Navigation\NavigationMenuController;
 use App\Http\Controllers\Api\Merchant\Navigation\NavigationMenuItemController;
+use App\Http\Controllers\Api\Merchant\Navigation\NavigationResourceController;
 use App\Http\Controllers\Api\Merchant\Theme\ThemeBlockController;
 use App\Http\Controllers\Api\Merchant\Theme\ThemeController;
 use App\Http\Controllers\Api\Merchant\Theme\ThemeSectionController;
@@ -62,6 +63,17 @@ Route::name('merchant.')
                 Route::put('/{item}', [NavigationMenuItemController::class, 'update'])->name('update');
                 Route::delete('/{item}', [NavigationMenuItemController::class, 'destroy'])->name('destroy');
             });
+
+            // ── Available Resources for Linking ─────────────────
+            Route::prefix('resources')->name('resources.')->group(function () {
+                Route::get('/pages', [NavigationResourceController::class, 'pages'])->name('pages');
+                Route::get('/categories', [NavigationResourceController::class, 'categories'])->name('categories');
+                Route::get('/products', [NavigationResourceController::class, 'products'])->name('products');
+                Route::get('/{type}/{id}', [NavigationResourceController::class, 'show'])->name('show');
+            });
+
+            // ── URL Validation ───────────────────────────────────
+            Route::post('/validate-url', [NavigationResourceController::class, 'validateUrl'])->name('validate-url');
         });
 
         // ── Store Assets ────────────────────────────────────────

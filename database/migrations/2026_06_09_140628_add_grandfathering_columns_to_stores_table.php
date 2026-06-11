@@ -1,0 +1,29 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('stores', function (Blueprint $table) {
+            $table->boolean('is_grandfathered')->default(false)->after('is_active');
+            $table->timestamp('grandfathered_until')->nullable()->after('is_grandfathered');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('stores', function (Blueprint $table) {
+            $table->dropColumn(['is_grandfathered', 'grandfathered_until']);
+        });
+    }
+};

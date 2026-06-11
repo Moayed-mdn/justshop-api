@@ -63,4 +63,27 @@ enum ErrorCode: string
 
     // --- User (USR) ---
     case USR_001 = 'USR_001'; // User not found
+
+    // --- Subscription (SUB) ---
+    case SUB_001 = 'SUB_001'; // Subscription not found
+    case SUB_002 = 'SUB_002'; // Subscription required (payment required)
+    case SUB_003 = 'SUB_003'; // Trial already used
+    case SUB_004 = 'SUB_004'; // Invalid subscription transition
+    case SUB_005 = 'SUB_005'; // Feature not available in plan
+    case SUB_006 = 'SUB_006'; // Quota exceeded
+
+    // --- Billing (BIL) ---
+    case BIL_001 = 'BIL_001'; // Billing account not found
+    case BIL_002 = 'BIL_002'; // Invoice not found
+    case BIL_003 = 'BIL_003'; // Payment transaction failed
+    case BIL_004 = 'BIL_004'; // Checkout session creation failed
+    case BIL_005 = 'BIL_005'; // Billing portal session creation failed
+    case BIL_006 = 'BIL_006'; // Plan not found
+    case BIL_007 = 'BIL_007'; // Subscription not found
+    case BIL_008 = 'BIL_008'; // Active subscription required
+    case BIL_009 = 'BIL_009'; // Invalid plan change operation
+    case BIL_010 = 'BIL_010'; // Plan upgrade failed
+    case BIL_011 = 'BIL_011'; // Subscription cancellation failed
+    case BIL_012 = 'BIL_012'; // Cannot resume subscription in current status
+    case BIL_013 = 'BIL_013'; // Resume subscription failed
 }

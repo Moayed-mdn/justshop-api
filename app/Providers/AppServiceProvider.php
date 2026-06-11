@@ -35,6 +35,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(SecurityEventLoggerInterface::class, LogSecurityEventLogger::class);
         $this->app->bind(MembershipResolver::class, PivotMembershipResolver::class);
 
+        // Phase 3: Stripe Provider Binding
+        $this->app->singleton(
+            \App\Contracts\Billing\BillingProviderInterface::class,
+            \App\Services\Billing\StripeProvider::class
+        );
+
         // Wave 6: Policy Ownership Registry — singleton so registrations persist per request
         $this->app->singleton(
             \App\Services\Authorization\PolicyOwnershipRegistry::class,

@@ -1,56 +1,312 @@
-# Documentation Index
+# 📚 Laravel Backend Documentation
 
-This directory is the canonical home for project documentation.
+**Project**: Multi-Tenant E-Commerce Platform  
+**Total Documents**: 180+ files  
+**Status**: Comprehensive and well-organized  
+**Last Updated**: June 7, 2026
 
-## Core Contracts
+---
 
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - Project-wide architecture rules and implementation contract.
-- [AUTH_ROUTING.md](./AUTH_ROUTING.md) - Auth routing, identity context, and route ownership doctrine.
-- [CMS_MARKETING_ARCHITECTURE.md](./CMS_MARKETING_ARCHITECTURE.md) - CMS and marketing architecture contract.
-- [EXECUTION_GOVERNANCE.md](./EXECUTION_GOVERNANCE.md) - Execution and rollout governance rules.
-- [OBSERVABILITY.md](./OBSERVABILITY.md) - Observability and telemetry guidance.
-- [exception-system.md](./exception-system.md) - Exception and API error handling standards.
+## 🚀 START HERE
 
-## Topical Guides
+**👉 New to this project? Read**: [00-START-HERE.md](./00-START-HERE.md) ⭐
 
-- `auth/guides/frontend-dashboard-auth-onboarding-guide.md` - Frontend integration contract for dashboard auth and onboarding.
-- `auth/guides/onboarding-auth-store-lifecycle.md` - Backend lifecycle reference for auth, onboarding, and store flows.
-- `production-hardening-checklist.md` - Production readiness checklist.
-- `admin-api.md` - Admin API overview.
-- `reference/storefront-runtime.md` - Storefront runtime endpoint reference and example payloads for frontend integration.
+**👉 Working with AI? Read**: [AI_RULES_ENFORCEMENT_SYSTEM.md](./AI_RULES_ENFORCEMENT_SYSTEM.md) ⭐⭐
 
-## Organized Areas
+---
 
-- `architecture/` - Supporting architecture documents and historical architecture notes.
-- `auth/` - Canonical auth, identity, session, browser, governance, report, and draft docs.
-- `audits/` - Read-only audits and verification reports.
-- `plans/` - Execution plans and staged implementation planning docs.
-- `reference/` - Technical reference material such as route inventories.
-- `security/` - Security guarantees, audits, patterns, and test strategy.
-- `runbooks/` - Operational incident and response procedures.
-- `dashboards/` - Dashboard definitions and telemetry views.
-- `alerts/` - Alert definitions and monitoring thresholds.
-- `adr/` - Architecture decision records.
-- `wave2/`, `wave6/`, `wave7/` - Wave-specific governance and rollout documentation.
+## ⚡ Essential Documents (READ FIRST)
 
-## Recently Reorganized
+| Priority | Document | Description |
+|----------|----------|-------------|
+| ⭐⭐⭐ | [00-START-HERE.md](./00-START-HERE.md) | Your comprehensive entry point |
+| ⭐⭐⭐ | [ARCHITECTURE.md](./ARCHITECTURE.md) | **Supreme law** - MANDATORY reading |
+| ⭐⭐⭐ | [AI_PROMPT_TEMPLATE.md](./AI_PROMPT_TEMPLATE.md) | **Copy-paste template** for AI (USE THIS!) |
+| ⭐⭐ | [AI_RULES_ENFORCEMENT_SYSTEM.md](./AI_RULES_ENFORCEMENT_SYSTEM.md) | How to make AI follow rules |
+| ⭐⭐ | [AI_DOCUMENTATION_RULES.md](./AI_DOCUMENTATION_RULES.md) | Prevent documentation chaos |
+| ⭐⭐ | [EXECUTION_GOVERNANCE.md](./EXECUTION_GOVERNANCE.md) | Execution and migration rules |
+| ⭐ | [AUTH_ROUTING.md](./AUTH_ROUTING.md) | Auth routing and identity context |
+| ⭐ | [exception-system.md](./exception-system.md) | Error handling standards |
 
-- `audits/documentation-tenancy-audit-report.md`
-- `architecture/history/cms-stabilization-summary.md`
-- `architecture/history/wave6-enterprise-authority-foundations.md`
-- `auth/README.md`
-- `auth/core/`
-- `auth/sessions/`
-- `auth/browser/`
-- `auth/governance/`
-- `auth/reports/`
-- `auth/drafts/`
-- `auth/guides/`
-- `plans/marketing-pages-execution-plan.md`
-- `reference/routes.md`
+---
 
-## Conflict Resolution Notes
+## 📂 Documentation Organization
 
-- Auth documentation is now grouped by topic so core contracts, reports, drafts, and guides no longer compete in one flat directory.
-- The historical architecture copy of Wave 6 foundations now lives under `architecture/history/`; the active Wave 6 track remains under `wave6/`.
-- Reports and drafts support decision-making but do not define the canonical architecture unless a core contract explicitly promotes them.
+### Core Contracts & Architecture
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Project-wide architecture rules (SUPREME LAW)
+- **[AUTH_ROUTING.md](./AUTH_ROUTING.md)** - Auth routing, identity context, route ownership
+- **[CMS_MARKETING_ARCHITECTURE.md](./CMS_MARKETING_ARCHITECTURE.md)** - CMS and marketing architecture
+- **[EXECUTION_GOVERNANCE.md](./EXECUTION_GOVERNANCE.md)** - Execution and rollout governance
+- **[OBSERVABILITY.md](./OBSERVABILITY.md)** - Observability and telemetry
+- **[exception-system.md](./exception-system.md)** - Exception and API error handling
+- **[AI_RULES_ENFORCEMENT_SYSTEM.md](./AI_RULES_ENFORCEMENT_SYSTEM.md)** - AI collaboration guide
+
+### Implementation & Features
+- **[GENERIC_IMAGE_UPLOAD.md](./GENERIC_IMAGE_UPLOAD.md)** - Image upload system
+- **[MARKETING_PAGES_ARCHITECTURE.md](./MARKETING_PAGES_ARCHITECTURE.md)** - Marketing pages
+- **[MARKETING_PAGES_IMPLEMENTATION_SUMMARY.md](./MARKETING_PAGES_IMPLEMENTATION_SUMMARY.md)** - Implementation summary
+- **[admin-api.md](./admin-api.md)** - Admin API overview
+- **[production-hardening-checklist.md](./production-hardening-checklist.md)** - Production readiness
+
+### Wave Migrations (Complete)
+- **[wave-closure-audit.md](./wave-closure-audit.md)** - Overall wave closure audit
+- **[WAVE1_REMEDIATION_REPORT.md](./WAVE1_REMEDIATION_REPORT.md)** - Wave 1 report
+- **[wave5-runtime-authority-activation.md](./wave5-runtime-authority-activation.md)** - Wave 5
+- **[wave2/](./wave2/)** - Wave 2 migration docs
+- **[wave6/](./wave6/)** - Wave 6 migration docs
+- **[wave7/](./wave7/)** - Wave 7 migration docs
+- **[wave8/](./wave8/)** - Wave 8 migration docs
+- **[wave9/](./wave9/)** - Wave 9 migration docs
+- **[wave10/](./wave10/)** - Wave 10 migration docs
+- **[wave11/](./wave11/)** - Wave 11 migration docs
+- **[wave12/](./wave12/)** - Wave 12 migration docs
+
+---
+
+## 📁 Organized Directories
+
+### Documentation by Category
+
+| Folder | Description | Contents |
+|--------|-------------|----------|
+| **[adr/](./adr/)** | Architecture Decision Records | Design decisions and rationale |
+| **[alerts/](./alerts/)** | Alert Configurations | Monitoring alert definitions |
+| **[architecture/](./architecture/)** | Architecture Docs | Design documents and history |
+| **[audits/](./audits/)** | Audit Reports | Read-only verification reports |
+| **[auth/](./auth/)** | Authentication Docs | Auth, identity, session, governance |
+| **[dashboards/](./dashboards/)** | Dashboard Definitions | Monitoring dashboards and telemetry |
+| **[features/](./features/)** | Feature Documentation | Individual feature guides |
+| **[fixes/](./fixes/)** | Bug Fixes | Bug fix documentation (15+ files) |
+| **[frontend/](./frontend/)** | Frontend Integration | Frontend collaboration guides |
+| **[implementation/](./implementation/)** | Implementation Guides | Step-by-step implementation docs |
+| **[migrations/](./migrations/)** | Migration Guides | Database and code migration docs |
+| **[plans/](./plans/)** | Planning Documents | Execution plans and roadmaps |
+| **[quick-reference/](./quick-reference/)** | Quick References | Cheat sheets and quick starts (4 files) |
+| **[reference/](./reference/)** | Technical Reference | API references, route inventories |
+| **[reports/](./reports/)** | Status Reports | Project status and progress reports |
+| **[runbooks/](./runbooks/)** | Operational Runbooks | Incident response procedures |
+| **[security/](./security/)** | Security Guidelines | Security patterns and audits |
+| **[sessions/](./sessions/)** | Session Logs | Implementation session logs (Session 9) |
+| **[testing/](./testing/)** | Testing Guides | Test strategies and results (3 files) |
+| **[theme-system/](./theme-system/)** | Theme Backend | Theme system documentation (3 files) |
+
+---
+
+## 🎯 Find Documentation By Task
+
+### I want to...
+
+#### **Understand the architecture**
+→ Start with [00-START-HERE.md](./00-START-HERE.md)  
+→ Read [ARCHITECTURE.md](./ARCHITECTURE.md) completely  
+→ Review [EXECUTION_GOVERNANCE.md](./EXECUTION_GOVERNANCE.md)  
+→ Check [adr/](./adr/) for design decisions
+
+#### **Work with AI assistants**
+→ **MUST READ**: [AI_RULES_ENFORCEMENT_SYSTEM.md](./AI_RULES_ENFORCEMENT_SYSTEM.md)  
+→ Use prompt templates provided  
+→ Reference ARCHITECTURE.md in every prompt  
+→ Follow the enforcement checklist
+
+#### **Implement a new feature**
+→ Read [ARCHITECTURE.md](./ARCHITECTURE.md) rules  
+→ Check [features/](./features/) for examples  
+→ Use [AI_RULES_ENFORCEMENT_SYSTEM.md](./AI_RULES_ENFORCEMENT_SYSTEM.md) prompts  
+→ Follow Golden Path strictly
+
+#### **Fix a bug**
+→ Check [fixes/](./fixes/) for similar issues  
+→ Maintain [ARCHITECTURE.md](./ARCHITECTURE.md) compliance  
+→ Document your fix
+
+#### **Understand authentication**
+→ Read [AUTH_ROUTING.md](./AUTH_ROUTING.md)  
+→ Explore [auth/](./auth/) folder  
+→ Review [security/](./security/) guidelines
+
+#### **Deploy to production**
+→ [production-hardening-checklist.md](./production-hardening-checklist.md)  
+→ [runbooks/](./runbooks/)  
+→ [alerts/](./alerts/) and [dashboards/](./dashboards/)
+
+#### **Understand wave migrations**
+→ [wave-closure-audit.md](./wave-closure-audit.md) for overview  
+→ Specific wave folders (wave6/, wave7/, etc.)  
+→ [EXECUTION_GOVERNANCE.md](./EXECUTION_GOVERNANCE.md) for rules
+
+---
+
+## 🔥 Critical Rules (Quick Ref)
+
+### 1. No Database Enums
+```php
+❌ FORBIDDEN: $table->enum('status', ['pending', 'paid'])
+✅ REQUIRED: $table->string('status') + PHP Enum
+```
+
+### 2. Store Scoping MANDATORY
+```php
+❌ FORBIDDEN: Product::find($id)
+✅ REQUIRED: Product::where('store_id', $storeId)->findOrFail($id)
+```
+
+### 3. Authorization ONLY in Policies
+```php
+❌ FORBIDDEN: Action checks Auth::user()
+✅ REQUIRED: Controller calls $this->authorize()
+```
+
+### 4. Thin Controllers (10-15 lines)
+```php
+✅ REQUIRED: 
+public function store(Request $request, int $store): JsonResponse {
+    $result = $this->action->execute(DTO::fromRequest($request, $store));
+    return $this->success(new Resource($result));
+}
+```
+
+### 5. DTOs with storeId First
+```php
+✅ REQUIRED:
+public function __construct(
+    public int $storeId,    // ← MUST be first parameter
+    public string $name,
+) {}
+```
+
+**Full rules**: See [ARCHITECTURE.md](./ARCHITECTURE.md)
+
+---
+
+## 🎓 Learning Path for New Developers
+
+### Week 1: Foundation
+**Day 1**: [00-START-HERE.md](./00-START-HERE.md)  
+**Day 2**: [ARCHITECTURE.md](./ARCHITECTURE.md) (complete read)  
+**Day 3**: [AI_RULES_ENFORCEMENT_SYSTEM.md](./AI_RULES_ENFORCEMENT_SYSTEM.md)  
+**Day 4**: [EXECUTION_GOVERNANCE.md](./EXECUTION_GOVERNANCE.md)  
+**Day 5**: Explore domain folders ([features/](./features/), [auth/](./auth/))
+
+### Week 2: Deep Dive
+- Study wave migrations ([wave-closure-audit.md](./wave-closure-audit.md))
+- Review ADRs ([adr/](./adr/))
+- Understand auth flow ([AUTH_ROUTING.md](./AUTH_ROUTING.md))
+- Explore implementation examples ([implementation/](./implementation/))
+
+### Week 3: Hands-On
+- Implement sample feature following rules
+- Practice AI collaboration correctly
+- Review production checklist
+- Contribute to documentation
+
+---
+
+## 📊 Statistics
+
+| Category | Count | Status |
+|----------|-------|--------|
+| **Total Documents** | 180+ | ✅ Complete |
+| **Core Contracts** | 7 | ✅ Active |
+| **Wave Migrations** | 12 waves | ✅ Complete |
+| **Feature Docs** | 20+ | ✅ Active |
+| **Bug Fixes** | 15+ | ✅ Documented |
+| **Quick References** | 4 | ✅ Ready |
+| **ADRs** | Multiple | ✅ Active |
+| **Runbooks** | Multiple | ✅ Ready |
+
+---
+
+## ⚠️ Important Notes
+
+### For AI Assistants
+**CRITICAL**: Read [AI_RULES_ENFORCEMENT_SYSTEM.md](./AI_RULES_ENFORCEMENT_SYSTEM.md) before ANY work.  
+Rules are non-negotiable. Follow strictly or code will be rejected.
+
+### For Developers
+- **ARCHITECTURE.md is LAW** - No exceptions, no shortcuts
+- **Store scoping is MANDATORY** - On every commerce query
+- **Authorization in Policies ONLY** - Never in Actions
+- **Work with AI carefully** - Use the enforcement system
+
+### For Code Reviewers
+Use checklists in [AI_RULES_ENFORCEMENT_SYSTEM.md](./AI_RULES_ENFORCEMENT_SYSTEM.md) to verify compliance.
+
+---
+
+## 🔍 Search & Navigation
+
+### Finding Files
+```bash
+# Find by name
+find . -name "*keyword*.md"
+
+# Search content
+grep -r "search term" --include="*.md"
+
+# List category
+ls -la features/
+ls -la fixes/
+```
+
+### Common Searches
+```bash
+# Architecture rules
+grep -r "MANDATORY" ARCHITECTURE.md
+
+# Store scoping examples
+grep -r "store_id" features/
+
+# Authorization patterns
+grep -r "authorize" ARCHITECTURE.md
+```
+
+---
+
+## 📞 Getting Help
+
+### Can't find something?
+
+1. Check [00-START-HERE.md](./00-START-HERE.md)
+2. Review this README's organization
+3. Use search commands above
+4. Check folder-specific READMEs
+
+### Questions about...
+
+**Architecture**: [ARCHITECTURE.md](./ARCHITECTURE.md)  
+**AI Usage**: [AI_RULES_ENFORCEMENT_SYSTEM.md](./AI_RULES_ENFORCEMENT_SYSTEM.md)  
+**Execution**: [EXECUTION_GOVERNANCE.md](./EXECUTION_GOVERNANCE.md)  
+**Auth**: [AUTH_ROUTING.md](./AUTH_ROUTING.md), [auth/](./auth/)  
+**Features**: [features/](./features/)  
+**Bugs**: [fixes/](./fixes/)  
+
+---
+
+## ✅ Success Criteria
+
+You understand this documentation when you can:
+
+1. ✅ Navigate to any document quickly
+2. ✅ Explain why database enums are forbidden
+3. ✅ Write queries with proper store scoping
+4. ✅ Build controllers following Golden Path
+5. ✅ Make AI follow architecture rules
+6. ✅ Find examples for any pattern
+7. ✅ Know where to document your work
+
+---
+
+## 🎉 Welcome to the Team!
+
+This is a **mature, well-architected project** with **strict rules** for excellent reasons.
+
+**Your journey starts here**: [00-START-HERE.md](./00-START-HERE.md) ⭐
+
+Take time to understand the architecture, follow the rules, and you'll be productive quickly!
+
+---
+
+**Last Updated**: June 7, 2026  
+**Status**: Complete and organized  
+**Total Documents**: 180+  
+**Authority**: ARCHITECTURE.md

@@ -21,5 +21,6 @@ class GetBootstrapResponseDTO
         public BootstrapConfigDTO $config,
         public ActorContextEnum $actorContext,
         public array $session,
+        public ?array $billing = null,
     ) {}
 }

@@ -50,6 +50,8 @@ class StorefrontThemeController extends Controller
                     ],
                     'tokens' => [
                         'colorPrimary' => config('storefront_runtime.theme.tokens.color_primary', '#000000'),
+                        'colorSecondary' => config('storefront_runtime.theme.tokens.color_primary', '#6366f1'),
+                        'colorAccent' => config('storefront_runtime.theme.tokens.color_primary', '#ec4899'),
                         'colorSurface' => config('storefront_runtime.theme.tokens.color_surface', '#ffffff'),
                         'colorText' => config('storefront_runtime.theme.tokens.color_text', '#000000'),
                         'fontBody' => config('storefront_runtime.theme.tokens.font_body', 'Inter'),
@@ -81,11 +83,13 @@ class StorefrontThemeController extends Controller
                     'tagline' => $settings['tagline'] ?? 'Your one-stop shop',
                 ],
                 'tokens' => [
-                    'colorPrimary' => $settings['color_primary'] ?? '#000000',
-                    'colorSurface' => $settings['color_surface'] ?? '#ffffff',
-                    'colorText' => $settings['color_text'] ?? '#000000',
-                    'fontBody' => $settings['font_body'] ?? 'Inter',
-                    'fontHeading' => $settings['font_heading'] ?? 'Inter',
+                    'colorPrimary' => $settings['colors']['primary'] ?? '#000000',
+                    'colorSecondary' => $settings['colors']['secondary'] ?? '#6366f1',
+                    'colorAccent' => $settings['colors']['accent'] ?? '#ec4899',
+                    'colorSurface' => $settings['colors']['background'] ?? '#ffffff',
+                    'colorText' => $settings['colors']['text'] ?? '#000000',
+                    'fontBody' => $settings['fonts']['body'] ?? 'Inter',
+                    'fontHeading' => $settings['fonts']['heading'] ?? 'Inter',
                 ],
                 'assets' => [
                     'logoUrl' => $store->logo_url,

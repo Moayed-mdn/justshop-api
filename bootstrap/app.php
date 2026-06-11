@@ -20,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'api/v1/merchant/stores/*/media/delete',
             'api/v1/merchant/stores/*/hero-banners/upload-image',
             'api/v1/merchant/stores/*/hero-banners/delete-image',
+            'api/v1/merchant/billing/*',
+            'api/v1/webhooks/stripe',
         ]);
 
         $middleware->api(prepend: [
@@ -41,6 +43,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'api.deprecated' => \App\Http\Middleware\HandleDeprecatedRoute::class,
+            'subscription.active' => \App\Http\Middleware\EnsureActiveSubscription::class,
+            'feature.gate' => \App\Http\Middleware\EnforceFeatureGate::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

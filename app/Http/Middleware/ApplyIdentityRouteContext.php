@@ -183,7 +183,26 @@ class ApplyIdentityRouteContext
             );
 
             // Step 3 Hardening: Strict Enforcement of session ownership.
-            throw new InvalidIdentityDomainAccessException('Session contamination detected: domain mismatch.');
+            // Provide clear, actionable error message to user
+            $currentDomain = $sessionOwnership->sessionAuthDomain ?? 'unknown';
+            $requiredDomain = $sessionOwnership->authDomain ?? 'unknown';
+            
+            $message = sprintf(
+                'You are currently logged in as a %s, but this page requires %s access. Please log out and sign in with the correct account type.',
+                $currentDomain,
+                $requiredDomain
+            );
+            
+            // Provide a logout URL based on the current session domain
+            $logoutRoute = match($sessionOwnership->sessionAuthDomain) {
+                'merchant' => 'merchant.auth.logout',
+                'customer' => 'customer.auth.logout',
+                default => null,
+            };
+            
+            $logoutUrl = $logoutRoute ? route($logoutRoute) : null;
+            
+            throw new InvalidIdentityDomainAccessException($message, $logoutUrl);
         }
 
         // Enforce guard authority
