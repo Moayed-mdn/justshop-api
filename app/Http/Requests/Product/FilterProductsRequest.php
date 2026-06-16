@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Product;
 
+use App\Rules\CategorySlugExists;
 use Illuminate\Foundation\Http\FormRequest;
 
 class FilterProductsRequest extends FormRequest
@@ -24,7 +25,7 @@ class FilterProductsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category_slug' => ['nullable', 'string', 'exists:categories,slug'],
+            'category_slug' => ['nullable', 'string', new CategorySlugExists()],
             'min_price' => ['nullable', 'numeric', 'min:0'],
             'max_price' => ['nullable', 'numeric', 'min:0', 'gte:min_price'],
             'earliest_manufacture' => ['nullable', 'date'],

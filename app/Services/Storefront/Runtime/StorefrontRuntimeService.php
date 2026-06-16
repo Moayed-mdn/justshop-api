@@ -729,15 +729,12 @@ class StorefrontRuntimeService
             'layout' => 'catalog',
             'status' => 'published',
             'sections' => [[
-                'id' => 'shop_categories',
-                'type' => 'category_grid',
-                'component' => 'CategoryGridSection',
+                'id' => 'shop_products',
+                'type' => 'shop_grid',
+                'component' => 'ShopGridSection',
                 'props' => [
-                    'title' => $locale === 'ar' ? 'تسوق حسب القسم' : 'Shop by department',
-                    'subtitle' => $locale === 'ar'
-                        ? 'تصفح أقسام المتجر واكتشف المنتجات المتاحة.'
-                        : 'Browse store departments and discover available products.',
-                    'categories' => $this->mapCategoryGridItems($store, $locale),
+                    'categorySlug' => null,
+                    'storeId' => $store->id,
                 ],
                 'version' => '1',
                 'dataState' => 'ready',
@@ -844,14 +841,13 @@ class StorefrontRuntimeService
         $translation = $category->translation($locale);
         $title = (string) ($translation?->name ?? $category->slug);
         $path = $this->categoryPath($category, $locale);
-
-        $products = $this->mapRuntimeProductCardsForCategory($store, $category, $locale);
+        $categorySlug = (string) ($translation?->slug ?? $category->slug);
 
         return [
             'id' => $pageId,
             'pageType' => 'category_page',
             'title' => $title,
-            'slug' => (string) ($translation?->slug ?? $category->slug),
+            'slug' => $categorySlug,
             'locale' => $locale,
             'layout' => 'catalog',
             'status' => 'published',
@@ -863,7 +859,7 @@ class StorefrontRuntimeService
                     'props' => [
                         'categoryId' => $category->id,
                         'name' => $title,
-                        'slug' => (string) ($translation?->slug ?? $category->slug),
+                        'slug' => $categorySlug,
                         'breadcrumb' => $category->breadcrumb->values()->all(),
                     ],
                     'version' => '1',
@@ -871,10 +867,11 @@ class StorefrontRuntimeService
                 ],
                 [
                     'id' => 'category_products_' . $category->id,
-                    'type' => 'product_grid',
-                    'component' => 'ProductGridSection',
+                    'type' => 'shop_grid',
+                    'component' => 'ShopGridSection',
                     'props' => [
-                        'products' => $products,
+                        'categorySlug' => $categorySlug,
+                        'storeId' => $store->id,
                     ],
                     'version' => '1',
                     'dataState' => 'ready',
@@ -936,6 +933,16 @@ class StorefrontRuntimeService
                     'price' => $product->primaryVariant()?->price,
                     'primaryImage' => $product->primary_image_url,
                     'maxQuantity' => $product->primaryVariant()?->quantity,
+                    'brand' => $product->brand ? [
+                        'id' => $product->brand->id,
+                        'name' => $product->brand->name,
+                        'slug' => $product->brand->slug,
+                    ] : null,
+                    'category' => $product->category ? [
+                        'id' => $product->category->id,
+                        'name' => $product->category->translation($locale)?->name ?? $product->category->slug,
+                        'slug' => $product->category->translation($locale)?->slug ?? $product->category->slug,
+                    ] : null,
                     'attributes' => $attributes,
                     'images' => $allImages,
                     'variants' => $activeVariants->map(fn ($v) => [
