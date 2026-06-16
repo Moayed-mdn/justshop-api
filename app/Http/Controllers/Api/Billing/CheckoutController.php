@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Api\Billing;
 
+use App\Actions\Billing\CreateBillingAccountAction;
 use App\Actions\Billing\CreateCheckoutSessionAction;
+use App\DTOs\Billing\CreateBillingAccountDTO;
 use App\DTOs\Billing\CreateCheckoutSessionDTO;
 use App\Enums\ErrorCode;
 use App\Http\Controllers\Controller;
@@ -14,6 +16,7 @@ class CheckoutController extends Controller
 {
     public function __construct(
         private CreateCheckoutSessionAction $createCheckoutSessionAction,
+        private CreateBillingAccountAction $createBillingAccountAction,
         private BillingAccountRepository $billingAccountRepository,
     ) {}
 
@@ -27,14 +30,15 @@ class CheckoutController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        // Get billing account
+        // Get or create billing account
         $billingAccount = $this->billingAccountRepository->findByOwner($user->id);
 
         if (!$billingAccount) {
-            return $this->error(
-                message: 'Billing account not found. Please create a store first.',
-                errorCode: ErrorCode::BIL_001->value,
-                statusCode: 404
+            $billingAccount = $this->createBillingAccountAction->execute(
+                new CreateBillingAccountDTO(
+                    ownerUserId: $user->id,
+                    billingEmail: $user->email,
+                )
             );
         }
 

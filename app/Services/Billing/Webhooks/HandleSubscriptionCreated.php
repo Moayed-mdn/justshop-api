@@ -47,11 +47,17 @@ class HandleSubscriptionCreated
             'provider_synced_at' => Carbon::now(),
         ];
 
-        if (isset($stripeSubscription['current_period_start'])) {
-            $updateData['current_period_starts_at'] = Carbon::createFromTimestamp($stripeSubscription['current_period_start']);
-        }
-        if (isset($stripeSubscription['current_period_end'])) {
-            $updateData['current_period_ends_at'] = Carbon::createFromTimestamp($stripeSubscription['current_period_end']);
+        // Get period dates from subscription items (not available at subscription level)
+        $items = $stripeSubscription['items']['data'] ?? [];
+        if (!empty($items)) {
+            $firstItem = $items[0];
+            
+            if (isset($firstItem['current_period_start'])) {
+                $updateData['current_period_starts_at'] = Carbon::createFromTimestamp($firstItem['current_period_start']);
+            }
+            if (isset($firstItem['current_period_end'])) {
+                $updateData['current_period_ends_at'] = Carbon::createFromTimestamp($firstItem['current_period_end']);
+            }
         }
 
         $subscription->update($updateData);

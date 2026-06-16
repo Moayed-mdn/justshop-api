@@ -21,7 +21,322 @@ class StorefrontRuntimeDevSeeder extends Seeder
             return;
         }
 
-        $aboutPage = StoreMarketingPage::query()->updateOrCreate(
+        $this->seedHomePage($store, $creator);
+        $this->seedAboutPage($store, $creator);
+        $this->seedContactPage($store, $creator);
+        $this->seedFaqPage($store, $creator);
+        $this->seedSummerSalePage($store, $creator);
+    }
+
+    private function seedHomePage(Store $store, User $creator): void
+    {
+        $page = StoreMarketingPage::query()->updateOrCreate(
+            [
+                'store_id' => $store->id,
+                'slug->en' => 'home',
+            ],
+            [
+                'title' => ['en' => 'Home', 'ar' => 'الرئيسية'],
+                'slug' => ['en' => 'home', 'ar' => 'home'],
+                'excerpt' => [
+                    'en' => 'JustShop — premium quality products at honest prices, delivered fast.',
+                    'ar' => 'JustShop — منتجات عالية الجودة بأسعار عادلة، توصيل سريع.',
+                ],
+                'content' => [],
+                'status' => MarketingPageStatusEnum::PUBLISHED,
+                'published_at' => now()->subDays(7),
+                'seo' => [
+                    'meta_title' => ['en' => 'JustShop Demo — Premium Products, Honest Prices', 'ar' => 'JustShop — منتجات ممتازة بأسعار منصفة'],
+                    'meta_description' => [
+                        'en' => 'Shop premium-quality products with fast shipping, 60-day returns, and price-match guarantee. Join 200,000+ happy customers.',
+                        'ar' => 'تسوق منتجات عالية الجودة مع شحن سريع وإرجاع لمدة 60 يوم وضمان مطابقة السعر. انضم إلى أكثر من 200,000 عميل سعيد.',
+                    ],
+                    'canonical_url' => config('app.url'),
+                    'og_image' => null,
+                    'og_title' => ['en' => 'JustShop Demo — Shop Premium Products', 'ar' => 'JustShop — تسوق منتجات ممتازة'],
+                    'og_description' => [
+                        'en' => 'Premium-quality products at honest prices. Free shipping over $49.',
+                        'ar' => 'منتجات عالية الجودة بأسعار عادلة. شحن مجاني للطلبات فوق $49.',
+                    ],
+                    'robots' => 'index,follow',
+                    'twitter_card' => 'summary_large_image',
+                    'structured_data' => [
+                        '@context' => 'https://schema.org',
+                        '@type' => 'Store',
+                        'name' => 'JustShop Demo',
+                        'url' => config('app.url'),
+                        'description' => 'Premium-quality products at honest prices, delivered fast.',
+                        'aggregateRating' => [
+                            '@type' => 'AggregateRating',
+                            'ratingValue' => '4.8',
+                            'reviewCount' => '12400',
+                            'bestRating' => '5',
+                        ],
+                    ],
+                ],
+                'template' => MarketingPageTemplateEnum::LANDING,
+                'sort_order' => 0,
+                'created_by' => $creator->id,
+                'updated_by' => $creator->id,
+            ],
+        );
+
+        // ── Hero Section ──────────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'hero_home'],
+            [
+                'section_type' => 'hero',
+                'sort_order' => 0,
+                'title' => ['en' => 'Premium Quality, Honest Prices', 'ar' => 'جودة ممتازة، أسعار منصفة'],
+                'subtitle' => [
+                    'en' => 'Free shipping on orders over $49 · 60-day risk-free returns · Price match guarantee',
+                    'ar' => 'شحن مجاني للطلبات فوق $49 · إرجاع بدون مخاطرة لمدة 60 يوم · ضمان مطابقة السعر',
+                ],
+                'content' => [
+                    'en' => [
+                        'headline' => 'Premium Quality, Honest Prices',
+                        'subheadline' => 'Free shipping on orders over $49 · 60-day risk-free returns · Price match guarantee',
+                        'cta_primary' => ['label' => 'Shop Best Sellers', 'url' => '/products'],
+                        'cta_secondary' => ['label' => 'New Arrivals', 'url' => '/products?sort=newest'],
+                        'background_style' => 'gradient',
+                    ],
+                    'ar' => [
+                        'headline' => 'جودة ممتازة، أسعار منصفة',
+                        'subheadline' => 'شحن مجاني للطلبات فوق $49 · إرجاع بدون مخاطرة لمدة 60 يوم · ضمان مطابقة السعر',
+                        'cta_primary' => ['label' => 'تسوق الأكثر مبيعًا', 'url' => '/products'],
+                        'cta_secondary' => ['label' => 'وصل حديثًا', 'url' => '/products?sort=newest'],
+                        'background_style' => 'gradient',
+                    ],
+                ],
+                'settings' => ['layout' => 'full', 'height' => 'large', 'overlay' => true],
+                'is_active' => true,
+            ],
+        );
+
+        // ── Trust Badges Section ──────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'trust_badges_home'],
+            [
+                'section_type' => 'features',
+                'sort_order' => 1,
+                'title' => ['en' => 'Why shop with JustShop?', 'ar' => 'لماذا تتسوق من JustShop؟'],
+                'subtitle' => [
+                    'en' => 'Thousands of customers trust us — here is why.',
+                    'ar' => 'آلاف العملاء يثقون بنا — إليك السبب.',
+                ],
+                'content' => [
+                    'en' => [
+                        ['icon' => 'truck', 'title' => 'Free Shipping Over $49', 'body' => 'Free standard shipping on all orders over $49. Express shipping available from just $5.99.'],
+                        ['icon' => 'rotate-ccw', 'title' => '60-Day Returns', 'body' => 'Not happy? Return any item within 60 days for a full refund. No questions asked, no restocking fees.'],
+                        ['icon' => 'badge-percent', 'title' => 'Price Match Guarantee', 'body' => 'Found it cheaper elsewhere? We will match the price on the spot and refund the difference within 24 hours.'],
+                        ['icon' => 'lock', 'title' => 'Secure Checkout', 'body' => '256-bit SSL encryption. We never store your full card details. PCI DSS Level 1 compliant.'],
+                        ['icon' => 'message-square', 'title' => '24/7 Customer Support', 'body' => 'Real humans, real fast. Average response time: under 2 minutes via chat, under 2 hours via email.'],
+                        ['icon' => 'package', 'title' => 'Order Protection', 'body' => 'Every order is insured against loss, damage, or theft. If anything goes wrong, we reship or refund immediately.'],
+                    ],
+                    'ar' => [
+                        ['icon' => 'truck', 'title' => 'شحن مجاني فوق $49', 'body' => 'شحن مجاني لجميع الطلبات فوق $49. الشحن السريع متوفر ابتداءً من $5.99.'],
+                        ['icon' => 'rotate-ccw', 'title' => 'إرجاع لمدة 60 يومًا', 'body' => 'غير راضٍ؟ أعد أي منتج خلال 60 يومًا لاسترداد كامل المبلغ. لا أسئلة، لا رسوم إعادة تخزين.'],
+                        ['icon' => 'badge-percent', 'title' => 'ضمان مطابقة السعر', 'body' => 'وجدته بسعر أقل في مكان آخر؟ سنطابق السعر فورًا ونرد الفرق خلال 24 ساعة.'],
+                        ['icon' => 'lock', 'title' => 'دفع آمن', 'body' => 'تشفير SSL 256 بت. لا نخزن بيانات بطاقتك الكاملة. متوافق مع PCI DSS المستوى 1.'],
+                        ['icon' => 'message-square', 'title' => 'دعم عملاء 24/7', 'body' => 'بشر حقيقيون، استجابة سريعة. متوسط وقت الرد: أقل من دقيقتين عبر الدردشة، أقل من ساعتين عبر البريد.'],
+                        ['icon' => 'package', 'title' => 'حماية الطلبات', 'body' => 'كل طلب مؤمّن ضد الفقدان أو التلف أو السرقة. إذا حدث خطأ، نعيد الشحن أو نرد المبلغ فورًا.'],
+                    ],
+                ],
+                'settings' => ['layout' => 'grid', 'columns' => 3, 'icon_style' => 'outline'],
+                'is_active' => true,
+            ],
+        );
+
+        // ── Featured Categories Section ───────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'categories_home'],
+            [
+                'section_type' => 'custom',
+                'sort_order' => 2,
+                'title' => ['en' => 'Shop by Category', 'ar' => 'تسوق حسب التصنيف'],
+                'subtitle' => [
+                    'en' => 'Browse our curated collections — everything you need in one place.',
+                    'ar' => 'تصفح مجموعاتنا المختارة — كل ما تحتاجه في مكان واحد.',
+                ],
+                'content' => [
+                    'en' => [
+                        'categories' => [
+                            ['name' => 'Electronics', 'slug' => 'electronics', 'description' => 'Gadgets, accessories, and smart devices', 'image' => null, 'product_count' => 24],
+                            ['name' => 'Home & Living', 'slug' => 'home-living', 'description' => 'Furniture, decor, and kitchen essentials', 'image' => null, 'product_count' => 36],
+                            ['name' => 'Fashion', 'slug' => 'fashion', 'description' => 'Clothing, shoes, and accessories for all', 'image' => null, 'product_count' => 48],
+                            ['name' => 'Beauty & Health', 'slug' => 'beauty-health', 'description' => 'Skincare, wellness, and personal care', 'image' => null, 'product_count' => 30],
+                            ['name' => 'Sports & Outdoors', 'slug' => 'sports-outdoors', 'description' => 'Fitness gear, camping, and outdoor equipment', 'image' => null, 'product_count' => 18],
+                            ['name' => 'Toys & Games', 'slug' => 'toys-games', 'description' => 'Fun for all ages — board games, puzzles, and more', 'image' => null, 'product_count' => 22],
+                        ],
+                    ],
+                    'ar' => [
+                        'categories' => [
+                            ['name' => 'الإلكترونيات', 'slug' => 'electronics', 'description' => 'أجهزة، إكسسوارات، وأجهزة ذكية', 'image' => null, 'product_count' => 24],
+                            ['name' => 'المنزل والمعيشة', 'slug' => 'home-living', 'description' => 'أثاث، ديكور، وأساسيات المطبخ', 'image' => null, 'product_count' => 36],
+                            ['name' => 'الأزياء', 'slug' => 'fashion', 'description' => 'ملابس، أحذية، وإكسسوارات للجميع', 'image' => null, 'product_count' => 48],
+                            ['name' => 'الجمال والصحة', 'slug' => 'beauty-health', 'description' => 'العناية بالبشرة، الصحة، والعناية الشخصية', 'image' => null, 'product_count' => 30],
+                            ['name' => 'الرياضة والهواء الطلق', 'slug' => 'sports-outdoors', 'description' => 'معدات اللياقة، التخييم، والمعدات الخارجية', 'image' => null, 'product_count' => 18],
+                            ['name' => 'الألعاب', 'slug' => 'toys-games', 'description' => 'متعة لجميع الأعمار — ألعاب لوحية، ألغاز، والمزيد', 'image' => null, 'product_count' => 22],
+                        ],
+                    ],
+                ],
+                'settings' => ['layout' => 'grid', 'columns' => 3, 'card_style' => 'elevated'],
+                'is_active' => true,
+            ],
+        );
+
+        // ── Testimonials Section ──────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'testimonials_home'],
+            [
+                'section_type' => 'testimonials',
+                'sort_order' => 3,
+                'title' => ['en' => 'What our customers say', 'ar' => 'ماذا يقول عملاؤنا'],
+                'subtitle' => [
+                    'en' => 'Join 200,000+ happy customers who shop with confidence.',
+                    'ar' => 'انضم إلى أكثر من 200,000 عميل سعيد يتسوقون بثقة.',
+                ],
+                'content' => [
+                    'en' => [
+                        'testimonials' => [
+                            [
+                                'quote' => 'I was skeptical about the price-match guarantee, but they actually honored it. Saved $34 on a blender I was about to buy on Amazon. Customer for life.',
+                                'author' => 'Sarah M.',
+                                'role' => 'Verified Buyer',
+                                'rating' => 5,
+                                'avatar' => null,
+                            ],
+                            [
+                                'quote' => 'Ordered a jacket on Monday, it arrived Wednesday — across the country. The quality exceeded my expectations. The fit was exactly as described.',
+                                'author' => 'James K.',
+                                'role' => 'Verified Buyer',
+                                'rating' => 5,
+                                'avatar' => null,
+                            ],
+                            [
+                                'quote' => 'I had to return a pair of shoes because they were too small. The process took literally 2 minutes online and the refund hit my account the next day. Incredible.',
+                                'author' => 'Priya R.',
+                                'role' => 'Verified Buyer',
+                                'rating' => 5,
+                                'avatar' => null,
+                            ],
+                            [
+                                'quote' => 'The customer support chat helped me find the perfect laptop bag in under 5 minutes. They knew their products inside out. Rare these days.',
+                                'author' => 'Mike T.',
+                                'role' => 'Verified Buyer',
+                                'rating' => 5,
+                                'avatar' => null,
+                            ],
+                            [
+                                'quote' => 'I have been a customer for 3 years. The quality has only improved, the prices have stayed fair, and the shipping keeps getting faster. Do not change a thing.',
+                                'author' => 'Elena V.',
+                                'role' => 'VIP Member',
+                                'rating' => 5,
+                                'avatar' => null,
+                            ],
+                        ],
+                        'aggregate' => [
+                            'average_rating' => 4.8,
+                            'total_reviews' => 12400,
+                        ],
+                    ],
+                    'ar' => [
+                        'testimonials' => [
+                            [
+                                'quote' => 'كنت متشككًا في ضمان مطابقة السعر، لكنهم وفوا به بالفعل. وفرت 34 دولارًا على خلاط كنت سأشتريه من أمازون. عميل مدى الحياة.',
+                                'author' => 'سارة م.',
+                                'role' => 'مشترٍ موثّق',
+                                'rating' => 5,
+                                'avatar' => null,
+                            ],
+                            [
+                                'quote' => 'طلبت سترة يوم الاثنين، وصلت الأربعاء — عبر البلاد. الجودة فاقت توقعاتي. المقاس كان مطابقًا تمامًا للوصف.',
+                                'author' => 'جيمس ك.',
+                                'role' => 'مشترٍ موثّق',
+                                'rating' => 5,
+                                'avatar' => null,
+                            ],
+                            [
+                                'quote' => 'اضطررت لإرجاع حذاء لأنه كان صغيرًا جدًا. العملية استغرقت دقيقتين عبر الإنترنت والمبلغ عاد إلى حسابي في اليوم التالي. مذهل.',
+                                'author' => 'بريا ر.',
+                                'role' => 'مشترٍ موثّق',
+                                'rating' => 5,
+                                'avatar' => null,
+                            ],
+                        ],
+                        'aggregate' => [
+                            'average_rating' => 4.8,
+                            'total_reviews' => 12400,
+                        ],
+                    ],
+                ],
+                'settings' => ['layout' => 'carousel', 'autoplay' => true, 'show_rating' => true],
+                'is_active' => true,
+            ],
+        );
+
+        // ── Newsletter / CTA Section ──────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'newsletter_home'],
+            [
+                'section_type' => 'cta',
+                'sort_order' => 4,
+                'title' => ['en' => 'Stay in the loop', 'ar' => 'ابق على اطلاع'],
+                'subtitle' => [
+                    'en' => 'Be the first to know about new drops, exclusive deals, and VIP-only sales. No spam — ever.',
+                    'ar' => 'كن أول من يعرف عن المنتجات الجديدة والعروض الحصرية وتخفيضات VIP. لا بريد مزعج — أبدًا.',
+                ],
+                'content' => [
+                    'en' => [
+                        'headline' => 'Stay in the loop',
+                        'description' => 'Be the first to know about new drops, exclusive deals, and VIP-only sales. No spam — ever.',
+                        'ctas' => [
+                            ['label' => 'Subscribe', 'url' => '/subscribe', 'style' => 'primary'],
+                            ['label' => 'Follow on Instagram', 'url' => 'https://instagram.com/justshop', 'style' => 'outline'],
+                        ],
+                        'benefits' => [
+                            '10% off your first order',
+                            'Early access to sales',
+                            'Exclusive VIP pricing',
+                            'Monthly gift giveaways',
+                        ],
+                        'trust_badges' => [
+                            'Free shipping over $49',
+                            '60-day returns',
+                            'Price match guarantee',
+                            'Secure checkout',
+                        ],
+                    ],
+                    'ar' => [
+                        'headline' => 'ابق على اطلاع',
+                        'description' => 'كن أول من يعرف عن المنتجات الجديدة والعروض الحصرية وتخفيضات VIP. لا بريد مزعج — أبدًا.',
+                        'ctas' => [
+                            ['label' => 'اشترك', 'url' => '/subscribe', 'style' => 'primary'],
+                            ['label' => 'تابعنا على إنستغرام', 'url' => 'https://instagram.com/justshop', 'style' => 'outline'],
+                        ],
+                        'benefits' => [
+                            'خصم 10% على أول طلب',
+                            'وصول مبكر للتخفيضات',
+                            'أسعار VIP حصرية',
+                            'هدايا شهرية',
+                        ],
+                        'trust_badges' => [
+                            'شحن مجاني فوق $49',
+                            'إرجاع 60 يومًا',
+                            'ضمان مطابقة السعر',
+                            'دفع آمن',
+                        ],
+                    ],
+                ],
+                'settings' => ['layout' => 'split', 'background' => 'brand'],
+                'is_active' => true,
+            ],
+        );
+    }
+
+    private function seedAboutPage(Store $store, User $creator): void
+    {
+        $page = StoreMarketingPage::query()->updateOrCreate(
             [
                 'store_id' => $store->id,
                 'slug->en' => 'about-us',
@@ -37,30 +352,41 @@ class StorefrontRuntimeDevSeeder extends Seeder
                 'status' => MarketingPageStatusEnum::PUBLISHED,
                 'published_at' => now()->subDay(),
                 'seo' => [
-                    'meta_title' => ['en' => 'About Us', 'ar' => 'من نحن'],
+                    'meta_title' => ['en' => 'About Us — JustShop Demo', 'ar' => 'من نحن — JustShop'],
                     'meta_description' => [
-                        'en' => 'Development storefront about page for the seeded tenant.',
-                        'ar' => 'صفحة تعريفية لمتجر التطوير الخاص بالمستأجر التجريبي.',
+                        'en' => 'JustShop started in 2019 with one mission: premium-quality products at honest prices. Read our story, meet our team, and see why 200,000+ customers trust us.',
+                        'ar' => 'بدأ JustShop عام 2019 بمهمة واحدة: منتجات عالية الجودة بأسعار عادلة. اقرأ قصتنا وتعرف على فريقنا.',
+                    ],
+                    'canonical_url' => config('app.url') . '/about-us',
+                    'og_image' => null,
+                    'og_title' => ['en' => 'About JustShop Demo', 'ar' => 'عن JustShop'],
+                    'og_description' => [
+                        'en' => 'From a small warehouse in 2019 to 8,000+ orders per month. This is our story.',
+                        'ar' => 'من مستودع صغير في 2019 إلى أكثر من 8,000 طلب شهريًا. هذه قصتنا.',
                     ],
                     'robots' => 'index,follow',
                     'twitter_card' => 'summary_large_image',
                     'structured_data' => [
                         '@context' => 'https://schema.org',
-                        '@type' => 'WebPage',
+                        '@type' => 'AboutPage',
+                        'mainEntity' => [
+                            '@type' => 'Organization',
+                            'name' => 'JustShop Demo',
+                            'foundingDate' => '2019',
+                            'description' => 'Premium-quality products at honest prices.',
+                        ],
                     ],
                 ],
                 'template' => MarketingPageTemplateEnum::GENERIC,
-                'sort_order' => 0,
+                'sort_order' => 1,
                 'created_by' => $creator->id,
                 'updated_by' => $creator->id,
             ],
         );
 
-        $aboutPage->sections()->updateOrCreate(
-            [
-                'store_id' => $store->id,
-                'identifier' => 'hero_about',
-            ],
+        // ── Hero Section ──────────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'hero_about'],
             [
                 'section_type' => 'hero',
                 'sort_order' => 0,
@@ -74,15 +400,15 @@ class StorefrontRuntimeDevSeeder extends Seeder
                         'headline' => 'We exist to make great products accessible to everyone',
                         'subheadline' => 'Founded in 2019, JustShop started in a small warehouse with one obsession: deliver premium-quality goods at honest prices, fast.',
                         'mission' => 'Our mission is simple — remove the gap between quality and affordability, and put the customer at the center of everything we do.',
-                        'cta_primary' => ['label' => 'Shop Best Sellers', 'url' => '/'],
-                        'cta_secondary' => ['label' => 'New Arrivals', 'url' => '/'],
+                        'cta_primary' => ['label' => 'Shop Best Sellers', 'url' => '/products'],
+                        'cta_secondary' => ['label' => 'Meet Our Team', 'url' => '#team'],
                     ],
                     'ar' => [
                         'headline' => 'نحن هنا لنجعل المنتجات الرائعة في متناول الجميع',
                         'subheadline' => 'تأسست JustShop عام 2019 في مستودع صغير بهاجس واحد: تقديم منتجات عالية الجودة بأسعار عادلة وبسرعة.',
                         'mission' => 'مهمتنا بسيطة — إزالة الفجوة بين الجودة والقدرة على تحمّل التكاليف، ووضع العميل في مركز كل ما نفعله.',
-                        'cta_primary' => ['label' => 'تسوق الأكثر مبيعًا', 'url' => '/'],
-                        'cta_secondary' => ['label' => 'وصل حديثًا', 'url' => '/'],
+                        'cta_primary' => ['label' => 'تسوق الأكثر مبيعًا', 'url' => '/products'],
+                        'cta_secondary' => ['label' => 'تعرف على فريقنا', 'url' => '#team'],
                     ],
                 ],
                 'settings' => ['layout' => 'full'],
@@ -90,11 +416,9 @@ class StorefrontRuntimeDevSeeder extends Seeder
             ],
         );
 
-        $aboutPage->sections()->updateOrCreate(
-            [
-                'store_id' => $store->id,
-                'identifier' => 'story_about',
-            ],
+        // ── Our Story Section ─────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'story_about'],
             [
                 'section_type' => 'content',
                 'sort_order' => 1,
@@ -128,11 +452,9 @@ class StorefrontRuntimeDevSeeder extends Seeder
             ],
         );
 
-        $aboutPage->sections()->updateOrCreate(
-            [
-                'store_id' => $store->id,
-                'identifier' => 'quality_about',
-            ],
+        // ── Quality Features Section ──────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'quality_about'],
             [
                 'section_type' => 'features',
                 'sort_order' => 2,
@@ -164,11 +486,9 @@ class StorefrontRuntimeDevSeeder extends Seeder
             ],
         );
 
-        $aboutPage->sections()->updateOrCreate(
-            [
-                'store_id' => $store->id,
-                'identifier' => 'customer_promise_about',
-            ],
+        // ── Customer Promise Section ──────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'customer_promise_about'],
             [
                 'section_type' => 'content',
                 'sort_order' => 3,
@@ -200,11 +520,9 @@ class StorefrontRuntimeDevSeeder extends Seeder
             ],
         );
 
-        $aboutPage->sections()->updateOrCreate(
-            [
-                'store_id' => $store->id,
-                'identifier' => 'sustainability_about',
-            ],
+        // ── Sustainability Section ────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'sustainability_about'],
             [
                 'section_type' => 'content',
                 'sort_order' => 4,
@@ -238,14 +556,50 @@ class StorefrontRuntimeDevSeeder extends Seeder
             ],
         );
 
-        $aboutPage->sections()->updateOrCreate(
+        // ── Team Section ──────────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'team_about'],
             [
-                'store_id' => $store->id,
-                'identifier' => 'cta_about',
+                'section_type' => 'gallery',
+                'sort_order' => 5,
+                'title' => ['en' => 'Meet the team', 'ar' => 'تعرف على الفريق'],
+                'subtitle' => [
+                    'en' => 'The people behind JustShop who make it all happen.',
+                    'ar' => 'الأشخاص الذين يقفون وراء JustShop ويجعلون كل هذا ممكنًا.',
+                ],
+                'content' => [
+                    'en' => [
+                        'members' => [
+                            ['name' => 'Sara Chen', 'role' => 'Co-Founder & CEO', 'bio' => 'Former supply chain analyst at Walmart. Obsessed with ethical sourcing and operational efficiency.', 'image' => null],
+                            ['name' => 'Khalid Al-Rashid', 'role' => 'Co-Founder & COO', 'bio' => 'Ex-Amazon logistics manager. Built our fulfillment network from scratch.', 'image' => null],
+                            ['name' => 'Maria Gonzalez', 'role' => 'Head of Product', 'bio' => '15 years in product development. Ensures every item meets our quality bar before it reaches you.', 'image' => null],
+                            ['name' => 'David Kim', 'role' => 'VP of Engineering', 'bio' => 'Built e-commerce platforms serving 10M+ users. Leads our storefront and AI initiatives.', 'image' => null],
+                            ['name' => 'Aisha Patel', 'role' => 'Customer Experience Director', 'bio' => 'Built a support team that averages 4.9★ CSAT. Answers chats herself every Friday.', 'image' => null],
+                            ['name' => 'James Wilson', 'role' => 'Head of Sustainability', 'bio' => 'Environmental scientist turned supply chain optimizer. Made us carbon-neutral in 2024.', 'image' => null],
+                        ],
+                    ],
+                    'ar' => [
+                        'members' => [
+                            ['name' => 'سارة تشن', 'role' => 'المؤسس المشارك والرئيس التنفيذي', 'bio' => 'محللة سلسلة توريد سابقة في Walmart. شغوفة بالتوريد الأخلاقي والكفاءة التشغيلية.', 'image' => null],
+                            ['name' => 'خالد الرشيد', 'role' => 'المؤسس المشارك والمدير التنفيذي للعمليات', 'bio' => 'مدير لوجستي سابق في Amazon. بنى شبكة التوزيع لدينا من الصفر.', 'image' => null],
+                            ['name' => 'ماريا غونزاليس', 'role' => 'رئيسة قسم المنتجات', 'bio' => '15 عامًا في تطوير المنتجات. تضمن أن كل عنصر يلبي معايير الجودة لدينا قبل أن يصل إليك.', 'image' => null],
+                            ['name' => 'ديفيد كيم', 'role' => 'نائب الرئيس للهندسة', 'bio' => 'بنى منصات تجارة إلكترونية تخدم أكثر من 10 ملايين مستخدم.', 'image' => null],
+                            ['name' => 'عائشة باتيل', 'role' => 'مديرة تجربة العملاء', 'bio' => 'بنت فريق دعم بمتوسط 4.9★ في رضا العملاء. تجيب على الدردشات بنفسها كل جمعة.', 'image' => null],
+                            ['name' => 'جيمس ويلسون', 'role' => 'رئيس الاستدامة', 'bio' => 'عالم بيئة تحول إلى محسّن لسلسلة التوريد. جعلنا محايدين كربونيًا في 2024.', 'image' => null],
+                        ],
+                    ],
+                ],
+                'settings' => ['layout' => 'grid', 'columns' => 3, 'show_bio' => true],
+                'is_active' => true,
             ],
+        );
+
+        // ── CTA Section ───────────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'cta_about'],
             [
                 'section_type' => 'cta',
-                'sort_order' => 5,
+                'sort_order' => 6,
                 'title' => ['en' => 'Ready to shop smarter?', 'ar' => 'مستعد للتسوق بذكاء؟'],
                 'subtitle' => [
                     'en' => 'Join 200,000+ customers who switched to JustShop. Follow our store for VIP-only deals and early access to new drops.',
@@ -254,9 +608,9 @@ class StorefrontRuntimeDevSeeder extends Seeder
                 'content' => [
                     'en' => [
                         'ctas' => [
-                            ['label' => 'Shop Best Sellers', 'url' => '/', 'style' => 'primary'],
-                            ['label' => 'New Arrivals', 'url' => '/', 'style' => 'secondary'],
-                            ['label' => 'Follow Our Store', 'url' => '/', 'style' => 'outline'],
+                            ['label' => 'Shop Best Sellers', 'url' => '/products', 'style' => 'primary'],
+                            ['label' => 'New Arrivals', 'url' => '/products?sort=newest', 'style' => 'secondary'],
+                            ['label' => 'Follow Our Store', 'url' => '#', 'style' => 'outline'],
                         ],
                         'trust_badges' => [
                             'Free shipping over $49',
@@ -267,9 +621,9 @@ class StorefrontRuntimeDevSeeder extends Seeder
                     ],
                     'ar' => [
                         'ctas' => [
-                            ['label' => 'تسوق الأكثر مبيعًا', 'url' => '/', 'style' => 'primary'],
-                            ['label' => 'وصل حديثًا', 'url' => '/', 'style' => 'secondary'],
-                            ['label' => 'تابع متجرنا', 'url' => '/', 'style' => 'outline'],
+                            ['label' => 'تسوق الأكثر مبيعًا', 'url' => '/products', 'style' => 'primary'],
+                            ['label' => 'وصل حديثًا', 'url' => '/products?sort=newest', 'style' => 'secondary'],
+                            ['label' => 'تابع متجرنا', 'url' => '#', 'style' => 'outline'],
                         ],
                         'trust_badges' => [
                             'شحن مجاني فوق $49',
@@ -283,90 +637,634 @@ class StorefrontRuntimeDevSeeder extends Seeder
                 'is_active' => true,
             ],
         );
+    }
 
-        $demoPage = StoreMarketingPage::query()->updateOrCreate(
+    private function seedContactPage(Store $store, User $creator): void
+    {
+        $page = StoreMarketingPage::query()->updateOrCreate(
             [
                 'store_id' => $store->id,
-                'slug->en' => 'demo',
+                'slug->en' => 'contact',
             ],
             [
-                'title' => ['en' => 'Showcase', 'ar' => 'العرض التوضيحي'],
-                'slug' => ['en' => 'demo', 'ar' => 'demo-ar'],
+                'title' => ['en' => 'Contact Us', 'ar' => 'اتصل بنا'],
+                'slug' => ['en' => 'contact', 'ar' => 'contact-ar'],
                 'excerpt' => [
-                    'en' => 'A seeded demo page for local storefront runtime validation.',
-                    'ar' => 'صفحة عرض تجريبية مزروعة للتحقق من واجهة تشغيل المتجر محليًا.',
+                    'en' => 'We are here to help. Reach out to our team anytime.',
+                    'ar' => 'نحن هنا للمساعدة. تواصل مع فريقنا في أي وقت.',
                 ],
                 'content' => [],
                 'status' => MarketingPageStatusEnum::PUBLISHED,
-                'published_at' => now()->subHours(12),
+                'published_at' => now()->subDays(2),
                 'seo' => [
-                    'meta_title' => ['en' => 'Showcase', 'ar' => 'العرض التوضيحي'],
+                    'meta_title' => ['en' => 'Contact Us — JustShop Demo', 'ar' => 'اتصل بنا — JustShop'],
                     'meta_description' => [
-                        'en' => 'Seeded demo page for the tenant storefront runtime.',
-                        'ar' => 'صفحة عرض تجريبية مزروعة لمتجر المستأجر عبر واجهة التشغيل.',
+                        'en' => 'Get in touch with the JustShop team. We reply within 2 hours during business days.',
+                        'ar' => 'تواصل مع فريق JustShop. نرد خلال ساعتين في أيام العمل.',
                     ],
+                    'canonical_url' => config('app.url') . '/contact',
                     'robots' => 'index,follow',
                     'twitter_card' => 'summary_large_image',
-                    'structured_data' => [
-                        '@context' => 'https://schema.org',
-                        '@type' => 'WebPage',
-                    ],
                 ],
-                'template' => MarketingPageTemplateEnum::LANDING,
-                'sort_order' => 1,
+                'template' => MarketingPageTemplateEnum::GENERIC,
+                'sort_order' => 2,
                 'created_by' => $creator->id,
                 'updated_by' => $creator->id,
             ],
         );
 
-        $demoPage->sections()->updateOrCreate(
-            [
-                'store_id' => $store->id,
-                'identifier' => 'hero_demo',
-            ],
+        // ── Hero Section ──────────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'hero_contact'],
             [
                 'section_type' => 'hero',
                 'sort_order' => 0,
-                'title' => ['en' => 'Local runtime showcase', 'ar' => 'عرض محلي لواجهة التشغيل'],
+                'title' => ['en' => 'We would love to hear from you', 'ar' => 'يسعدنا التواصل معك'],
                 'subtitle' => [
-                    'en' => 'Use this page to confirm seeded tenant content resolves through the runtime APIs.',
-                    'ar' => 'استخدم هذه الصفحة للتأكد من أن محتوى المستأجر المزروع يتم حله عبر واجهات التشغيل.',
+                    'en' => 'Our team typically replies within 2 hours on business days. Whether you have a question, a suggestion, or just want to say hi — we are all ears.',
+                    'ar' => 'فريقنا يرد عادة خلال ساعتين في أيام العمل. سواء كان لديك سؤال أو اقتراح أو تريد فقط إلقاء التحية — نحن هنا.',
                 ],
                 'content' => [
-                    'en' => ['headline' => 'Local runtime demo', 'subheadline' => 'Seeded page content for justshop-frontend development.'],
-                    'ar' => ['headline' => 'عرض محلي لواجهة التشغيل', 'subheadline' => 'محتوى صفحة مزروع لتطوير justshop-frontend.'],
+                    'en' => [
+                        'headline' => 'We would love to hear from you',
+                        'subheadline' => 'Our team typically replies within 2 hours on business days. Whether you have a question, a suggestion, or just want to say hi — we are all ears.',
+                    ],
+                    'ar' => [
+                        'headline' => 'يسعدنا التواصل معك',
+                        'subheadline' => 'فريقنا يرد عادة خلال ساعتين في أيام العمل. سواء كان لديك سؤال أو اقتراح أو تريد فقط إلقاء التحية — نحن هنا.',
+                    ],
                 ],
-                'settings' => ['layout' => 'full'],
+                'settings' => ['layout' => 'full', 'height' => 'medium'],
                 'is_active' => true,
             ],
         );
 
-        $demoPage->sections()->updateOrCreate(
-            [
-                'store_id' => $store->id,
-                'identifier' => 'features_demo',
-            ],
+        // ── Contact Methods Section ────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'methods_contact'],
             [
                 'section_type' => 'features',
                 'sort_order' => 1,
-                'title' => ['en' => 'What to verify', 'ar' => 'ما الذي يجب التحقق منه'],
+                'title' => ['en' => 'Ways to reach us', 'ar' => 'طرق التواصل معنا'],
                 'subtitle' => [
-                    'en' => 'Suggested local checks after migrate:fresh --seed.',
-                    'ar' => 'فحوصات محلية مقترحة بعد تشغيل migrate:fresh --seed.',
+                    'en' => 'Choose the method that works best for you.',
+                    'ar' => 'اختر الطريقة التي تناسبك.',
                 ],
                 'content' => [
                     'en' => [
-                        'Open the tenant home page',
-                        'Open /about-us and /demo',
-                        'Verify category and product pages resolve',
+                        ['icon' => 'message-circle', 'title' => 'Live Chat', 'body' => 'Click the chat bubble at the bottom right. Average response time: under 2 minutes. Available 24/7.'],
+                        ['icon' => 'mail', 'title' => 'Email Us', 'body' => 'support@justshop.test — we respond within 2 hours on business days, 6 hours on weekends.'],
+                        ['icon' => 'phone', 'title' => 'Call Us', 'body' => '+1 (555) 123-4567 — Mon–Fri, 9 AM – 8 PM EST. Saturday 10 AM – 6 PM EST. Closed Sunday.'],
+                        ['icon' => 'map-pin', 'title' => 'Visit Our Warehouse', 'body' => '1234 Commerce Blvd, Suite 200, Austin, TX 78701. Walk-in customer service: Mon–Fri, 10 AM – 5 PM.'],
+                        ['icon' => 'twitter', 'title' => 'Social Media', 'body' => 'DM us on Instagram (@justshop) or X (@justshop). We monitor both channels during business hours.'],
+                        ['icon' => 'file-text', 'title' => 'Help Center', 'body' => 'Browse our FAQ and knowledge base for instant answers to common questions — available 24/7.'],
                     ],
                     'ar' => [
-                        'افتح الصفحة الرئيسية للمستأجر',
-                        'افتح /about-us و /demo',
-                        'تحقق من عمل صفحات التصنيف والمنتج',
+                        ['icon' => 'message-circle', 'title' => 'الدردشة المباشرة', 'body' => 'اضغط على فقاعة الدردشة في الزاوية اليمنى السفلية. متوسط وقت الرد: أقل من دقيقتين. متاحة 24/7.'],
+                        ['icon' => 'mail', 'title' => 'راسلنا بالبريد', 'body' => 'support@justshop.test — نرد خلال ساعتين في أيام العمل، 6 ساعات في عطلات نهاية الأسبوع.'],
+                        ['icon' => 'phone', 'title' => 'اتصل بنا', 'body' => '+1 (555) 123-4567 — الإثنين–الجمعة، 9 صباحًا – 8 مساءً بتوقيت شرق الولايات المتحدة.'],
+                        ['icon' => 'map-pin', 'title' => 'زر مستودعنا', 'body' => '1234 Commerce Blvd, Suite 200, Austin, TX 78701. خدمة العملاء المباشرة: الإثنين–الجمعة 10 صباحًا – 5 مساءً.'],
+                        ['icon' => 'twitter', 'title' => 'وسائل التواصل الاجتماعي', 'body' => 'راسلنا عبر Instagram (@justshop) أو X (@justshop). نراقب كلا القناتين خلال ساعات العمل.'],
+                        ['icon' => 'file-text', 'title' => 'مركز المساعدة', 'body' => 'تصفح الأسئلة الشائعة وقاعدة المعرفة للحصول على إجابات فورية — متاحة 24/7.'],
                     ],
                 ],
-                'settings' => ['layout' => 'grid'],
+                'settings' => ['layout' => 'grid', 'columns' => 3],
+                'is_active' => true,
+            ],
+        );
+
+        // ── FAQ Section ───────────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'faq_contact'],
+            [
+                'section_type' => 'faq',
+                'sort_order' => 2,
+                'title' => ['en' => 'Frequently asked questions', 'ar' => 'الأسئلة الشائعة'],
+                'subtitle' => [
+                    'en' => 'Quick answers to the most common questions we receive.',
+                    'ar' => 'إجابات سريعة على أكثر الأسئلة شيوعًا التي نتلقاها.',
+                ],
+                'content' => [
+                    'en' => [
+                        'items' => [
+                            ['question' => 'How long does shipping take?', 'answer' => 'Standard shipping takes 3–7 business days within the continental US. Express shipping (2–3 business days) is available from $5.99. International shipping takes 7–14 business days.'],
+                            ['question' => 'What is your return policy?', 'answer' => 'We offer a 60-day, no-questions-asked return policy. Simply initiate a return from your account page, print the prepaid label, and drop it off at any UPS location. Refunds are processed within 48 hours of us receiving the item.'],
+                            ['question' => 'Do you price match?', 'answer' => 'Yes! If you find the same product (identical brand, model, and condition) at a lower price from a major retailer, we will match it. Contact our support team with a link and we will process the adjustment within 24 hours.'],
+                            ['question' => 'Can I change or cancel my order?', 'answer' => 'You can modify or cancel your order within 1 hour of placing it. After that, our warehouse team may have already started packing it. Contact us immediately and we will do our best to accommodate.'],
+                            ['question' => 'Is my payment information secure?', 'answer' => 'Absolutely. We use 256-bit SSL encryption and are PCI DSS Level 1 compliant. We never store your full card details. For additional security, we support Apple Pay, Google Pay, and PayPal.'],
+                            ['question' => 'Do you ship internationally?', 'answer' => 'Yes, we ship to over 40 countries worldwide. International shipping rates and delivery times vary by destination. Duties and taxes are calculated at checkout and are the responsibility of the buyer.'],
+                            ['question' => 'How do I track my order?', 'answer' => 'Once your order ships, you will receive a confirmation email with a tracking number. You can also view the latest status anytime from your account dashboard.'],
+                        ],
+                    ],
+                    'ar' => [
+                        'items' => [
+                            ['question' => 'كم تستغرق مدة الشحن؟', 'answer' => 'الشحن العادي يستغرق 3–7 أيام عمل داخل الولايات المتحدة. الشحن السريع (2–3 أيام عمل) متوفر ابتداءً من $5.99. الشحن الدولي يستغرق 7–14 يوم عمل.'],
+                            ['question' => 'ما هي سياسة الإرجاع؟', 'answer' => 'نقدم سياسة إرجاع لمدة 60 يومًا بدون طرح أسئلة. ببساطة ابدأ الإرجاع من صفحة حسابك، اطبع الملصق المدفوع مسبقًا، وسلّمه في أي موقع UPS. تتم معالجة المبالغ المستردة خلال 48 ساعة من استلامنا للمنتج.'],
+                            ['question' => 'هل تطابقون الأسعار؟', 'answer' => 'نعم! إذا وجدت نفس المنتج بسعر أقل من تاجر تجزئة كبير، سنطابقه. اتصل بفريق الدعم وسنقوم بالتعديل خلال 24 ساعة.'],
+                            ['question' => 'هل يمكنني تغيير أو إلغاء طلبي؟', 'answer' => 'يمكنك تعديل أو إلغاء طلبك خلال ساعة من تقديمه. بعد ذلك، قد يكون فريق المستودع قد بدأ في تجهيزه. اتصل بنا فورًا وسنبذل قصارى جهدنا.'],
+                            ['question' => 'هل معلومات الدفع الخاصة بي آمنة؟', 'answer' => 'بالتأكيد. نستخدم تشفير SSL 256 بت ومتوافقون مع PCI DSS المستوى 1. لا نخزن أبدًا بيانات بطاقتك الكاملة.'],
+                            ['question' => 'هل تشحنون دوليًا؟', 'answer' => 'نعم، نشحن إلى أكثر من 40 دولة حول العالم. تختلف تكاليف الشحن وأوقات التوصيل حسب الوجهة.'],
+                            ['question' => 'كيف أتتبع طلبي؟', 'answer' => 'بمجرد شحن طلبك، ستتلقى بريدًا إلكترونيًا للتأكيد مع رقم تتبع. يمكنك أيضًا عرض الحالة في أي وقت من لوحة التحكم.'],
+                        ],
+                    ],
+                ],
+                'settings' => ['layout' => 'accordion', 'show_search' => true],
+                'is_active' => true,
+            ],
+        );
+
+        // ── CTA Section ───────────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'cta_contact'],
+            [
+                'section_type' => 'cta',
+                'sort_order' => 3,
+                'title' => ['en' => 'Still have a question?', 'ar' => 'لا يزال لديك سؤال؟'],
+                'subtitle' => [
+                    'en' => 'Our support team is standing by. Start a chat or drop us an email — we are here to help.',
+                    'ar' => 'فريق الدعم لدينا في انتظارك. ابدأ محادثة أو أرسل لنا بريدًا إلكترونيًا — نحن هنا للمساعدة.',
+                ],
+                'content' => [
+                    'en' => [
+                        'ctas' => [
+                            ['label' => 'Start Live Chat', 'url' => '#', 'style' => 'primary'],
+                            ['label' => 'Email Support', 'url' => 'mailto:support@justshop.test', 'style' => 'secondary'],
+                        ],
+                    ],
+                    'ar' => [
+                        'ctas' => [
+                            ['label' => 'ابدأ الدردشة المباشرة', 'url' => '#', 'style' => 'primary'],
+                            ['label' => 'راسل الدعم', 'url' => 'mailto:support@justshop.test', 'style' => 'secondary'],
+                        ],
+                    ],
+                ],
+                'settings' => ['layout' => 'centered', 'background' => 'muted'],
+                'is_active' => true,
+            ],
+        );
+    }
+
+    private function seedFaqPage(Store $store, User $creator): void
+    {
+        $page = StoreMarketingPage::query()->updateOrCreate(
+            [
+                'store_id' => $store->id,
+                'slug->en' => 'faq',
+            ],
+            [
+                'title' => ['en' => 'Frequently Asked Questions', 'ar' => 'الأسئلة الشائعة'],
+                'slug' => ['en' => 'faq', 'ar' => 'faq-ar'],
+                'excerpt' => [
+                    'en' => 'Everything you need to know about shopping at JustShop.',
+                    'ar' => 'كل ما تحتاج معرفته عن التسوق في JustShop.',
+                ],
+                'content' => [],
+                'status' => MarketingPageStatusEnum::PUBLISHED,
+                'published_at' => now()->subDays(3),
+                'seo' => [
+                    'meta_title' => ['en' => 'FAQ — JustShop Demo', 'ar' => 'الأسئلة الشائعة — JustShop'],
+                    'meta_description' => [
+                        'en' => 'Find answers to common questions about shipping, returns, payments, orders, and more at JustShop.',
+                        'ar' => 'اعثر على إجابات للأسئلة الشائعة حول الشحن والإرجاع والدفع والطلبات والمزيد في JustShop.',
+                    ],
+                    'canonical_url' => config('app.url') . '/faq',
+                    'robots' => 'index,follow',
+                    'twitter_card' => 'summary',
+                ],
+                'template' => MarketingPageTemplateEnum::GENERIC,
+                'sort_order' => 3,
+                'created_by' => $creator->id,
+                'updated_by' => $creator->id,
+            ],
+        );
+
+        // ── Hero Section ──────────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'hero_faq'],
+            [
+                'section_type' => 'hero',
+                'sort_order' => 0,
+                'title' => ['en' => 'Frequently Asked Questions', 'ar' => 'الأسئلة الشائعة'],
+                'subtitle' => [
+                    'en' => 'Quick answers to everything you need to know before you buy.',
+                    'ar' => 'إجابات سريعة لكل ما تحتاج معرفته قبل الشراء.',
+                ],
+                'content' => [
+                    'en' => [
+                        'headline' => 'Frequently Asked Questions',
+                        'subheadline' => 'Quick answers to everything you need to know before you buy.',
+                    ],
+                    'ar' => [
+                        'headline' => 'الأسئلة الشائعة',
+                        'subheadline' => 'إجابات سريعة لكل ما تحتاج معرفته قبل الشراء.',
+                    ],
+                ],
+                'settings' => ['layout' => 'full', 'height' => 'small'],
+                'is_active' => true,
+            ],
+        );
+
+        // ── Orders Section ─────────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'orders_faq'],
+            [
+                'section_type' => 'faq',
+                'sort_order' => 1,
+                'title' => ['en' => 'Orders & Shipping', 'ar' => 'الطلبات والشحن'],
+                'content' => [
+                    'en' => [
+                        'items' => [
+                            ['question' => 'How do I place an order?', 'answer' => 'Simply browse our catalog, add items to your cart, and proceed to checkout. You can checkout as a guest or create an account for faster future purchases. We accept credit/debit cards, PayPal, Apple Pay, and Google Pay.'],
+                            ['question' => 'Can I modify my order after placing it?', 'answer' => 'Yes — you have a 1-hour window to modify or cancel your order. Log into your account, go to "My Orders," and select the order you want to change. After 1 hour, contact our support team and we will try to accommodate.'],
+                            ['question' => 'What shipping options do you offer?', 'answer' => 'We offer Standard (3–7 business days, free over $49), Express (2–3 business days, from $5.99), and International (7–14 business days, rates vary by destination).'],
+                            ['question' => 'How can I track my package?', 'answer' => 'Once shipped, you will receive a tracking link via email. You can also track from your account dashboard. All carriers provide real-time updates.'],
+                            ['question' => 'Do you ship to PO boxes?', 'answer' => 'Standard shipping supports PO boxes. Express and International shipments require a physical street address.'],
+                        ],
+                    ],
+                    'ar' => [
+                        'items' => [
+                            ['question' => 'كيف أقدم طلبًا؟', 'answer' => 'تصفح كتالوجنا، أضف العناصر إلى عربة التسوق، وتابع إلى الدفع. يمكنك الدفع كضيف أو إنشاء حساب لعمليات شراء أسرع في المستقبل.'],
+                            ['question' => 'هل يمكنني تعديل طلبي بعد تقديمه؟', 'answer' => 'نعم — لديك ساعة واحدة لتعديل أو إلغاء طلبك. سجل الدخول إلى حسابك، انتقل إلى "طلباتي"، واختر الطلب الذي تريد تغييره.'],
+                            ['question' => 'ما خيارات الشحن المتاحة؟', 'answer' => 'نقدم الشحن العادي (3–7 أيام عمل، مجاني للطلبات فوق $49)، السريع (2–3 أيام عمل، من $5.99)، والدولي (7–14 يوم عمل).'],
+                            ['question' => 'كيف أتتبع طردي؟', 'answer' => 'بمجرد الشحن، ستتلقى رابط التتبع عبر البريد الإلكتروني. يمكنك أيضًا التتبع من لوحة تحكم حسابك.'],
+                            ['question' => 'هل تشحنون إلى الصناديق البريدية؟', 'answer' => 'الشحن العادي يدعم الصناديق البريدية. الشحن السريع والدولي يتطلبان عنوان شارع فعلي.'],
+                        ],
+                    ],
+                ],
+                'settings' => ['layout' => 'accordion'],
+                'is_active' => true,
+            ],
+        );
+
+        // ── Returns Section ───────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'returns_faq'],
+            [
+                'section_type' => 'faq',
+                'sort_order' => 2,
+                'title' => ['en' => 'Returns & Refunds', 'ar' => 'الإرجاع والاسترداد'],
+                'content' => [
+                    'en' => [
+                        'items' => [
+                            ['question' => 'What is your return policy?', 'answer' => 'We offer a 60-day, no-questions-asked return policy. Items must be in original condition with all tags and packaging. Some exclusions apply (underwear, swimwear, and personalized items).'],
+                            ['question' => 'How do I start a return?', 'answer' => 'Log into your account, go to "My Orders," select the item you want to return, and click "Return." Print the prepaid shipping label, pack the item securely, and drop it off at any UPS location.'],
+                            ['question' => 'How long do refunds take?', 'answer' => 'Refunds are processed within 48 hours of us receiving the returned item. It may take 3–5 additional business days for the refund to appear on your statement, depending on your payment provider.'],
+                            ['question' => 'Do you offer exchanges?', 'answer' => 'We do not offer direct exchanges. However, the fastest option is to return the unwanted item and place a new order. Most customers find this quicker than waiting for an exchange.'],
+                            ['question' => 'Who pays for return shipping?', 'answer' => 'We provide free return shipping for all domestic returns. For international returns, the customer is responsible for return shipping costs.'],
+                        ],
+                    ],
+                    'ar' => [
+                        'items' => [
+                            ['question' => 'ما هي سياسة الإرجاع؟', 'answer' => 'نقدم سياسة إرجاع لمدة 60 يومًا بدون طرح أسئلة. يجب أن تكون العناصر في حالتها الأصلية مع جميع العلامات والتغليف.'],
+                            ['question' => 'كيف أبدأ عملية الإرجاع؟', 'answer' => 'سجل الدخول إلى حسابك، انتقل إلى "طلباتي"، اختر العنصر الذي تريد إرجاعه، وانقر "إرجاع". اطبع ملصق الشحن المدفوع مسبقًا وسلّمه في أي موقع UPS.'],
+                            ['question' => 'كم تستغرق المبالغ المستردة؟', 'answer' => 'تتم معالجة المبالغ المستردة خلال 48 ساعة من استلامنا للمنتج المعاد. قد يستغرق ظهور المبلغ في حسابك 3–5 أيام عمل إضافية.'],
+                            ['question' => 'هل تقدمون الاستبدال؟', 'answer' => 'لا نقدم استبدالاً مباشرًا. لكن الخيار الأسرع هو إرجاع العنصر غير المرغوب فيه وتقديم طلب جديد.'],
+                            ['question' => 'من يتحمل تكلفة شحن الإرجاع؟', 'answer' => 'نوفر شحن إرجاع مجاني لجميع الإرجاعات المحلية. بالنسبة للإرجاعات الدولية، يتحمل العميل تكاليف شحن الإرجاع.'],
+                        ],
+                    ],
+                ],
+                'settings' => ['layout' => 'accordion'],
+                'is_active' => true,
+            ],
+        );
+
+        // ── Payments Section ──────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'payments_faq'],
+            [
+                'section_type' => 'faq',
+                'sort_order' => 3,
+                'title' => ['en' => 'Payments & Pricing', 'ar' => 'الدفع والأسعار'],
+                'content' => [
+                    'en' => [
+                        'items' => [
+                            ['question' => 'What payment methods do you accept?', 'answer' => 'We accept Visa, Mastercard, American Express, Discover, PayPal, Apple Pay, and Google Pay. All payments are processed securely through Stripe.'],
+                            ['question' => 'Is it safe to save my card on your site?', 'answer' => 'Yes. We use Stripe as our payment processor — your full card details never touch our servers. Stripe is PCI DSS Level 1 compliant, the highest security standard in the payments industry.'],
+                            ['question' => 'Do you charge sales tax?', 'answer' => 'Sales tax is calculated and applied at checkout based on your shipping address. We are required to collect tax in all US states where we have economic nexus.'],
+                            ['question' => 'How does the price match guarantee work?', 'answer' => 'If you find an identical product at a lower price from a major US retailer, contact us within 7 days of purchase. We will refund the difference. The item must be in stock and available for immediate purchase at the competitor.'],
+                        ],
+                    ],
+                    'ar' => [
+                        'items' => [
+                            ['question' => 'ما طرق الدفع التي تقبلونها؟', 'answer' => 'نقبل Visa وMastercard وAmerican Express وDiscover وPayPal وApple Pay وGoogle Pay. جميع المدفوعات تتم معالجتها بشكل آمن عبر Stripe.'],
+                            ['question' => 'هل من الآمن حفظ بطاقتي على موقعكم؟', 'answer' => 'نعم. نستخدم Stripe كمعالج دفع — تفاصيل بطاقتك الكاملة لا تصل إلى خوادمنا أبدًا. Stripe متوافق مع PCI DSS المستوى 1.'],
+                            ['question' => 'هل تفرضون ضريبة مبيعات؟', 'answer' => 'يتم حساب ضريبة المبيعات وتطبيقها عند الدفع بناءً على عنوان الشحن الخاص بك.'],
+                            ['question' => 'كيف يعمل ضمان مطابقة السعر؟', 'answer' => 'إذا وجدت منتجًا مماثلاً بسعر أقل من تاجر تجزئة أمريكي كبير، اتصل بنا خلال 7 أيام من الشراء. سنرد الفرق.'],
+                        ],
+                    ],
+                ],
+                'settings' => ['layout' => 'accordion'],
+                'is_active' => true,
+            ],
+        );
+
+        // ── Account Section ───────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'account_faq'],
+            [
+                'section_type' => 'faq',
+                'sort_order' => 4,
+                'title' => ['en' => 'Account & Security', 'ar' => 'الحساب والأمان'],
+                'content' => [
+                    'en' => [
+                        'items' => [
+                            ['question' => 'How do I create an account?', 'answer' => 'Click "Sign Up" at the top right of any page. You can register with your email address or sign in with Google. Creating an account takes under 30 seconds.'],
+                            ['question' => 'I forgot my password — what do I do?', 'answer' => 'Click "Forgot Password" on the login page. We will send a password reset link to your email. The link expires in 60 minutes.'],
+                            ['question' => 'How do I delete my account?', 'answer' => 'Go to Account Settings → Privacy → Delete Account. Please note that this action is irreversible and will delete your order history, saved addresses, and preferences.'],
+                            ['question' => 'Do you share my personal data?', 'answer' => 'We never sell your personal data. We only share necessary information with our shipping carriers and payment processor to fulfill your orders. See our Privacy Policy for full details.'],
+                        ],
+                    ],
+                    'ar' => [
+                        'items' => [
+                            ['question' => 'كيف أُنشئ حسابًا؟', 'answer' => 'انقر على "تسجيل" في الزاوية اليمنى العليا من أي صفحة. يمكنك التسجيل ببريدك الإلكتروني أو تسجيل الدخول عبر Google. إنشاء حساب يستغرق أقل من 30 ثانية.'],
+                            ['question' => 'نسيت كلمة المرور — ماذا أفعل؟', 'answer' => 'انقر على "نسيت كلمة المرور" في صفحة تسجيل الدخول. سنرسل رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني. الرابط صالح لمدة 60 دقيقة.'],
+                            ['question' => 'كيف أحذف حسابي؟', 'answer' => 'انتقل إلى إعدادات الحساب → الخصوصية → حذف الحساب. يرجى ملاحظة أن هذا الإجراء لا يمكن التراجع عنه.'],
+                            ['question' => 'هل تشاركون بياناتي الشخصية؟', 'answer' => 'لا نبيع بياناتك الشخصية أبدًا. نشارك المعلومات الضرورية فقط مع شركات الشحن ومعالج الدفع لتنفيذ طلباتك.'],
+                        ],
+                    ],
+                ],
+                'settings' => ['layout' => 'accordion'],
+                'is_active' => true,
+            ],
+        );
+
+        // ── CTA Section ───────────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'cta_faq'],
+            [
+                'section_type' => 'cta',
+                'sort_order' => 5,
+                'title' => ['en' => 'Did not find what you are looking for?', 'ar' => 'لم تجد ما تبحث عنه؟'],
+                'subtitle' => [
+                    'en' => 'Our support team is just a message away. We typically reply within 2 minutes on chat.',
+                    'ar' => 'فريق الدعم لدينا على بعد رسالة واحدة. نرد عادة خلال دقيقتين في الدردشة.',
+                ],
+                'content' => [
+                    'en' => [
+                        'ctas' => [
+                            ['label' => 'Chat with us', 'url' => '#', 'style' => 'primary'],
+                            ['label' => 'Email support', 'url' => 'mailto:support@justshop.test', 'style' => 'secondary'],
+                        ],
+                    ],
+                    'ar' => [
+                        'ctas' => [
+                            ['label' => 'تحدث معنا', 'url' => '#', 'style' => 'primary'],
+                            ['label' => 'راسل الدعم', 'url' => 'mailto:support@justshop.test', 'style' => 'secondary'],
+                        ],
+                    ],
+                ],
+                'settings' => ['layout' => 'centered'],
+                'is_active' => true,
+            ],
+        );
+    }
+
+    private function seedSummerSalePage(Store $store, User $creator): void
+    {
+        $page = StoreMarketingPage::query()->updateOrCreate(
+            [
+                'store_id' => $store->id,
+                'slug->en' => 'summer-sale',
+            ],
+            [
+                'title' => ['en' => 'Summer Sale — Up to 40% Off', 'ar' => 'تخفيضات الصيف — خصم يصل إلى 40%'],
+                'slug' => ['en' => 'summer-sale', 'ar' => 'summer-sale-ar'],
+                'excerpt' => [
+                    'en' => 'Our biggest sale of the year is here! Up to 40% off across thousands of items. Limited time only.',
+                    'ar' => 'أكبر تخفيضات العام هنا! خصم يصل إلى 40% على آلاف المنتجات. لفترة محدودة.',
+                ],
+                'content' => [],
+                'status' => MarketingPageStatusEnum::PUBLISHED,
+                'published_at' => now()->subDays(1),
+                'seo' => [
+                    'meta_title' => ['en' => 'Summer Sale — Up to 40% Off | JustShop Demo', 'ar' => 'تخفيضات الصيف — خصم يصل إلى 40% | JustShop'],
+                    'meta_description' => [
+                        'en' => 'Shop our biggest sale of the year. Up to 40% off electronics, fashion, home, and more. Free shipping over $49. Ends soon!',
+                        'ar' => 'تسوق أكبر تخفيضات العام. خصم يصل إلى 40% على الإلكترونيات والأزياء والمنزل والمزيد. شحن مجاني للطلبات فوق $49.',
+                    ],
+                    'canonical_url' => config('app.url') . '/summer-sale',
+                    'robots' => 'index,follow',
+                    'twitter_card' => 'summary_large_image',
+                ],
+                'template' => MarketingPageTemplateEnum::PROMOTION,
+                'sort_order' => 4,
+                'created_by' => $creator->id,
+                'updated_by' => $creator->id,
+            ],
+        );
+
+        // ── Hero Section ──────────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'hero_summer'],
+            [
+                'section_type' => 'hero',
+                'sort_order' => 0,
+                'title' => ['en' => 'Summer Sale — Up to 40% Off', 'ar' => 'تخفيضات الصيف — خصم يصل إلى 40%'],
+                'subtitle' => [
+                    'en' => 'Thousands of items marked down. Free shipping over $49. This is our biggest sale of the year — do not miss it.',
+                    'ar' => 'آلاف المنتجات بأسعار مخفضة. شحن مجاني للطلبات فوق $49. هذه أكبر تخفيضات العام — لا تفوّتها.',
+                ],
+                'content' => [
+                    'en' => [
+                        'headline' => 'Summer Sale — Up to 40% Off',
+                        'subheadline' => 'Thousands of items marked down. Free shipping over $49. This is our biggest sale of the year — do not miss it.',
+                        'badge' => 'Limited Time Offer',
+                        'cta_primary' => ['label' => 'Shop the Sale', 'url' => '/products?sale=1'],
+                        'cta_secondary' => ['label' => 'View Categories', 'url' => '/categories'],
+                        'background_style' => 'gradient',
+                    ],
+                    'ar' => [
+                        'headline' => 'تخفيضات الصيف — خصم يصل إلى 40%',
+                        'subheadline' => 'آلاف المنتجات بأسعار مخفضة. شحن مجاني للطلبات فوق $49. هذه أكبر تخفيضات العام — لا تفوّتها.',
+                        'badge' => 'عرض لفترة محدودة',
+                        'cta_primary' => ['label' => 'تسوق التخفيضات', 'url' => '/products?sale=1'],
+                        'cta_secondary' => ['label' => 'عرض التصنيفات', 'url' => '/categories'],
+                        'background_style' => 'gradient',
+                    ],
+                ],
+                'settings' => ['layout' => 'full', 'height' => 'large', 'overlay' => true],
+                'is_active' => true,
+            ],
+        );
+
+        // ── Sale Categories Section ───────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'categories_summer'],
+            [
+                'section_type' => 'features',
+                'sort_order' => 1,
+                'title' => ['en' => 'Shop by department — all on sale', 'ar' => 'تسوق حسب القسم — الكل مخفّض'],
+                'subtitle' => [
+                    'en' => 'Every category has something for you. Discounts range from 15% to 40% off.',
+                    'ar' => 'كل قسم لديه شيء لك. الخصومات تتراوح من 15% إلى 40%.',
+                ],
+                'content' => [
+                    'en' => [
+                        ['icon' => 'smartphone', 'title' => 'Electronics — Up to 30% Off', 'body' => 'Wireless earbuds, smartwatches, bluetooth speakers, portable chargers, and more. Top brands at unbeatable prices.'],
+                        ['icon' => 'shirt', 'title' => 'Fashion — Up to 40% Off', 'body' => 'Summer collection: t-shirts, shorts, dresses, sandals, and sunglasses. Refresh your wardrobe without breaking the bank.'],
+                        ['icon' => 'home', 'title' => 'Home & Living — Up to 35% Off', 'body' => 'Kitchen gadgets, decorative pieces, smart home devices, and organizational tools. Make your home summer-ready.'],
+                        ['icon' => 'heart', 'title' => 'Beauty & Health — Up to 25% Off', 'body' => 'Skincare bundles, wellness kits, essential oils, and personal care essentials. Treat yourself this summer.'],
+                        ['icon' => 'bike', 'title' => 'Sports & Outdoors — Up to 30% Off', 'body' => 'Camping gear, fitness equipment, hydration packs, and outdoor accessories. Get outside and save.'],
+                        ['icon' => 'gift', 'title' => 'Flash Deals — Up to 50% Off', 'body' => 'Limited-quantity flash deals that change daily. Check back every morning for new surprises. Quantities are strictly limited.'],
+                    ],
+                    'ar' => [
+                        ['icon' => 'smartphone', 'title' => 'الإلكترونيات — خصم يصل إلى 30%', 'body' => 'سماعات لاسلكية، ساعات ذكية، مكبرات بلوتوث، شواحن محمولة، والمزيد. أفضل العلامات التجارية بأسعار لا تُقبل المنافسة.'],
+                        ['icon' => 'shirt', 'title' => 'الأزياء — خصم يصل إلى 40%', 'body' => 'مجموعة الصيف: تيشيرتات، شورتات، فساتين، صنادل، ونظارات شمسية. جدّد خزانة ملابسك دون إرهاق الميزانية.'],
+                        ['icon' => 'home', 'title' => 'المنزل والمعيشة — خصم يصل إلى 35%', 'body' => 'أدوات المطبخ، قطع ديكور، أجهزة منزلية ذكية، وأدوات تنظيم. اجعل منزلك جاهزًا للصيف.'],
+                        ['icon' => 'heart', 'title' => 'الجمال والصحة — خصم يصل إلى 25%', 'body' => 'مجموعات العناية بالبشرة، أطقم العافية، زيوت أساسية، وأساسيات العناية الشخصية.'],
+                        ['icon' => 'bike', 'title' => 'الرياضة والهواء الطلق — خصم يصل إلى 30%', 'body' => 'معدات التخييم، أدوات اللياقة، حقائب الترطيب، وإكسسوارات الأنشطة الخارجية.'],
+                        ['icon' => 'gift', 'title' => 'عروض خاطفة — خصم يصل إلى 50%', 'body' => 'عروض خاطفة بكميات محدودة تتغير يوميًا. تفقد الصفحة كل صباح لمفاجآت جديدة.'],
+                    ],
+                ],
+                'settings' => ['layout' => 'grid', 'columns' => 3],
+                'is_active' => true,
+            ],
+        );
+
+        // ── Countdown / Urgency Section ───────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'urgency_summer'],
+            [
+                'section_type' => 'cta',
+                'sort_order' => 2,
+                'title' => ['en' => 'The clock is ticking', 'ar' => 'الوقت يداهمك'],
+                'subtitle' => [
+                    'en' => 'This sale ends in 7 days. Once it is gone, these prices are gone too.',
+                    'ar' => 'تنتهي هذه التخفيضات بعد 7 أيام. بمجرد انتهائها، لن تعود هذه الأسعار.',
+                ],
+                'content' => [
+                    'en' => [
+                        'headline' => 'The clock is ticking',
+                        'description' => 'This sale ends in 7 days. Once it is gone, these prices are gone too.',
+                        'ctas' => [
+                            ['label' => 'Shop Now — Save Up to 40%', 'url' => '/products?sale=1', 'style' => 'primary'],
+                        ],
+                        'urgency_badges' => [
+                            '12,000+ items already claimed',
+                            'Average discount: 27% off',
+                            'Free shipping over $49',
+                            '60-day returns on all sale items',
+                        ],
+                    ],
+                    'ar' => [
+                        'headline' => 'الوقت يداهمك',
+                        'description' => 'تنتهي هذه التخفيضات بعد 7 أيام. بمجرد انتهائها، لن تعود هذه الأسعار.',
+                        'ctas' => [
+                            ['label' => 'تسوق الآن — وفر حتى 40%', 'url' => '/products?sale=1', 'style' => 'primary'],
+                        ],
+                        'urgency_badges' => [
+                            'أكثر من 12,000 منتج تم شراؤها',
+                            'متوسط الخصم: 27%',
+                            'شحن مجاني فوق $49',
+                            'إرجاع 60 يومًا على جميع منتجات التخفيضات',
+                        ],
+                    ],
+                ],
+                'settings' => ['layout' => 'centered', 'background' => 'brand'],
+                'is_active' => true,
+            ],
+        );
+
+        // ── Testimonials Section ──────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'testimonials_summer'],
+            [
+                'section_type' => 'testimonials',
+                'sort_order' => 3,
+                'title' => ['en' => 'What customers are saying about our sale', 'ar' => 'ماذا يقول العملاء عن تخفيضاتنا'],
+                'subtitle' => [
+                    'en' => 'Real reviews from real shoppers who scored big during our last sale.',
+                    'ar' => 'تقييمات حقيقية من متسوقين حقيقيين استفادوا كثيرًا من تخفيضاتنا السابقة.',
+                ],
+                'content' => [
+                    'en' => [
+                        'testimonials' => [
+                            [
+                                'quote' => 'Got a $200 smartwatch for $120 during last year summer sale. Still wearing it daily. The deals are legit.',
+                                'author' => 'Alex P.',
+                                'role' => 'Verified Buyer',
+                                'rating' => 5,
+                            ],
+                            [
+                                'quote' => 'Stocked up on summer clothes for the whole family. Saved $180 total. The quality is way better than what you would get at the mall for the same price.',
+                                'author' => 'Tanya W.',
+                                'role' => 'Verified Buyer',
+                                'rating' => 5,
+                            ],
+                            [
+                                'quote' => 'The flash deals sell out fast — you have to be quick. Managed to grab a portable speaker at 50% off. Best impulse purchase ever.',
+                                'author' => 'Carlos M.',
+                                'role' => 'Verified Buyer',
+                                'rating' => 5,
+                            ],
+                        ],
+                    ],
+                    'ar' => [
+                        'testimonials' => [
+                            [
+                                'quote' => 'حصلت على ساعة ذكية بقيمة $200 مقابل $120 خلال تخفيضات الصيف الماضي. ما زلت أرتديها يوميًا. العروض حقيقية.',
+                                'author' => 'أليكس ب.',
+                                'role' => 'مشترٍ موثّق',
+                                'rating' => 5,
+                            ],
+                            [
+                                'quote' => 'تسوقت ملابس صيفية للعائلة كلها. وفرت $180 إجمالاً. الجودة أفضل بكثير مما ستجده في المركز التجاري بنفس السعر.',
+                                'author' => 'تانيا و.',
+                                'role' => 'مشترٍ موثّق',
+                                'rating' => 5,
+                            ],
+                            [
+                                'quote' => 'العروض الخاطفة تنفد بسرعة — يجب أن تكون سريعًا. تمكنت من الحصول على مكبر صوت محمول بخصم 50%. أفضل شراء مندفع على الإطلاق.',
+                                'author' => 'كارلوس م.',
+                                'role' => 'مشترٍ موثّق',
+                                'rating' => 5,
+                            ],
+                        ],
+                    ],
+                ],
+                'settings' => ['layout' => 'carousel', 'autoplay' => true],
+                'is_active' => true,
+            ],
+        );
+
+        // ── Final CTA Section ─────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'final_cta_summer'],
+            [
+                'section_type' => 'cta',
+                'sort_order' => 4,
+                'title' => ['en' => 'Do not wait — these deals will not last', 'ar' => 'لا تنتظر — هذه العروض لن تدوم'],
+                'subtitle' => [
+                    'en' => 'Thousands of shoppers are browsing the sale right now. Items are selling out fast.',
+                    'ar' => 'آلاف المتسوقين يتصفحون التخفيضات الآن. المنتجات تنفد بسرعة.',
+                ],
+                'content' => [
+                    'en' => [
+                        'ctas' => [
+                            ['label' => 'Shop the Summer Sale', 'url' => '/products?sale=1', 'style' => 'primary'],
+                            ['label' => 'Browse New Arrivals', 'url' => '/products?sort=newest', 'style' => 'secondary'],
+                        ],
+                        'trust_badges' => [
+                            'Free shipping over $49',
+                            '60-day returns on sale items',
+                            'Price match guarantee',
+                            'Secure checkout',
+                        ],
+                    ],
+                    'ar' => [
+                        'ctas' => [
+                            ['label' => 'تسوق تخفيضات الصيف', 'url' => '/products?sale=1', 'style' => 'primary'],
+                            ['label' => 'تصفح الوافدين الجدد', 'url' => '/products?sort=newest', 'style' => 'secondary'],
+                        ],
+                        'trust_badges' => [
+                            'شحن مجاني فوق $49',
+                            'إرجاع 60 يومًا على منتجات التخفيضات',
+                            'ضمان مطابقة السعر',
+                            'دفع آمن',
+                        ],
+                    ],
+                ],
+                'settings' => ['layout' => 'centered', 'background' => 'dark'],
                 'is_active' => true,
             ],
         );

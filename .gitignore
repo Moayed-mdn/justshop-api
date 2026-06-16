@@ -19,3 +19,9 @@ search_and_print.sh
 .marscode
 .scalar.swp
 .kiro
+venv/
+*.py
+*.pyc
+__pycache__/
+.playwright-mcp/
+scripts/node_modules/

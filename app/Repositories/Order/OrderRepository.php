@@ -44,6 +44,19 @@ class OrderRepository extends BaseRepository
             ->find($id);
     }
 
+    public function findByOrderNumber(string $orderNumber, int $storeId): ?Order
+    {
+        return $this->scopedQuery()
+            ->with([
+                'items.productVariant.product.images',
+                'shippingAddress',
+                'billingAddress',
+                'paymentMethod'
+            ])
+            ->where('order_number', $orderNumber)
+            ->first();
+    }
+
     public function create(array $data, int $storeId): Order
     {
         $data['store_id'] = $this->getCurrentStoreId() ?? $storeId;

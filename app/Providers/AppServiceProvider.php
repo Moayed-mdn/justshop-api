@@ -8,6 +8,7 @@ use App\Domain\Shared\Events\StoreCreated;
 use App\Exceptions\Auth\TooManyRequestsException;
 use App\Listeners\Auth\SendWelcomeEmailListener;
 use App\Listeners\Lead\SendLeadSubmittedNotificationListener;
+use App\Listeners\Store\AutoAddStoreToHostsFile;
 use App\Listeners\Store\BootstrapStoreListener;
 use App\Services\Auth\Membership\MembershipResolver;
 use App\Services\Auth\Membership\PivotMembershipResolver;
@@ -190,6 +191,11 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(
             StoreCreated::class,
             BootstrapStoreListener::class,
+        );
+
+        Event::listen(
+            StoreCreated::class,
+            AutoAddStoreToHostsFile::class,
         );
 
         // Register custom rate limiter for email verification resends

@@ -123,14 +123,16 @@ class ProductRepository extends BaseRepository
             ->active()
             ->where(function (Builder $q) use ($term) {
                 $q->whereHas('translations', function (Builder $q2) use ($term) {
-                    $q2->where('name', 'LIKE', "%{$term}%")
-                       ->orWhere('description', 'LIKE', "%{$term}%");
+                    $q2->where('product_translations.name', 'LIKE', "%{$term}%")
+                       ->orWhere('product_translations.description', 'LIKE', "%{$term}%");
                 })
                 ->orWhereHas('brand', function (Builder $q2) use ($term) {
-                    $q2->where('name', 'LIKE', "%{$term}%");
+                    $q2->where('brands.name', 'LIKE', "%{$term}%");
                 })
                 ->orWhereHas('tags', function (Builder $q2) use ($term) {
-                    $q2->where('name', 'LIKE', "%{$term}%");
+                    $q2->whereHas('translations', function (Builder $q3) use ($term) {
+                        $q3->where('tag_translations.name', 'LIKE', "%{$term}%");
+                    });
                 });
             })
             ->with([

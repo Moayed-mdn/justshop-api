@@ -50,11 +50,11 @@ class OrderController extends Controller
         );
     }
 
-    public function show(Request $request, int $store, string $orderNumber): JsonResponse
+    public function show(GetOrderRequest $request, int $store, string $orderNumber): JsonResponse
     {
         // Wave 2 Remediation: Fetch order first to enable explicit policy authorization
         $order = $this->getOrderAction->execute(
-            GetOrderDTO::fromRequest($request, $store, $orderNumber)
+            GetOrderDTO::fromRequest($request, $store)
         );
 
         // Wave 2 Remediation: Explicit policy authorization moved from Action to Controller
@@ -68,7 +68,7 @@ class OrderController extends Controller
     {
         // Wave 2 Remediation: Fetch order first to enable explicit policy authorization
         $order = $this->getOrderAction->execute(
-            GetOrderDTO::fromRequest($request, $store, $orderNumber)
+            GetOrderDTO::fromRequest($request, $store)
         );
 
         // Wave 2 Remediation: Explicit policy authorization moved from Action to Controller
@@ -76,7 +76,7 @@ class OrderController extends Controller
         $this->authorize('cancel', $order);
 
         $order = $this->cancelOrderAction->execute(
-            CancelOrderDTO::fromRequest($request, $store, $orderNumber)
+            CancelOrderDTO::fromRequest($request, $store)
         );
 
         return $this->success(new OrderResource($order), __('order.cancelled'));

@@ -50,17 +50,30 @@ class HandleSubscriptionUpdated
             return;
         }
 
-        // Update subscription data
-        $subscription->update([
+        // Get period dates from subscription items (not available at subscription level)
+        $items = $stripeSubscription['items']['data'] ?? [];
+        $updateData = [
             'provider_status' => $stripeSubscription['status'],
             'provider_synced_at' => Carbon::now(),
-            'current_period_starts_at' => Carbon::createFromTimestamp($stripeSubscription['current_period_start']),
-            'current_period_ends_at' => Carbon::createFromTimestamp($stripeSubscription['current_period_end']),
             'cancel_at_period_end' => $stripeSubscription['cancel_at_period_end'] ?? false,
             'canceled_at' => $stripeSubscription['canceled_at'] 
                 ? Carbon::createFromTimestamp($stripeSubscription['canceled_at']) 
                 : null,
-        ]);
+        ];
+        
+        if (!empty($items)) {
+            $firstItem = $items[0];
+            
+            if (isset($firstItem['current_period_start'])) {
+                $updateData['current_period_starts_at'] = Carbon::createFromTimestamp($firstItem['current_period_start']);
+            }
+            if (isset($firstItem['current_period_end'])) {
+                $updateData['current_period_ends_at'] = Carbon::createFromTimestamp($firstItem['current_period_end']);
+            }
+        }
+        
+        // Update subscription data
+        $subscription->update($updateData);
 
         // Transition status if changed
         if ($newStatus !== $oldStatus && $oldStatus->canTransitionTo($newStatus)) {

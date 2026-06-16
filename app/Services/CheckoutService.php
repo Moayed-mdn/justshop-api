@@ -246,12 +246,18 @@ class CheckoutService
                 ];
             })->toArray();
 
-            // ── 5. Build Stripe session params ─────────────────
+            // ── 5. Read locale from X-Storefront-Locale header ─
+            $locale = request()->header('X-Storefront-Locale') ?? app()->getLocale();
+            
+            $successPath = $locale ? "/{$locale}/checkout/success" : '/checkout/success';
+            $cancelPath  = $locale ? "/{$locale}/checkout/cancel" : '/checkout/cancel';
+
+            // ── 6. Build Stripe session params ─────────────────
             $sessionParams = [
                 'mode'        => 'payment',
                 'line_items'  => $lineItems,
-                'success_url' => FrontendUrlBuilder::build('/checkout/success', [], $frontendBaseUrl) . '?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url'  => FrontendUrlBuilder::build('/checkout/cancel', [], $frontendBaseUrl),
+                'success_url' => FrontendUrlBuilder::build($successPath, [], $frontendBaseUrl) . '?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url'  => FrontendUrlBuilder::build($cancelPath, [], $frontendBaseUrl),
 
                 'shipping_address_collection' => [
                     'allowed_countries' => ['US', 'CA', 'GB', 'DE', 'FR', 'SA', 'AE', 'EG', 'JO'],
@@ -277,15 +283,15 @@ class CheckoutService
                 ],
             ];
 
-            // ── 6. Logged-in user: attach Stripe customer ──────
+            // ── 7. Logged-in user: attach Stripe customer ──────
             if ($user) {
                 $sessionParams['customer_email'] = $user->email;
             }
 
-            // ── 7. Create Stripe Checkout Session ──────────────
+            // ── 8. Create Stripe Checkout Session ──────────────
             $session = $this->createStripeSession($sessionParams);
 
-            // ── 8. Store session ID on order ───────────────────
+            // ── 9. Store session ID on order ───────────────────
             $order->update([
                 'stripe_checkout_session_id' => $session->id,
             ]);
@@ -306,7 +312,28 @@ class CheckoutService
         try {
             return Session::create($sessionParams);
         } catch (\Stripe\Exception\ApiErrorException $e) {
-            throw new StripeServiceException(__('payment.stripe_checkout_failed'));
+            // Log detailed Stripe error for debugging
+            Log::error('Stripe checkout session creation failed', [
+                'error_type' => get_class($e),
+                'error_code' => $e->getStripeCode(),
+                'error_message' => $e->getMessage(),
+                'error_param' => $e->getStripeParam(),
+                'http_status' => $e->getHttpStatus(),
+                'request_id' => $e->getRequestId(),
+                'session_params' => [
+                    'mode' => $sessionParams['mode'] ?? null,
+                    'line_items_count' => count($sessionParams['line_items'] ?? []),
+                    'has_customer_email' => isset($sessionParams['customer_email']),
+                    'success_url' => $sessionParams['success_url'] ?? null,
+                    'cancel_url' => $sessionParams['cancel_url'] ?? null,
+                ],
+            ]);
+            
+            // Include more specific error message for debugging
+            $errorDetail = $e->getMessage();
+            throw new StripeServiceException(
+                __('payment.stripe_checkout_failed') . ' [' . $e->getStripeCode() . ']: ' . $errorDetail
+            );
         }
     }
 
@@ -449,7 +476,17 @@ class CheckoutService
                 'customer_email' => $session->customer_details->email ?? $order?->guest_email,
             ];
         } catch (\Stripe\Exception\ApiErrorException $e) {
-            throw new StripeServiceException(__('payment.stripe_session_retrieve_failed'));
+            // Log detailed error for session retrieval failures
+            Log::error('Stripe session retrieval failed', [
+                'session_id' => $sessionId,
+                'error_type' => get_class($e),
+                'error_code' => $e->getStripeCode(),
+                'error_message' => $e->getMessage(),
+            ]);
+            
+            throw new StripeServiceException(
+                __('payment.stripe_session_retrieve_failed') . ': ' . $e->getMessage()
+            );
         }
     }
 }

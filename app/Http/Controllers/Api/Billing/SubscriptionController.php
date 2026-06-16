@@ -42,11 +42,11 @@ class SubscriptionController extends Controller
         $billingAccount = $this->billingAccountRepo->findByOwner($user->id);
 
         if (!$billingAccount) {
-            return $this->error(
-                message: 'Billing account not found',
-                errorCode: ErrorCode::BIL_001->value,
-                statusCode: 404
-            );
+            return $this->success([
+                'subscription' => null,
+                'has_active_subscription' => false,
+                'needs_billing_account' => true,
+            ]);
         }
 
         $subscription = $this->subscriptionRepo->getActiveForAccount($billingAccount->id);
@@ -77,11 +77,18 @@ class SubscriptionController extends Controller
         $billingAccount = $this->billingAccountRepo->findByOwner($user->id);
 
         if (!$billingAccount) {
-            return $this->error(
-                message: 'Billing account not found',
-                errorCode: ErrorCode::BIL_001->value,
-                statusCode: 404
-            );
+            return $this->success([
+                'usage' => [
+                    'stores' => [
+                        'count' => 0,
+                        'limit' => 1,
+                    ],
+                    'products' => [
+                        'count' => 0,
+                        'limit' => 0,
+                    ],
+                ],
+            ]);
         }
 
         // Get all store entitlement snapshots for this account
@@ -144,8 +151,15 @@ class SubscriptionController extends Controller
                 statusCode: 422
             );
         } catch (\Exception $e) {
+            \Log::error('Subscription upgrade failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'billing_account_id' => $billingAccount->id,
+                'plan_code' => $request->validated('plan_code'),
+            ]);
+            
             return $this->error(
-                message: 'Failed to upgrade plan',
+                message: 'Failed to upgrade plan: ' . $e->getMessage(),
                 errorCode: ErrorCode::BIL_010->value,
                 statusCode: 500
             );
@@ -192,8 +206,15 @@ class SubscriptionController extends Controller
                 statusCode: 422
             );
         } catch (\Exception $e) {
+            Log::error('Subscription downgrade failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'billing_account_id' => $billingAccount->id,
+                'plan_code' => $request->validated('plan_code'),
+            ]);
+            
             return $this->error(
-                message: 'Failed to schedule downgrade',
+                message: 'Failed to schedule downgrade: ' . $e->getMessage(),
                 errorCode: ErrorCode::BIL_010->value,
                 statusCode: 500
             );

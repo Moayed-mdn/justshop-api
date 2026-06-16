@@ -10,7 +10,7 @@ class CancelOrderDTO
 {
     public function __construct(
         public int $storeId,
-        public int $orderId,
+        public string $orderNumber,
         public int $userId,
     ) {}
 
@@ -18,7 +18,7 @@ class CancelOrderDTO
     {
         return new self(
             storeId: $storeId,
-            orderId: (int) $request->route('orderNumber'),
+            orderNumber: (string) $request->route('orderNumber'),
             userId: $request->user()->id,
         );
     }

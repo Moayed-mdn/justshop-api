@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\Category;
+use App\Models\Image;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Database\Seeders\Concerns\SeedsDemoStore;
@@ -25,15 +26,26 @@ class DemoStoreVolumeSeeder extends Seeder
             ['en' => 'Pixel 8 Pro', 'ar' => 'بيكسل 8 برو', 'price' => 899.00],
             ['en' => 'OnePlus 12', 'ar' => 'ون بلس 12', 'price' => 749.00],
             ['en' => 'Budget Android A55', 'ar' => 'أندرويد اقتصادي A55', 'price' => 249.00],
+            ['en' => 'iPhone 15', 'ar' => 'آيفون 15', 'price' => 999.00],
+            ['en' => 'Samsung Galaxy S24 Ultra', 'ar' => 'سامسونج جالاكسي S24 ألترا', 'price' => 1199.00],
+            ['en' => 'Nothing Phone 2', 'ar' => 'نوثينج فون 2', 'price' => 599.00],
+            ['en' => 'Motorola Edge 50', 'ar' => 'موتورولا إيدج 50', 'price' => 549.00],
         ],
         'Laptops' => [
             ['en' => 'Surface Laptop 6', 'ar' => 'سيرفس لابتوب 6', 'price' => 1199.00],
             ['en' => 'Acer Swift Go', 'ar' => 'ايسر سويفت جو', 'price' => 899.00],
+            ['en' => 'HP Pavilion 16', 'ar' => 'إتش بي بافيليون 16', 'price' => 849.00],
+            ['en' => 'ASUS Zenbook 14', 'ar' => 'آسوس زينبوك 14', 'price' => 999.00],
+            ['en' => 'Lenovo IdeaPad 5', 'ar' => 'لينوفو إيدياباد 5', 'price' => 749.00],
         ],
         'Accessories' => [
             ['en' => 'USB-C Hub Pro', 'ar' => 'موزع USB-C برو', 'price' => 59.99],
             ['en' => 'Mechanical Keyboard', 'ar' => 'لوحة مفاتيح ميكانيكية', 'price' => 129.99],
             ['en' => 'Noise Cancelling Headphones', 'ar' => 'سماعات بعزل الضوضاء', 'price' => 199.99],
+            ['en' => 'Wireless Mouse MX', 'ar' => 'ماوس لاسلكي MX', 'price' => 49.99],
+            ['en' => 'Laptop Stand Aluminum', 'ar' => 'حامل لابتوب ألومنيوم', 'price' => 39.99],
+            ['en' => 'Screen Protector Tempered Glass', 'ar' => 'حماية شاشة زجاج مقسى', 'price' => 14.99],
+            ['en' => 'Phone Case Silicone', 'ar' => 'جراب هاتف سيليكون', 'price' => 19.99],
         ],
         'Men Clothing' => [
             ['en' => 'Oxford Button-Down Shirt', 'ar' => 'قميص اوكسفورد', 'price' => 44.99],
@@ -127,6 +139,35 @@ class DemoStoreVolumeSeeder extends Seeder
                 ]);
 
                 $product->update(['product_variant_id' => $variant->id]);
+
+                $topic = match (true) {
+                    str_contains($categoryName, 'Phone') => 'technology',
+                    str_contains($categoryName, 'Laptop') => 'computer',
+                    str_contains($categoryName, 'Accessor') => 'accessory',
+                    str_contains($categoryName, 'Shoe') => 'sneakers',
+                    str_contains($categoryName, 'Cloth') => 'fashion',
+                    str_contains($categoryName, 'Appliance') => 'interior',
+                    str_contains($categoryName, 'Furniture') => 'interior',
+                    str_contains($categoryName, 'Skin') => 'cosmetic',
+                    default => 'retail',
+                };
+
+                $imageCount = random_int(3, 4);
+                for ($imgIdx = 0; $imgIdx < $imageCount; $imgIdx++) {
+                    Image::create([
+                        'imageable_id' => $variant->id,
+                        'imageable_type' => ProductVariant::class,
+                        'image_url' => sprintf(
+                            'https://picsum.photos/seed/justshop-%s-%d-%d/800/800',
+                            $topic,
+                            $product->id,
+                            $imgIdx,
+                        ),
+                        'is_primary' => $imgIdx === 0,
+                        'sort_order' => $imgIdx,
+                    ]);
+                }
+
                 $created++;
             }
         }

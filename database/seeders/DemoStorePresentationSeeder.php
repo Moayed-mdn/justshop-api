@@ -80,7 +80,7 @@ class DemoStorePresentationSeeder extends Seeder
         $topic = match (true) {
             str_contains($categorySlug, 'phone') => 'technology',
             str_contains($categorySlug, 'laptop') => 'computer',
-            str_contains($categorySlug, 'accessor') => 'gadget',
+            str_contains($categorySlug, 'accessor') => 'accessory',
             str_contains($categorySlug, 'shoe'), str_contains($categorySlug, 'sport') => 'sneakers',
             str_contains($categorySlug, 'cloth'), str_contains($categorySlug, 'fashion') => 'fashion',
             str_contains($categorySlug, 'furniture'), str_contains($categorySlug, 'appliance') => 'interior',

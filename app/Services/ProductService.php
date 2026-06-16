@@ -69,7 +69,8 @@ class ProductService
      */
     public function getCategoryDescendants(int $storeId): array
     {
-        return $this->categoryRepository->getRootCategories($storeId)->toArray();
+        $locale = app()->getLocale();
+        return $this->categoryRepository->getRootCategoriesForFilters($storeId, $locale);
     }
 
     /**

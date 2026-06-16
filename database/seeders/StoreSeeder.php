@@ -20,10 +20,10 @@ class StoreSeeder extends Seeder
             [
                 'name' => 'Merchant User',
                 'password' => Hash::make('password'),
-                'email_verified_at' => now(),
                 'onboarding_step' => OnboardingStepEnum::COMPLETED->value,
             ]
         );
+        $merchantUser->markEmailAsVerified();
 
         // 2. Create Super Admin User (Platform administrator)
         $superAdminUser = User::updateOrCreate(
@@ -31,10 +31,10 @@ class StoreSeeder extends Seeder
             [
                 'name' => 'Super Admin',
                 'password' => Hash::make('password'),
-                'email_verified_at' => now(),
                 'onboarding_step' => OnboardingStepEnum::COMPLETED->value,
             ]
         );
+        $superAdminUser->markEmailAsVerified();
 
         // 3. Create Staff User
         $staffUser = User::updateOrCreate(
@@ -42,10 +42,10 @@ class StoreSeeder extends Seeder
             [
                 'name' => 'Staff User',
                 'password' => Hash::make('password'),
-                'email_verified_at' => now(),
                 'onboarding_step' => OnboardingStepEnum::COMPLETED->value,
             ]
         );
+        $staffUser->markEmailAsVerified();
 
         // 4. Create Customer User
         $customerUser = User::updateOrCreate(
@@ -53,10 +53,10 @@ class StoreSeeder extends Seeder
             [
                 'name' => 'Customer User',
                 'password' => Hash::make('password'),
-                'email_verified_at' => now(),
                 'onboarding_step' => null,
             ]
         );
+        $customerUser->markEmailAsVerified();
 
         // 5. Create the first store (Owned by Merchant User)
         $store = Store::updateOrCreate(

@@ -22,10 +22,10 @@ class CreateCheckoutRequest extends FormRequest
 
         // Guest must send cart items
         return [
-            'items'                        => ['required', 'array', 'min:1'],
-            'items.*.product_variant_id'   => ['required', 'integer', 'exists:product_variants,id'],
-            'items.*.quantity'             => ['required', 'integer', 'min:1', 'max:10'],
-            'email'                        => ['nullable', 'email', 'max:255'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.product_variant_id' => ['required', 'integer', 'exists:product_variants,id'],
+            'items.*.quantity' => ['required', 'integer', 'min:1', 'max:10'],
+            'email' => ['nullable', 'email', 'max:255'],
         ];
     }
 

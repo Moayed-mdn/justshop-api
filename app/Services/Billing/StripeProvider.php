@@ -73,6 +73,12 @@ class StripeProvider implements BillingProviderInterface
         string $cancelUrl,
         array $metadata = []
     ): array {
+        // Ensure success_url includes the session_id parameter
+        // Stripe will replace {CHECKOUT_SESSION_ID} with the actual session ID
+        if (!str_contains($successUrl, '{CHECKOUT_SESSION_ID}')) {
+            $successUrl .= (str_contains($successUrl, '?') ? '&' : '?') . 'session_id={CHECKOUT_SESSION_ID}';
+        }
+
         $session = $this->stripe->checkout->sessions->create([
             'customer' => $customer->provider_customer_id,
             'mode' => 'subscription',
@@ -173,6 +179,14 @@ class StripeProvider implements BillingProviderInterface
         string $newPlanPriceId,
         bool $prorated = true
     ): void {
+        // If no provider subscription ID, this is a trial that never went through Stripe
+        // We can't update a subscription that doesn't exist in Stripe
+        if (empty($subscription->provider_subscription_id)) {
+            throw new \DomainException(
+                'Cannot update subscription: No Stripe subscription found. Please complete checkout first.'
+            );
+        }
+
         $stripeSubscription = $this->stripe->subscriptions->retrieve(
             $subscription->provider_subscription_id
         );

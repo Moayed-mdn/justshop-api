@@ -41,6 +41,18 @@ class DowngradePlanAction
                 );
             }
 
+            // Handle missing current_period_ends_at (sync from Stripe if needed)
+            if (!$subscription->current_period_ends_at && $subscription->provider_subscription_id) {
+                $this->syncPeriodEndFromStripe($subscription);
+            }
+
+            // If still null, throw error
+            if (!$subscription->current_period_ends_at) {
+                throw new \DomainException(
+                    "Cannot schedule downgrade: subscription has no billing period end date"
+                );
+            }
+
             // Schedule the downgrade (do NOT call Stripe yet)
             $subscription->update([
                 'pending_plan_id' => $newPlan->id,
@@ -74,5 +86,37 @@ class DowngradePlanAction
 
             return $subscription->fresh(['plan', 'pendingPlan']);
         });
+    }
+
+    /**
+     * Sync current_period_ends_at from Stripe if missing.
+     */
+    private function syncPeriodEndFromStripe(Subscription $subscription): void
+    {
+        try {
+            $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
+            $stripeSubscription = $stripe->subscriptions->retrieve(
+                $subscription->provider_subscription_id
+            );
+
+            // Get period end from subscription items
+            $items = $stripeSubscription->items->data ?? [];
+            if (!empty($items)) {
+                $periodEnd = $items[0]->current_period_end ?? null;
+                if ($periodEnd) {
+                    $subscription->update([
+                        'current_period_ends_at' => \Carbon\Carbon::createFromTimestamp($periodEnd),
+                        'current_period_starts_at' => $subscription->current_period_starts_at 
+                            ?? \Carbon\Carbon::createFromTimestamp($items[0]->current_period_start ?? time()),
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Failed to sync period end from Stripe', [
+                'subscription_id' => $subscription->id,
+                'error' => $e->getMessage(),
+            ]);
+            // Don't throw, let the null check handle it
+        }
     }
 }

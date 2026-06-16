@@ -25,7 +25,7 @@ class CategoryRepository extends BaseRepository
 
         return $this->scopedQuery()
             ->whereHas('translations', function (Builder $q) use ($term) {
-                $q->where('name', 'LIKE', "%{$term}%");
+                $q->where('category_translations.name', 'LIKE', "%{$term}%");
             })
             ->withCount(['products' => fn (Builder $q) => $q
                 ->where('store_id', $storeId)
@@ -319,6 +319,29 @@ class CategoryRepository extends BaseRepository
 
             $this->flattenDescendantsRecursive($child, $result, $locale);
         }
+    }
+
+    /**
+     * Get root categories formatted for filter display.
+     * Returns array with id, name (localized), and slug for each category.
+     *
+     * @param int $storeId Store ID for isolation
+     * @param string $locale Current locale for translations
+     * @return array<int, array{id: int, name: string, slug: string}>
+     */
+    public function getRootCategoriesForFilters(int $storeId, string $locale): array
+    {
+        $categories = $this->getRootCategories($storeId);
+
+        return $categories->map(function (Category $category) use ($locale) {
+            $translation = $category->translation($locale);
+
+            return [
+                'id'   => $category->id,
+                'name' => $translation?->name ?? $category->slug,
+                'slug' => $translation?->slug ?? $category->slug,
+            ];
+        })->toArray();
     }
 
     public function getBreadcrumb(Category $category): array

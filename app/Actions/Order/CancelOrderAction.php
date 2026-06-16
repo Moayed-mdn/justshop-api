@@ -29,7 +29,7 @@ class CancelOrderAction
         // Authorization now explicitly owned by OrderPolicy::cancel() in controller
         // This action is now orchestration-focused only
         
-        $order = $this->orderRepository->findById($dto->orderId, $dto->storeId);
+        $order = $this->orderRepository->findByOrderNumber($dto->orderNumber, $dto->storeId);
 
         if (!$order) {
             throw new \Illuminate\Database\Eloquent\ModelNotFoundException(__('error.order_not_found'));

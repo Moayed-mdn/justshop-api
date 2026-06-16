@@ -27,11 +27,13 @@ class ProductSeeder extends Seeder
     private array $productBrands = [
         // Phones
         'iPhone 14'              => 'Apple',
-        'Samsung Galaxy S23'     => 'Samsung',
-        'Xiaomi Redmi Note 12'   => 'Xiaomi',
+            'Samsung Galaxy S23'              => 'Samsung',
+            'Google Pixel 8'                 => 'Google',
+            'Xiaomi Redmi Note 12'   => 'Xiaomi',
         // Laptops
-        'MacBook Pro'            => 'Apple',
-        'Dell XPS 13'            => 'Dell',
+            'MacBook Pro'            => 'Apple',
+            'Dell XPS 13'            => 'Dell',
+            'Dell XPS 15'            => 'Dell',
         'HP Spectre x360'        => 'HP',
         'Lenovo ThinkPad X1'     => 'Lenovo',
         'ASUS ROG Zephyrus'      => 'ASUS',
@@ -47,8 +49,10 @@ class ProductSeeder extends Seeder
      */
     private array $productTags = [
         'iPhone 14'              => ['Electronics', 'Mobile', 'New Arrival'],
-        'Samsung Galaxy S23'     => ['Electronics', 'Mobile', 'Bestseller'],
-        'MacBook Pro'            => ['Electronics', 'Laptop', 'Pro'],
+            'Samsung Galaxy S23'     => ['Electronics', 'Mobile', 'Bestseller'],
+            'Google Pixel 8'         => ['Electronics', 'Mobile', 'New Arrival'],
+            'MacBook Pro'            => ['Electronics', 'Laptop', 'Pro'],
+            'Dell XPS 15'            => ['Electronics', 'Laptop', 'Pro'],
         'Classic Cotton T-Shirt' => ['Fashion', 'T-Shirt', 'Sale'],
         'Slim Fit Jeans'         => ['Fashion', 'Jeans', 'Bestseller'],
         'Flory Summer Dress'     => ['Fashion', 'Dress', 'New Arrival'],
@@ -155,6 +159,14 @@ class ProductSeeder extends Seeder
                 'base_price' => 699.99,
                 'description' => 'Samsung Galaxy S23 with dynamic AMOLED display',
             ],
+            'Google Pixel 8' => [
+                'options' => [
+                    'Storage' => ['128GB', '256GB', '512GB'],
+                    'Color' => ['Obsidian', 'Porcelain', 'Mint', 'Rose'],
+                ],
+                'base_price' => 749.99,
+                'description' => 'Google Pixel 8 with advanced AI camera features',
+            ],
         ],
         'Laptops' => [
             'MacBook Pro' => [
@@ -165,6 +177,15 @@ class ProductSeeder extends Seeder
                 ],
                 'base_price' => 1299.99,
                 'description' => 'MacBook Pro with M2 chip and Retina display',
+            ],
+            'Dell XPS 15' => [
+                'options' => [
+                    'Storage' => ['512GB', '1TB', '2TB'],
+                    'RAM' => ['16GB', '32GB'],
+                    'Color' => ['Graphite', 'Silver'],
+                ],
+                'base_price' => 1599.99,
+                'description' => 'Dell XPS 15 with infinity edge display and Intel i9',
             ],
         ],
         'Furniture' => [
@@ -511,6 +532,7 @@ class ProductSeeder extends Seeder
         $translations = [
             'iPhone 14' => 'آيفون 14',
             'Samsung Galaxy S23' => 'سامسونج جالاكسي S23',
+            'Google Pixel 8' => 'جوجل بيكسل 8',
             'Xiaomi Redmi Note 12' => 'شاومي ريدمي نوت 12',
             'Wireless Earbuds' => 'سماعات لاسلكية',
             'Smartwatches' => 'ساعات ذكية',
@@ -522,6 +544,7 @@ class ProductSeeder extends Seeder
             'Portable SSDs' => 'أقراص SSD محمولة',
             'MacBook Pro' => 'ماك بوك برو',
             'Dell XPS 13' => 'ديل XPS 13',
+            'Dell XPS 15' => 'ديل XPS 15',
             'HP Spectre x360' => 'إتش بي سبيكتر x360',
             'Lenovo ThinkPad X1' => 'لينوفو ثينك باد X1',
             'ASUS ROG Zephyrus' => 'آسوس ROG زيفيروس',
@@ -571,7 +594,9 @@ class ProductSeeder extends Seeder
             'Casual Loafers' => 'لوففرز كاجوال مريحة للاستخدام اليومي',
             'iPhone 14' => 'آيفون 14 من أبل مع نظام كاميرا متقدم',
             'Samsung Galaxy S23' => 'سامسونج جالاكسي S23 بشاشة AMOLED ديناميكية',
+            'Google Pixel 8' => 'جوجل بيكسل 8 مع كاميرا ذكاء اصطناعي متقدمة',
             'MacBook Pro' => 'ماك بوك برو مع شريحة M2 وشاشة ريتينا',
+            'Dell XPS 15' => 'ديل XPS 15 مع شاشة إنفينيتي إيدج ومعالج إنتل i9',
             'Modern Sofa 3-Seater' => 'كنبة عصرية بثلاثة مقاعد مع وسائد مريحة',
             'Wireless Earbuds' => 'سماعات لاسلكية عالية الجودة مع إلغاء الضوضاء',
         ];
