@@ -395,22 +395,6 @@ class StorefrontRuntimeService
         ?array $previewContext = null,
     ): array
     {
-        if ($redirect = $this->resolveRedirect($lookupPath, $locale)) {
-            return [
-                'status' => 'redirect',
-                'routeType' => 'redirect',
-                'pageId' => null,
-                'resourceType' => 'none',
-                'resourceId' => null,
-                'path' => $path,
-                'locale' => $locale,
-                'layout' => null,
-                'redirectTo' => $redirect['to'],
-                'redirectStatus' => $redirect['status'],
-                'legacyPassthrough' => false,
-            ];
-        }
-
         if ($this->isLegacyPassthrough($lookupPath)) {
             return [
                 'status' => 'matched',
@@ -421,8 +405,6 @@ class StorefrontRuntimeService
                 'path' => $path,
                 'locale' => $locale,
                 'layout' => null,
-                'redirectTo' => null,
-                'redirectStatus' => null,
                 'legacyPassthrough' => true,
             ];
         }
@@ -437,8 +419,6 @@ class StorefrontRuntimeService
                 'path' => $path,
                 'locale' => $locale,
                 'layout' => 'default',
-                'redirectTo' => null,
-                'redirectStatus' => null,
                 'legacyPassthrough' => false,
             ];
         }
@@ -453,8 +433,6 @@ class StorefrontRuntimeService
                 'path' => $path,
                 'locale' => $locale,
                 'layout' => 'catalog',
-                'redirectTo' => null,
-                'redirectStatus' => null,
                 'legacyPassthrough' => false,
             ];
         }
@@ -472,8 +450,6 @@ class StorefrontRuntimeService
                     'path' => $path,
                     'locale' => $locale,
                     'layout' => 'catalog',
-                    'redirectTo' => null,
-                    'redirectStatus' => null,
                     'legacyPassthrough' => false,
                 ];
             }
@@ -498,8 +474,6 @@ class StorefrontRuntimeService
                     'path' => $path,
                     'locale' => $locale,
                     'layout' => 'product',
-                    'redirectTo' => null,
-                    'redirectStatus' => null,
                     'legacyPassthrough' => false,
                 ];
             }
@@ -527,8 +501,6 @@ class StorefrontRuntimeService
                 'path' => $path,
                 'locale' => $locale,
                 'layout' => 'marketing',
-                'redirectTo' => null,
-                'redirectStatus' => null,
                 'legacyPassthrough' => false,
             ];
         }
@@ -1556,44 +1528,6 @@ class StorefrontRuntimeService
     }
 
     /**
-     * @return array{to: string, status: 301|302}|null
-     */
-    private function resolveRedirect(string $path, string $locale): ?array
-    {
-        $prefix = $locale === 'ar' ? '/ar' : '';
-
-        // Legacy Category
-        if (preg_match('#^/products/category/(?P<slug>[^/]+)$#', $path, $matches) === 1) {
-            return [
-                'to' => $prefix . '/shop/category/' . ltrim($matches['slug'], '/'),
-                'status' => 301,
-            ];
-        }
-
-        // Legacy Product Detail (Deeply nested)
-        if (preg_match('#^/products/product/(?P<slug>[^/]+)$#', $path, $matches) === 1) {
-            return [
-                'to' => $prefix . '/shop/product/' . ltrim($matches['slug'], '/'),
-                'status' => 301,
-            ];
-        }
-
-        // Legacy Product Detail (Simple)
-        if (preg_match('#^/products/(?P<slug>[^/]+)$#', $path, $matches) === 1) {
-            return [
-                'to' => $prefix . '/shop/product/' . ltrim($matches['slug'], '/'),
-                'status' => 301,
-            ];
-        }
-
-        return match ($path) {
-            '/old-about' => ['to' => $prefix . '/about-us', 'status' => 301],
-            '/products' => ['to' => $this->shopPath($locale), 'status' => 301],
-            default => null,
-        };
-    }
-
-    /**
      * @return array<string, mixed>
      */
     private function notFoundRoute(string $path, string $locale, string $routeType): array
@@ -1607,8 +1541,6 @@ class StorefrontRuntimeService
             'path' => $path,
             'locale' => $locale,
             'layout' => null,
-            'redirectTo' => null,
-            'redirectStatus' => null,
             'legacyPassthrough' => false,
         ];
     }
@@ -1675,8 +1607,6 @@ class StorefrontRuntimeService
             'path' => $path,
             'locale' => $locale,
             'layout' => 'marketing',
-            'redirectTo' => null,
-            'redirectStatus' => null,
             'legacyPassthrough' => false,
         ];
     }

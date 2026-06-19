@@ -37,7 +37,7 @@ class StorefrontRuntimeTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_resolve_endpoint_returns_contract_shape_for_home_marketing_category_product_redirect_and_not_found(): void
+    public function test_resolve_endpoint_returns_contract_shape_for_home_marketing_category_product_and_not_found(): void
     {
         [$store, $page, $category, $product] = $this->seedRuntimeCatalog();
 
@@ -60,11 +60,6 @@ class StorefrontRuntimeTest extends TestCase
             ->assertJsonPath('data.routeType', 'shop_page')
             ->assertJsonPath('data.pageId', 'shop');
 
-        $this->runtimeGet($store, '/api/v1/storefront/runtime/resolve', ['path' => '/products'])
-            ->assertOk()
-            ->assertJsonPath('data.status', 'redirect')
-            ->assertJsonPath('data.redirectTo', '/shop');
-
         $this->runtimeGet($store, '/api/v1/storefront/runtime/resolve', ['path' => '/shop/category/shoes'])
             ->assertOk()
             ->assertJsonPath('data.status', 'matched')
@@ -77,12 +72,16 @@ class StorefrontRuntimeTest extends TestCase
             ->assertJsonPath('data.routeType', 'product_page')
             ->assertJsonPath('data.pageId', 'prd_' . $product->id);
 
+        // Legacy routes now return 404 instead of redirecting
+        $this->runtimeGet($store, '/api/v1/storefront/runtime/resolve', ['path' => '/products'])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'not_found')
+            ->assertJsonPath('data.routeType', 'marketing_page');
+
         $this->runtimeGet($store, '/api/v1/storefront/runtime/resolve', ['path' => '/old-about'])
             ->assertOk()
-            ->assertJsonPath('data.status', 'redirect')
-            ->assertJsonPath('data.routeType', 'redirect')
-            ->assertJsonPath('data.redirectTo', '/about-us')
-            ->assertJsonPath('data.redirectStatus', 301);
+            ->assertJsonPath('data.status', 'not_found')
+            ->assertJsonPath('data.routeType', 'marketing_page');
 
         $this->runtimeGet($store, '/api/v1/storefront/runtime/resolve', ['path' => '/missing-page'])
             ->assertOk()

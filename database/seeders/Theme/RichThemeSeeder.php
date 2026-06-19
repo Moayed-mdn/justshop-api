@@ -568,63 +568,15 @@ class RichThemeSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // Categories (parent)
-        $categoriesParent = NavigationMenuItem::create([
-            'menu_id' => $mainMenu->id,
-            'parent_id' => null,
-            'label' => json_encode(['en' => 'Categories', 'ar' => 'الفئات']),
-            'type' => 'page',
-            'url' => '/categories',
-            'target' => '_self',
-            'position' => 3,
-            'is_active' => true,
-        ]);
-
-        // Categories > Electronics (child)
-        NavigationMenuItem::create([
-            'menu_id' => $mainMenu->id,
-            'parent_id' => $categoriesParent->id,
-            'label' => json_encode(['en' => 'Electronics', 'ar' => 'إلكترونيات']),
-            'type' => 'category',
-            'url' => '/categories/electronics',
-            'target' => '_self',
-            'position' => 1,
-            'is_active' => true,
-        ]);
-
-        // Categories > Fashion (child)
-        NavigationMenuItem::create([
-            'menu_id' => $mainMenu->id,
-            'parent_id' => $categoriesParent->id,
-            'label' => json_encode(['en' => 'Fashion', 'ar' => 'أزياء']),
-            'type' => 'category',
-            'url' => '/categories/fashion',
-            'target' => '_self',
-            'position' => 2,
-            'is_active' => true,
-        ]);
-
-        // Categories > Home & Garden (child)
-        NavigationMenuItem::create([
-            'menu_id' => $mainMenu->id,
-            'parent_id' => $categoriesParent->id,
-            'label' => json_encode(['en' => 'Home & Garden', 'ar' => 'منزل وحديقة']),
-            'type' => 'category',
-            'url' => '/categories/home-garden',
-            'target' => '_self',
-            'position' => 3,
-            'is_active' => true,
-        ]);
-
         // About
         NavigationMenuItem::create([
             'menu_id' => $mainMenu->id,
             'parent_id' => null,
             'label' => json_encode(['en' => 'About', 'ar' => 'من نحن']),
             'type' => 'page',
-            'url' => '/about',
+            'url' => '/about-us',
             'target' => '_self',
-            'position' => 4,
+            'position' => 3,
             'is_active' => true,
         ]);
 
@@ -636,7 +588,7 @@ class RichThemeSeeder extends Seeder
             'type' => 'page',
             'url' => '/contact',
             'target' => '_self',
-            'position' => 5,
+            'position' => 4,
             'is_active' => true,
         ]);
 
@@ -727,7 +679,7 @@ class RichThemeSeeder extends Seeder
 
         // Flat links (no children, render as single links)
         $flatLinks = [
-            ['en' => 'About Us', 'ar' => 'من نحن', 'url' => '/about'],
+            ['en' => 'About Us', 'ar' => 'من نحن', 'url' => '/about-us'],
             ['en' => 'Contact', 'ar' => 'اتصل بنا', 'url' => '/contact'],
             ['en' => 'Privacy Policy', 'ar' => 'سياسة الخصوصية', 'url' => '/privacy'],
             ['en' => 'Terms of Service', 'ar' => 'شروط الخدمة', 'url' => '/terms'],
