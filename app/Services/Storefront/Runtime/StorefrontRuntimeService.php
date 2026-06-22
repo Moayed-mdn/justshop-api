@@ -6,7 +6,6 @@ namespace App\Services\Storefront\Runtime;
 
 use App\Models\Category;
 use App\Models\Cms\Marketing\Store\StoreMarketingPage;
-use App\Models\HeroBanner;
 use App\Models\Product;
 use App\Models\Store;
 use App\Repositories\Category\CategoryRepository;
@@ -410,6 +409,26 @@ class StorefrontRuntimeService
         }
 
         if ($lookupPath === '/') {
+            $homePage = StoreMarketingPage::query()
+                ->where('store_id', $store->id)
+                ->published()
+                ->where(fn ($q) => $q->where('slug->en', 'home')->orWhere('slug->ar', 'home'))
+                ->first();
+
+            if ($homePage instanceof StoreMarketingPage) {
+                return [
+                    'status' => 'matched',
+                    'routeType' => 'marketing_page',
+                    'pageId' => 'mkt_' . $homePage->id,
+                    'resourceType' => 'page',
+                    'resourceId' => 'mkt_' . $homePage->id,
+                    'path' => $path,
+                    'locale' => $locale,
+                    'layout' => 'marketing',
+                    'legacyPassthrough' => false,
+                ];
+            }
+
             return [
                 'status' => 'matched',
                 'routeType' => 'home',
@@ -725,16 +744,29 @@ class StorefrontRuntimeService
 
     private function buildHomePagePayload(Store $store, string $locale): array
     {
-        $heroBanners = HeroBanner::query()
-            ->where('store_id', $store->id)
-            ->active()
-            ->with('translations')
-            ->orderBy('position')
-            ->get();
-
         $categoryGrid = $this->mapCategoryGridItems($store, $locale);
         $featuredProducts = $this->mapFeaturedProductsForStore($store, $locale);
 
+        // Check if store has a designated homepage CMS page
+        $homePage = StoreMarketingPage::query()
+            ->where('store_id', $store->id)
+            ->where('is_homepage', true)
+            ->where('status', 'published')
+            ->with('sections')
+            ->first();
+
+        // If homepage CMS page exists, use it
+        if ($homePage) {
+            return $this->buildMarketingPagePayload(
+                page: $homePage,
+                store: $store,
+                locale: $locale,
+                pageId: 'home',
+                preview: false
+            );
+        }
+
+        // Fallback: default homepage with category grid and featured products
         return [
             'id' => 'home',
             'pageType' => 'home',
@@ -744,26 +776,6 @@ class StorefrontRuntimeService
             'layout' => 'default',
             'status' => 'published',
             'sections' => [
-                [
-                    'id' => 'home_hero',
-                    'type' => 'hero_banner',
-                    'component' => 'HeroSection',
-                    'props' => [
-                        'items' => $heroBanners->map(fn (HeroBanner $banner): array => [
-                            'id' => (string) $banner->id,
-                            'headline' => (string) ($banner->getTranslation($locale)?->title ?? ''),
-                            'subheadline' => (string) ($banner->getTranslation($locale)?->subtitle ?? ''),
-                            'ctaText' => (string) ($banner->getTranslation($locale)?->cta_text ?? ''),
-                            'ctaUrl' => $banner->link_url ?? $banner->cat_url,
-                            'visualType' => $banner->visual_type?->value ?? 'image',
-                            'imageUrl' => $banner->image_url,
-                            'gradientFrom' => $banner->gradient_from,
-                            'gradientTo' => $banner->gradient_to,
-                        ])->values()->all(),
-                    ],
-                    'version' => '1',
-                    'dataState' => $heroBanners->isEmpty() ? 'empty' : 'ready',
-                ],
                 [
                     'id' => 'home_categories',
                     'type' => 'category_grid',
@@ -1078,17 +1090,33 @@ class StorefrontRuntimeService
                 ->values()
                 ->map(function ($section, int $index) use ($locale, $fallbackLocale): array {
                     $type = (string) $section->section_type;
+                    $title = $this->localizedContentResolver->resolveLocalizedField($section->title, $locale, $fallbackLocale);
+                    $subtitle = $this->localizedContentResolver->resolveLocalizedField($section->subtitle, $locale, $fallbackLocale);
+                    $content = $this->localizedContentResolver->resolveLocalizedPayload($section->content, $locale, $fallbackLocale);
+                    $settings = $this->localizedContentResolver->resolveLocalizedPayload($section->settings, $locale, $fallbackLocale);
+
+                    // Special handling for feature_list sections: extract locale-specific array if content wasn't resolved
+                    if (in_array($type, ['features', 'feature_list'], true) && is_array($content)) {
+                        if (isset($content[$locale]) && is_array($content[$locale])) {
+                            $content = $content[$locale];
+                        } elseif (isset($content[$fallbackLocale]) && is_array($content[$fallbackLocale])) {
+                            $content = $content[$fallbackLocale];
+                        }
+                    }
+
+                    // Transform relative image URLs to absolute URLs
+                    $content = $this->transformImageUrls($content);
+
+                    $props = $this->buildSectionProps($type, $title, $subtitle, $content, $settings);
+                    
+                    // Transform props again in case buildSectionProps wrapped content
+                    $props = $this->transformImageUrls($props);
 
                     return [
                         'id' => $section->identifier ?: ('section_' . $section->id . '_' . $index),
                         'type' => $this->normalizeSectionType($type),
                         'component' => $this->componentForSection($type),
-                        'props' => array_filter([
-                            'title' => $this->localizedContentResolver->resolveLocalizedField($section->title, $locale, $fallbackLocale),
-                            'subtitle' => $this->localizedContentResolver->resolveLocalizedField($section->subtitle, $locale, $fallbackLocale),
-                            'content' => $this->localizedContentResolver->resolveLocalizedPayload($section->content, $locale, $fallbackLocale),
-                            'settings' => $this->localizedContentResolver->resolveLocalizedPayload($section->settings, $locale, $fallbackLocale),
-                        ], static fn (mixed $value): bool => $value !== null),
+                        'props' => $props,
                         'version' => '1',
                         'dataState' => 'ready',
                     ];
@@ -1102,6 +1130,9 @@ class StorefrontRuntimeService
                 ->map(function (array $section, int $index) use ($locale, $fallbackLocale): array {
                     $type = (string) ($section['type'] ?? $section['section_type'] ?? 'custom');
                     $props = $this->localizedContentResolver->resolveLocalizedPayload($section, $locale, $fallbackLocale);
+                    
+                    // Transform relative image URLs to absolute URLs
+                    $props = $this->transformImageUrls($props);
 
                     return [
                         'id' => (string) ($section['identifier'] ?? $section['id'] ?? 'section_' . $index),
@@ -1120,7 +1151,7 @@ class StorefrontRuntimeService
             'type' => 'custom',
             'component' => 'RuntimeFallbackSection',
             'props' => [
-                'content' => $this->localizedContentResolver->resolveLocalizedPayload($page->content, $locale, $fallbackLocale),
+                'content' => $this->transformImageUrls($this->localizedContentResolver->resolveLocalizedPayload($page->content, $locale, $fallbackLocale)),
             ],
             'version' => '1',
             'dataState' => empty($page->content) ? 'empty' : 'ready',
@@ -1286,7 +1317,40 @@ class StorefrontRuntimeService
             return $path;
         }
 
+        // For CMS uploaded images, use Storage::url() to get the correct public URL
+        if (str_starts_with($path, 'cms/') || str_starts_with($path, 'products/') || str_starts_with($path, 'categories/') || str_starts_with($path, 'brands/')) {
+            return \Illuminate\Support\Facades\Storage::disk('public')->url($path);
+        }
+
         return asset($path);
+    }
+
+    /**
+     * Recursively transform relative image URLs to absolute URLs in arrays
+     * 
+     * @param mixed $data
+     * @return mixed
+     */
+    private function transformImageUrls(mixed $data): mixed
+    {
+        if (!is_array($data)) {
+            return $data;
+        }
+
+        foreach ($data as $key => $value) {
+            // Check for common image URL field names
+            if (is_string($key) && in_array($key, ['imageUrl', 'image', 'url', 'src', 'thumbnail', 'avatar', 'icon'], true)) {
+                if (is_string($value) && $value !== '') {
+                    $data[$key] = $this->resolvePublicImageUrl($value);
+                }
+            }
+            // Recursively process nested arrays
+            elseif (is_array($value)) {
+                $data[$key] = $this->transformImageUrls($value);
+            }
+        }
+
+        return $data;
     }
 
     private function normalizeSectionType(string $type): string
@@ -1311,9 +1375,133 @@ class StorefrontRuntimeService
             'faq'                           => 'FaqSection',
             'gallery'                       => 'GallerySection',
             'video'                         => 'VideoSection',
-            'testimonials'                  => 'TestimonialSection',
+            'testimonials'                  => 'TestimonialsSection',
+            'pricing'                       => 'PricingSection',
             default                         => 'RuntimeFallbackSection',
         };
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildSectionProps(string $type, ?string $title, ?string $subtitle, ?array $content, ?array $settings): array
+    {
+        $props = array_filter([
+            'title' => $title,
+            'subtitle' => $subtitle,
+        ], static fn (mixed $value): bool => $value !== null);
+
+        if (in_array($type, ['category_grid', 'category_summary'], true)) {
+            $props['categories'] = $content['categories'] ?? [];
+            return $props;
+        }
+
+        if (in_array($type, ['product_grid', 'product_summary'], true)) {
+            // If content has products already (hand-built), use them
+            if (isset($content['products']) && is_array($content['products'])) {
+                $props['products'] = $content['products'];
+                return $props;
+            }
+
+            // Otherwise, resolve product_ids (from CMS)
+            if (isset($content['product_ids']) && is_array($content['product_ids'])) {
+                $props['products'] = $this->resolveProductsFromIds($content['product_ids']);
+                if (isset($settings['columns'])) {
+                    $props['settings']['columns'] = $settings['columns'];
+                }
+                if (isset($settings['style'])) {
+                    $props['settings']['style'] = $settings['style'];
+                }
+                if (isset($settings['show_prices'])) {
+                    $props['settings']['show_prices'] = $settings['show_prices'];
+                }
+                if (isset($settings['show_add_to_cart'])) {
+                    $props['settings']['show_add_to_cart'] = $settings['show_add_to_cart'];
+                }
+                return $props;
+            }
+
+            $props['products'] = [];
+            return $props;
+        }
+
+        // For feature_list sections, the content is already resolved by LocalizedContentResolver
+        // and should be an array of items. Pass it as 'items' to match component expectations.
+        if ($type === 'feature_list' || $type === 'features') {
+            if (is_array($content) && array_is_list($content)) {
+                $props['items'] = $content;
+            } else {
+                $props['items'] = [];
+            }
+            $props['settings'] = $settings ?? [];
+            return $props;
+        }
+
+        // For hero_banner sections, extract items from content if present
+        if ($type === 'hero' || $type === 'hero_banner') {
+            if (isset($content['items']) && is_array($content['items'])) {
+                $props['items'] = $content['items'];
+            } else {
+                $props['items'] = [];
+            }
+            $props['content'] = $content ?? [];
+            $props['settings'] = $settings ?? [];
+            return $props;
+        }
+
+        $props['content'] = $content ?? [];
+        $props['settings'] = $settings ?? [];
+
+        return $props;
+    }
+
+    /**
+     * Resolve product IDs to product DTOs for the storefront.
+     * Returns products in the format expected by RuntimeProductGridSection.vue
+     */
+    private function resolveProductsFromIds(array $productIds): array
+    {
+        if (empty($productIds)) {
+            return [];
+        }
+
+        $store = $this->currentStore();
+
+        // Load products with their primary variants
+        $products = Product::query()
+            ->where('store_id', $store->id)
+            ->whereIn('id', $productIds)
+            ->where('status', 'active')
+            ->with(['variants' => function ($query) {
+                $query->where('is_active', true)->orderBy('sort_order');
+            }])
+            ->get();
+
+        return $products->map(function (Product $product) {
+            $variant = $product->variants->first();
+
+            if (!$variant) {
+                return null;
+            }
+
+            return [
+                'id' => $product->id,
+                'variantId' => $variant->id,
+                'product_variant_id' => $variant->id, // Alias for compatibility
+                'name' => $product->name,
+                'slug' => $product->slug,
+                'image' => $variant->primary_image_url ?? '',
+                'primary_image' => $variant->primary_image_url ?? '', // Alias
+                'price' => $variant->price,
+                'currency' => $store->default_currency ?? 'USD',
+                'description' => $product->description ?? '',
+                'categoryId' => $product->category_id,
+                'category_id' => $product->category_id, // Alias
+            ];
+        })
+        ->filter() // Remove null entries (products without variants)
+        ->values()
+        ->all();
     }
 
     /**

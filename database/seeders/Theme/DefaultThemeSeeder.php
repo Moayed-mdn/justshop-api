@@ -291,7 +291,7 @@ class DefaultThemeSeeder extends Seeder
                 'ar' => 'من نحن',
             ]),
             'type' => 'page',
-            'url' => '/about',
+            'url' => '/about-us',
             'target' => '_self',
             'resource_type' => null,
             'resource_id' => null,
@@ -312,6 +312,38 @@ class DefaultThemeSeeder extends Seeder
             'resource_type' => null,
             'resource_id' => null,
             'position' => 4,
+            'is_active' => true,
+        ]);
+
+        NavigationMenuItem::create([
+            'menu_id' => $mainMenu->id,
+            'parent_id' => null,
+            'label' => json_encode([
+                'en' => 'FAQ',
+                'ar' => 'الأسئلة الشائعة',
+            ]),
+            'type' => 'page',
+            'url' => '/faq',
+            'target' => '_self',
+            'resource_type' => null,
+            'resource_id' => null,
+            'position' => 5,
+            'is_active' => true,
+        ]);
+
+        NavigationMenuItem::create([
+            'menu_id' => $mainMenu->id,
+            'parent_id' => null,
+            'label' => json_encode([
+                'en' => 'Summer Sale',
+                'ar' => 'تخفيضات الصيف',
+            ]),
+            'type' => 'page',
+            'url' => '/summer-sale',
+            'target' => '_self',
+            'resource_type' => null,
+            'resource_id' => null,
+            'position' => 6,
             'is_active' => true,
         ]);
 

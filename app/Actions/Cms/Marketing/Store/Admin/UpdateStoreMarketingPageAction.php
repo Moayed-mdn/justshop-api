@@ -24,6 +24,14 @@ class UpdateStoreMarketingPageAction
         $publishedAt = $this->resolvePublishedAt($dto->status, $dto->publishedAt, $page);
 
         $page = DB::transaction(function () use ($page, $dto, $publishedAt): StoreMarketingPage {
+            // If marking as homepage, unset any existing homepage first (excluding current page)
+            if ($dto->isHomepage) {
+                StoreMarketingPage::where('store_id', $dto->storeId)
+                    ->where('is_homepage', true)
+                    ->where('id', '!=', $dto->id)
+                    ->update(['is_homepage' => false]);
+            }
+
             $updated = $this->repository->update($page, [
                 'title'        => $dto->title,
                 'slug'         => $dto->slug,
@@ -34,6 +42,7 @@ class UpdateStoreMarketingPageAction
                 'seo'          => $dto->seo,
                 'template'     => $dto->template?->value,
                 'sort_order'   => $dto->sortOrder,
+                'is_homepage'  => $dto->isHomepage,
                 'updated_by'   => $dto->updatedBy,
             ]);
 

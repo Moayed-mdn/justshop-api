@@ -9,5 +9,5 @@ Route::middleware(['store.context'])
     ->controller(HomePageController::class)
     ->group(function () {
         Route::get('/best-seller', 'bestSeller')->name('best-seller');
-        Route::get('/hero', 'hero')->name('hero');
+        // Hero banners removed - use CMS pages with is_homepage = true instead
     });

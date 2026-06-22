@@ -12,7 +12,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class StoreMarketingPageRepository
 {
-    public function paginateAdmin(int $storeId, int $perPage = 15, ?string $search = null, ?string $status = null): LengthAwarePaginator
+    public function paginateAdmin(int $storeId, int $perPage = 15, ?string $search = null, ?string $status = null, ?string $template = null): LengthAwarePaginator
     {
         $query = StoreMarketingPage::query()
             ->where('store_id', $storeId)
@@ -25,6 +25,10 @@ class StoreMarketingPageRepository
 
         if ($status !== null && $status !== 'all') {
             $query->where('status', $status);
+        }
+
+        if ($template !== null && $template !== 'all') {
+            $query->where('template', $template);
         }
 
         if ($search !== null) {

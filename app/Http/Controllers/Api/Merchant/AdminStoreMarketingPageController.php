@@ -39,6 +39,7 @@ class AdminStoreMarketingPageController extends Controller
             $request->integer('per_page', 15),
             $request->string('search')->toString() ?: null,
             $request->string('status')->toString() ?: null,
+            $request->string('template')->toString() ?: null,
         );
 
         return $this->paginated(
@@ -54,6 +55,35 @@ class AdminStoreMarketingPageController extends Controller
         $page = $this->repository->findByIdOrFail((int) $store->id, $id);
 
         return $this->success(new AdminStoreMarketingPageResource($page));
+    }
+
+    /**
+     * Check if a homepage already exists for this store.
+     * Returns the current homepage page info if exists, or null.
+     */
+    public function checkHomepage(Request $request, Store $store): JsonResponse
+    {
+        $this->authorize('viewAny', [StoreMarketingPage::class, $store]);
+
+        $excludeId = $request->integer('exclude_id', 0);
+
+        $homepage = StoreMarketingPage::where('store_id', $store->id)
+            ->where('is_homepage', true)
+            ->when($excludeId > 0, fn ($q) => $q->where('id', '!=', $excludeId))
+            ->first();
+
+        if (!$homepage) {
+            return $this->success(['exists' => false, 'page' => null]);
+        }
+
+        return $this->success([
+            'exists' => true,
+            'page' => [
+                'id' => $homepage->id,
+                'title' => $homepage->title,
+                'slug' => $homepage->slug,
+            ],
+        ]);
     }
 
     public function store(

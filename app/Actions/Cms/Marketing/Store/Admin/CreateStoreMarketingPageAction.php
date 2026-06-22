@@ -23,19 +23,27 @@ class CreateStoreMarketingPageAction
         $publishedAt = $this->resolvePublishedAt($dto->status, $dto->publishedAt);
 
         $page = DB::transaction(function () use ($dto, $publishedAt): StoreMarketingPage {
+            // If marking as homepage, unset any existing homepage first
+            if ($dto->isHomepage) {
+                StoreMarketingPage::where('store_id', $dto->storeId)
+                    ->where('is_homepage', true)
+                    ->update(['is_homepage' => false]);
+            }
+
             $page = $this->repository->create([
-                'store_id'    => $dto->storeId,
-                'title'       => $dto->title,
-                'slug'        => $dto->slug,
-                'excerpt'     => $dto->excerpt,
-                'content'     => $dto->content,
-                'status'      => $dto->status->value,
+                'store_id'     => $dto->storeId,
+                'title'        => $dto->title,
+                'slug'         => $dto->slug,
+                'excerpt'      => $dto->excerpt,
+                'content'      => $dto->content,
+                'status'       => $dto->status->value,
                 'published_at' => $publishedAt,
-                'seo'         => $dto->seo,
-                'template'    => $dto->template?->value,
-                'sort_order'  => $dto->sortOrder,
-                'created_by'  => $dto->createdBy,
-                'updated_by'  => $dto->updatedBy,
+                'seo'          => $dto->seo,
+                'template'     => $dto->template?->value,
+                'sort_order'   => $dto->sortOrder,
+                'is_homepage'  => $dto->isHomepage,
+                'created_by'   => $dto->createdBy,
+                'updated_by'   => $dto->updatedBy,
             ]);
 
             if (!empty($dto->sections)) {

@@ -6,6 +6,7 @@ namespace App\Http\Resources\Admin\Cms\Marketing\Store;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\Admin\Cms\Marketing\Store\StoreMarketingSectionResource;
 
 /**
  * Admin response resource for StoreMarketingPage.
@@ -40,6 +41,7 @@ class AdminStoreMarketingPageResource extends JsonResource
                 ? $this->template->value
                 : $this->template,
             'sort_order'   => $this->sort_order,
+            'is_homepage'  => (bool) $this->is_homepage,
 
             // SEO — raw map; admin editor needs full structure
             'seo'          => $this->seo,

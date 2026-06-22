@@ -13,6 +13,7 @@ enum MediaContextEnum: string
     case HERO_BANNERS = 'hero';
     case TAGS = 'tags';
     case STORES = 'stores';
+    case CMS = 'cms';
 
     /**
      * Get all enum values as array.

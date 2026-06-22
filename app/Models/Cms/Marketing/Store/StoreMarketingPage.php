@@ -40,6 +40,7 @@ class StoreMarketingPage extends Model implements HasLocalizedContent, HasSeoMet
         'seo',
         'template',
         'sort_order',
+        'is_homepage',
         'created_by',
         'updated_by',
     ];
@@ -57,6 +58,7 @@ class StoreMarketingPage extends Model implements HasLocalizedContent, HasSeoMet
             'template' => MarketingPageTemplateEnum::class,
             'published_at' => 'datetime',
             'sort_order' => 'integer',
+            'is_homepage' => 'boolean',
         ];
     }
 
@@ -102,6 +104,11 @@ class StoreMarketingPage extends Model implements HasLocalizedContent, HasSeoMet
     {
         $query->where('status', MarketingPageStatusEnum::SCHEDULED)
             ->where('published_at', '>', now());
+    }
+
+    public function scopeHomepage(Builder $query): void
+    {
+        $query->where('is_homepage', true);
     }
 
     // ── SEO Contract ───────────────────────────────────────────

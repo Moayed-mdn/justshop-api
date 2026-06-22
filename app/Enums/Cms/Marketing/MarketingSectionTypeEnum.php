@@ -22,6 +22,8 @@ enum MarketingSectionTypeEnum: string
     case FAQ = 'faq';
     case GALLERY = 'gallery';
     case VIDEO = 'video';
+    case CONTENT = 'content';
+    case CATEGORY_GRID = 'category_grid';
     case CUSTOM = 'custom';
 
     public static function values(): array
@@ -32,9 +34,10 @@ enum MarketingSectionTypeEnum: string
     public function label(): string
     {
         return match ($this) {
-            self::CTA  => 'CTA',
-            self::FAQ  => 'FAQ',
-            default    => ucfirst(str_replace('_', ' ', $this->value)),
+            self::CTA           => 'CTA',
+            self::FAQ           => 'FAQ',
+            self::CATEGORY_GRID => 'Category Grid',
+            default             => ucfirst(str_replace('_', ' ', $this->value)),
         };
     }
 

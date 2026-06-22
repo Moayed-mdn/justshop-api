@@ -592,6 +592,30 @@ class RichThemeSeeder extends Seeder
             'is_active' => true,
         ]);
 
+        // FAQ
+        NavigationMenuItem::create([
+            'menu_id' => $mainMenu->id,
+            'parent_id' => null,
+            'label' => json_encode(['en' => 'FAQ', 'ar' => 'الأسئلة الشائعة']),
+            'type' => 'page',
+            'url' => '/faq',
+            'target' => '_self',
+            'position' => 5,
+            'is_active' => true,
+        ]);
+
+        // Summer Sale
+        NavigationMenuItem::create([
+            'menu_id' => $mainMenu->id,
+            'parent_id' => null,
+            'label' => json_encode(['en' => 'Summer Sale', 'ar' => 'تخفيضات الصيف']),
+            'type' => 'page',
+            'url' => '/summer-sale',
+            'target' => '_self',
+            'position' => 6,
+            'is_active' => true,
+        ]);
+
         // Footer Menu
         $footerMenu = NavigationMenu::create([
             'store_id' => $store->id,

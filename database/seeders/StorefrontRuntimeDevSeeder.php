@@ -76,6 +76,7 @@ class StorefrontRuntimeDevSeeder extends Seeder
                 ],
                 'template' => MarketingPageTemplateEnum::LANDING,
                 'sort_order' => 0,
+                'is_homepage' => true,
                 'created_by' => $creator->id,
                 'updated_by' => $creator->id,
             ],
@@ -125,21 +126,37 @@ class StorefrontRuntimeDevSeeder extends Seeder
                     'ar' => 'آلاف العملاء يثقون بنا — إليك السبب.',
                 ],
                 'content' => [
-                    'en' => [
-                        ['icon' => 'truck', 'title' => 'Free Shipping Over $49', 'body' => 'Free standard shipping on all orders over $49. Express shipping available from just $5.99.'],
-                        ['icon' => 'rotate-ccw', 'title' => '60-Day Returns', 'body' => 'Not happy? Return any item within 60 days for a full refund. No questions asked, no restocking fees.'],
-                        ['icon' => 'badge-percent', 'title' => 'Price Match Guarantee', 'body' => 'Found it cheaper elsewhere? We will match the price on the spot and refund the difference within 24 hours.'],
-                        ['icon' => 'lock', 'title' => 'Secure Checkout', 'body' => '256-bit SSL encryption. We never store your full card details. PCI DSS Level 1 compliant.'],
-                        ['icon' => 'message-square', 'title' => '24/7 Customer Support', 'body' => 'Real humans, real fast. Average response time: under 2 minutes via chat, under 2 hours via email.'],
-                        ['icon' => 'package', 'title' => 'Order Protection', 'body' => 'Every order is insured against loss, damage, or theft. If anything goes wrong, we reship or refund immediately.'],
-                    ],
-                    'ar' => [
-                        ['icon' => 'truck', 'title' => 'شحن مجاني فوق $49', 'body' => 'شحن مجاني لجميع الطلبات فوق $49. الشحن السريع متوفر ابتداءً من $5.99.'],
-                        ['icon' => 'rotate-ccw', 'title' => 'إرجاع لمدة 60 يومًا', 'body' => 'غير راضٍ؟ أعد أي منتج خلال 60 يومًا لاسترداد كامل المبلغ. لا أسئلة، لا رسوم إعادة تخزين.'],
-                        ['icon' => 'badge-percent', 'title' => 'ضمان مطابقة السعر', 'body' => 'وجدته بسعر أقل في مكان آخر؟ سنطابق السعر فورًا ونرد الفرق خلال 24 ساعة.'],
-                        ['icon' => 'lock', 'title' => 'دفع آمن', 'body' => 'تشفير SSL 256 بت. لا نخزن بيانات بطاقتك الكاملة. متوافق مع PCI DSS المستوى 1.'],
-                        ['icon' => 'message-square', 'title' => 'دعم عملاء 24/7', 'body' => 'بشر حقيقيون، استجابة سريعة. متوسط وقت الرد: أقل من دقيقتين عبر الدردشة، أقل من ساعتين عبر البريد.'],
-                        ['icon' => 'package', 'title' => 'حماية الطلبات', 'body' => 'كل طلب مؤمّن ضد الفقدان أو التلف أو السرقة. إذا حدث خطأ، نعيد الشحن أو نرد المبلغ فورًا.'],
+                    'items' => [
+                        [
+                            'title' => ['en' => 'Free Shipping Over $49', 'ar' => 'شحن مجاني فوق $49'],
+                            'body' => ['en' => 'Free standard shipping on all orders over $49. Express shipping available from just $5.99.', 'ar' => 'شحن مجاني لجميع الطلبات فوق $49. الشحن السريع متوفر ابتداءً من $5.99.'],
+                            'icon' => 'truck',
+                        ],
+                        [
+                            'title' => ['en' => '60-Day Returns', 'ar' => 'إرجاع لمدة 60 يومًا'],
+                            'body' => ['en' => 'Not happy? Return any item within 60 days for a full refund. No questions asked, no restocking fees.', 'ar' => 'غير راضٍ؟ أعد أي منتج خلال 60 يومًا لاسترداد كامل المبلغ. لا أسئلة، لا رسوم إعادة تخزين.'],
+                            'icon' => 'rotate-ccw',
+                        ],
+                        [
+                            'title' => ['en' => 'Price Match Guarantee', 'ar' => 'ضمان مطابقة السعر'],
+                            'body' => ['en' => 'Found it cheaper elsewhere? We will match the price on the spot and refund the difference within 24 hours.', 'ar' => 'وجدته بسعر أقل في مكان آخر؟ سنطابق السعر فورًا ونرد الفرق خلال 24 ساعة.'],
+                            'icon' => 'badge-percent',
+                        ],
+                        [
+                            'title' => ['en' => 'Secure Checkout', 'ar' => 'دفع آمن'],
+                            'body' => ['en' => '256-bit SSL encryption. We never store your full card details. PCI DSS Level 1 compliant.', 'ar' => 'تشفير SSL 256 بت. لا نخزن بيانات بطاقتك الكاملة. متوافق مع PCI DSS المستوى 1.'],
+                            'icon' => 'lock',
+                        ],
+                        [
+                            'title' => ['en' => '24/7 Customer Support', 'ar' => 'دعم عملاء 24/7'],
+                            'body' => ['en' => 'Real humans, real fast. Average response time: under 2 minutes via chat, under 2 hours via email.', 'ar' => 'بشر حقيقيون، استجابة سريعة. متوسط وقت الرد: أقل من دقيقتين عبر الدردشة، أقل من ساعتين عبر البريد.'],
+                            'icon' => 'message-square',
+                        ],
+                        [
+                            'title' => ['en' => 'Order Protection', 'ar' => 'حماية الطلبات'],
+                            'body' => ['en' => 'Every order is insured against loss, damage, or theft. If anything goes wrong, we reship or refund immediately.', 'ar' => 'كل طلب مؤمّن ضد الفقدان أو التلف أو السرقة. إذا حدث خطأ، نعيد الشحن أو نرد المبلغ فورًا.'],
+                            'icon' => 'package',
+                        ],
                     ],
                 ],
                 'settings' => ['layout' => 'grid', 'columns' => 3, 'icon_style' => 'outline'],
@@ -151,7 +168,7 @@ class StorefrontRuntimeDevSeeder extends Seeder
         $page->sections()->updateOrCreate(
             ['store_id' => $store->id, 'identifier' => 'categories_home'],
             [
-                'section_type' => 'custom',
+                'section_type' => 'category_grid',
                 'sort_order' => 2,
                 'title' => ['en' => 'Shop by Category', 'ar' => 'تسوق حسب التصنيف'],
                 'subtitle' => [
@@ -159,24 +176,54 @@ class StorefrontRuntimeDevSeeder extends Seeder
                     'ar' => 'تصفح مجموعاتنا المختارة — كل ما تحتاجه في مكان واحد.',
                 ],
                 'content' => [
-                    'en' => [
-                        'categories' => [
-                            ['name' => 'Electronics', 'slug' => 'electronics', 'description' => 'Gadgets, accessories, and smart devices', 'image' => null, 'product_count' => 24],
-                            ['name' => 'Home & Living', 'slug' => 'home-living', 'description' => 'Furniture, decor, and kitchen essentials', 'image' => null, 'product_count' => 36],
-                            ['name' => 'Fashion', 'slug' => 'fashion', 'description' => 'Clothing, shoes, and accessories for all', 'image' => null, 'product_count' => 48],
-                            ['name' => 'Beauty & Health', 'slug' => 'beauty-health', 'description' => 'Skincare, wellness, and personal care', 'image' => null, 'product_count' => 30],
-                            ['name' => 'Sports & Outdoors', 'slug' => 'sports-outdoors', 'description' => 'Fitness gear, camping, and outdoor equipment', 'image' => null, 'product_count' => 18],
-                            ['name' => 'Toys & Games', 'slug' => 'toys-games', 'description' => 'Fun for all ages — board games, puzzles, and more', 'image' => null, 'product_count' => 22],
+                    'categories' => [
+                        [
+                            'id' => 'cat-electronics',
+                            'name' => ['en' => 'Electronics', 'ar' => 'الإلكترونيات'],
+                            'slug' => 'electronics',
+                            'path' => ['en' => '/shop/category/electronics', 'ar' => '/ar/shop/category/electronics'],
+                            'productCount' => 24,
+                            'image' => null,
                         ],
-                    ],
-                    'ar' => [
-                        'categories' => [
-                            ['name' => 'الإلكترونيات', 'slug' => 'electronics', 'description' => 'أجهزة، إكسسوارات، وأجهزة ذكية', 'image' => null, 'product_count' => 24],
-                            ['name' => 'المنزل والمعيشة', 'slug' => 'home-living', 'description' => 'أثاث، ديكور، وأساسيات المطبخ', 'image' => null, 'product_count' => 36],
-                            ['name' => 'الأزياء', 'slug' => 'fashion', 'description' => 'ملابس، أحذية، وإكسسوارات للجميع', 'image' => null, 'product_count' => 48],
-                            ['name' => 'الجمال والصحة', 'slug' => 'beauty-health', 'description' => 'العناية بالبشرة، الصحة، والعناية الشخصية', 'image' => null, 'product_count' => 30],
-                            ['name' => 'الرياضة والهواء الطلق', 'slug' => 'sports-outdoors', 'description' => 'معدات اللياقة، التخييم، والمعدات الخارجية', 'image' => null, 'product_count' => 18],
-                            ['name' => 'الألعاب', 'slug' => 'toys-games', 'description' => 'متعة لجميع الأعمار — ألعاب لوحية، ألغاز، والمزيد', 'image' => null, 'product_count' => 22],
+                        [
+                            'id' => 'cat-home-living',
+                            'name' => ['en' => 'Home & Living', 'ar' => 'المنزل والمعيشة'],
+                            'slug' => 'home-living',
+                            'path' => ['en' => '/shop/category/home-living', 'ar' => '/ar/shop/category/home-living'],
+                            'productCount' => 36,
+                            'image' => null,
+                        ],
+                        [
+                            'id' => 'cat-fashion',
+                            'name' => ['en' => 'Fashion', 'ar' => 'الأزياء'],
+                            'slug' => 'fashion',
+                            'path' => ['en' => '/shop/category/fashion', 'ar' => '/ar/shop/category/fashion'],
+                            'productCount' => 48,
+                            'image' => null,
+                        ],
+                        [
+                            'id' => 'cat-beauty-health',
+                            'name' => ['en' => 'Beauty & Health', 'ar' => 'الجمال والصحة'],
+                            'slug' => 'beauty-health',
+                            'path' => ['en' => '/shop/category/beauty-health', 'ar' => '/ar/shop/category/beauty-health'],
+                            'productCount' => 30,
+                            'image' => null,
+                        ],
+                        [
+                            'id' => 'cat-sports-outdoors',
+                            'name' => ['en' => 'Sports & Outdoors', 'ar' => 'الرياضة والهواء الطلق'],
+                            'slug' => 'sports-outdoors',
+                            'path' => ['en' => '/shop/category/sports-outdoors', 'ar' => '/ar/shop/category/sports-outdoors'],
+                            'productCount' => 18,
+                            'image' => null,
+                        ],
+                        [
+                            'id' => 'cat-toys-games',
+                            'name' => ['en' => 'Toys & Games', 'ar' => 'الألعاب'],
+                            'slug' => 'toys-games',
+                            'path' => ['en' => '/shop/category/toys-games', 'ar' => '/ar/shop/category/toys-games'],
+                            'productCount' => 22,
+                            'image' => null,
                         ],
                     ],
                 ],
@@ -197,76 +244,41 @@ class StorefrontRuntimeDevSeeder extends Seeder
                     'ar' => 'انضم إلى أكثر من 200,000 عميل سعيد يتسوقون بثقة.',
                 ],
                 'content' => [
-                    'en' => [
-                        'testimonials' => [
-                            [
-                                'quote' => 'I was skeptical about the price-match guarantee, but they actually honored it. Saved $34 on a blender I was about to buy on Amazon. Customer for life.',
-                                'author' => 'Sarah M.',
-                                'role' => 'Verified Buyer',
-                                'rating' => 5,
-                                'avatar' => null,
-                            ],
-                            [
-                                'quote' => 'Ordered a jacket on Monday, it arrived Wednesday — across the country. The quality exceeded my expectations. The fit was exactly as described.',
-                                'author' => 'James K.',
-                                'role' => 'Verified Buyer',
-                                'rating' => 5,
-                                'avatar' => null,
-                            ],
-                            [
-                                'quote' => 'I had to return a pair of shoes because they were too small. The process took literally 2 minutes online and the refund hit my account the next day. Incredible.',
-                                'author' => 'Priya R.',
-                                'role' => 'Verified Buyer',
-                                'rating' => 5,
-                                'avatar' => null,
-                            ],
-                            [
-                                'quote' => 'The customer support chat helped me find the perfect laptop bag in under 5 minutes. They knew their products inside out. Rare these days.',
-                                'author' => 'Mike T.',
-                                'role' => 'Verified Buyer',
-                                'rating' => 5,
-                                'avatar' => null,
-                            ],
-                            [
-                                'quote' => 'I have been a customer for 3 years. The quality has only improved, the prices have stayed fair, and the shipping keeps getting faster. Do not change a thing.',
-                                'author' => 'Elena V.',
-                                'role' => 'VIP Member',
-                                'rating' => 5,
-                                'avatar' => null,
-                            ],
+                    'testimonials' => [
+                        [
+                            'quote' => ['en' => 'I was skeptical about the price-match guarantee, but they actually honored it. Saved $34 on a blender I was about to buy on Amazon. Customer for life.', 'ar' => 'كنت متشككًا في ضمان مطابقة السعر، لكنهم وفوا به بالفعل. وفرت 34 دولارًا على خلاط كنت سأشتريه من أمازون. عميل مدى الحياة.'],
+                            'author' => ['en' => 'Sarah M.', 'ar' => 'سارة م.'],
+                            'role' => ['en' => 'Verified Buyer', 'ar' => 'مشترٍ موثّق'],
+                            'rating' => 5,
+                            'avatar' => null,
                         ],
-                        'aggregate' => [
-                            'average_rating' => 4.8,
-                            'total_reviews' => 12400,
+                        [
+                            'quote' => ['en' => 'Ordered a jacket on Monday, it arrived Wednesday — across the country. The quality exceeded my expectations. The fit was exactly as described.', 'ar' => 'طلبت سترة يوم الاثنين، وصلت الأربعاء — عبر البلاد. الجودة فاقت توقعاتي. المقاس كان مطابقًا تمامًا للوصف.'],
+                            'author' => ['en' => 'James K.', 'ar' => 'جيمس ك.'],
+                            'role' => ['en' => 'Verified Buyer', 'ar' => 'مشترٍ موثّق'],
+                            'rating' => 5,
+                            'avatar' => null,
                         ],
-                    ],
-                    'ar' => [
-                        'testimonials' => [
-                            [
-                                'quote' => 'كنت متشككًا في ضمان مطابقة السعر، لكنهم وفوا به بالفعل. وفرت 34 دولارًا على خلاط كنت سأشتريه من أمازون. عميل مدى الحياة.',
-                                'author' => 'سارة م.',
-                                'role' => 'مشترٍ موثّق',
-                                'rating' => 5,
-                                'avatar' => null,
-                            ],
-                            [
-                                'quote' => 'طلبت سترة يوم الاثنين، وصلت الأربعاء — عبر البلاد. الجودة فاقت توقعاتي. المقاس كان مطابقًا تمامًا للوصف.',
-                                'author' => 'جيمس ك.',
-                                'role' => 'مشترٍ موثّق',
-                                'rating' => 5,
-                                'avatar' => null,
-                            ],
-                            [
-                                'quote' => 'اضطررت لإرجاع حذاء لأنه كان صغيرًا جدًا. العملية استغرقت دقيقتين عبر الإنترنت والمبلغ عاد إلى حسابي في اليوم التالي. مذهل.',
-                                'author' => 'بريا ر.',
-                                'role' => 'مشترٍ موثّق',
-                                'rating' => 5,
-                                'avatar' => null,
-                            ],
+                        [
+                            'quote' => ['en' => 'I had to return a pair of shoes because they were too small. The process took literally 2 minutes online and the refund hit my account the next day. Incredible.', 'ar' => 'اضطررت لإرجاع حذاء لأنه كان صغيرًا جدًا. العملية استغرقت دقيقتين عبر الإنترنت والمبلغ عاد إلى حسابي في اليوم التالي. مذهل.'],
+                            'author' => ['en' => 'Priya R.', 'ar' => 'بريا ر.'],
+                            'role' => ['en' => 'Verified Buyer', 'ar' => 'مشترٍ موثّق'],
+                            'rating' => 5,
+                            'avatar' => null,
                         ],
-                        'aggregate' => [
-                            'average_rating' => 4.8,
-                            'total_reviews' => 12400,
+                        [
+                            'quote' => ['en' => 'The customer support chat helped me find the perfect laptop bag in under 5 minutes. They knew their products inside out. Rare these days.', 'ar' => 'ساعدتني الدردشة مع دعم العملاء في العثور على حقيبة لابتوب مثالية في أقل من 5 دقائق. يعرفون منتجاتهم جيدًا. نادر هذه الأيام.'],
+                            'author' => ['en' => 'Mike T.', 'ar' => 'مايك ت.'],
+                            'role' => ['en' => 'Verified Buyer', 'ar' => 'مشترٍ موثّق'],
+                            'rating' => 5,
+                            'avatar' => null,
+                        ],
+                        [
+                            'quote' => ['en' => 'I have been a customer for 3 years. The quality has only improved, the prices have stayed fair, and the shipping keeps getting faster. Do not change a thing.', 'ar' => 'أنا عميل منذ 3 سنوات. الجودة تحسنت فقط، والأسعار بقيت عادلة، والشحن أصبح أسرع. لا تغيروا شيئًا.'],
+                            'author' => ['en' => 'Elena V.', 'ar' => 'إلينا ف.'],
+                            'role' => ['en' => 'VIP Member', 'ar' => 'عضو VIP'],
+                            'rating' => 5,
+                            'avatar' => null,
                         ],
                     ],
                 ],
@@ -287,45 +299,23 @@ class StorefrontRuntimeDevSeeder extends Seeder
                     'ar' => 'كن أول من يعرف عن المنتجات الجديدة والعروض الحصرية وتخفيضات VIP. لا بريد مزعج — أبدًا.',
                 ],
                 'content' => [
-                    'en' => [
-                        'headline' => 'Stay in the loop',
-                        'description' => 'Be the first to know about new drops, exclusive deals, and VIP-only sales. No spam — ever.',
-                        'ctas' => [
-                            ['label' => 'Subscribe', 'url' => '/subscribe', 'style' => 'primary'],
-                            ['label' => 'Follow on Instagram', 'url' => 'https://instagram.com/justshop', 'style' => 'outline'],
+                    'ctas' => [
+                        [
+                            'label' => ['en' => 'Subscribe', 'ar' => 'اشترك'],
+                            'url' => '/subscribe',
+                            'style' => 'primary',
                         ],
-                        'benefits' => [
-                            '10% off your first order',
-                            'Early access to sales',
-                            'Exclusive VIP pricing',
-                            'Monthly gift giveaways',
-                        ],
-                        'trust_badges' => [
-                            'Free shipping over $49',
-                            '60-day returns',
-                            'Price match guarantee',
-                            'Secure checkout',
+                        [
+                            'label' => ['en' => 'Follow on Instagram', 'ar' => 'تابعنا على إنستغرام'],
+                            'url' => 'https://instagram.com/justshop',
+                            'style' => 'outline',
                         ],
                     ],
-                    'ar' => [
-                        'headline' => 'ابق على اطلاع',
-                        'description' => 'كن أول من يعرف عن المنتجات الجديدة والعروض الحصرية وتخفيضات VIP. لا بريد مزعج — أبدًا.',
-                        'ctas' => [
-                            ['label' => 'اشترك', 'url' => '/subscribe', 'style' => 'primary'],
-                            ['label' => 'تابعنا على إنستغرام', 'url' => 'https://instagram.com/justshop', 'style' => 'outline'],
-                        ],
-                        'benefits' => [
-                            'خصم 10% على أول طلب',
-                            'وصول مبكر للتخفيضات',
-                            'أسعار VIP حصرية',
-                            'هدايا شهرية',
-                        ],
-                        'trust_badges' => [
-                            'شحن مجاني فوق $49',
-                            'إرجاع 60 يومًا',
-                            'ضمان مطابقة السعر',
-                            'دفع آمن',
-                        ],
+                    'trust_badges' => [
+                        ['en' => 'Free shipping over $49', 'ar' => 'شحن مجاني فوق $49'],
+                        ['en' => '60-day returns', 'ar' => 'إرجاع 60 يومًا'],
+                        ['en' => 'Price match guarantee', 'ar' => 'ضمان مطابقة السعر'],
+                        ['en' => 'Secure checkout', 'ar' => 'دفع آمن'],
                     ],
                 ],
                 'settings' => ['layout' => 'split', 'background' => 'brand'],
@@ -594,12 +584,180 @@ class StorefrontRuntimeDevSeeder extends Seeder
             ],
         );
 
+        // ── Video Section ─────────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'video_about'],
+            [
+                'section_type' => 'video',
+                'sort_order' => 6,
+                'title' => ['en' => 'See how we work', 'ar' => 'شاهد كيف نعمل'],
+                'subtitle' => [
+                    'en' => 'A behind-the-scenes look at our fulfillment center and quality control process.',
+                    'ar' => 'نظرة من وراء الكواليس على مركز التوزيع لدينا وعملية مراقبة الجودة.',
+                ],
+                'content' => [
+                    'en' => [
+                        'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                        'poster_url' => null,
+                        'description' => 'Watch our team in action as they inspect, package, and ship your orders with care. Every product goes through our 3-stage quality check before it leaves our warehouse.',
+                    ],
+                    'ar' => [
+                        'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                        'poster_url' => null,
+                        'description' => 'شاهد فريقنا أثناء فحص المنتجات وتعبئتها وشحن طلباتك بعناية. كل منتج يخضع لفحص جودة ثلاثي المراحل قبل مغادرة مستودعنا.',
+                    ],
+                ],
+                'settings' => ['autoplay' => false, 'controls' => true],
+                'is_active' => true,
+            ],
+        );
+
+        // ── Pricing Section ───────────────────────────────────────
+        $page->sections()->updateOrCreate(
+            ['store_id' => $store->id, 'identifier' => 'pricing_about'],
+            [
+                'section_type' => 'pricing',
+                'sort_order' => 7,
+                'title' => ['en' => 'Join JustShop VIP', 'ar' => 'انضم إلى JustShop VIP'],
+                'subtitle' => [
+                    'en' => 'Get exclusive perks, early access to sales, and VIP-only pricing.',
+                    'ar' => 'احصل على امتيازات حصرية ووصول مبكر للتخفيضات وأسعار VIP.',
+                ],
+                'content' => [
+                    'en' => [
+                        'plans' => [
+                            [
+                                'name' => 'Standard',
+                                'description' => 'Perfect for occasional shoppers',
+                                'price' => 'Free',
+                                'currency' => '',
+                                'period' => '',
+                                'features' => [
+                                    'Free shipping over $49',
+                                    '60-day returns',
+                                    'Price match guarantee',
+                                    'Standard customer support',
+                                    'Access to all products',
+                                ],
+                                'cta_label' => 'Shop Now',
+                                'cta_url' => '/products',
+                                'featured' => false,
+                            ],
+                            [
+                                'name' => 'VIP',
+                                'description' => 'Best for frequent shoppers',
+                                'price' => '9.99',
+                                'currency' => '$',
+                                'period' => 'month',
+                                'features' => [
+                                    'Free shipping on all orders',
+                                    '90-day returns',
+                                    'Priority customer support',
+                                    'Early access to sales (24h early)',
+                                    'Exclusive VIP-only deals',
+                                    '5% cashback on all purchases',
+                                    'Birthday gift every year',
+                                ],
+                                'cta_label' => 'Start Free Trial',
+                                'cta_url' => '/subscribe/vip',
+                                'featured' => true,
+                                'badge' => 'Most Popular',
+                            ],
+                            [
+                                'name' => 'VIP Plus',
+                                'description' => 'For power shoppers',
+                                'price' => '19.99',
+                                'currency' => '$',
+                                'period' => 'month',
+                                'features' => [
+                                    'All VIP benefits',
+                                    'Free express shipping',
+                                    '120-day returns',
+                                    'Dedicated account manager',
+                                    'VIP hotline (call anytime)',
+                                    '10% cashback on all purchases',
+                                    'Exclusive product previews',
+                                    'Free gift wrapping',
+                                ],
+                                'cta_label' => 'Go Premium',
+                                'cta_url' => '/subscribe/vip-plus',
+                                'featured' => false,
+                            ],
+                        ],
+                    ],
+                    'ar' => [
+                        'plans' => [
+                            [
+                                'name' => 'عادي',
+                                'description' => 'مثالي للمتسوقين العرضيين',
+                                'price' => 'مجاني',
+                                'currency' => '',
+                                'period' => '',
+                                'features' => [
+                                    'شحن مجاني فوق $49',
+                                    'إرجاع 60 يومًا',
+                                    'ضمان مطابقة السعر',
+                                    'دعم عملاء قياسي',
+                                    'الوصول إلى جميع المنتجات',
+                                ],
+                                'cta_label' => 'تسوق الآن',
+                                'cta_url' => '/products',
+                                'featured' => false,
+                            ],
+                            [
+                                'name' => 'VIP',
+                                'description' => 'الأفضل للمتسوقين المتكررين',
+                                'price' => '9.99',
+                                'currency' => '$',
+                                'period' => 'شهر',
+                                'features' => [
+                                    'شحن مجاني على جميع الطلبات',
+                                    'إرجاع 90 يومًا',
+                                    'دعم عملاء ذو أولوية',
+                                    'وصول مبكر للتخفيضات (24 ساعة مبكرًا)',
+                                    'عروض حصرية لـ VIP',
+                                    'استرداد نقدي 5% على جميع المشتريات',
+                                    'هدية عيد ميلاد كل عام',
+                                ],
+                                'cta_label' => 'ابدأ تجربة مجانية',
+                                'cta_url' => '/subscribe/vip',
+                                'featured' => true,
+                                'badge' => 'الأكثر شعبية',
+                            ],
+                            [
+                                'name' => 'VIP Plus',
+                                'description' => 'للمتسوقين المكثفين',
+                                'price' => '19.99',
+                                'currency' => '$',
+                                'period' => 'شهر',
+                                'features' => [
+                                    'جميع مزايا VIP',
+                                    'شحن سريع مجاني',
+                                    'إرجاع 120 يومًا',
+                                    'مدير حساب مخصص',
+                                    'خط VIP (اتصل في أي وقت)',
+                                    'استرداد نقدي 10% على جميع المشتريات',
+                                    'معاينات منتجات حصرية',
+                                    'تغليف هدايا مجاني',
+                                ],
+                                'cta_label' => 'احصل على المميز',
+                                'cta_url' => '/subscribe/vip-plus',
+                                'featured' => false,
+                            ],
+                        ],
+                    ],
+                ],
+                'settings' => ['layout' => 'grid', 'highlight_featured' => true],
+                'is_active' => true,
+            ],
+        );
+
         // ── CTA Section ───────────────────────────────────────────
         $page->sections()->updateOrCreate(
             ['store_id' => $store->id, 'identifier' => 'cta_about'],
             [
                 'section_type' => 'cta',
-                'sort_order' => 6,
+                'sort_order' => 8,
                 'title' => ['en' => 'Ready to shop smarter?', 'ar' => 'مستعد للتسوق بذكاء؟'],
                 'subtitle' => [
                     'en' => 'Join 200,000+ customers who switched to JustShop. Follow our store for VIP-only deals and early access to new drops.',

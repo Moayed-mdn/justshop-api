@@ -22,6 +22,7 @@ class UpdateStoreMarketingPageDTO
         public readonly ?array $seo,
         public readonly ?MarketingPageTemplateEnum $template,
         public readonly int $sortOrder,
+        public readonly bool $isHomepage,
         public readonly ?array $sections,
         public readonly int $updatedBy,
     ) {}
@@ -42,6 +43,7 @@ class UpdateStoreMarketingPageDTO
             seo: $request->has('seo') ? $request->array('seo') : null,
             template: $templateValue ? MarketingPageTemplateEnum::from((string) $templateValue) : null,
             sortOrder: $request->integer('sort_order', 0),
+            isHomepage: $request->boolean('is_homepage', false),
             sections: $request->has('sections') ? $request->array('sections') : null,
             updatedBy: (int) $request->user()->id,
         );

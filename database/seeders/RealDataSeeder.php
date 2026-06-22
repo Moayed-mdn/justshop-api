@@ -17,7 +17,6 @@ class RealDataSeeder extends Seeder
                     CategorySeeder::class,
                     ProductSeeder::class,
                     ProductVariantSeeder::class,
-                    HeroBannerSeeder::class,
                     FakeSalesSeeder::class
                 ]);
     }

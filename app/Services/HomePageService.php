@@ -3,11 +3,15 @@
 namespace App\Services;
 
 use App\Models\Category;
-use App\Models\HeroBanner;
 use App\Models\OrderItem;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * HomePageService - Legacy service for best sellers
+ * 
+ * Note: hero() method removed - use CMS pages with is_homepage flag instead
+ */
 class HomePageService
 {
     public function index()
@@ -80,27 +84,5 @@ class HomePageService
         }
 
         return $result;
-    }
-
-    function hero(int $storeId)
-    {
-        $now = Carbon::now();
-        $banners = HeroBanner::query()
-            ->where('store_id', $storeId)
-            ->where('is_active', true)
-            ->with('translations')
-            ->where(function ($q) use ($now) {
-                $q->whereNull('starts_at')
-                    ->orWhere('starts_at', '<=', $now);
-            })
-            ->where(function ($q) use ($now) {
-                $q->whereNull('ends_at')
-                    ->orWhere('ends_at', '>', $now);
-            })
-            ->orderBy('position')
-            ->limit(2)
-            ->get();
-
-        return $banners;
     }
 }
