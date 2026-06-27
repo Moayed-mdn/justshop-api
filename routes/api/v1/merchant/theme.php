@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\Merchant\Navigation\NavigationResourceController;
 use App\Http\Controllers\Api\Merchant\Theme\ThemeBlockController;
 use App\Http\Controllers\Api\Merchant\Theme\ThemeController;
 use App\Http\Controllers\Api\Merchant\Theme\ThemeSectionController;
+use App\Http\Controllers\Api\Merchant\Theme\SectionSchemaController;
+use App\Http\Controllers\Api\Merchant\Theme\ThemeTemplateController;
 use Illuminate\Support\Facades\Route;
 
 // Theme Management Routes
@@ -26,6 +28,7 @@ Route::name('merchant.')
             Route::delete('/{theme}', [ThemeController::class, 'destroy'])->name('destroy');
             Route::post('/{theme}/publish', [ThemeController::class, 'publish'])->name('publish');
             Route::post('/{theme}/duplicate', [ThemeController::class, 'duplicate'])->name('duplicate');
+            Route::put('/{theme}/settings', [ThemeController::class, 'updateSettings'])->name('update-settings');
 
             // ── Theme Sections ──────────────────────────────────
             Route::prefix('{theme}/sections')->name('sections.')->group(function () {
@@ -47,6 +50,19 @@ Route::name('merchant.')
                 });
             });
         });
+
+        // ── Page Templates ──────────────────────────────────────
+        Route::prefix('templates')->name('templates.')->group(function () {
+            Route::get('/', [ThemeTemplateController::class, 'index'])->name('index');
+            Route::post('/', [ThemeTemplateController::class, 'store'])->name('store');
+            Route::get('/{template}', [ThemeTemplateController::class, 'show'])->name('show');
+            Route::put('/{template}', [ThemeTemplateController::class, 'update'])->name('update');
+            Route::delete('/{template}', [ThemeTemplateController::class, 'destroy'])->name('destroy');
+            Route::post('/{template}/duplicate', [ThemeTemplateController::class, 'duplicate'])->name('duplicate');
+        });
+
+        // ── Section Schemas (platform-defined section types) ────
+        Route::get('section-schemas', [SectionSchemaController::class, 'index'])->name('section-schemas');
 
         // ── Navigation Menus ────────────────────────────────────
         Route::prefix('navigation')->name('navigation.')->group(function () {

@@ -65,6 +65,7 @@ class StorefrontThemeController extends Controller
                         'radius' => 'md',
                         'direction' => 'ltr',
                     ],
+                    'buttons' => $this->getDefaultButtonSettings(),
                 ],
             ]);
         }
@@ -99,7 +100,53 @@ class StorefrontThemeController extends Controller
                     'radius' => $settings['radius'] ?? 'md',
                     'direction' => $settings['direction'] ?? 'ltr',
                 ],
+                'buttons' => $settings['buttons'] ?? $this->getDefaultButtonSettings(),
             ],
         ]);
+    }
+
+    /**
+     * Get default button settings
+     */
+    private function getDefaultButtonSettings(): array
+    {
+        return [
+            'primary' => [
+                'backgroundColor' => '#3B82F6',
+                'textColor' => '#FFFFFF',
+                'borderColor' => '#3B82F6',
+                'borderWidth' => 0,
+                'borderRadius' => 'full',
+                'paddingX' => 'lg',
+                'paddingY' => 'md',
+                'fontSize' => 'base',
+                'fontWeight' => 'semibold',
+                'hoverEffect' => 'opacity',
+            ],
+            'secondary' => [
+                'backgroundColor' => 'rgba(255, 255, 255, 0.15)',
+                'textColor' => '#FFFFFF',
+                'borderColor' => 'rgba(255, 255, 255, 0.4)',
+                'borderWidth' => 1,
+                'borderRadius' => 'full',
+                'paddingX' => 'lg',
+                'paddingY' => 'md',
+                'fontSize' => 'base',
+                'fontWeight' => 'semibold',
+                'hoverEffect' => 'opacity',
+            ],
+            'outline' => [
+                'backgroundColor' => 'transparent',
+                'textColor' => '#FFFFFF',
+                'borderColor' => 'rgba(255, 255, 255, 0.6)',
+                'borderWidth' => 2,
+                'borderRadius' => 'full',
+                'paddingX' => 'lg',
+                'paddingY' => 'md',
+                'fontSize' => 'base',
+                'fontWeight' => 'semibold',
+                'hoverEffect' => 'opacity',
+            ],
+        ];
     }
 }

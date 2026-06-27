@@ -24,6 +24,8 @@ class DatabaseSeeder extends Seeder
             DemoStorePresentationSeeder::class,
             FakeSalesSeeder::class,
             ReviewSeeder::class,
+            SectionSchemaSeeder::class,
+            DefaultTemplateSeeder::class,
             StorefrontRuntimeDevSeeder::class,
             CmsBlogSeeder::class,
             CmsDocumentationSeeder::class,

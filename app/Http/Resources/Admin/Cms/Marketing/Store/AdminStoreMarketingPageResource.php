@@ -37,11 +37,12 @@ class AdminStoreMarketingPageResource extends JsonResource
             'published_at' => $this->published_at?->toIso8601String(),
 
             // Metadata
-            'template'     => $this->template instanceof \BackedEnum
+            'template'         => $this->template instanceof \BackedEnum
                 ? $this->template->value
                 : $this->template,
-            'sort_order'   => $this->sort_order,
-            'is_homepage'  => (bool) $this->is_homepage,
+            'page_template_id' => $this->page_template_id,
+            'sort_order'       => $this->sort_order,
+            'is_homepage'      => (bool) $this->is_homepage,
 
             // SEO — raw map; admin editor needs full structure
             'seo'          => $this->seo,

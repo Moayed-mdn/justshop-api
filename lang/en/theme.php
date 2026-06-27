@@ -7,6 +7,8 @@ return [
     'published_successfully' => 'Theme published successfully',
     'duplicated_successfully' => 'Theme duplicated successfully',
     'cannot_delete_active' => 'Cannot delete active theme',
+    'cannot_delete_default_template' => 'Cannot delete the default template. Please set another template as default first.',
+    'template_in_use' => 'This template is currently used by :count page(s) and cannot be deleted.',
     
     'section_created' => 'Section created successfully',
     'section_updated' => 'Section updated successfully',

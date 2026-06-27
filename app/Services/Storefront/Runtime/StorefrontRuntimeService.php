@@ -13,6 +13,8 @@ use App\Repositories\Navigation\NavigationMenuRepository;
 use App\Repositories\Theme\ThemeRepository;
 use App\Services\Cms\LocalizedContentResolver;
 use App\Services\Cms\Seo\SeoResolutionService;
+use App\Services\Theme\SectionDataResolverService;
+use App\Services\Theme\TemplateResolutionService;
 use Throwable;
 
 class StorefrontRuntimeService
@@ -27,6 +29,8 @@ class StorefrontRuntimeService
         private readonly SeoResolutionService $seoResolutionService,
         private readonly ThemeRepository $themeRepository,
         private readonly NavigationMenuRepository $navigationMenuRepository,
+        private readonly TemplateResolutionService $templateResolutionService,
+        private readonly SectionDataResolverService $sectionDataResolverService,
     ) {}
 
     /**
@@ -394,6 +398,24 @@ class StorefrontRuntimeService
         ?array $previewContext = null,
     ): array
     {
+        // Auth routes - resolved through template system
+        $authRoutes = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email'];
+        if (in_array($lookupPath, $authRoutes, true)) {
+            $slug = ltrim($lookupPath, '/');
+
+            return [
+                'status' => 'matched',
+                'routeType' => 'auth_page',
+                'pageId' => 'auth_' . $slug,
+                'resourceType' => 'auth',
+                'resourceId' => $slug,
+                'path' => $path,
+                'locale' => $locale,
+                'layout' => 'auth',
+                'legacyPassthrough' => false,
+            ];
+        }
+
         if ($this->isLegacyPassthrough($lookupPath)) {
             return [
                 'status' => 'matched',
@@ -577,6 +599,15 @@ class StorefrontRuntimeService
             ];
         }
 
+        if (str_starts_with($pageId, 'auth_')) {
+            $type = substr($pageId, 5);
+
+            return [
+                'path' => '/' . $type,
+                'payload' => $this->buildAuthPagePayload($store, $locale, $type),
+            ];
+        }
+
         throw new RuntimeContractException(
             runtimeCode: 'runtime.page_not_found',
             httpStatus: 404,
@@ -685,19 +716,178 @@ class StorefrontRuntimeService
             ],
         );
 
-        return [
+        // Resolve template with sections
+        $resolvedTemplate = $this->templateResolutionService->resolveTemplate($page);
+        $templateData = null;
+
+        if ($resolvedTemplate) {
+            $sectionsData = [];
+            
+            foreach ($resolvedTemplate->sectionOrder as $sectionId) {
+                if ($resolvedTemplate->hasSection($sectionId)) {
+                    $sectionType = $resolvedTemplate->getSectionType($sectionId);
+                    $sectionSettings = $resolvedTemplate->getSectionSettings($sectionId);
+                    
+                    $sectionsData[$sectionId] = $this->sectionDataResolverService->resolveSectionData(
+                        sectionType: $sectionType,
+                        settings: $sectionSettings,
+                        store: $store,
+                        locale: $locale,
+                        page: $page
+                    );
+                }
+            }
+
+            $templateData = [
+                'id' => $resolvedTemplate->id,
+                'handle' => $resolvedTemplate->handle,
+                'sections' => $sectionsData,
+                'section_order' => $resolvedTemplate->sectionOrder,
+            ];
+        }
+
+        $mappedSections = $this->mapMarketingSections($page, $locale);
+
+        if ($resolvedTemplate && !empty($resolvedTemplate->sectionOrder)) {
+            $pageSectionsById = [];
+            foreach ($mappedSections as $s) {
+                $pageSectionsById[$s['id']] = $s;
+            }
+
+            $orderedSections = [];
+            $contentInserted = false;
+
+            foreach ($resolvedTemplate->sectionOrder as $sectionId) {
+                $sectionType = $resolvedTemplate->getSectionType($sectionId);
+
+                if ($sectionType === 'page_content' && !$contentInserted) {
+                    array_push($orderedSections, ...$mappedSections);
+                    $contentInserted = true;
+                } elseif (isset($pageSectionsById[$sectionId])) {
+                    $orderedSections[] = $pageSectionsById[$sectionId];
+                }
+            }
+
+            if (!$contentInserted) {
+                array_push($orderedSections, ...$mappedSections);
+            }
+
+            $mappedSections = $orderedSections;
+        }
+
+        $layoutOrder = ['header', 'content', 'footer'];
+
+        if ($resolvedTemplate && !empty($resolvedTemplate->sectionOrder)) {
+            $layoutOrder = [];
+            foreach ($resolvedTemplate->sectionOrder as $sectionId) {
+                $sectionType = $resolvedTemplate->getSectionType($sectionId);
+                $mapped = match ($sectionType) {
+                    'header' => 'header',
+                    'footer' => 'footer',
+                    'page_content' => 'content',
+                    default => null,
+                };
+                if ($mapped !== null) {
+                    $layoutOrder[] = $mapped;
+                }
+            }
+            if (!in_array('content', $layoutOrder, true)) {
+                $layoutOrder[] = 'content';
+            }
+        }
+
+        $payload = [
             'id' => $pageId,
+            'page_template_id' => $page->page_template_id,
             'pageType' => 'marketing_page',
             'title' => $title,
             'slug' => ltrim($slug, '/'),
             'locale' => $locale,
             'layout' => 'marketing',
+            'layout_order' => $layoutOrder,
             'status' => $preview && !$page->isPublished() ? 'draft' : 'published',
-            'sections' => $this->mapMarketingSections($page, $locale),
+            'sections' => $mappedSections,
             'seo' => $this->mapSeoPayload($store, $resolvedSeo, 'website', $this->localizedStorefrontPath($page, $locale)),
             'publishedAt' => $page->published_at?->toIso8601String(),
             'updatedAt' => $page->updated_at?->toIso8601String() ?? now()->toIso8601String(),
         ];
+
+        // Add template data if available
+        if ($templateData) {
+            $payload['template'] = $templateData;
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildAuthPagePayload(Store $store, string $locale, string $type): array
+    {
+        $resolvedTemplate = $this->templateResolutionService->resolveSystemPageTemplate($store->id, 'auth');
+        $templateData = null;
+
+        if ($resolvedTemplate) {
+            $sectionsData = [];
+
+            foreach ($resolvedTemplate->sectionOrder as $sectionId) {
+                if ($resolvedTemplate->hasSection($sectionId)) {
+                    $sectionType = $resolvedTemplate->getSectionType($sectionId);
+                    $sectionSettings = $resolvedTemplate->getSectionSettings($sectionId);
+
+                    $sectionsData[$sectionId] = $this->sectionDataResolverService->resolveSectionData(
+                        sectionType: $sectionType,
+                        settings: $sectionSettings,
+                        store: $store,
+                        locale: $locale,
+                        page: null,
+                    );
+                }
+            }
+
+            $templateData = [
+                'id' => $resolvedTemplate->id,
+                'handle' => $resolvedTemplate->handle,
+                'sections' => $sectionsData,
+                'section_order' => $resolvedTemplate->sectionOrder,
+            ];
+        }
+
+        $title = match ($type) {
+            'login' => $locale === 'ar' ? 'تسجيل الدخول' : 'Login',
+            'register' => $locale === 'ar' ? 'إنشاء حساب' : 'Create Account',
+            'forgot-password' => $locale === 'ar' ? 'نسيت كلمة المرور' : 'Forgot Password',
+            'reset-password' => $locale === 'ar' ? 'إعادة تعيين كلمة المرور' : 'Reset Password',
+            'verify-email' => $locale === 'ar' ? 'تأكيد البريد الإلكتروني' : 'Verify Email',
+            default => $locale === 'ar' ? 'حسابي' : 'My Account',
+        };
+
+        $payload = [
+            'id' => 'auth_' . $type,
+            'pageType' => 'auth_page',
+            'title' => $title,
+            'slug' => $type,
+            'locale' => $locale,
+            'layout' => 'auth',
+            'status' => 'published',
+            'sections' => [],
+            'seo' => $this->buildBasicSeo(
+                store: $store,
+                path: '/' . $type,
+                title: $title,
+                description: $title,
+                openGraphType: 'website',
+            ),
+            'publishedAt' => null,
+            'updatedAt' => now()->toIso8601String(),
+        ];
+
+        if ($templateData) {
+            $payload['template'] = $templateData;
+        }
+
+        return $payload;
     }
 
     /**
@@ -1094,6 +1284,9 @@ class StorefrontRuntimeService
                     $subtitle = $this->localizedContentResolver->resolveLocalizedField($section->subtitle, $locale, $fallbackLocale);
                     $content = $this->localizedContentResolver->resolveLocalizedPayload($section->content, $locale, $fallbackLocale);
                     $settings = $this->localizedContentResolver->resolveLocalizedPayload($section->settings, $locale, $fallbackLocale);
+                    
+                    // Extract items from section model (for hero banners with gradient/image data)
+                    $items = $this->localizedContentResolver->resolveLocalizedPayload($section->items ?? [], $locale, $fallbackLocale);
 
                     // Special handling for feature_list sections: extract locale-specific array if content wasn't resolved
                     if (in_array($type, ['features', 'feature_list'], true) && is_array($content)) {
@@ -1106,8 +1299,9 @@ class StorefrontRuntimeService
 
                     // Transform relative image URLs to absolute URLs
                     $content = $this->transformImageUrls($content);
+                    $items = $this->transformImageUrls($items);
 
-                    $props = $this->buildSectionProps($type, $title, $subtitle, $content, $settings);
+                    $props = $this->buildSectionProps($type, $title, $subtitle, $content, $settings, $items);
                     
                     // Transform props again in case buildSectionProps wrapped content
                     $props = $this->transformImageUrls($props);
@@ -1384,7 +1578,7 @@ class StorefrontRuntimeService
     /**
      * @return array<string, mixed>
      */
-    private function buildSectionProps(string $type, ?string $title, ?string $subtitle, ?array $content, ?array $settings): array
+    private function buildSectionProps(string $type, ?string $title, ?string $subtitle, ?array $content, ?array $settings, ?array $items = null): array
     {
         $props = array_filter([
             'title' => $title,
@@ -1393,6 +1587,7 @@ class StorefrontRuntimeService
 
         if (in_array($type, ['category_grid', 'category_summary'], true)) {
             $props['categories'] = $content['categories'] ?? [];
+            $props['settings'] = $settings ?? [];
             return $props;
         }
 
@@ -1437,9 +1632,12 @@ class StorefrontRuntimeService
             return $props;
         }
 
-        // For hero_banner sections, extract items from content if present
+        // For hero_banner sections, use items from section model if present
         if ($type === 'hero' || $type === 'hero_banner') {
-            if (isset($content['items']) && is_array($content['items'])) {
+            // Priority: $items parameter > content['items'] > empty array
+            if (is_array($items) && !empty($items)) {
+                $props['items'] = $items;
+            } elseif (isset($content['items']) && is_array($content['items'])) {
                 $props['items'] = $content['items'];
             } else {
                 $props['items'] = [];
@@ -1834,8 +2032,9 @@ class StorefrontRuntimeService
                     'colorAccent' => $settings['colors']['accent'] ?? (string) config('storefront_runtime.theme.tokens.color_primary'),
                     'colorSurface' => $settings['colors']['background'] ?? (string) config('storefront_runtime.theme.tokens.color_surface'),
                     'colorText' => $settings['colors']['text'] ?? (string) config('storefront_runtime.theme.tokens.color_text'),
-                    'fontBody' => $settings['fonts']['body'] ?? (string) config('storefront_runtime.theme.tokens.font_body'),
-                    'fontHeading' => $settings['fonts']['heading'] ?? (string) config('storefront_runtime.theme.tokens.font_heading'),
+                    // Support both old fonts structure and new typography structure
+                    'fontBody' => $settings['typography']['bodyFont'] ?? $settings['fonts']['body'] ?? (string) config('storefront_runtime.theme.tokens.font_body'),
+                    'fontHeading' => $settings['typography']['headingFont'] ?? $settings['fonts']['heading'] ?? (string) config('storefront_runtime.theme.tokens.font_heading'),
                 ],
                 'assets' => [
                     'logoUrl' => $store->logo_url,
@@ -1844,6 +2043,11 @@ class StorefrontRuntimeService
                 'settings' => [
                     'radius' => $settings['radius'] ?? (string) config('storefront_runtime.theme.radius', 'md'),
                     'direction' => $locale === 'ar' ? 'rtl' : 'ltr',
+                    // Include complete settings for frontend consumption
+                    'colors' => $settings['colors'] ?? [],
+                    'color_schemes' => $settings['color_schemes'] ?? [],
+                    'typography' => $settings['typography'] ?? [],
+                    'buttons' => $settings['buttons'] ?? [],
                 ],
             ];
         }
@@ -1872,8 +2076,10 @@ class StorefrontRuntimeService
             ],
             'settings' => [
                 'radius' => (string) config('storefront_runtime.theme.radius', 'md'),
-                'direction' => $locale === 'ar' ? 'rtl' : 'ltr',
-            ],
-        ];
-    }
+            'direction' => $locale === 'ar' ? 'rtl' : 'ltr',
+        ],
+    ];
+}
+
+
 }

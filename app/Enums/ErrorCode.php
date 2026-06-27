@@ -86,4 +86,8 @@ enum ErrorCode: string
     case BIL_011 = 'BIL_011'; // Subscription cancellation failed
     case BIL_012 = 'BIL_012'; // Cannot resume subscription in current status
     case BIL_013 = 'BIL_013'; // Resume subscription failed
+
+    // --- Theme (THEME) ---
+    case THEME_001 = 'THEME_001'; // Cannot delete default template
+    case THEME_002 = 'THEME_002'; // Template in use (cannot delete)
 }

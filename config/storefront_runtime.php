@@ -17,21 +17,17 @@ return [
     'base_domain' => env('STOREFRONT_BASE_DOMAIN', 'justshop.test'),
 
     'legacy_passthrough_prefixes' => [
-        '/login',
-        '/register',
         '/cart',
         '/checkout',
         '/orders',
         '/profile',
-        '/verify-email',
-        '/auth',
     ],
 
     'cache_ttl' => [
-        'route' => 300,
-        'page' => 3600,
-        'navigation' => 1800,
-        'theme' => 3600,
+        'route' => env('STOREFRONT_RUNTIME_CACHE_TTL_ROUTE', 300),
+        'page' => env('STOREFRONT_RUNTIME_CACHE_TTL_PAGE', 3600),
+        'navigation' => env('STOREFRONT_RUNTIME_CACHE_TTL_NAVIGATION', 1800),
+        'theme' => env('STOREFRONT_RUNTIME_CACHE_TTL_THEME', 3600),
     ],
 
     'category_product_limit' => 48,

@@ -104,6 +104,45 @@ class RichThemeSeeder extends Seeder
                 'settings' => [
                     'colors' => $variation['colors'],
                     'fonts' => $variation['fonts'],
+                    // Shopify-style color schemes
+                    'color_schemes' => [
+                        'default' => [
+                            'name' => 'Default',
+                            'background' => '#FFFFFF',
+                            'text' => '#1F2937',
+                            'button_background' => $variation['colors']['primary'],
+                            'button_text' => '#FFFFFF',
+                            'secondary_background' => '#F3F4F6',
+                            'border' => '#E5E7EB',
+                        ],
+                        'brand' => [
+                            'name' => 'Brand',
+                            'background' => $variation['colors']['primary'],
+                            'text' => '#FFFFFF',
+                            'button_background' => '#FFFFFF',
+                            'button_text' => $variation['colors']['primary'],
+                            'secondary_background' => $this->darkenColor($variation['colors']['primary'], 10),
+                            'border' => 'rgba(255, 255, 255, 0.2)',
+                        ],
+                        'dark' => [
+                            'name' => 'Dark',
+                            'background' => '#1F2937',
+                            'text' => '#FFFFFF',
+                            'button_background' => $variation['colors']['accent'],
+                            'button_text' => '#000000',
+                            'secondary_background' => '#374151',
+                            'border' => '#4B5563',
+                        ],
+                        'light' => [
+                            'name' => 'Light',
+                            'background' => '#F9FAFB',
+                            'text' => '#1F2937',
+                            'button_background' => $variation['colors']['primary'],
+                            'button_text' => '#FFFFFF',
+                            'secondary_background' => '#FFFFFF',
+                            'border' => '#E5E7EB',
+                        ],
+                    ],
                 ],
             ]);
 
@@ -726,5 +765,26 @@ class RichThemeSeeder extends Seeder
 
         $this->command->info("  ✓ Created rich navigation menus");
     }
-}
 
+    /**
+     * Darken a hex color by a percentage
+     */
+    private function darkenColor(string $hex, int $percent): string
+    {
+        // Remove # if present
+        $hex = ltrim($hex, '#');
+        
+        // Convert to RGB
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+        
+        // Darken
+        $r = max(0, min(255, $r - ($r * $percent / 100)));
+        $g = max(0, min(255, $g - ($g * $percent / 100)));
+        $b = max(0, min(255, $b - ($b * $percent / 100)));
+        
+        // Convert back to hex
+        return sprintf('#%02X%02X%02X', (int)$r, (int)$g, (int)$b);
+    }
+}

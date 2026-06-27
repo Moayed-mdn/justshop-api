@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Enums\Cms\Marketing\MarketingPageStatusEnum;
 use App\Enums\Cms\Marketing\MarketingPageTemplateEnum;
 use App\Models\Cms\Marketing\Store\StoreMarketingPage;
+use App\Models\PageTemplate;
 use App\Models\Store;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -21,14 +22,18 @@ class StorefrontRuntimeDevSeeder extends Seeder
             return;
         }
 
-        $this->seedHomePage($store, $creator);
-        $this->seedAboutPage($store, $creator);
-        $this->seedContactPage($store, $creator);
-        $this->seedFaqPage($store, $creator);
-        $this->seedSummerSalePage($store, $creator);
+        // Resolve page template IDs for the store
+        $defaultTemplateId  = PageTemplate::where('store_id', $store->id)->where('handle', 'page.default')->value('id');
+        $landingTemplateId  = PageTemplate::where('store_id', $store->id)->where('handle', 'page.landing')->value('id');
+
+        $this->seedHomePage($store, $creator, $landingTemplateId);
+        $this->seedAboutPage($store, $creator, $defaultTemplateId);
+        $this->seedContactPage($store, $creator, $defaultTemplateId);
+        $this->seedFaqPage($store, $creator, $defaultTemplateId);
+        $this->seedSummerSalePage($store, $creator, $landingTemplateId);
     }
 
-    private function seedHomePage(Store $store, User $creator): void
+    private function seedHomePage(Store $store, User $creator, ?int $templateId): void
     {
         $page = StoreMarketingPage::query()->updateOrCreate(
             [
@@ -43,6 +48,7 @@ class StorefrontRuntimeDevSeeder extends Seeder
                     'ar' => 'JustShop — منتجات عالية الجودة بأسعار عادلة، توصيل سريع.',
                 ],
                 'content' => [],
+                'page_template_id' => $templateId,
                 'status' => MarketingPageStatusEnum::PUBLISHED,
                 'published_at' => now()->subDays(7),
                 'seo' => [
@@ -159,7 +165,7 @@ class StorefrontRuntimeDevSeeder extends Seeder
                         ],
                     ],
                 ],
-                'settings' => ['layout' => 'grid', 'columns' => 3, 'icon_style' => 'outline'],
+                'settings' => ['layout' => 'grid', 'columns' => 3, 'icon_style' => 'outline', 'color_scheme' => 'light'],
                 'is_active' => true,
             ],
         );
@@ -282,7 +288,7 @@ class StorefrontRuntimeDevSeeder extends Seeder
                         ],
                     ],
                 ],
-                'settings' => ['layout' => 'carousel', 'autoplay' => true, 'show_rating' => true],
+                'settings' => ['layout' => 'carousel', 'autoplay' => true, 'show_rating' => true, 'color_scheme' => 'light'],
                 'is_active' => true,
             ],
         );
@@ -318,13 +324,13 @@ class StorefrontRuntimeDevSeeder extends Seeder
                         ['en' => 'Secure checkout', 'ar' => 'دفع آمن'],
                     ],
                 ],
-                'settings' => ['layout' => 'split', 'background' => 'brand'],
+                'settings' => ['layout' => 'split', 'color_scheme' => 'brand'],
                 'is_active' => true,
             ],
         );
     }
 
-    private function seedAboutPage(Store $store, User $creator): void
+    private function seedAboutPage(Store $store, User $creator, ?int $templateId): void
     {
         $page = StoreMarketingPage::query()->updateOrCreate(
             [
@@ -339,6 +345,7 @@ class StorefrontRuntimeDevSeeder extends Seeder
                     'ar' => 'تعرف على كيفية تجهيز هذا المتجر التجريبي للعمل عبر واجهة التشغيل.',
                 ],
                 'content' => [],
+                'page_template_id' => $templateId,
                 'status' => MarketingPageStatusEnum::PUBLISHED,
                 'published_at' => now()->subDay(),
                 'seo' => [
@@ -797,7 +804,7 @@ class StorefrontRuntimeDevSeeder extends Seeder
         );
     }
 
-    private function seedContactPage(Store $store, User $creator): void
+    private function seedContactPage(Store $store, User $creator, ?int $templateId): void
     {
         $page = StoreMarketingPage::query()->updateOrCreate(
             [
@@ -812,6 +819,7 @@ class StorefrontRuntimeDevSeeder extends Seeder
                     'ar' => 'نحن هنا للمساعدة. تواصل مع فريقنا في أي وقت.',
                 ],
                 'content' => [],
+                'page_template_id' => $templateId,
                 'status' => MarketingPageStatusEnum::PUBLISHED,
                 'published_at' => now()->subDays(2),
                 'seo' => [
@@ -956,13 +964,13 @@ class StorefrontRuntimeDevSeeder extends Seeder
                         ],
                     ],
                 ],
-                'settings' => ['layout' => 'centered', 'background' => 'muted'],
+                'settings' => ['layout' => 'centered', 'color_scheme' => 'default'],
                 'is_active' => true,
             ],
         );
     }
 
-    private function seedFaqPage(Store $store, User $creator): void
+    private function seedFaqPage(Store $store, User $creator, ?int $templateId): void
     {
         $page = StoreMarketingPage::query()->updateOrCreate(
             [
@@ -977,6 +985,7 @@ class StorefrontRuntimeDevSeeder extends Seeder
                     'ar' => 'كل ما تحتاج معرفته عن التسوق في JustShop.',
                 ],
                 'content' => [],
+                'page_template_id' => $templateId,
                 'status' => MarketingPageStatusEnum::PUBLISHED,
                 'published_at' => now()->subDays(3),
                 'seo' => [
@@ -1177,7 +1186,7 @@ class StorefrontRuntimeDevSeeder extends Seeder
         );
     }
 
-    private function seedSummerSalePage(Store $store, User $creator): void
+    private function seedSummerSalePage(Store $store, User $creator, ?int $templateId): void
     {
         $page = StoreMarketingPage::query()->updateOrCreate(
             [
@@ -1192,6 +1201,7 @@ class StorefrontRuntimeDevSeeder extends Seeder
                     'ar' => 'أكبر تخفيضات العام هنا! خصم يصل إلى 40% على آلاف المنتجات. لفترة محدودة.',
                 ],
                 'content' => [],
+                'page_template_id' => $templateId,
                 'status' => MarketingPageStatusEnum::PUBLISHED,
                 'published_at' => now()->subDays(1),
                 'seo' => [
@@ -1318,7 +1328,7 @@ class StorefrontRuntimeDevSeeder extends Seeder
                         ],
                     ],
                 ],
-                'settings' => ['layout' => 'centered', 'background' => 'brand'],
+                'settings' => ['layout' => 'centered', 'color_scheme' => 'brand'],
                 'is_active' => true,
             ],
         );
@@ -1422,7 +1432,7 @@ class StorefrontRuntimeDevSeeder extends Seeder
                         ],
                     ],
                 ],
-                'settings' => ['layout' => 'centered', 'background' => 'dark'],
+                'settings' => ['layout' => 'centered', 'color_scheme' => 'dark'],
                 'is_active' => true,
             ],
         );

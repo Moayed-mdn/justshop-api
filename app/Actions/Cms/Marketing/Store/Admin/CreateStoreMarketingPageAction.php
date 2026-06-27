@@ -31,19 +31,20 @@ class CreateStoreMarketingPageAction
             }
 
             $page = $this->repository->create([
-                'store_id'     => $dto->storeId,
-                'title'        => $dto->title,
-                'slug'         => $dto->slug,
-                'excerpt'      => $dto->excerpt,
-                'content'      => $dto->content,
-                'status'       => $dto->status->value,
-                'published_at' => $publishedAt,
-                'seo'          => $dto->seo,
-                'template'     => $dto->template?->value,
-                'sort_order'   => $dto->sortOrder,
-                'is_homepage'  => $dto->isHomepage,
-                'created_by'   => $dto->createdBy,
-                'updated_by'   => $dto->updatedBy,
+                'store_id'        => $dto->storeId,
+                'title'           => $dto->title,
+                'slug'            => $dto->slug,
+                'excerpt'         => $dto->excerpt,
+                'content'         => $dto->content,
+                'status'          => $dto->status->value,
+                'published_at'    => $publishedAt,
+                'seo'             => $dto->seo,
+                'template'        => $dto->template?->value,
+                'page_template_id' => $dto->pageTemplateId,
+                'sort_order'      => $dto->sortOrder,
+                'is_homepage'     => $dto->isHomepage,
+                'created_by'      => $dto->createdBy,
+                'updated_by'      => $dto->updatedBy,
             ]);
 
             if (!empty($dto->sections)) {

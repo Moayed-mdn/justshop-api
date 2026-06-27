@@ -31,6 +31,7 @@ class NavigationMenuRepository
     public function getAllForStore(int $storeId): Collection
     {
         return NavigationMenu::where('store_id', $storeId)
+            ->withCount('items')
             ->orderBy('created_at', 'desc')
             ->get();
     }

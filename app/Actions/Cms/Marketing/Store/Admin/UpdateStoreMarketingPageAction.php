@@ -33,17 +33,18 @@ class UpdateStoreMarketingPageAction
             }
 
             $updated = $this->repository->update($page, [
-                'title'        => $dto->title,
-                'slug'         => $dto->slug,
-                'excerpt'      => $dto->excerpt,
-                'content'      => $dto->content,
-                'status'       => $dto->status->value,
-                'published_at' => $publishedAt,
-                'seo'          => $dto->seo,
-                'template'     => $dto->template?->value,
-                'sort_order'   => $dto->sortOrder,
-                'is_homepage'  => $dto->isHomepage,
-                'updated_by'   => $dto->updatedBy,
+                'title'           => $dto->title,
+                'slug'            => $dto->slug,
+                'excerpt'         => $dto->excerpt,
+                'content'         => $dto->content,
+                'status'          => $dto->status->value,
+                'published_at'    => $publishedAt,
+                'seo'             => $dto->seo,
+                'template'        => $dto->template?->value,
+                'page_template_id' => $dto->pageTemplateId,
+                'sort_order'      => $dto->sortOrder,
+                'is_homepage'     => $dto->isHomepage,
+                'updated_by'      => $dto->updatedBy,
             ]);
 
             // Sync sections only when the key was present in the request

@@ -44,9 +44,10 @@ class UpdateStoreMarketingPageRequest extends FormRequest
             'published_at' => ['sometimes', 'nullable', 'date'],
 
             // ── Metadata ───────────────────────────────────────
-            'template'   => ['sometimes', 'nullable', 'string', Rule::in(MarketingPageTemplateEnum::storeTemplates())],
-            'sort_order' => ['sometimes', 'integer', 'min:0'],
-            'is_homepage' => ['sometimes', 'boolean'],
+            'template'        => ['sometimes', 'nullable', 'string', Rule::in(MarketingPageTemplateEnum::storeTemplates())],
+            'page_template_id' => ['sometimes', 'nullable', 'integer', 'exists:page_templates,id'],
+            'sort_order'      => ['sometimes', 'integer', 'min:0'],
+            'is_homepage'     => ['sometimes', 'boolean'],
 
             // ── SEO ────────────────────────────────────────────
             'seo'                    => ['sometimes', 'nullable', 'array'],

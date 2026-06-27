@@ -9,6 +9,8 @@ use App\Contracts\Cms\HasSeoMetadata;
 use App\DTOs\Cms\Seo\SeoMetaDTO;
 use App\Enums\Cms\Marketing\MarketingPageStatusEnum;
 use App\Enums\Cms\Marketing\MarketingPageTemplateEnum;
+use App\Models\PageTemplate;
+use App\Models\PageTemplateOverride;
 use App\Models\Store;
 use App\Models\User;
 use App\Traits\Cms\LocalizedContentTrait;
@@ -39,6 +41,7 @@ class StoreMarketingPage extends Model implements HasLocalizedContent, HasSeoMet
         'published_at',
         'seo',
         'template',
+        'page_template_id',
         'sort_order',
         'is_homepage',
         'created_by',
@@ -82,6 +85,16 @@ class StoreMarketingPage extends Model implements HasLocalizedContent, HasSeoMet
     public function updater(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function pageTemplate(): BelongsTo
+    {
+        return $this->belongsTo(PageTemplate::class, 'page_template_id');
+    }
+
+    public function templateOverrides(): HasMany
+    {
+        return $this->hasMany(PageTemplateOverride::class, 'page_id');
     }
 
     // ── Scopes ─────────────────────────────────────────────────
@@ -129,6 +142,53 @@ class StoreMarketingPage extends Model implements HasLocalizedContent, HasSeoMet
     }
 
     // ── Helpers ────────────────────────────────────────────────
+
+    /**
+     * Get the resolved template (template + page-specific overrides)
+     */
+    public function getResolvedTemplate(): ?PageTemplate
+    {
+        if (!$this->pageTemplate) {
+            // Fallback to store's default template for this type
+            return PageTemplate::forStore($this->store_id)
+                ->byType('page')
+                ->default()
+                ->active()
+                ->first();
+        }
+
+        return $this->pageTemplate;
+    }
+
+    /**
+     * Get template configuration with overrides applied
+     */
+    public function getTemplateConfig(): ?array
+    {
+        $template = $this->getResolvedTemplate();
+        
+        if (!$template) {
+            return null;
+        }
+
+        $sections = $template->sections;
+        
+        // Apply page-specific overrides
+        foreach ($this->templateOverrides as $override) {
+            if (isset($sections[$override->section_id])) {
+                $sections[$override->section_id]['settings'] = $override->mergeWithDefaults(
+                    $sections[$override->section_id]['settings'] ?? []
+                );
+            }
+        }
+
+        return [
+            'id' => $template->id,
+            'handle' => $template->handle,
+            'sections' => $sections,
+            'section_order' => $template->section_order,
+        ];
+    }
 
     public function isPublished(): bool
     {

@@ -54,15 +54,105 @@ class DefaultThemeSeeder extends Seeder
             'is_published' => true,
             'settings' => [
                 'colors' => [
-                    'primary' => '#3B82F6',
-                    'secondary' => '#10B981',
-                    'accent' => '#F59E0B',
-                    'background' => '#FFFFFF',
-                    'text' => '#1F2937',
+                    'primary' => '#3B82F6',      // Blue-500 - Main brand color
+                    'secondary' => '#10B981',    // Green-500 - Secondary accent
+                    'background' => '#FFFFFF',   // White - Main background
+                    'text' => '#1F2937',         // Gray-800 - Primary text
+                    'textMuted' => '#6B7280',    // Gray-500 - Secondary/muted text
+                    'border' => '#E5E7EB',       // Gray-200 - Default borders
+                    'success' => '#10B981',      // Green-500 - Success states
+                    'error' => '#EF4444',        // Red-500 - Error states
+                    'warning' => '#F59E0B',      // Amber-500 - Warning states
+                ],
+                // Shopify-style color schemes
+                'color_schemes' => [
+                    'default' => [
+                        'name' => 'Default',
+                        'background' => '#FFFFFF',
+                        'text' => '#1F2937',
+                        'button_background' => '#3B82F6',
+                        'button_text' => '#FFFFFF',
+                        'secondary_background' => '#F3F4F6',
+                        'border' => '#E5E7EB',
+                    ],
+                    'brand' => [
+                        'name' => 'Brand',
+                        'background' => '#3B82F6',
+                        'text' => '#FFFFFF',
+                        'button_background' => '#FFFFFF',
+                        'button_text' => '#3B82F6',
+                        'secondary_background' => '#2563EB',
+                        'border' => 'rgba(255, 255, 255, 0.2)',
+                    ],
+                    'dark' => [
+                        'name' => 'Dark',
+                        'background' => '#1F2937',
+                        'text' => '#FFFFFF',
+                        'button_background' => '#F59E0B',
+                        'button_text' => '#000000',
+                        'secondary_background' => '#374151',
+                        'border' => '#4B5563',
+                    ],
+                    'light' => [
+                        'name' => 'Light',
+                        'background' => '#F9FAFB',
+                        'text' => '#1F2937',
+                        'button_background' => '#3B82F6',
+                        'button_text' => '#FFFFFF',
+                        'secondary_background' => '#FFFFFF',
+                        'border' => '#E5E7EB',
+                    ],
                 ],
                 'fonts' => [
                     'heading' => 'Inter',
                     'body' => 'Inter',
+                ],
+                'typography' => [
+                    'headingFont' => 'Inter',
+                    'bodyFont' => 'Inter',
+                    'headingWeight' => 'semibold',
+                    'bodyWeight' => 'normal',
+                    'baseFontSize' => 'base',
+                    'lineHeight' => 'normal',
+                    'letterSpacing' => 'normal',
+                ],
+                'buttons' => [
+                    'primary' => [
+                        'backgroundColor' => '#FFFFFF',
+                        'textColor' => '#3B82F6',
+                        'borderColor' => '#FFFFFF',
+                        'borderWidth' => 0,
+                        'borderRadius' => 'full',
+                        'paddingX' => 'lg',
+                        'paddingY' => 'md',
+                        'fontSize' => 'base',
+                        'fontWeight' => 'semibold',
+                        'hoverEffect' => 'opacity',
+                    ],
+                    'secondary' => [
+                        'backgroundColor' => 'rgba(255, 255, 255, 0.15)',
+                        'textColor' => '#FFFFFF',
+                        'borderColor' => 'rgba(255, 255, 255, 0.4)',
+                        'borderWidth' => 1,
+                        'borderRadius' => 'full',
+                        'paddingX' => 'lg',
+                        'paddingY' => 'md',
+                        'fontSize' => 'base',
+                        'fontWeight' => 'semibold',
+                        'hoverEffect' => 'opacity',
+                    ],
+                    'outline' => [
+                        'backgroundColor' => 'transparent',
+                        'textColor' => '#FFFFFF',
+                        'borderColor' => 'rgba(255, 255, 255, 0.6)',
+                        'borderWidth' => 2,
+                        'borderRadius' => 'full',
+                        'paddingX' => 'lg',
+                        'paddingY' => 'md',
+                        'fontSize' => 'base',
+                        'fontWeight' => 'semibold',
+                        'hoverEffect' => 'opacity',
+                    ],
                 ],
             ],
         ]);
