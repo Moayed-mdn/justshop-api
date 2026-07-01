@@ -13,6 +13,7 @@ use App\Support\Auth\ActorResolver;
 use App\Enums\Address\AddressTypeEnum;
 use App\Notifications\CustomResetPassword;
 use App\Notifications\VerifyEmail;
+use App\Support\System\FrontendUrlBuilder;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -133,13 +134,36 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sendEmailVerificationNotification(): void
     {
-        $this->notify(new VerifyEmail());
+        $frontendUrl = FrontendUrlBuilder::resolveRequestFrontendUrl(request());
+
+        if ($frontendUrl === null) {
+            $store = $this->stores()->first();
+            if ($store?->domain) {
+                $frontendUrl = FrontendUrlBuilder::fromStoreDomain($store->domain);
+            }
+        }
+
+        $this->notify(new VerifyEmail(
+            frontendUrl: $frontendUrl ?? config('app.frontend_url', 'http://localhost:3000'),
+        ));
     }
 
 
     public function sendPasswordResetNotification($token)
     {
-        $this->notify(new CustomResetPassword($token));
+        $frontendUrl = FrontendUrlBuilder::resolveRequestFrontendUrl(request());
+
+        if ($frontendUrl === null) {
+            $store = $this->stores()->first();
+            if ($store?->domain) {
+                $frontendUrl = FrontendUrlBuilder::fromStoreDomain($store->domain);
+            }
+        }
+
+        $this->notify(new CustomResetPassword(
+            $token,
+            frontendUrl: $frontendUrl ?? config('app.frontend_url', 'http://localhost:3000'),
+        ));
     }
 
     public function addresses()
@@ -159,22 +183,28 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function shippingAddresses()
     {
-        return $this->addresses()->where('type', AddressTypeEnum::SHIPPING);
+        return $this->addresses()->whereIn('type', [
+            AddressTypeEnum::SHIPPING,
+            AddressTypeEnum::BOTH,
+        ]);
     }
 
     public function billingAddresses()
     {
-        return $this->addresses()->where('type', AddressTypeEnum::BILLING);
+        return $this->addresses()->whereIn('type', [
+            AddressTypeEnum::BILLING,
+            AddressTypeEnum::BOTH,
+        ]);
     }
 
     public function defaultShippingAddress()
     {
-        return $this->shippingAddresses()->where('is_default', true)->first();
+        return $this->shippingAddresses()->where('is_default_shipping', true)->first();
     }
 
     public function defaultBillingAddress()
     {
-        return $this->billingAddresses()->where('is_default', true)->first();
+        return $this->billingAddresses()->where('is_default_billing', true)->first();
     }
 
     public function defaultPaymentMethod()

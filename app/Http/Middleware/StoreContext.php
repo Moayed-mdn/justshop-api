@@ -21,18 +21,19 @@ class StoreContext
 
     public function handle(Request $request, Closure $next): mixed
     {
-        $store = $request->route('store');
+        $storeParameter = $request->route('store');
+        $store = $storeParameter;
         $user = $request->user();
 
         if (!($store instanceof Store)) {
-            $store = Store::find($store);
+            $store = (new Store())->resolveRouteBinding($storeParameter);
+        }
+
+        if ($store instanceof Store) {
+            $request->route()->setParameter('store', $store);
         }
 
         if (!$store instanceof Store) {
-            if ($user && $user->last_active_store_id == $request->route('store')) {
-                $user->update(['last_active_store_id' => null]);
-            }
-
             throw new StoreNotFoundException();
         }
 
@@ -41,7 +42,7 @@ class StoreContext
         }
 
         if (!$store->isOperational()) {
-            if ($user && $user->last_active_store_id == $request->route('store')) {
+            if ($user && $user->last_active_store_id === $store->id) {
                 $user->update(['last_active_store_id' => null]);
             }
 

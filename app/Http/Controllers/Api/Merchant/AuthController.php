@@ -70,8 +70,14 @@ class AuthController extends \App\Http\Controllers\Controller
     {
         // Wave 2 Remediation: Explicit policy authorization moved from Action to Controller
         // Authorization now owned by StorePolicy::switchStore()
-        $store = Store::findOrFail($request->integer('store_id'));
+        $storeIdentifier = $request->input('store_id');
+        $store = is_numeric($storeIdentifier)
+            ? Store::findOrFail((int) $storeIdentifier)
+            : Store::where('slug', $storeIdentifier)->firstOrFail();
         $this->authorize('switchStore', $store);
+
+        // Ensure the request uses the actual store ID for the DTO
+        $request->merge(['store_id' => $store->id]);
 
         $data = $this->updateActiveStoreAction->execute(
             UpdateActiveStoreDTO::fromRequest($request),

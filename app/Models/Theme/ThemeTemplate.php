@@ -46,7 +46,7 @@ class ThemeTemplate extends Model
     public function sections(): BelongsToMany
     {
         return $this->belongsToMany(ThemeSection::class, 'theme_template_sections', 'template_id', 'section_id')
-            ->withPivot('position', 'overrides')
+            ->withPivot('position', 'overrides', 'is_enabled')
             ->withTimestamps()
             ->orderByPivot('position');
     }

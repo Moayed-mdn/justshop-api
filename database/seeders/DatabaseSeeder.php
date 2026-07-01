@@ -33,6 +33,8 @@ class DatabaseSeeder extends Seeder
             // DefaultThemeSeeder::class, // Basic version
             StoreAssetsSeeder::class, // Must run before themes (for logo/favicon)
             RichThemeSeeder::class, // Rich version with multiple themes
+            SystemTemplateSeeder::class, // Creates ThemeTemplate records (one per system page per theme)
+            DefaultSectionSeeder::class, // Creates default ThemeSection, ThemeBlock, ThemeSectionGroup
         ]);
 
         $store = Store::query()->where('slug', 'merchant-store')->first();

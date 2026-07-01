@@ -19,6 +19,11 @@ class ProcessStripeWebhookJob implements ShouldQueue
     public $tries = 3;
     public $backoff = [30, 60, 120]; // 30s, 1min, 2min
 
+    /**
+     * The webhook event instance for use in getHandler
+     */
+    private ?StripeWebhookEvent $webhookEvent = null;
+
     public function __construct(
         private int $webhookEventId,
     ) {}
@@ -38,6 +43,8 @@ class ProcessStripeWebhookJob implements ShouldQueue
             ]);
             return;
         }
+
+        $this->webhookEvent = $webhookEvent;
 
         // Skip if already processed
         if ($webhookEvent->status === WebhookStatusEnum::PROCESSED->value) {
@@ -109,8 +116,17 @@ class ProcessStripeWebhookJob implements ShouldQueue
      */
     private function getHandler(string $eventType): ?object
     {
+        if ($eventType === 'checkout.session.completed') {
+            // Check session mode to pick the right handler
+            $sessionMode = $this->webhookEvent?->payload['data']['object']['mode'] ?? null;
+            if ($sessionMode === 'payment') {
+                return app(\App\Services\Payment\Webhooks\HandleEcommerceCheckoutSessionCompleted::class);
+            }
+            
+            return app(\App\Services\Billing\Webhooks\HandleCheckoutSessionCompleted::class);
+        }
+
         return match ($eventType) {
-            'checkout.session.completed' => app(\App\Services\Billing\Webhooks\HandleCheckoutSessionCompleted::class),
             'customer.subscription.created' => app(\App\Services\Billing\Webhooks\HandleSubscriptionCreated::class),
             'customer.subscription.updated' => app(\App\Services\Billing\Webhooks\HandleSubscriptionUpdated::class),
             'customer.subscription.deleted' => app(\App\Services\Billing\Webhooks\HandleSubscriptionDeleted::class),

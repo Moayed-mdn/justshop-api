@@ -51,7 +51,7 @@ class StoreController extends Controller
         return $this->success(new StoreResource($store), 'Store created successfully', 201);
     }
 
-    public function show(Request $request, int $store): JsonResponse
+    public function show(Request $request, Store $store): JsonResponse
     {
         $storeModel = app('currentStore');
         $this->guardStoreAccess($request, $storeModel);
@@ -60,13 +60,13 @@ class StoreController extends Controller
         return $this->success(new StoreResource($storeModel), 'Store retrieved successfully');
     }
 
-    public function update(UpdateStoreRequest $request, int $store): JsonResponse
+    public function update(UpdateStoreRequest $request, Store $store): JsonResponse
     {
         $storeModel = app('currentStore');
         $this->guardStoreAccess($request, $storeModel);
         $this->authorize('update', $storeModel);
 
-        $dto = UpdateStoreDTO::fromRequest($request, $store);
+        $dto = UpdateStoreDTO::fromRequest($request, $store->id);
         $storeModel = $this->updateStoreAction->execute($dto);
 
         return $this->success(new StoreResource($storeModel), 'Store updated successfully');

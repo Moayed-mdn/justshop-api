@@ -11,6 +11,7 @@ use App\Models\Cart;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\ProductVariant;
+use App\Models\Store;
 use App\Models\User;
 use App\Support\System\FrontendUrlBuilder;
 use Illuminate\Support\Facades\DB;
@@ -183,6 +184,9 @@ class CheckoutService
     private function createCheckoutSession(array $validatedItems, int $storeId, ?User $user, ?string $guestEmail = null, ?string $frontendBaseUrl = null): array
     {
         return DB::transaction(function () use ($validatedItems, $storeId, $user, $guestEmail, $frontendBaseUrl) {
+            
+            // Retrieve the store to get address settings
+            $store = Store::findOrFail($storeId);
 
             // ── 1. Calculate totals ────────────────────────────
             $subtotal = collect($validatedItems)->sum(fn($i) => $i['unit_price'] * $i['quantity']);
@@ -252,7 +256,11 @@ class CheckoutService
             $successPath = $locale ? "/{$locale}/checkout/success" : '/checkout/success';
             $cancelPath  = $locale ? "/{$locale}/checkout/cancel" : '/checkout/cancel';
 
-            // ── 6. Build Stripe session params ─────────────────
+            // ── 6. Resolve allowed countries from merchant-controlled settings ─
+            $allowedCountries = app(StoreAddressSettingsService::class)
+                ->getAvailableCountries($store);
+
+            // ── 7. Build Stripe session params ─────────────────
             $sessionParams = [
                 'mode'        => 'payment',
                 'line_items'  => $lineItems,
@@ -260,7 +268,7 @@ class CheckoutService
                 'cancel_url'  => FrontendUrlBuilder::build($cancelPath, [], $frontendBaseUrl),
 
                 'shipping_address_collection' => [
-                    'allowed_countries' => ['US', 'CA', 'GB', 'DE', 'FR', 'SA', 'AE', 'EG', 'JO'],
+                    'allowed_countries' => $allowedCountries,
                 ],
 
                 'shipping_options' => [
@@ -283,15 +291,15 @@ class CheckoutService
                 ],
             ];
 
-            // ── 7. Logged-in user: attach Stripe customer ──────
+            // ── 8. Logged-in user: attach Stripe customer ──────
             if ($user) {
                 $sessionParams['customer_email'] = $user->email;
             }
 
-            // ── 8. Create Stripe Checkout Session ──────────────
+            // ── 9. Create Stripe Checkout Session ──────────────
             $session = $this->createStripeSession($sessionParams);
 
-            // ── 9. Store session ID on order ───────────────────
+            // ── 10. Store session ID on order ───────────────────
             $order->update([
                 'stripe_checkout_session_id' => $session->id,
             ]);

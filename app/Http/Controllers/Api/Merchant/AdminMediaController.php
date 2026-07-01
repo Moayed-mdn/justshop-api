@@ -11,6 +11,7 @@ use App\DTOs\Admin\Media\UploadImageDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Media\DeleteImageRequest;
 use App\Http\Requests\Admin\Media\UploadImageRequest;
+use App\Models\Store;
 use Illuminate\Http\JsonResponse;
 
 class AdminMediaController extends Controller
@@ -29,10 +30,10 @@ class AdminMediaController extends Controller
      */
     public function upload(
         UploadImageRequest $request,
-        int $store,
+        Store $store,
     ): JsonResponse {
         $result = $this->uploadAction->execute(
-            UploadImageDTO::fromRequest($request, $store)
+            UploadImageDTO::fromRequest($request, $store->id)
         );
 
         return $this->success(
@@ -50,10 +51,10 @@ class AdminMediaController extends Controller
      */
     public function delete(
         DeleteImageRequest $request,
-        int $store,
+        Store $store,
     ): JsonResponse {
         $this->deleteAction->execute(
-            DeleteImageDTO::fromRequest($request, $store)
+            DeleteImageDTO::fromRequest($request, $store->id)
         );
 
         return $this->success(

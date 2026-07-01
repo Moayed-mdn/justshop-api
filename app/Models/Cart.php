@@ -45,4 +45,16 @@ class Cart extends Model
     {
         return $this->items->sum('quantity');
     }
+
+    /**
+     * Calculate cart subtotal (sum of all items' subtotals).
+     *
+     * @return float
+     */
+    public function calculateSubtotal(): float
+    {
+        return $this->items->sum(function ($item) {
+            return $item->quantity * $item->productVariant->price;
+        });
+    }
 }

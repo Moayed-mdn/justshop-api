@@ -28,7 +28,19 @@ class AdminOrderResource extends JsonResource
                 'email' => $this->user->email,
                 'phone' => $this->user->phone ?? null,
             ]),
-            'line_items'         => [],
+            'line_items'         => $this->whenLoaded('items', fn() =>
+                $this->items->map(fn($item) => [
+                    'id'           => $item->id,
+                    'product_id'   => $item->product_id,
+                    'product_name' => $item->product_name,
+                    'sku'          => $item->sku ?? null,
+                    'quantity'     => $item->quantity,
+                    'price'        => (float) $item->unit_price,
+                    'total'        => round(
+                        (float) $item->unit_price * $item->quantity, 2
+                    ),
+                ])
+            ),
             'items_count'        => $this->whenLoaded('items',
                 fn() => $this->items->sum('quantity')
             ),

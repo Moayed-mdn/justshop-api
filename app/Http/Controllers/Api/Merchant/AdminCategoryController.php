@@ -22,19 +22,20 @@ use App\Http\Requests\Admin\Category\ListCategoriesRequest;
 use App\Http\Requests\Admin\Category\UpdateCategoryRequest;
 use App\Http\Resources\Admin\Category\AdminCategoryResource;
 use App\Models\Category;
+use App\Models\Store;
 use Illuminate\Http\JsonResponse;
 
 class AdminCategoryController extends Controller
 {
     public function index(
         ListCategoriesRequest $request,
-        int $store,
+        Store $store,
         ListCategoriesAction $action,
     ): JsonResponse {
         $this->authorize('viewAny', [Category::class, $this->currentStore()]);
 
         $categories = $action->execute(
-            dto:  ListCategoriesDTO::fromRequest($request, $store),
+            dto:  ListCategoriesDTO::fromRequest($request, $store->id),
         );
 
         return $this->paginated(
@@ -44,7 +45,7 @@ class AdminCategoryController extends Controller
     }
 
     public function show(
-        int $store,
+        Store $store,
         int $category,
         ShowCategoryAction $action,
     ): JsonResponse {
@@ -52,7 +53,7 @@ class AdminCategoryController extends Controller
 
         $result = $action->execute(
             dto: new ShowCategoryDTO(
-                storeId:    $store,
+                storeId:    $store->id,
                 categoryId: $category,
             ),
         );
@@ -62,13 +63,13 @@ class AdminCategoryController extends Controller
 
     public function store(
         CreateCategoryRequest $request,
-        int $store,
+        Store $store,
         CreateCategoryAction $action,
     ): JsonResponse {
         $this->authorize('create', [Category::class, $this->currentStore()]);
 
         $result = $action->execute(
-            dto:  CreateCategoryDTO::fromRequest($request, $store),
+            dto:  CreateCategoryDTO::fromRequest($request, $store->id),
         );
 
         return $this->success(
@@ -80,14 +81,14 @@ class AdminCategoryController extends Controller
 
     public function update(
         UpdateCategoryRequest $request,
-        int $store,
+        Store $store,
         int $category,
         UpdateCategoryAction $action,
     ): JsonResponse {
         $this->authorize('update', [Category::class, $this->currentStore()]);
 
         $result = $action->execute(
-            dto:  UpdateCategoryDTO::fromRequest($request, $store, $category),
+            dto:  UpdateCategoryDTO::fromRequest($request, $store->id, $category),
         );
 
         return $this->success(
@@ -97,7 +98,7 @@ class AdminCategoryController extends Controller
     }
 
     public function destroy(
-        int $store,
+        Store $store,
         int $category,
         DeleteCategoryAction $action,
     ): JsonResponse {
@@ -105,7 +106,7 @@ class AdminCategoryController extends Controller
 
         $action->execute(
             dto: new DeleteCategoryDTO(
-                storeId:    $store,
+                storeId:    $store->id,
                 categoryId: $category,
             ),
         );
@@ -116,7 +117,7 @@ class AdminCategoryController extends Controller
     }
 
     public function restore(
-        int $store,
+        Store $store,
         int $category,
         RestoreCategoryAction $action,
     ): JsonResponse {
@@ -124,7 +125,7 @@ class AdminCategoryController extends Controller
 
         $result = $action->execute(
             dto: new RestoreCategoryDTO(
-                storeId:    $store,
+                storeId:    $store->id,
                 categoryId: $category,
             ),
         );

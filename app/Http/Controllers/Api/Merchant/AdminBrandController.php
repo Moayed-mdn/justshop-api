@@ -22,19 +22,20 @@ use App\Http\Requests\Admin\Brand\ListBrandsRequest;
 use App\Http\Requests\Admin\Brand\UpdateBrandRequest;
 use App\Http\Resources\Admin\Brand\AdminBrandResource;
 use App\Models\Brand;
+use App\Models\Store;
 use Illuminate\Http\JsonResponse;
 
 class AdminBrandController extends Controller
 {
     public function index(
         ListBrandsRequest $request,
-        int $store,
+        Store $store,
         ListBrandsAction $action,
     ): JsonResponse {
         $this->authorize('viewAny', [Brand::class, $this->currentStore()]);
 
         $brands = $action->execute(
-            dto:  ListBrandsDTO::fromRequest($request, $store),
+            dto:  ListBrandsDTO::fromRequest($request, $store->id),
         );
 
         return $this->paginated(
@@ -44,7 +45,7 @@ class AdminBrandController extends Controller
     }
 
     public function show(
-        int $store,
+        Store $store,
         int $brand,
         ShowBrandAction $action,
     ): JsonResponse {
@@ -52,7 +53,7 @@ class AdminBrandController extends Controller
 
         $result = $action->execute(
             dto: new ShowBrandDTO(
-                storeId: $store,
+                storeId: $store->id,
                 brandId: $brand,
             ),
         );
@@ -62,13 +63,13 @@ class AdminBrandController extends Controller
 
     public function store(
         CreateBrandRequest $request,
-        int $store,
+        Store $store,
         CreateBrandAction $action,
     ): JsonResponse {
         $this->authorize('create', [Brand::class, $this->currentStore()]);
 
         $result = $action->execute(
-            dto:  CreateBrandDTO::fromRequest($request, $store),
+            dto:  CreateBrandDTO::fromRequest($request, $store->id),
         );
 
         return $this->success(
@@ -80,14 +81,14 @@ class AdminBrandController extends Controller
 
     public function update(
         UpdateBrandRequest $request,
-        int $store,
+        Store $store,
         int $brand,
         UpdateBrandAction $action,
     ): JsonResponse {
         $this->authorize('update', [Brand::class, $this->currentStore()]);
 
         $result = $action->execute(
-            dto:  UpdateBrandDTO::fromRequest($request, $store, $brand),
+            dto:  UpdateBrandDTO::fromRequest($request, $store->id, $brand),
         );
 
         return $this->success(
@@ -97,7 +98,7 @@ class AdminBrandController extends Controller
     }
 
     public function destroy(
-        int $store,
+        Store $store,
         int $brand,
         DeleteBrandAction $action,
     ): JsonResponse {
@@ -105,7 +106,7 @@ class AdminBrandController extends Controller
 
         $action->execute(
             dto: new DeleteBrandDTO(
-                storeId: $store,
+                storeId: $store->id,
                 brandId: $brand,
             ),
         );
@@ -116,7 +117,7 @@ class AdminBrandController extends Controller
     }
 
     public function restore(
-        int $store,
+        Store $store,
         int $brand,
         RestoreBrandAction $action,
     ): JsonResponse {
@@ -124,7 +125,7 @@ class AdminBrandController extends Controller
 
         $result = $action->execute(
             dto: new RestoreBrandDTO(
-                storeId: $store,
+                storeId: $store->id,
                 brandId: $brand,
             ),
         );

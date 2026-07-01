@@ -9,7 +9,9 @@ use App\Services\Auth\SessionGuardTelemetry;
 use App\Services\Auth\SessionOwnershipResolver;
 use App\Support\System\FrontendUrlBuilder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -24,14 +26,19 @@ class SocialAuthService
 
     /**
      * Redirect the user to Google's OAuth page.
+     *
+     * Encrypts the storefront base URL into the OAuth `state` parameter so the
+     * callback can redirect back to the correct tenant domain without relying on
+     * sessions or hardcoded configs.
      */
     public function redirect(): RedirectResponse
     {
         $request = request();
-        FrontendUrlBuilder::rememberSocialAuthFrontendUrl($request);
+        $frontendUrl = FrontendUrlBuilder::rememberSocialAuthFrontendUrl($request) ?? config('app.frontend_url', 'http://localhost:3000');
 
         return Socialite::driver('google')
             ->stateless()
+            ->with(['state' => Crypt::encryptString($frontendUrl)])
             ->redirect();
     }
 
@@ -41,13 +48,46 @@ class SocialAuthService
     public function callback(): RedirectResponse
     {
         $request = request();
-        $frontendBaseUrl = FrontendUrlBuilder::pullSocialAuthFrontendUrl($request)
-            ?? FrontendUrlBuilder::resolveRequestFrontendUrl($request);
+
+        // #region debug-point I:backend-callback-start
+        \Log::debug('[DEBUG I] Backend Google callback started', [
+            'timestamp' => now()->toISOString(),
+            'hasCode' => $request->has('code'),
+            'hasState' => $request->has('state'),
+            'hasXStorefrontVersion' => $request->headers->has('X-Storefront-Version'),
+            'headers' => $request->headers->all(),
+        ]);
+        // #endregion
+
+        $frontendBaseUrl = $this->resolveFrontendUrlFromState($request)
+            ?? FrontendUrlBuilder::pullSocialAuthFrontendUrl($request)
+            ?? FrontendUrlBuilder::resolveRequestFrontendUrl($request)
+            ?? config('app.frontend_url', 'http://localhost:3000');
+
+        // #region debug-point J:frontend-url-resolved
+        \Log::debug('[DEBUG J] Frontend URL resolved', [
+            'timestamp' => now()->toISOString(),
+            'frontendBaseUrl' => $frontendBaseUrl,
+            'fromState' => $this->resolveFrontendUrlFromState($request),
+            'fromPull' => FrontendUrlBuilder::pullSocialAuthFrontendUrl($request),
+            'fromResolve' => FrontendUrlBuilder::resolveRequestFrontendUrl($request),
+            'fromConfig' => config('app.frontend_url', 'http://localhost:3000'),
+        ]);
+        // #endregion
+
         $isStorefrontProxyCallback = $request->headers->has('X-Storefront-Version');
 
         // When Google returns to Laravel directly, bounce once through the Nuxt callback
         // proxy so the frontend host can receive the session cookies.
         if (!$isStorefrontProxyCallback && ($request->has('code') || $request->has('state'))) {
+            // #region debug-point K:bounce-to-nitro-proxy
+            \Log::debug('[DEBUG K] Bouncing to Nitro proxy', [
+                'timestamp' => now()->toISOString(),
+                'reason' => 'Direct Google callback (not from storefront proxy)',
+                'redirectUrl' => FrontendUrlBuilder::build('/api/auth/google/callback', $request->query(), $frontendBaseUrl),
+            ]);
+            // #endregion
+            
             return redirect(FrontendUrlBuilder::build('/api/auth/google/callback', $request->query(), $frontendBaseUrl));
         }
 
@@ -55,8 +95,29 @@ class SocialAuthService
             $googleUser = Socialite::driver('google')
                 ->stateless()
                 ->user();
+                
+            // #region debug-point L:google-user-obtained
+            \Log::debug('[DEBUG L] Google user obtained', [
+                'timestamp' => now()->toISOString(),
+                'googleId' => $googleUser->getId(),
+                'email' => $googleUser->getEmail(),
+                'name' => $googleUser->getName(),
+            ]);
+            // #endregion
         } catch (\Exception $e) {
-            Log::error('Google OAuth failed', ['error' => $e->getMessage()]);
+            \Log::error('Google OAuth failed', ['error' => $e->getMessage()]);
+            
+            // #region debug-point M:google-auth-failed
+            \Log::debug('[DEBUG M] Google auth failed', [
+                'timestamp' => now()->toISOString(),
+                'error' => $e->getMessage(),
+                'redirectUrl' => FrontendUrlBuilder::build(
+                    '/auth/google/callback',
+                    ['error' => 'google_auth_failed'],
+                    $frontendBaseUrl,
+                ),
+            ]);
+            // #endregion
             
             return redirect(FrontendUrlBuilder::build(
                 '/auth/google/callback',
@@ -66,6 +127,15 @@ class SocialAuthService
         }
 
         $user = $this->findOrCreateUser($googleUser);
+        
+        // #region debug-point N:user-found-or-created
+        \Log::debug('[DEBUG N] User found/created', [
+            'timestamp' => now()->toISOString(),
+            'userId' => $user->id,
+            'email' => $user->email,
+            'googleId' => $user->google_id,
+        ]);
+        // #endregion
 
         Auth::login($user);
         $identityContext = $this->identityContextResolver->resolve($user);
@@ -73,12 +143,48 @@ class SocialAuthService
         $this->sessionGuardTelemetry->logSessionOwnershipResolved($request, $ownership);
 
         $request->session()->regenerate();
+        
+        // #region debug-point O:session-established
+        \Log::debug('[DEBUG O] Session established', [
+            'timestamp' => now()->toISOString(),
+            'sessionId' => $request->session()->getId(),
+            'userId' => Auth::id(),
+            'redirectUrl' => FrontendUrlBuilder::build(
+                '/auth/google/callback',
+                ['status' => 'success'],
+                $frontendBaseUrl,
+            ),
+        ]);
+        // #endregion
 
         return redirect(FrontendUrlBuilder::build(
             '/auth/google/callback',
-            ['user_id' => $user->id],
+            ['status' => 'success'],
             $frontendBaseUrl,
         ));
+    }
+
+    /**
+     * Extract the storefront base URL from the encrypted OAuth state parameter.
+     *
+     * The state was encrypted in {@see redirect()} with the tenant-specific
+     * frontend URL so the callback can bounce back to the correct domain.
+     */
+    private function resolveFrontendUrlFromState(Request $request): ?string
+    {
+        $state = $request->input('state');
+
+        if (!is_string($state) || $state === '') {
+            return null;
+        }
+
+        try {
+            $url = Crypt::decryptString($state);
+
+            return is_string($url) && $url !== '' ? $url : null;
+        } catch (\Exception) {
+            return null;
+        }
     }
 
     /**

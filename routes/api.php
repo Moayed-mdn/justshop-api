@@ -208,6 +208,7 @@ Route::prefix('/v1/merchant')
         require 'api/v1/merchant/stores.php';
         require 'api/v1/merchant/theme.php';
         require 'api/v1/merchant/billing.php'; // Phase 3: Subscription & Billing
+        require 'api/v1/merchant/shipping.php'; // Shipping Management
     });
 
 // ── 3. STOREFRONT CONTEXT ────────────────────────────────────────────────

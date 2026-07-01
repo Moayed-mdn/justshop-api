@@ -13,6 +13,10 @@ class VerifyEmail extends Notification implements ShouldQueue
 {
     use Queueable;
 
+    public function __construct(
+        private readonly ?string $frontendUrl = null,
+    ) {}
+
     public function via($notifiable)
     {
         return ['mail'];
@@ -53,7 +57,8 @@ class VerifyEmail extends Notification implements ShouldQueue
 
         return FrontendUrlBuilder::buildSigned(
             '/verify-email/' . $notifiable->getKey() . '/' . sha1($notifiable->getEmailForVerification()),
-            $backendUrl
+            $backendUrl,
+            baseUrl: $this->frontendUrl,
         );
     }
 

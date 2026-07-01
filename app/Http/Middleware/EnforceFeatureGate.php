@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Enums\Entitlement\FeatureKeyEnum;
 use App\Enums\ErrorCode;
+use App\Models\Store;
 use App\Services\Entitlement\FeatureGateService;
 use Closure;
 use Illuminate\Http\Request;
@@ -27,8 +28,8 @@ class EnforceFeatureGate
      */
     public function handle(Request $request, Closure $next, string $featureKey): Response
     {
-        // Extract store ID from route parameter
-        $storeId = $request->route('store');
+        $store = $request->route('store');
+        $storeId = $store instanceof Store ? $store->id : null;
 
         if (!$storeId) {
             return response()->json([

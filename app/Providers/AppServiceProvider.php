@@ -42,6 +42,11 @@ class AppServiceProvider extends ServiceProvider
             \App\Services\Billing\StripeProvider::class
         );
 
+        // Stripe Client for enhanced checkout
+        $this->app->singleton(\Stripe\StripeClient::class, function () {
+            return new \Stripe\StripeClient(config('services.stripe.secret'));
+        });
+
         // Wave 6: Policy Ownership Registry — singleton so registrations persist per request
         $this->app->singleton(
             \App\Services\Authorization\PolicyOwnershipRegistry::class,

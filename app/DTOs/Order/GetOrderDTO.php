@@ -14,7 +14,7 @@ class GetOrderDTO
         public int $userId,
     ) {}
 
-    public static function fromRequest(\App\Http\Requests\Order\GetOrderRequest $request, int $storeId): self
+    public static function fromRequest(\Illuminate\Http\Request $request, int $storeId): self
     {
         return new self(
             storeId: $storeId,

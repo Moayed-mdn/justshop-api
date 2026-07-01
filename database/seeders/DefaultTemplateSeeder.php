@@ -147,6 +147,18 @@ class DefaultTemplateSeeder extends Seeder
                 'type' => 'page',
                 'description' => 'Marketing landing page with hero banner',
                 'sections' => [
+                    'header' => [
+                        'type' => 'header',
+                        'settings' => [
+                            'sticky' => true,
+                            'transparent' => false,
+                            'full_width' => true,
+                            'show_topbar' => true,
+                            'show_search' => true,
+                            'show_cart' => true,
+                            'show_account' => true,
+                        ],
+                    ],
                     'hero' => [
                         'type' => 'hero',
                         'settings' => [
@@ -168,7 +180,7 @@ class DefaultTemplateSeeder extends Seeder
                         ],
                     ],
                 ],
-                'section_order' => ['hero', 'main', 'footer'],
+                'section_order' => ['header', 'hero', 'main', 'footer'],
                 'is_default' => false,
                 'is_active' => true,
             ]

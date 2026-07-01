@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ThemeSection extends Model
@@ -67,6 +68,11 @@ class ThemeSection extends Model
     /**
      * Scope to get only enabled sections
      */
+    public function blockInstances(): MorphMany
+    {
+        return $this->morphMany(ThemeBlockInstance::class, 'container')->orderBy('position');
+    }
+
     public function scopeEnabled($query)
     {
         return $query->where('is_enabled', true);

@@ -15,7 +15,7 @@ class UpdateAddressAction
     public function execute(Address $address, UpdateAddressDTO $dto): Address
     {
         if ($dto->isDefault) {
-            $this->addressRepository->unsetDefaultForType(
+            $this->addressRepository->clearDefaultsForAddressType(
                 $address->user_id,
                 $address->type,
                 $address->id,
@@ -34,11 +34,17 @@ class UpdateAddressAction
             'postal_code' => $dto->postalCode,
             'country' => $dto->country,
             'phone' => $dto->phone,
-            'is_default' => $dto->isDefault,
         ]);
 
         if ($dto->isDefault) {
-            $this->addressRepository->setDefault($address->user_id, $address->type, $address->id, $dto->storeId);
+            $this->addressRepository->setDefaultForAddressType(
+                $address->user_id,
+                $address->type,
+                $address->id,
+                $dto->storeId
+            );
+
+            return $updated->fresh();
         }
 
         return $updated;

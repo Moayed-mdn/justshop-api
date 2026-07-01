@@ -12,6 +12,7 @@ use App\Models\Store;
 use App\Repositories\Category\CategoryRepository;
 use App\Repositories\Navigation\NavigationMenuRepository;
 use App\Services\Cms\LocalizedContentResolver;
+use Illuminate\Support\Facades\Storage;
 
 class SectionDataResolverService
 {
@@ -57,7 +58,7 @@ class SectionDataResolverService
             'settings' => $settings,
             'data' => [
                 'navigation' => $navigation,
-                'logo_url' => $store->logo_url ?? null,
+                'logo_url' => $this->resolvePublicImageUrl((string) ($store->logo_url ?? '')),
                 'store_name' => $store->name,
             ],
         ];
@@ -297,5 +298,22 @@ class SectionDataResolverService
             'external' => $item->target === '_blank',
             'children' => $children,
         ];
+    }
+
+    private function resolvePublicImageUrl(string $path): string
+    {
+        if ($path === '') {
+            return '';
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        if (preg_match('#^(?:cms|products|categories|brands|hero|variants|stores|tags)/#', $path)) {
+            return Storage::disk('public')->url($path);
+        }
+
+        return asset($path);
     }
 }

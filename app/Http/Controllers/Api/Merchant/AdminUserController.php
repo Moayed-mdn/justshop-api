@@ -29,13 +29,13 @@ use Illuminate\Http\JsonResponse;
 
 class AdminUserController extends Controller
 {
-    public function index(ListUsersRequest $request, ListUsersAction $action, int $store): JsonResponse
+    public function index(ListUsersRequest $request, ListUsersAction $action, Store $store): JsonResponse
     {
         // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        $storeModel = Store::findOrFail($store);
+        $storeModel = $store;
         $this->authorize('viewAny', [ManagedUser::class, $storeModel]);
         
-        $dto = ListUsersDTO::fromRequest($request, $store);
+        $dto = ListUsersDTO::fromRequest($request, $store->id);
         $users = $action->execute($dto);
 
         return $this->paginated(
@@ -44,13 +44,13 @@ class AdminUserController extends Controller
         );
     }
 
-    public function store(CreateUserRequest $request, CreateUserAction $action, int $store): JsonResponse
+    public function store(CreateUserRequest $request, CreateUserAction $action, Store $store): JsonResponse
     {
         // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        $storeModel = Store::findOrFail($store);
+        $storeModel = $store;
         $this->authorize('create', [ManagedUser::class, $storeModel]);
         
-        $dto = CreateUserDTO::fromRequest($request, $store);
+        $dto = CreateUserDTO::fromRequest($request, $store->id);
         $user = $action->execute($dto);
 
         return $this->success(
@@ -60,25 +60,25 @@ class AdminUserController extends Controller
         );
     }
 
-    public function show(Request $request, GetUserAction $action, int $store, int $user): JsonResponse
+    public function show(Request $request, GetUserAction $action, Store $store, int $user): JsonResponse
     {
         // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        $storeModel = Store::findOrFail($store);
+        $storeModel = $store;
         $this->authorize('view', [ManagedUser::class, $storeModel]);
         
-        $dto = GetUserDTO::fromRequest($request, $store, $user);
+        $dto = GetUserDTO::fromRequest($request, $store->id, $user);
         $userModel = $action->execute($dto);
 
         return $this->success(new AdminUserDetailResource($userModel));
     }
 
-    public function block(Request $request, BlockUserAction $action, int $store, int $user): JsonResponse
+    public function block(Request $request, BlockUserAction $action, Store $store, int $user): JsonResponse
     {
         // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        $storeModel = Store::findOrFail($store);
+        $storeModel = $store;
         $this->authorize('update', [ManagedUser::class, $storeModel]);
         
-        $dto = BlockUserDTO::fromRequest($request, $store, $user);
+        $dto = BlockUserDTO::fromRequest($request, $store->id, $user);
         $blockedUser = $action->execute($dto);
 
         return $this->success(
@@ -87,13 +87,13 @@ class AdminUserController extends Controller
         );
     }
 
-    public function unblock(Request $request, UnblockUserAction $action, int $store, int $user): JsonResponse
+    public function unblock(Request $request, UnblockUserAction $action, Store $store, int $user): JsonResponse
     {
         // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        $storeModel = Store::findOrFail($store);
+        $storeModel = $store;
         $this->authorize('update', [ManagedUser::class, $storeModel]);
         
-        $dto = UnblockUserDTO::fromRequest($request, $store, $user);
+        $dto = UnblockUserDTO::fromRequest($request, $store->id, $user);
         $unblockedUser = $action->execute($dto);
 
         return $this->success(
@@ -102,25 +102,25 @@ class AdminUserController extends Controller
         );
     }
 
-    public function destroy(Request $request, DeleteUserAction $action, int $store, int $user): JsonResponse
+    public function destroy(Request $request, DeleteUserAction $action, Store $store, int $user): JsonResponse
     {
         // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        $storeModel = Store::findOrFail($store);
+        $storeModel = $store;
         $this->authorize('delete', [ManagedUser::class, $storeModel]);
         
-        $dto = DeleteUserDTO::fromRequest($request, $store, $user);
+        $dto = DeleteUserDTO::fromRequest($request, $store->id, $user);
         $action->execute($dto);
 
         return $this->success(null, __('admin.user_deleted'));
     }
 
-    public function restore(Request $request, RestoreUserAction $action, int $store, int $user): JsonResponse
+    public function restore(Request $request, RestoreUserAction $action, Store $store, int $user): JsonResponse
     {
         // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        $storeModel = Store::findOrFail($store);
+        $storeModel = $store;
         $this->authorize('update', [ManagedUser::class, $storeModel]);
         
-        $dto = RestoreUserDTO::fromRequest($request, $store, $user);
+        $dto = RestoreUserDTO::fromRequest($request, $store->id, $user);
         $restoredUser = $action->execute($dto);
 
         return $this->success(

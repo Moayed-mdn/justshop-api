@@ -20,7 +20,7 @@ use App\Models\Store;
 use App\Traits\ApiResponserTrait;
 use Illuminate\Http\JsonResponse;
 
-class ThemeTemplateController extends Controller
+class PageTemplateController extends Controller
 {
     use ApiResponserTrait;
 
@@ -34,12 +34,12 @@ class ThemeTemplateController extends Controller
     /**
      * List all templates for a store
      */
-    public function index(int $store): JsonResponse
+    public function index(Store $store): JsonResponse
     {
-        $storeModel = Store::findOrFail($store);
+        $storeModel = $store;
         $this->authorize('viewAny', [PageTemplate::class, $storeModel]);
 
-        $templates = PageTemplate::where('store_id', $store)
+        $templates = PageTemplate::where('store_id', $store->id)
             ->withCount('pages')
             ->orderBy('is_default', 'desc')
             ->orderBy('name')
@@ -51,24 +51,24 @@ class ThemeTemplateController extends Controller
     /**
      * Create a new template
      */
-    public function store(CreateTemplateRequest $request, int $store): JsonResponse
+    public function store(CreateTemplateRequest $request, Store $store): JsonResponse
     {
-        $storeModel = Store::findOrFail($store);
+        $storeModel = $store;
         $this->authorize('create', [PageTemplate::class, $storeModel]);
 
         $template = $this->createTemplateAction->execute(
-            CreateTemplateDTO::fromRequest($request, $store)
+            CreateTemplateDTO::fromRequest($request, $store->id)
         );
 
-        return $this->success(new PageTemplateResource($template), 201);
+        return $this->success(new PageTemplateResource($template), 'success', 201);
     }
 
     /**
      * Show a specific template
      */
-    public function show(int $store, int $template): JsonResponse
+    public function show(Store $store, int $template): JsonResponse
     {
-        $template = PageTemplate::where('store_id', $store)
+        $template = PageTemplate::where('store_id', $store->id)
             ->findOrFail($template);
 
         $this->authorize('view', $template);
@@ -79,9 +79,9 @@ class ThemeTemplateController extends Controller
     /**
      * Update a template
      */
-    public function update(UpdateTemplateRequest $request, int $store, int $template): JsonResponse
+    public function update(UpdateTemplateRequest $request, Store $store, int $template): JsonResponse
     {
-        $template = PageTemplate::where('store_id', $store)
+        $template = PageTemplate::where('store_id', $store->id)
             ->findOrFail($template);
 
         $this->authorize('update', $template);
@@ -97,9 +97,9 @@ class ThemeTemplateController extends Controller
     /**
      * Delete a template
      */
-    public function destroy(int $store, int $template): JsonResponse
+    public function destroy(Store $store, int $template): JsonResponse
     {
-        $template = PageTemplate::where('store_id', $store)
+        $template = PageTemplate::where('store_id', $store->id)
             ->findOrFail($template);
 
         $this->authorize('delete', $template);
@@ -112,16 +112,16 @@ class ThemeTemplateController extends Controller
     /**
      * Duplicate a template
      */
-    public function duplicate(int $store, int $template): JsonResponse
+    public function duplicate(Store $store, int $template): JsonResponse
     {
-        $template = PageTemplate::where('store_id', $store)
+        $template = PageTemplate::where('store_id', $store->id)
             ->findOrFail($template);
 
-        $storeModel = Store::findOrFail($store);
+        $storeModel = $store;
         $this->authorize('create', [PageTemplate::class, $storeModel]);
 
         $duplicatedTemplate = $this->duplicateTemplateAction->execute($template);
 
-        return $this->success(new PageTemplateResource($duplicatedTemplate), 201);
+        return $this->success(new PageTemplateResource($duplicatedTemplate), 'success', 201);
     }
 }

@@ -13,14 +13,17 @@ class CustomResetPassword extends Notification
 {
     use Queueable;
 
-
     public $token;
+
+    private ?string $frontendUrl = null;
+
     /**
      * Create a new notification instance.
      */
-    public function __construct($token)
+    public function __construct($token, ?string $frontendUrl = null)
     {
         $this->token = $token;
+        $this->frontendUrl = $frontendUrl;
     }
 
     /**
@@ -44,7 +47,7 @@ class CustomResetPassword extends Notification
         $frontendUrl = FrontendUrlBuilder::build('/reset-password', [
             'token' => $token,
             'email' => $email
-        ]);
+        ], baseUrl: $this->frontendUrl);
 
         return (new MailMessage)
         ->subject('Reset Your Password - ' . config('app.name'))

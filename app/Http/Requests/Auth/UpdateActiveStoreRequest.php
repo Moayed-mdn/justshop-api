@@ -16,7 +16,7 @@ class UpdateActiveStoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'store_id' => ['required', 'integer', 'exists:stores,id'],
+            'store_id' => ['required'],
         ];
     }
 }

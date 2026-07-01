@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services\Storefront\Runtime;
 
+use App\Enums\Theme\BlockTypeEnum;
+use App\Enums\Theme\TemplateTypeEnum;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Category;
 use App\Models\Cms\Marketing\Store\StoreMarketingPage;
 use App\Models\Product;
 use App\Models\Store;
+use App\Models\Theme\ThemeTemplate;
 use App\Repositories\Category\CategoryRepository;
 use App\Repositories\Navigation\NavigationMenuRepository;
 use App\Repositories\Theme\ThemeRepository;
@@ -775,27 +779,6 @@ class StorefrontRuntimeService
             $mappedSections = $orderedSections;
         }
 
-        $layoutOrder = ['header', 'content', 'footer'];
-
-        if ($resolvedTemplate && !empty($resolvedTemplate->sectionOrder)) {
-            $layoutOrder = [];
-            foreach ($resolvedTemplate->sectionOrder as $sectionId) {
-                $sectionType = $resolvedTemplate->getSectionType($sectionId);
-                $mapped = match ($sectionType) {
-                    'header' => 'header',
-                    'footer' => 'footer',
-                    'page_content' => 'content',
-                    default => null,
-                };
-                if ($mapped !== null) {
-                    $layoutOrder[] = $mapped;
-                }
-            }
-            if (!in_array('content', $layoutOrder, true)) {
-                $layoutOrder[] = 'content';
-            }
-        }
-
         $payload = [
             'id' => $pageId,
             'page_template_id' => $page->page_template_id,
@@ -804,7 +787,7 @@ class StorefrontRuntimeService
             'slug' => ltrim($slug, '/'),
             'locale' => $locale,
             'layout' => 'marketing',
-            'layout_order' => $layoutOrder,
+            'layout_order' => ['header', 'content', 'footer'],
             'status' => $preview && !$page->isPublished() ? 'draft' : 'published',
             'sections' => $mappedSections,
             'seo' => $this->mapSeoPayload($store, $resolvedSeo, 'website', $this->localizedStorefrontPath($page, $locale)),
@@ -817,7 +800,7 @@ class StorefrontRuntimeService
             $payload['template'] = $templateData;
         }
 
-        return $payload;
+        return $this->addChromeToPayload($payload, $store, TemplateTypeEnum::HOME);
     }
 
     /**
@@ -887,7 +870,16 @@ class StorefrontRuntimeService
             $payload['template'] = $templateData;
         }
 
-        return $payload;
+        $templateType = match ($type) {
+            'login' => TemplateTypeEnum::LOGIN,
+            'register' => TemplateTypeEnum::REGISTER,
+            'forgot-password' => TemplateTypeEnum::FORGOT_PASSWORD,
+            'reset-password' => TemplateTypeEnum::RESET_PASSWORD,
+            'verify-email' => TemplateTypeEnum::VERIFY_EMAIL,
+            default => TemplateTypeEnum::ACCOUNT,
+        };
+
+        return $this->addChromeToPayload($payload, $store, $templateType);
     }
 
     /**
@@ -901,7 +893,7 @@ class StorefrontRuntimeService
         $path = $this->shopPath($locale);
         $title = $locale === 'ar' ? 'تسوق' : 'Shop';
 
-        return [
+        $payload = [
             'id' => 'shop',
             'pageType' => 'shop_page',
             'title' => $title,
@@ -930,6 +922,8 @@ class StorefrontRuntimeService
             'publishedAt' => null,
             'updatedAt' => now()->toIso8601String(),
         ];
+
+        return $this->addChromeToPayload($payload, $store, TemplateTypeEnum::SHOP);
     }
 
     private function buildHomePagePayload(Store $store, string $locale): array
@@ -957,7 +951,7 @@ class StorefrontRuntimeService
         }
 
         // Fallback: default homepage with category grid and featured products
-        return [
+        return $this->addChromeToPayload([
             'id' => 'home',
             'pageType' => 'home',
             'title' => $store->name,
@@ -1004,7 +998,7 @@ class StorefrontRuntimeService
             ),
             'publishedAt' => null,
             'updatedAt' => now()->toIso8601String(),
-        ];
+        ], $store, TemplateTypeEnum::HOME);
     }
 
     /**
@@ -1017,7 +1011,7 @@ class StorefrontRuntimeService
         $path = $this->categoryPath($category, $locale);
         $categorySlug = (string) ($translation?->slug ?? $category->slug);
 
-        return [
+        return $this->addChromeToPayload([
             'id' => $pageId,
             'pageType' => 'category_page',
             'title' => $title,
@@ -1060,7 +1054,7 @@ class StorefrontRuntimeService
             ),
             'publishedAt' => null,
             'updatedAt' => $category->updated_at?->toIso8601String() ?? now()->toIso8601String(),
-        ];
+        ], $store, TemplateTypeEnum::CATEGORY);
     }
 
     /**
@@ -1086,7 +1080,7 @@ class StorefrontRuntimeService
             $attributes[$key] = array_values(array_unique($values));
         }
 
-        return [
+        return $this->addChromeToPayload([
             'id' => $pageId,
             'pageType' => 'product_page',
             'title' => $title,
@@ -1146,7 +1140,7 @@ class StorefrontRuntimeService
             ),
             'publishedAt' => null,
             'updatedAt' => $product->updated_at?->toIso8601String() ?? now()->toIso8601String(),
-        ];
+        ], $store, TemplateTypeEnum::PRODUCT);
     }
 
     private function mapProductGallery(Product $product): array
@@ -1501,7 +1495,106 @@ class StorefrontRuntimeService
         ];
     }
 
-    private function resolvePublicImageUrl(string $path): string
+    /**
+     * Inject header section data (with blocks) from the active theme's HOME template
+     * into the page payload. Block image URLs are resolved to absolute paths.
+     */
+    private function injectChromeHeaderSection(array $payload, Store $store): array
+    {
+        $activeTheme = $this->themeRepository->getActiveForStore($store->id);
+        if ($activeTheme) {
+            $chromeTemplate = ThemeTemplate::where('theme_id', $activeTheme->id)
+                ->where('type', TemplateTypeEnum::HOME)
+                ->with(['sections' => fn ($q) => $q->where('type', 'header'), 'sections.blocks'])
+                ->first();
+
+            if ($chromeTemplate && $chromeTemplate->sections->isNotEmpty()) {
+                $header = $chromeTemplate->sections->first();
+                $payload['themeHeaderSection'] = [
+                    'id' => (string) $header->id,
+                    'type' => $header->type?->value ?? (string) $header->type,
+                    'settings' => $this->resolveBlockImageUrls($header->settings ?? []),
+                    'blocks' => $header->blocks->map(fn ($b) => [
+                        'id' => (string) $b->id,
+                        'type' => $b->type?->value ?? (string) $b->type,
+                        'name' => $b->name,
+                        'is_enabled' => (bool) ($b->is_enabled ?? true),
+                        'settings' => tap(
+                            $this->resolveBlockImageUrls($b->settings ?? []),
+                            function (array &$settings) use ($b) {
+                                if ($b->type === BlockTypeEnum::LOGO && empty($settings['logo_url'])) {
+                                    $settings['logo_url'] = Storage::disk('public')->url('cms/default-logo.png');
+                                }
+                            }
+                        ),
+                        'content' => $this->resolveBlockImageUrls($b->content ?? []),
+                        'position' => (int) $b->position,
+                    ])->values()->toArray(),
+                ];
+            }
+        }
+
+        return $payload;
+    }
+
+    /**
+     * Add default chrome sections (layout_order + themeHeaderSection) to any page payload.
+     * Checks the given template type for header/footer enabled/disabled state.
+     */
+    private function addChromeToPayload(array $payload, Store $store, ?TemplateTypeEnum $templateType = null): array
+    {
+        $payload['layout_order'] ??= ['header', 'content', 'footer'];
+
+        if ($templateType) {
+            $activeTheme = $this->themeRepository->getActiveForStore($store->id);
+            if ($activeTheme) {
+                $template = ThemeTemplate::where('theme_id', $activeTheme->id)
+                    ->where('type', $templateType)
+                    ->with(['sections' => fn ($q) => $q->orderBy('position')])
+                    ->first();
+
+                if ($template && $template->sections->isNotEmpty()) {
+                    $chromeOrder = [];
+                    $chromeSections = [];
+                    foreach ($template->sections as $section) {
+                        $type = $section->type->value;
+                        $enabled = (bool) ($section->pivot->is_enabled ?? true);
+                        if ($enabled && in_array($type, ['header', 'announcement_bar', 'content', 'footer', 'copyright_bar'], true)) {
+                            $chromeOrder[] = $type;
+                            $chromeSections[$type] = $this->resolveBlockImageUrls($section->settings ?? []);
+                        }
+                    }
+                    if (!empty($chromeOrder)) {
+                        $payload['layout_order'] = $chromeOrder;
+                    }
+                    if (!empty($chromeSections)) {
+                        $payload['chrome_sections'] = $chromeSections;
+                    }
+                }
+            }
+        }
+
+        return $this->injectChromeHeaderSection($payload, $store);
+    }
+
+    /**
+     * Resolve image-like values in a settings/content array to absolute URLs.
+     * Any string value that looks like a relative storage path (e.g. "cms/xxx.jpg")
+     * is resolved via Storage::url().
+     */
+    public function resolveBlockImageUrls(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if (is_string($value) && $value !== '' && !str_starts_with($value, 'http://') && !str_starts_with($value, 'https://')) {
+                if (preg_match('#^(?:cms|products|categories|brands|hero|variants|stores|tags)/#', $value)) {
+                    $data[$key] = $this->resolvePublicImageUrl($value);
+                }
+            }
+        }
+        return $data;
+    }
+
+    public function resolvePublicImageUrl(string $path): string
     {
         if ($path === '') {
             return '';
@@ -1511,8 +1604,8 @@ class StorefrontRuntimeService
             return $path;
         }
 
-        // For CMS uploaded images, use Storage::url() to get the correct public URL
-        if (str_starts_with($path, 'cms/') || str_starts_with($path, 'products/') || str_starts_with($path, 'categories/') || str_starts_with($path, 'brands/')) {
+        // For uploaded images, use Storage::url() to get the correct public URL
+        if (preg_match('#^(?:cms|products|categories|brands|hero|variants|stores|tags)/#', $path)) {
             return \Illuminate\Support\Facades\Storage::disk('public')->url($path);
         }
 
@@ -2037,8 +2130,8 @@ class StorefrontRuntimeService
                     'fontHeading' => $settings['typography']['headingFont'] ?? $settings['fonts']['heading'] ?? (string) config('storefront_runtime.theme.tokens.font_heading'),
                 ],
                 'assets' => [
-                    'logoUrl' => $store->logo_url,
-                    'faviconUrl' => $store->favicon_url,
+                    'logoUrl' => $this->resolvePublicImageUrl((string) ($store->logo_url ?? '')),
+                    'faviconUrl' => $this->resolvePublicImageUrl((string) ($store->favicon_url ?? '')),
                 ],
                 'settings' => [
                     'radius' => $settings['radius'] ?? (string) config('storefront_runtime.theme.radius', 'md'),

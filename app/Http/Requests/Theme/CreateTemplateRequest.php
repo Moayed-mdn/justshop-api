@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Theme;
 
+use App\Models\Store;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -22,7 +23,8 @@ class CreateTemplateRequest extends FormRequest
      */
     public function rules(): array
     {
-        $storeId = $this->route('store');
+        $store = $this->route('store');
+        $storeId = $store instanceof Store ? $store->id : $store;
 
         return [
             'name' => ['required', 'string', 'max:255'],
@@ -58,4 +60,3 @@ class CreateTemplateRequest extends FormRequest
         ];
     }
 }
-

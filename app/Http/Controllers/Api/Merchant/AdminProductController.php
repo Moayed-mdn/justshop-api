@@ -28,63 +28,63 @@ use Illuminate\Http\JsonResponse;
 
 class AdminProductController extends Controller
 {
-    public function index(ListProductsRequest $request, ListProductsAction $action, int $store): JsonResponse
+    public function index(ListProductsRequest $request, ListProductsAction $action, Store $store): JsonResponse
     {
         // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        $storeModel = Store::findOrFail($store);
+        $storeModel = $store;
         $this->authorize('viewAny', $storeModel);
         
-        $products = $action->execute(ListProductsDTO::fromRequest($request, $store));
+        $products = $action->execute(ListProductsDTO::fromRequest($request, $store->id));
         return $this->paginated($products, AdminProductResource::collection($products));
     }
 
-    public function show(GetProductRequest $request, GetProductAction $action, int $store, int $product): JsonResponse
+    public function show(GetProductRequest $request, GetProductAction $action, Store $store, int $product): JsonResponse
     {
         // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        $storeModel = Store::findOrFail($store);
+        $storeModel = $store;
         $this->authorize('view', $storeModel);
         
-        $productModel = $action->execute(GetProductDTO::fromRequest($request, $store, $product));
+        $productModel = $action->execute(GetProductDTO::fromRequest($request, $store->id, $product));
         return $this->success(new AdminProductDetailResource($productModel));
     }
 
-    public function store(CreateProductRequest $request, CreateProductAction $action, int $store): JsonResponse
+    public function store(CreateProductRequest $request, CreateProductAction $action, Store $store): JsonResponse
     {
         // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        $storeModel = Store::findOrFail($store);
+        $storeModel = $store;
         $this->authorize('create', $storeModel);
         
-        $product = $action->execute(CreateProductDTO::fromRequest($request, $store));
+        $product = $action->execute(CreateProductDTO::fromRequest($request, $store->id));
         return $this->success(new AdminProductDetailResource($product), __('admin.product_created'));
     }
 
-    public function update(UpdateProductRequest $request, UpdateProductAction $action, int $store, int $product): JsonResponse
+    public function update(UpdateProductRequest $request, UpdateProductAction $action, Store $store, int $product): JsonResponse
     {
         // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        $storeModel = Store::findOrFail($store);
+        $storeModel = $store;
         $this->authorize('update', $storeModel);
         
-        $productModel = $action->execute(UpdateProductDTO::fromRequest($request, $store, $product));
+        $productModel = $action->execute(UpdateProductDTO::fromRequest($request, $store->id, $product));
         return $this->success(new AdminProductDetailResource($productModel), __('admin.product_updated'));
     }
 
-    public function destroy(DeleteProductRequest $request, DeleteProductAction $action, int $store, int $product): JsonResponse
+    public function destroy(DeleteProductRequest $request, DeleteProductAction $action, Store $store, int $product): JsonResponse
     {
         // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        $storeModel = Store::findOrFail($store);
+        $storeModel = $store;
         $this->authorize('delete', $storeModel);
         
-        $action->execute(DeleteProductDTO::fromRequest($request, $store, $product));
+        $action->execute(DeleteProductDTO::fromRequest($request, $store->id, $product));
         return $this->success(null, __('admin.product_deleted'));
     }
 
-    public function restore(RestoreProductRequest $request, RestoreProductAction $action, int $store, int $product): JsonResponse
+    public function restore(RestoreProductRequest $request, RestoreProductAction $action, Store $store, int $product): JsonResponse
     {
         // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        $storeModel = Store::findOrFail($store);
+        $storeModel = $store;
         $this->authorize('update', $storeModel);
         
-        $productModel = $action->execute(RestoreProductDTO::fromRequest($request, $store, $product));
+        $productModel = $action->execute(RestoreProductDTO::fromRequest($request, $store->id, $product));
         return $this->success(new AdminProductDetailResource($productModel), __('admin.product_restored'));
     }
 }

@@ -34,6 +34,7 @@ class Order extends Model
         'payment_intent_id',
         'stripe_checkout_session_id',     // ← NEW
         'shipping_method',
+        'shipping_method_id',             // ← NEW
         'tracking_number',
         'shipped_at',
         'delivered_at',
@@ -82,6 +83,11 @@ class Order extends Model
     public function store(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Store::class);
+    }
+
+    public function shippingMethodRelation(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(ShippingMethod::class, 'shipping_method_id');
     }
 
     // ── Auto-generate order number ─────────────────────────────

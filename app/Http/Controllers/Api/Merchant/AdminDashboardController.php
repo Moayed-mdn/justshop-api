@@ -15,15 +15,16 @@ use App\Http\Requests\Admin\Dashboard\GetTopProductsRequest;
 use App\Http\Resources\Admin\Dashboard\StoreStatsResource;
 use App\Http\Resources\Admin\Dashboard\RecentOrderResource;
 use App\Http\Resources\Admin\Dashboard\TopProductResource;
+use App\Models\Store;
 use App\Support\Auth\DashboardAuthorization;
 use Illuminate\Http\JsonResponse;
 
 class AdminDashboardController extends Controller
 {
-    public function stats(GetStatsRequest $request, GetStatsAction $action, int $store): JsonResponse
+    public function stats(GetStatsRequest $request, GetStatsAction $action, Store $store): JsonResponse
     {
         $this->authorize('viewStats', [DashboardAuthorization::class, $this->currentStore()]);
-        $dto = GetStatsDTO::fromRequest($request, $store);
+        $dto = GetStatsDTO::fromRequest($request, $store->id);
         $stats = $action->execute($dto);
 
         return $this->success(
@@ -32,10 +33,10 @@ class AdminDashboardController extends Controller
         );
     }
 
-    public function recentOrders(GetRecentOrdersRequest $request, GetRecentOrdersAction $action, int $store): JsonResponse
+    public function recentOrders(GetRecentOrdersRequest $request, GetRecentOrdersAction $action, Store $store): JsonResponse
     {
         $this->authorize('viewRecentOrders', [DashboardAuthorization::class, $this->currentStore()]);
-        $dto = GetRecentOrdersDTO::fromRequest($request, $store);
+        $dto = GetRecentOrdersDTO::fromRequest($request, $store->id);
         $orders = $action->execute($dto);
 
         return $this->success(
@@ -44,10 +45,10 @@ class AdminDashboardController extends Controller
         );
     }
 
-    public function topProducts(GetTopProductsRequest $request, GetTopProductsAction $action, int $store): JsonResponse
+    public function topProducts(GetTopProductsRequest $request, GetTopProductsAction $action, Store $store): JsonResponse
     {
         $this->authorize('viewTopProducts', [DashboardAuthorization::class, $this->currentStore()]);
-        $dto = GetTopProductsDTO::fromRequest($request, $store);
+        $dto = GetTopProductsDTO::fromRequest($request, $store->id);
         $products = $action->execute($dto);
 
         return $this->success(

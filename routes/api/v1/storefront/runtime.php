@@ -12,6 +12,8 @@ Route::prefix('runtime')
         Route::get('/page/{id}', [StorefrontRuntimeController::class, 'page']);
         Route::get('/navigation', [StorefrontRuntimeController::class, 'navigation']);
         Route::get('/theme', [StorefrontRuntimeController::class, 'theme']);
+        Route::get('/template/{type}', [StorefrontRuntimeController::class, 'systemTemplate']);
+        Route::get('/section-groups', [StorefrontRuntimeController::class, 'sectionGroups']);
         Route::post('/preview/validate', [StorefrontRuntimeController::class, 'validatePreview']);
     });
 

@@ -31,6 +31,21 @@ class ThemeTemplateControllerTest extends TestCase
         $this->actingAs($this->merchant);
     }
 
+    private function templatesPath(?int $templateId = null, bool $duplicate = false): string
+    {
+        $path = "/api/v1/merchant/stores/{$this->store->slug}/templates";
+
+        if ($templateId !== null) {
+            $path .= "/{$templateId}";
+        }
+
+        if ($duplicate) {
+            $path .= '/duplicate';
+        }
+
+        return $path;
+    }
+
     public function test_list_templates_returns_all_templates_for_store(): void
     {
         PageTemplate::factory()->count(3)->create(['store_id' => $this->store->id]);
@@ -39,7 +54,7 @@ class ThemeTemplateControllerTest extends TestCase
         $otherStore = Store::factory()->create();
         PageTemplate::factory()->create(['store_id' => $otherStore->id]);
 
-        $response = $this->getJson("/api/v1/merchant/stores/{$this->store->id}/templates");
+        $response = $this->getJson($this->templatesPath());
 
         $response->assertStatus(200);
         
@@ -73,7 +88,7 @@ class ThemeTemplateControllerTest extends TestCase
             'is_default' => false,
         ]);
 
-        $response = $this->getJson("/api/v1/merchant/stores/{$this->store->id}/templates");
+        $response = $this->getJson($this->templatesPath());
 
         $response->assertStatus(200);
         $names = collect($response->json('data'))->pluck('name')->toArray();
@@ -96,7 +111,7 @@ class ThemeTemplateControllerTest extends TestCase
             'is_default' => false,
         ];
 
-        $response = $this->postJson("/api/v1/merchant/stores/{$this->store->id}/templates", $payload);
+        $response = $this->postJson($this->templatesPath(), $payload);
 
         $response->assertStatus(201);
         $response->assertJsonPath('data.name', 'Landing Page');
@@ -111,7 +126,7 @@ class ThemeTemplateControllerTest extends TestCase
 
     public function test_create_template_validates_required_fields(): void
     {
-        $response = $this->postJson("/api/v1/merchant/stores/{$this->store->id}/templates", []);
+        $response = $this->postJson($this->templatesPath(), []);
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['name', 'handle', 'type']);
@@ -132,7 +147,7 @@ class ThemeTemplateControllerTest extends TestCase
             'section_order' => [],
         ];
 
-        $response = $this->postJson("/api/v1/merchant/stores/{$this->store->id}/templates", $payload);
+        $response = $this->postJson($this->templatesPath(), $payload);
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['handle']);
@@ -154,7 +169,7 @@ class ThemeTemplateControllerTest extends TestCase
             'section_order' => [],
         ];
 
-        $response = $this->postJson("/api/v1/merchant/stores/{$this->store->id}/templates", $payload);
+        $response = $this->postJson($this->templatesPath(), $payload);
 
         $response->assertStatus(201);
     }
@@ -166,7 +181,7 @@ class ThemeTemplateControllerTest extends TestCase
             'name' => 'Test Template',
         ]);
 
-        $response = $this->getJson("/api/v1/merchant/stores/{$this->store->id}/templates/{$template->id}");
+        $response = $this->getJson($this->templatesPath($template->id));
 
         $response->assertStatus(200);
         $response->assertJsonPath('data.id', $template->id);
@@ -178,7 +193,7 @@ class ThemeTemplateControllerTest extends TestCase
         $otherStore = Store::factory()->create();
         $template = PageTemplate::factory()->create(['store_id' => $otherStore->id]);
 
-        $response = $this->getJson("/api/v1/merchant/stores/{$this->store->id}/templates/{$template->id}");
+        $response = $this->getJson($this->templatesPath($template->id));
 
         $response->assertStatus(404);
     }
@@ -197,10 +212,7 @@ class ThemeTemplateControllerTest extends TestCase
             ],
         ];
 
-        $response = $this->putJson(
-            "/api/v1/merchant/stores/{$this->store->id}/templates/{$template->id}",
-            $payload
-        );
+        $response = $this->putJson($this->templatesPath($template->id), $payload);
 
         $response->assertStatus(200);
         $response->assertJsonPath('data.name', 'Updated Name');
@@ -225,10 +237,7 @@ class ThemeTemplateControllerTest extends TestCase
 
         $payload = ['handle' => 'page.one']; // Try to use template1's handle
 
-        $response = $this->putJson(
-            "/api/v1/merchant/stores/{$this->store->id}/templates/{$template2->id}",
-            $payload
-        );
+        $response = $this->putJson($this->templatesPath($template2->id), $payload);
 
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['handle']);
@@ -241,7 +250,7 @@ class ThemeTemplateControllerTest extends TestCase
             'is_default' => false,
         ]);
 
-        $response = $this->deleteJson("/api/v1/merchant/stores/{$this->store->id}/templates/{$template->id}");
+        $response = $this->deleteJson($this->templatesPath($template->id));
 
         $response->assertStatus(204);
         $this->assertDatabaseMissing('page_templates', ['id' => $template->id]);
@@ -254,7 +263,7 @@ class ThemeTemplateControllerTest extends TestCase
             'is_default' => true,
         ]);
 
-        $response = $this->deleteJson("/api/v1/merchant/stores/{$this->store->id}/templates/{$template->id}");
+        $response = $this->deleteJson($this->templatesPath($template->id));
 
         $response->assertStatus(422);
         $this->assertDatabaseHas('page_templates', ['id' => $template->id]);
@@ -273,7 +282,7 @@ class ThemeTemplateControllerTest extends TestCase
             'page_template_id' => $template->id,
         ]);
 
-        $response = $this->deleteJson("/api/v1/merchant/stores/{$this->store->id}/templates/{$template->id}");
+        $response = $this->deleteJson($this->templatesPath($template->id));
 
         $response->assertStatus(422);
         $this->assertDatabaseHas('page_templates', ['id' => $template->id]);
@@ -290,7 +299,7 @@ class ThemeTemplateControllerTest extends TestCase
             ],
         ]);
 
-        $response = $this->postJson("/api/v1/merchant/stores/{$this->store->id}/templates/{$template->id}/duplicate");
+        $response = $this->postJson($this->templatesPath($template->id, true));
 
         $response->assertStatus(201);
         $response->assertJsonPath('data.name', 'Original Template (Copy)');
@@ -307,7 +316,7 @@ class ThemeTemplateControllerTest extends TestCase
             'handle' => 'page.original',
         ]);
 
-        $response = $this->postJson("/api/v1/merchant/stores/{$this->store->id}/templates/{$template->id}/duplicate");
+        $response = $this->postJson($this->templatesPath($template->id, true));
 
         $response->assertStatus(201);
         
@@ -322,10 +331,10 @@ class ThemeTemplateControllerTest extends TestCase
         $template = PageTemplate::factory()->create(['store_id' => $otherStore->id]);
 
         $endpoints = [
-            'GET' => "/api/v1/merchant/stores/{$this->store->id}/templates/{$template->id}",
-            'PUT' => "/api/v1/merchant/stores/{$this->store->id}/templates/{$template->id}",
-            'DELETE' => "/api/v1/merchant/stores/{$this->store->id}/templates/{$template->id}",
-            'POST' => "/api/v1/merchant/stores/{$this->store->id}/templates/{$template->id}/duplicate",
+            'GET' => $this->templatesPath($template->id),
+            'PUT' => $this->templatesPath($template->id),
+            'DELETE' => $this->templatesPath($template->id),
+            'POST' => $this->templatesPath($template->id, true),
         ];
 
         foreach ($endpoints as $method => $url) {

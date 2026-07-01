@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Store;
 
+use App\Models\Store;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -14,7 +15,8 @@ class UpdateStoreRequest extends FormRequest
 
     public function rules(): array
     {
-        $storeId = $this->route('store');
+        $store = $this->route('store');
+        $storeId = $store instanceof Store ? $store->id : $store;
 
         return [
             'name' => ['sometimes', 'string', 'max:255'],

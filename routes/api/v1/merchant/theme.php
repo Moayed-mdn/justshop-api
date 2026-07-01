@@ -8,7 +8,10 @@ use App\Http\Controllers\Api\Merchant\Theme\ThemeBlockController;
 use App\Http\Controllers\Api\Merchant\Theme\ThemeController;
 use App\Http\Controllers\Api\Merchant\Theme\ThemeSectionController;
 use App\Http\Controllers\Api\Merchant\Theme\SectionSchemaController;
-use App\Http\Controllers\Api\Merchant\Theme\ThemeTemplateController;
+use App\Http\Controllers\Api\Merchant\Theme\PageTemplateController;
+use App\Http\Controllers\Api\Merchant\Theme\SystemTemplateController;
+use App\Http\Controllers\Api\Merchant\Theme\ThemeSectionGroupController;
+use App\Http\Controllers\Api\Merchant\Theme\ThemeBlockInstanceController;
 use Illuminate\Support\Facades\Route;
 
 // Theme Management Routes
@@ -20,7 +23,7 @@ Route::name('merchant.')
     ->group(function () {
 
         // ── Themes ──────────────────────────────────────────────
-        Route::prefix('themes')->name('themes.')->group(function () {
+        Route::prefix('themes')->name('themes.')->scopeBindings()->group(function () {
             Route::get('/', [ThemeController::class, 'index'])->name('index');
             Route::post('/', [ThemeController::class, 'store'])->name('store');
             Route::get('/{theme}', [ThemeController::class, 'show'])->name('show');
@@ -48,17 +51,45 @@ Route::name('merchant.')
                     Route::put('/{block}', [ThemeBlockController::class, 'update'])->name('update');
                     Route::delete('/{block}', [ThemeBlockController::class, 'destroy'])->name('destroy');
                 });
+
+                // ── Section Block Instances (polymorphic runtime instances) ──
+                Route::prefix('{section}/block-instances')->name('block-instances.')->group(function () {
+                    Route::get('/', [ThemeBlockInstanceController::class, 'index'])->name('index');
+                    Route::post('/', [ThemeBlockInstanceController::class, 'store'])->name('store');
+                    Route::post('/reorder', [ThemeBlockInstanceController::class, 'reorder'])->name('reorder');
+                    Route::get('/{blockInstance}', [ThemeBlockInstanceController::class, 'show'])->name('show');
+                    Route::put('/{blockInstance}', [ThemeBlockInstanceController::class, 'update'])->name('update');
+                    Route::delete('/{blockInstance}', [ThemeBlockInstanceController::class, 'destroy'])->name('destroy');
+                });
+            });
+
+            // ── System Templates (theme-scoped system page templates) ──
+            Route::prefix('{theme}/system-templates')->name('system-templates.')->group(function () {
+                Route::get('/', [SystemTemplateController::class, 'index'])->name('index');
+                Route::post('/', [SystemTemplateController::class, 'store'])->name('store');
+                Route::get('/{template}', [SystemTemplateController::class, 'show'])->name('show');
+                Route::put('/{template}', [SystemTemplateController::class, 'update'])->name('update');
+                Route::delete('/{template}', [SystemTemplateController::class, 'destroy'])->name('destroy');
+            });
+
+            // ── Section Groups (header/footer section groups) ──────────
+            Route::prefix('{theme}/section-groups')->name('section-groups.')->group(function () {
+                Route::get('/', [ThemeSectionGroupController::class, 'index'])->name('index');
+                Route::post('/', [ThemeSectionGroupController::class, 'store'])->name('store');
+                Route::get('/{sectionGroup}', [ThemeSectionGroupController::class, 'show'])->name('show');
+                Route::put('/{sectionGroup}', [ThemeSectionGroupController::class, 'update'])->name('update');
+                Route::delete('/{sectionGroup}', [ThemeSectionGroupController::class, 'destroy'])->name('destroy');
             });
         });
 
         // ── Page Templates ──────────────────────────────────────
         Route::prefix('templates')->name('templates.')->group(function () {
-            Route::get('/', [ThemeTemplateController::class, 'index'])->name('index');
-            Route::post('/', [ThemeTemplateController::class, 'store'])->name('store');
-            Route::get('/{template}', [ThemeTemplateController::class, 'show'])->name('show');
-            Route::put('/{template}', [ThemeTemplateController::class, 'update'])->name('update');
-            Route::delete('/{template}', [ThemeTemplateController::class, 'destroy'])->name('destroy');
-            Route::post('/{template}/duplicate', [ThemeTemplateController::class, 'duplicate'])->name('duplicate');
+            Route::get('/', [PageTemplateController::class, 'index'])->name('index');
+            Route::post('/', [PageTemplateController::class, 'store'])->name('store');
+            Route::get('/{template}', [PageTemplateController::class, 'show'])->name('show');
+            Route::put('/{template}', [PageTemplateController::class, 'update'])->name('update');
+            Route::delete('/{template}', [PageTemplateController::class, 'destroy'])->name('destroy');
+            Route::post('/{template}/duplicate', [PageTemplateController::class, 'duplicate'])->name('duplicate');
         });
 
         // ── Section Schemas (platform-defined section types) ────

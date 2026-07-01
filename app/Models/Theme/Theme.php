@@ -63,6 +63,20 @@ class Theme extends Model
         return $this->hasMany(ThemeTemplate::class);
     }
 
+    public function sectionGroups(): HasMany
+    {
+        return $this->hasMany(ThemeSectionGroup::class);
+    }
+
+    /**
+     * Resolve merchant theme routes by slug only. When this runs on a scoped
+     * relation query, Laravel keeps the lookup tenant-safe.
+     */
+    public function resolveRouteBindingQuery($query, $value, $field = null)
+    {
+        return $query->where('slug', (string) $value);
+    }
+
     /**
      * Scope to get only active themes
      */
