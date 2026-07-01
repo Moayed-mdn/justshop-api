@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\Platform;
 
 use App\Http\Controllers\Controller;
+use App\Models\Store;
 use Illuminate\Http\JsonResponse;
 
 class PlatformStoreController extends Controller
@@ -14,17 +15,17 @@ class PlatformStoreController extends Controller
         return response()->json(['message' => 'Platform stores list']);
     }
 
-    public function show(int $store): JsonResponse
+    public function show(Store $store): JsonResponse
     {
-        return response()->json(['message' => 'Store details', 'store_id' => $store]);
+        return response()->json(['message' => 'Store details', 'store_id' => $store->id]);
     }
 
-    public function suspend(int $store): JsonResponse
+    public function suspend(Store $store): JsonResponse
     {
         return response()->json(['message' => 'Store suspended']);
     }
 
-    public function activate(int $store): JsonResponse
+    public function activate(Store $store): JsonResponse
     {
         return response()->json(['message' => 'Store activated']);
     }

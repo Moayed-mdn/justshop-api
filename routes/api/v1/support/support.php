@@ -39,8 +39,10 @@ Route::name('support.')->group(function () {
     // Support store lookup (read-only)
     Route::prefix('/stores')->name('stores.')->group(function (): void {
         Route::get('/search', [\App\Http\Controllers\Api\Support\SupportStoreLookupController::class, 'search'])->name('search');
-        Route::get('/{store}', [\App\Http\Controllers\Api\Support\SupportStoreLookupController::class, 'show'])->name('show');
-        Route::get('/{store}/activity', [\App\Http\Controllers\Api\Support\SupportStoreLookupController::class, 'activity'])->name('activity');
+        Route::middleware(['store.context'])->group(function () {
+            Route::get('/{store}', [\App\Http\Controllers\Api\Support\SupportStoreLookupController::class, 'show'])->name('show');
+            Route::get('/{store}/activity', [\App\Http\Controllers\Api\Support\SupportStoreLookupController::class, 'activity'])->name('activity');
+        });
     });
 
     // Support impersonation (governed, audited)

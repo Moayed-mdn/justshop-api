@@ -20,6 +20,7 @@ use App\Http\Requests\Order\GuestOrderLookupRequest;
 use App\Http\Requests\Order\ListOrdersRequest;
 use App\Http\Requests\Order\StoreOrderRequest;
 use App\Http\Resources\OrderResource;
+use App\Models\Store;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -32,16 +33,16 @@ class OrderController extends Controller
         private CancelOrderAction $cancelOrderAction,
     ) {}
 
-    public function filters(FilterOrdersRequest $request, int $store): JsonResponse
+    public function filters(FilterOrdersRequest $request, Store $store): JsonResponse
     {
         // Filters logic - returns filter options
         return $this->success([]);
     }
 
-    public function index(ListOrdersRequest $request, int $store): JsonResponse
+    public function index(ListOrdersRequest $request, Store $store): JsonResponse
     {
         $orders = $this->listOrdersAction->execute(
-            ListOrdersDTO::fromRequest($request, $store)
+            ListOrdersDTO::fromRequest($request, $store->id)
         );
 
         return $this->paginated(
@@ -50,11 +51,11 @@ class OrderController extends Controller
         );
     }
 
-    public function show(GetOrderRequest $request, int $store, string $orderNumber): JsonResponse
+    public function show(GetOrderRequest $request, Store $store, string $orderNumber): JsonResponse
     {
         // Wave 2 Remediation: Fetch order first to enable explicit policy authorization
         $order = $this->getOrderAction->execute(
-            GetOrderDTO::fromRequest($request, $store)
+            GetOrderDTO::fromRequest($request, $store->id)
         );
 
         // Wave 2 Remediation: Explicit policy authorization moved from Action to Controller
@@ -64,11 +65,11 @@ class OrderController extends Controller
         return $this->success(new OrderResource($order));
     }
 
-    public function cancel(CancelOrderRequest $request, int $store, string $orderNumber): JsonResponse
+    public function cancel(CancelOrderRequest $request, Store $store, string $orderNumber): JsonResponse
     {
         // Wave 2 Remediation: Fetch order first to enable explicit policy authorization
         $order = $this->getOrderAction->execute(
-            GetOrderDTO::fromRequest($request, $store)
+            GetOrderDTO::fromRequest($request, $store->id)
         );
 
         // Wave 2 Remediation: Explicit policy authorization moved from Action to Controller
@@ -76,13 +77,13 @@ class OrderController extends Controller
         $this->authorize('cancel', $order);
 
         $order = $this->cancelOrderAction->execute(
-            CancelOrderDTO::fromRequest($request, $store)
+            CancelOrderDTO::fromRequest($request, $store->id)
         );
 
         return $this->success(new OrderResource($order), __('order.cancelled'));
     }
 
-    public function reorder(Request $request, int $store, string $orderNumber): JsonResponse
+    public function reorder(Request $request, Store $store, string $orderNumber): JsonResponse
     {
         // Reorder logic placeholder
         return $this->success(null, __('order.reordered'));

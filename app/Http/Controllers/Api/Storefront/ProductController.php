@@ -20,6 +20,7 @@ use App\Http\Requests\Product\GetRelatedProductsRequest;
 use App\Http\Resources\ProductCardResource;
 use App\Http\Resources\ProductDetailResource;
 use App\Http\Resources\RelatedProductResource;
+use App\Models\Store;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -32,10 +33,10 @@ class ProductController extends Controller
         private GetRelatedProductsAction $getRelatedProductsAction,
     ) {}
 
-    public function index(FilterProductsRequest $request, int $store): JsonResponse
+    public function index(FilterProductsRequest $request, Store $store): JsonResponse
     {
         $result = $this->listProductsAction->execute(
-            ListProductsDTO::fromRequest($request, $store)
+            ListProductsDTO::fromRequest($request, $store->id)
         );
 
         $paginator = $result['paginator'];
@@ -56,10 +57,10 @@ class ProductController extends Controller
         );
     }
 
-    public function indexByCategory(GetProductsByCategoryRequest $request, int $store, string $slug): JsonResponse
+    public function indexByCategory(GetProductsByCategoryRequest $request, Store $store, string $slug): JsonResponse
     {
         $result = $this->getProductsByCategoryAction->execute(
-            GetProductsByCategoryDTO::fromRequest($request, $store, $slug)
+            GetProductsByCategoryDTO::fromRequest($request, $store->id, $slug)
         );
 
         $paginator = $result['paginator'];
@@ -81,19 +82,19 @@ class ProductController extends Controller
         );
     }
 
-    public function show(GetProductDetailRequest $request, int $store, string $slug): JsonResponse
+    public function show(GetProductDetailRequest $request, Store $store, string $slug): JsonResponse
     {
         $product = $this->getProductDetailAction->execute(
-            GetProductDetailDTO::fromRequest($request, $store, $slug)
+            GetProductDetailDTO::fromRequest($request, $store->id, $slug)
         );
 
         return $this->success(new ProductDetailResource($product));
     }
 
-    public function related(GetRelatedProductsRequest $request, int $store, string $slug): JsonResponse
+    public function related(GetRelatedProductsRequest $request, Store $store, string $slug): JsonResponse
     {
         $relatedProducts = $this->getRelatedProductsAction->execute(
-            GetRelatedProductsDTO::fromRequest($request, $store, $slug)
+            GetRelatedProductsDTO::fromRequest($request, $store->id, $slug)
         );
 
         return $this->success(RelatedProductResource::collection($relatedProducts));

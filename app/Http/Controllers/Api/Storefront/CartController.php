@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api\Storefront;
 
 use App\Actions\Cart\AddToCartAction;
@@ -20,6 +22,7 @@ use App\Http\Requests\Cart\ClearRequest;
 use App\Http\Requests\Cart\RemoveItemRequest;
 use App\Http\Requests\Cart\UpdateItemRequest;
 use App\Http\Resources\CartResource;
+use App\Models\Store;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -36,55 +39,55 @@ class CartController extends Controller
 
     public function show(
         Request $request, 
-        int $store,
+        Store $store,
     ): JsonResponse {
         $cart = $this->getCartAction->execute(
-            GetCartDTO::fromRequest($request, $store)
+            GetCartDTO::fromRequest($request, $store->id)
         );
 
         return $this->success(new CartResource($cart));
     }
 
-    public function addItem(AddItemRequest $request, int $store): JsonResponse
+    public function addItem(AddItemRequest $request, Store $store): JsonResponse
     {
         $cart = $this->addToCartAction->execute(
-            AddToCartDTO::fromRequest($request, $store)
+            AddToCartDTO::fromRequest($request, $store->id)
         );
 
         return $this->success(new CartResource($cart));
     }
 
-    public function bulkAdd(Request $request, int $store): JsonResponse
+    public function bulkAdd(Request $request, Store $store): JsonResponse
     {
         $cart = $this->bulkAddToCartAction->execute(
-            BulkAddToCartDTO::fromRequest($request, $store)
+            BulkAddToCartDTO::fromRequest($request, $store->id)
         );
 
         return $this->success(new CartResource($cart));
     }
 
-    public function updateItem(UpdateItemRequest $request, int $store): JsonResponse
+    public function updateItem(UpdateItemRequest $request, Store $store): JsonResponse
     {
         $this->updateCartItemAction->execute(
-            UpdateCartItemDTO::fromRequest($request, $store)
+            UpdateCartItemDTO::fromRequest($request, $store->id)
         );
 
         return $this->show($request, $store);
     }
 
-    public function removeItem(RemoveItemRequest $request, int $store): JsonResponse
+    public function removeItem(RemoveItemRequest $request, Store $store): JsonResponse
     {
         $this->removeCartItemAction->execute(
-            RemoveCartItemDTO::fromRequest($request, $store)
+            RemoveCartItemDTO::fromRequest($request, $store->id)
         );
 
         return $this->show($request, $store);
     }
 
-    public function clear(ClearRequest $request, int $store): JsonResponse
+    public function clear(ClearRequest $request, Store $store): JsonResponse
     {
         $this->clearCartAction->execute(
-            ClearCartDTO::fromRequest($request, $store)
+            ClearCartDTO::fromRequest($request, $store->id)
         );
 
         return $this->success(null, __('cart.cleared'));

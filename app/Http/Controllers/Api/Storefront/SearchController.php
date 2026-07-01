@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Search\SearchRequest;
 use App\Services\SearchService;
 use App\DTOs\Search\SearchDTO;
+use App\Models\Store;
 
 
 class SearchController extends Controller
@@ -17,9 +18,9 @@ class SearchController extends Controller
         private SearchService $searchService,
     ) {}
 
-    public function index(SearchRequest $request, int $store)
+    public function index(SearchRequest $request, Store $store)
     {
-        $dto = SearchDTO::fromRequest($request, $store);
+        $dto = SearchDTO::fromRequest($request, $store->id);
         $results = $this->searchService->execute($dto);
 
         if ($results['type'] === 'all') {
