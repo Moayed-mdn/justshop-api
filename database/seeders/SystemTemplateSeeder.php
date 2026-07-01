@@ -127,7 +127,9 @@ class SystemTemplateSeeder extends Seeder
                 'footer', 'copyright_bar',
             ],
             TemplateTypeEnum::SHOP => [
-                'header', 'announcement_bar', 'content', 'footer', 'copyright_bar',
+                'header', 'announcement_bar',
+                'search_filters', 'content',
+                'footer', 'copyright_bar',
             ],
             TemplateTypeEnum::ERROR_404 => [
                 'header', 'announcement_bar', 'error_404', 'footer', 'copyright_bar',

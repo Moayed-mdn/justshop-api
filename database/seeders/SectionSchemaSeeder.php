@@ -318,6 +318,58 @@ class SectionSchemaSeeder extends Seeder
                 'is_active' => true,
                 'sort_order' => 210,
             ],
+            [
+                'type' => 'search_filters',
+                'name' => 'Product Filters',
+                'description' => 'Configurable product filter panel for shop and search pages',
+                'category' => 'commerce',
+                'settings' => [
+                    [
+                        'type' => 'header',
+                        'id' => 'filter_header',
+                        'label' => 'Available Filters',
+                        'default' => 'Filter Options',
+                    ],
+                    [
+                        'type' => 'checkbox',
+                        'id' => 'show_category_filter',
+                        'label' => 'Category filter',
+                        'default' => true,
+                    ],
+                    [
+                        'type' => 'checkbox',
+                        'id' => 'show_price_filter',
+                        'label' => 'Price range filter',
+                        'default' => true,
+                    ],
+                    [
+                        'type' => 'checkbox',
+                        'id' => 'show_manufacture_filter',
+                        'label' => 'Manufacture date filter',
+                        'default' => true,
+                    ],
+                    [
+                        'type' => 'checkbox',
+                        'id' => 'show_expiry_filter',
+                        'label' => 'Expiry date filter',
+                        'default' => true,
+                    ],
+                    [
+                        'type' => 'checkbox',
+                        'id' => 'show_brand_filter',
+                        'label' => 'Brand filter',
+                        'default' => false,
+                    ],
+                    [
+                        'type' => 'checkbox',
+                        'id' => 'show_rating_filter',
+                        'label' => 'Rating filter',
+                        'default' => false,
+                    ],
+                ],
+                'is_active' => true,
+                'sort_order' => 215,
+            ],
         ];
 
         foreach ($schemas as $schema) {
