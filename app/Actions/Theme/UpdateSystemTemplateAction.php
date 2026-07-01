@@ -6,13 +6,18 @@ namespace App\Actions\Theme;
 
 use App\DTOs\Theme\UpdateSystemTemplateDTO;
 use App\Models\Theme\ThemeTemplate;
+use App\Services\Storefront\Runtime\RuntimeCacheService;
 use Illuminate\Support\Facades\DB;
 
 class UpdateSystemTemplateAction
 {
+    public function __construct(
+        private readonly RuntimeCacheService $runtimeCacheService,
+    ) {}
+
     public function execute(ThemeTemplate $template, UpdateSystemTemplateDTO $dto): ThemeTemplate
     {
-        return DB::transaction(function () use ($template, $dto) {
+        $updated = DB::transaction(function () use ($template, $dto) {
             if ($dto->isDefault === true) {
                 ThemeTemplate::whereHas('theme', fn($q) => $q->where('id', $template->theme_id))
                     ->where('type', $template->type->value)
@@ -54,5 +59,12 @@ class UpdateSystemTemplateAction
 
             return $template->fresh()->load('sections');
         });
+
+        $store = $updated->theme?->store;
+        if ($store !== null) {
+            $this->runtimeCacheService->invalidateTenantArtifacts($store);
+        }
+
+        return $updated;
     }
 }

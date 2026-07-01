@@ -16,6 +16,14 @@ class ThemeSectionGroupResource extends JsonResource
         $themeSlug = $routeTheme instanceof Theme
             ? $routeTheme->slug
             : $this->theme?->slug;
+        $sections = [];
+
+        foreach (($this->sections ?? []) as $sectionId => $section) {
+            $sections[(string) $sectionId] = [
+                'type' => $section['type'] ?? null,
+                'settings' => $section['settings'] ?? [],
+            ];
+        }
 
         return [
             'id' => $this->id,
@@ -24,7 +32,7 @@ class ThemeSectionGroupResource extends JsonResource
             'theme_identifier' => $themeSlug,
             'name' => $this->name,
             'handle' => $this->handle,
-            'sections' => $this->sections,
+            'sections' => (object) $sections,
             'order' => $this->order,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

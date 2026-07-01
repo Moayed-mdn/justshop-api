@@ -14,6 +14,7 @@ use App\Models\Navigation\NavigationMenu;
 use App\Models\Navigation\NavigationMenuItem;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * Rich Theme Seeder - Creates Multiple Realistic Themes with Variations
@@ -97,6 +98,7 @@ class RichThemeSeeder extends Seeder
             $theme = Theme::create([
                 'store_id' => $store->id,
                 'name' => $variation['name'],
+                'slug' => Str::slug($variation['name']),
                 'version' => '1.0.0',
                 'description' => $variation['description'],
                 'is_active' => $isActive,

@@ -14,6 +14,7 @@ use App\Models\Navigation\NavigationMenu;
 use App\Models\Navigation\NavigationMenuItem;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class DefaultThemeSeeder extends Seeder
 {
@@ -48,6 +49,7 @@ class DefaultThemeSeeder extends Seeder
         $theme = Theme::create([
             'store_id' => $store->id,
             'name' => 'Default Theme',
+            'slug' => Str::slug('Default Theme'),
             'version' => '1.0.0',
             'description' => 'Default storefront theme with header and footer',
             'is_active' => true,

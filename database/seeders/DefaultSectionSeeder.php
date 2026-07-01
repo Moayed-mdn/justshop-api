@@ -94,28 +94,30 @@ class DefaultSectionSeeder extends Seeder
         $footerKeys = ['footer', 'copyright_bar'];
 
         $headerSections = [];
+        $headerOrder = [];
         foreach ($headerKeys as $key) {
             if (isset($sections[$key])) {
                 $section = $sections[$key];
-                $headerSections[] = [
-                    'id' => (string) $section->id,
+                $sectionId = (string) $section->id;
+                $headerSections[$sectionId] = [
                     'type' => $section->type->value,
                     'settings' => $section->settings,
-                    'data' => [],
                 ];
+                $headerOrder[] = $sectionId;
             }
         }
 
         $footerSections = [];
+        $footerOrder = [];
         foreach ($footerKeys as $key) {
             if (isset($sections[$key])) {
                 $section = $sections[$key];
-                $footerSections[] = [
-                    'id' => (string) $section->id,
+                $sectionId = (string) $section->id;
+                $footerSections[$sectionId] = [
                     'type' => $section->type->value,
                     'settings' => $section->settings,
-                    'data' => [],
                 ];
+                $footerOrder[] = $sectionId;
             }
         }
 
@@ -125,7 +127,7 @@ class DefaultSectionSeeder extends Seeder
                 [
                     'name' => 'Header Section Group',
                     'sections' => $headerSections,
-                    'order' => collect($headerSections)->pluck('id')->values()->toArray(),
+                    'order' => $headerOrder,
                 ]
             );
         }
@@ -136,7 +138,7 @@ class DefaultSectionSeeder extends Seeder
                 [
                     'name' => 'Footer Section Group',
                     'sections' => $footerSections,
-                    'order' => collect($footerSections)->pluck('id')->values()->toArray(),
+                    'order' => $footerOrder,
                 ]
             );
         }
@@ -249,10 +251,19 @@ class DefaultSectionSeeder extends Seeder
                 'removable' => true,
                 'settings' => [
                     'enabled' => true,
-                    'text' => 'Free shipping on orders over $50!',
+                    'text' => [
+                        'en' => 'Free shipping on orders over $50!',
+                        'ar' => 'شحن مجاني للطلبات التي تزيد عن 50 دولار!',
+                    ],
                     'phone' => '+001234567890',
-                    'offer_text' => 'Free shipping on orders over $50!',
-                    'shop_now_text' => 'Shop Now',
+                    'offer_text' => [
+                        'en' => 'Free shipping on orders over $50!',
+                        'ar' => 'شحن مجاني للطلبات التي تزيد عن 50 دولار!',
+                    ],
+                    'shop_now_text' => [
+                        'en' => 'Shop Now',
+                        'ar' => 'تسوق الآن',
+                    ],
                     'shop_now_link' => '/en/shop',
                     'show_language_switcher' => true,
                     'dismissible' => true,
@@ -318,7 +329,10 @@ class DefaultSectionSeeder extends Seeder
                 'position' => 11,
                 'removable' => true,
                 'settings' => [
-                    'text' => '© 2026 All rights reserved.',
+                    'text' => [
+                        'en' => '© 2026 All rights reserved.',
+                        'ar' => '© 2026 جميع الحقوق محفوظة.',
+                    ],
                     'show_payment_icons' => true,
                 ],
                 'blocks' => [

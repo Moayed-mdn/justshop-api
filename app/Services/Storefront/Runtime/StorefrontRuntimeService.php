@@ -1544,37 +1544,100 @@ class StorefrontRuntimeService
     private function addChromeToPayload(array $payload, Store $store, ?TemplateTypeEnum $templateType = null): array
     {
         $payload['layout_order'] ??= ['header', 'content', 'footer'];
+        $locale = is_string($payload['locale'] ?? null)
+            ? (string) $payload['locale']
+            : $this->resolvedLocaleFromRequest();
 
-        if ($templateType) {
-            $activeTheme = $this->themeRepository->getActiveForStore($store->id);
-            if ($activeTheme) {
+        $activeTheme = $this->themeRepository->getActiveForStore($store->id);
+        if ($activeTheme) {
+            // First try to use SHOP template for consistent chrome across all pages
+            $template = ThemeTemplate::where('theme_id', $activeTheme->id)
+                ->where('type', TemplateTypeEnum::SHOP)
+                ->with(['sections' => fn ($q) => $q->orderBy('position')])
+                ->first();
+            
+            // If no SHOP template, fall back to original template type
+            if (!$template && $templateType) {
                 $template = ThemeTemplate::where('theme_id', $activeTheme->id)
                     ->where('type', $templateType)
                     ->with(['sections' => fn ($q) => $q->orderBy('position')])
                     ->first();
+            }
 
-                if ($template && $template->sections->isNotEmpty()) {
-                    $chromeOrder = [];
-                    $chromeSections = [];
-                    foreach ($template->sections as $section) {
-                        $type = $section->type->value;
-                        $enabled = (bool) ($section->pivot->is_enabled ?? true);
-                        if ($enabled && in_array($type, ['header', 'announcement_bar', 'content', 'footer', 'copyright_bar'], true)) {
-                            $chromeOrder[] = $type;
-                            $chromeSections[$type] = $this->resolveBlockImageUrls($section->settings ?? []);
+            if ($template && $template->sections->isNotEmpty()) {
+                $chromeOrder = [];
+                $chromeSections = [];
+                foreach ($template->sections as $section) {
+                    $type = $section->type->value;
+                    $enabled = (bool) ($section->pivot->is_enabled ?? true);
+                    if ($enabled && in_array($type, ['header', 'announcement_bar', 'content', 'footer', 'copyright_bar'], true)) {
+                        $chromeOrder[] = $type;
+                        $settings = $this->resolveBlockImageUrls($this->resolveTemplateSectionSettings($section));
+                        
+                        if (in_array($type, ['announcement_bar', 'copyright_bar'], true)) {
+                            // Normalize localized settings like SectionDataResolverService does
+                            $fields = $type === 'announcement_bar' 
+                                ? ['text', 'offer_text', 'shop_now_text'] 
+                                : ['text'];
+                                
+                            $normalizedSettings = $this->normalizeLocalizedSettings($settings, $fields);
+                            $chromeSections[$type] = $this->localizedContentResolver->resolveLocalizedPayload($normalizedSettings, $locale);
+                        } else {
+                            $chromeSections[$type] = $settings;
                         }
                     }
-                    if (!empty($chromeOrder)) {
-                        $payload['layout_order'] = $chromeOrder;
-                    }
-                    if (!empty($chromeSections)) {
-                        $payload['chrome_sections'] = $chromeSections;
-                    }
+                }
+                if (!empty($chromeOrder)) {
+                    $payload['layout_order'] = $chromeOrder;
+                }
+                if (!empty($chromeSections)) {
+                    $payload['chrome_sections'] = $chromeSections;
                 }
             }
         }
 
         return $this->injectChromeHeaderSection($payload, $store);
+    }
+
+    /**
+     * Merge template pivot overrides into the section's base settings so
+     * storefront chrome honors dashboard edits.
+     *
+     * @return array<string, mixed>
+     */
+    private function resolveTemplateSectionSettings(object $section): array
+    {
+        $settings = is_array($section->settings ?? null) ? $section->settings : [];
+        $overrides = $section->pivot->overrides ?? [];
+
+        if (is_string($overrides)) {
+            $decoded = json_decode($overrides, true);
+            $overrides = is_array($decoded) ? $decoded : [];
+        }
+
+        if (!is_array($overrides) || $overrides === []) {
+            return $settings;
+        }
+
+        return array_replace_recursive($settings, $overrides);
+    }
+
+    /**
+     * Normalize settings to ensure specified fields are in localized {en: '', ar: ''} format.
+     *
+     * @param array<string, mixed> $settings
+     * @param array<string> $fields
+     * @return array<string, mixed>
+     */
+    private function normalizeLocalizedSettings(array $settings, array $fields): array
+    {
+        foreach ($fields as $field) {
+            if (isset($settings[$field]) && is_string($settings[$field])) {
+                $settings[$field] = ['en' => $settings[$field], 'ar' => ''];
+            }
+        }
+
+        return $settings;
     }
 
     /**

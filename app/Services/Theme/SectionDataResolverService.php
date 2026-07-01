@@ -41,8 +41,38 @@ class SectionDataResolverService
             'hero' => $this->resolveHeroData($settings, $locale),
             'product-grid' => $this->resolveProductGridData($settings, $store, $locale),
             'category-grid' => $this->resolveCategoryGridData($settings, $store, $locale),
+            'announcement_bar' => $this->resolveAnnouncementBarData($settings, $locale),
+            'copyright_bar' => $this->resolveCopyrightBarData($settings, $locale),
             default => $this->resolveGenericSectionData($sectionType, $settings, $locale),
         };
+    }
+
+    private function resolveAnnouncementBarData(array $settings, string $locale): array
+    {
+        $localizedSettings = $this->localizedContentResolver->resolveLocalizedPayload(
+            $this->normalizeLocalizedSettings($settings, ['text', 'offer_text', 'shop_now_text']),
+            $locale
+        );
+
+        return [
+            'type' => 'announcement_bar',
+            'settings' => $localizedSettings,
+            'data' => [],
+        ];
+    }
+
+    private function resolveCopyrightBarData(array $settings, string $locale): array
+    {
+        $localizedSettings = $this->localizedContentResolver->resolveLocalizedPayload(
+            $this->normalizeLocalizedSettings($settings, ['text']),
+            $locale
+        );
+
+        return [
+            'type' => 'copyright_bar',
+            'settings' => $localizedSettings,
+            'data' => [],
+        ];
     }
 
     /**
@@ -315,5 +345,16 @@ class SectionDataResolverService
         }
 
         return asset($path);
+    }
+
+    private function normalizeLocalizedSettings(array $settings, array $fields): array
+    {
+        foreach ($fields as $field) {
+            if (isset($settings[$field]) && is_string($settings[$field])) {
+                $settings[$field] = ['en' => $settings[$field], 'ar' => ''];
+            }
+        }
+
+        return $settings;
     }
 }

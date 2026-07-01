@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Theme extends Model
 {
@@ -38,6 +39,17 @@ class Theme extends Model
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
     ];
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (self $theme): void {
+            if (empty($theme->slug)) {
+                $theme->slug = Str::slug($theme->name);
+            }
+        });
+    }
 
     /**
      * Get the store that owns the theme

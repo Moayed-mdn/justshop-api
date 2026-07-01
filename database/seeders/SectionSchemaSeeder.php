@@ -113,10 +113,10 @@ class SectionSchemaSeeder extends Seeder
                         'default' => true,
                     ],
                     [
-                        'type' => 'text',
+                        'type' => 'localized_text',
                         'id' => 'text',
                         'label' => 'Announcement text',
-                        'default' => 'Free shipping on orders over $50!',
+                        'default' => ['en' => 'Free shipping on orders over $50!', 'ar' => 'شحن مجاني للطلبات التي تزيد عن 50 دولار!'],
                     ],
                     [
                         'type' => 'text',
@@ -125,16 +125,16 @@ class SectionSchemaSeeder extends Seeder
                         'default' => '+001234567890',
                     ],
                     [
-                        'type' => 'text',
+                        'type' => 'localized_text',
                         'id' => 'offer_text',
                         'label' => 'Offer text',
-                        'default' => 'Free shipping on orders over $50!',
+                        'default' => ['en' => 'Free shipping on orders over $50!', 'ar' => 'شحن مجاني للطلبات التي تزيد عن 50 دولار!'],
                     ],
                     [
-                        'type' => 'text',
+                        'type' => 'localized_text',
                         'id' => 'shop_now_text',
                         'label' => 'Shop Now button text',
-                        'default' => 'Shop Now',
+                        'default' => ['en' => 'Shop Now', 'ar' => 'تسوق الآن'],
                     ],
                     [
                         'type' => 'text',
@@ -177,10 +177,10 @@ class SectionSchemaSeeder extends Seeder
                 'category' => 'layout',
                 'settings' => [
                     [
-                        'type' => 'text',
+                        'type' => 'localized_text',
                         'id' => 'text',
                         'label' => 'Copyright text',
-                        'default' => '© 2026 All rights reserved.',
+                        'default' => ['en' => '© 2026 All rights reserved.', 'ar' => '© 2026 جميع الحقوق محفوظة.'],
                     ],
                     [
                         'type' => 'checkbox',
@@ -358,7 +358,7 @@ class SectionSchemaSeeder extends Seeder
                         'type' => 'checkbox',
                         'id' => 'show_brand_filter',
                         'label' => 'Brand filter',
-                        'default' => false,
+                        'default' => true,
                     ],
                     [
                         'type' => 'checkbox',
