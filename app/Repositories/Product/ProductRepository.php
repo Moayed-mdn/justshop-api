@@ -58,7 +58,7 @@ class ProductRepository extends BaseRepository
         $filterQuery = clone $query;
         $productIdsSub = $filterQuery->select('products.id');
 
-        return \Illuminate\Support\Facades\DB::table('product_variants')
+        $variantStats = \Illuminate\Support\Facades\DB::table('product_variants')
             ->whereIn('product_id', $productIdsSub)
             ->selectRaw("
                 MIN(price) AS min_price,
@@ -66,6 +66,20 @@ class ProductRepository extends BaseRepository
                 MIN(manufacture_date) AS earliest_manufacture,
                 MAX(expiry_date) AS latest_expiry
             ")->first();
+
+        $ratingStats = \Illuminate\Support\Facades\DB::table('reviews')
+            ->whereIn('product_id', function ($sub) use ($productIdsSub) {
+                $sub->select('id')->from('products')
+                    ->whereIn('products.id', $productIdsSub);
+            })
+            ->where('is_approved', true)
+            ->selectRaw("MIN(rating) AS min_rating, MAX(rating) AS max_rating")
+            ->first();
+
+        $variantStats->min_rating = $ratingStats?->min_rating;
+        $variantStats->max_rating = $ratingStats?->max_rating;
+
+        return $variantStats;
     }
 
     public function applyPriceFilter(Builder $query, ?float $minPrice, ?float $maxPrice): Builder

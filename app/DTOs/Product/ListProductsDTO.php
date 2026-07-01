@@ -15,6 +15,8 @@ class ListProductsDTO
         public ?float $maxPrice = null,
         public ?string $earliestManufacture = null,
         public ?string $latestExpiry = null,
+        public array $brandSlugs = [],
+        public ?float $minRating = null,
         public int $perPage = 20,
     ) {}
 
@@ -27,6 +29,8 @@ class ListProductsDTO
             maxPrice: $request->filled('max_price') ? (float) $request->input('max_price') : null,
             earliestManufacture: $request->string('earliest_manufacture')->toString() ?: null,
             latestExpiry: $request->string('latest_expiry')->toString() ?: null,
+            brandSlugs: $request->input('brand_slugs', []),
+            minRating: $request->filled('min_rating') ? (float) $request->input('min_rating') : null,
             perPage: $request->integer('per_page', 20),
         );
     }

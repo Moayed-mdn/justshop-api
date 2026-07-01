@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use App\Repositories\Brand\BrandRepository;
 use App\Repositories\Product\ProductRepository;
 use App\Repositories\Category\CategoryRepository;
 
@@ -14,6 +15,7 @@ class ProductService
     public function __construct(
         private ProductRepository $productRepository,
         private CategoryRepository $categoryRepository,
+        private BrandRepository $brandRepository,
     ) {}
 
     /**
@@ -62,6 +64,14 @@ class ProductService
         }
 
         return $query;
+    }
+
+    /**
+     * Get active brands for filter display.
+     */
+    public function getBrandsForFilters(int $storeId): array
+    {
+        return $this->brandRepository->getActiveBrandsForStore($storeId);
     }
 
     /**

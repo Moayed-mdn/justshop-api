@@ -64,6 +64,16 @@ class GetProductsByCategoryAction
             });
         }
 
+        if ($dto->minRating !== null) {
+            $query->whereIn('products.id', function ($sub) use ($dto) {
+                $sub->select('product_id')
+                     ->from('reviews')
+                     ->where('is_approved', true)
+                     ->groupBy('product_id')
+                     ->havingRaw('AVG(rating) >= ?', [$dto->minRating]);
+            });
+        }
+
         $paginator = $query->paginate($dto->perPage);
         $categoryTranslation = $category->translation($locale);
 

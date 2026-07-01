@@ -21,6 +21,7 @@ class GetProductsByCategoryRequest extends FormRequest
             'max_price' => ['sometimes', 'numeric', 'min:0'],
             'earliest_manufacture' => ['sometimes', 'date'],
             'latest_expiry' => ['sometimes', 'date'],
+            'min_rating' => ['sometimes', 'numeric', 'min:0', 'max:5'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
         ];
     }

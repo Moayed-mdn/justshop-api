@@ -15,6 +15,7 @@ class GetProductsByCategoryDTO
         public ?float $maxPrice = null,
         public ?string $earliestManufacture = null,
         public ?string $latestExpiry = null,
+        public ?float $minRating = null,
         public int $perPage = 20,
     ) {}
 
@@ -27,6 +28,7 @@ class GetProductsByCategoryDTO
             $request->filled('max_price') ? (float) $request->input('max_price') : null,
             $request->string('earliest_manufacture')->toString() ?: null,
             $request->string('latest_expiry')->toString() ?: null,
+            $request->filled('min_rating') ? (float) $request->input('min_rating') : null,
             $request->integer('per_page', 20),
         );
     }

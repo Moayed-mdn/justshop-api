@@ -51,7 +51,10 @@ class ProductController extends Controller
                     'min_price' => $variantStatus->min_price,
                     'max_price' => $variantStatus->max_price,
                     'earliest_manufacture' => $variantStatus->earliest_manufacture,
-                    'latest_expiry' => $variantStatus->latest_expiry
+                    'latest_expiry' => $variantStatus->latest_expiry,
+                    'brands' => $result['brands'],
+                    'min_rating' => $variantStatus->min_rating,
+                    'max_rating' => $variantStatus->max_rating,
                 ]
             ]
         );
@@ -77,6 +80,8 @@ class ProductController extends Controller
                     'max_price'            => $variantStatus->max_price ?? null,
                     'earliest_manufacture' => $variantStatus->earliest_manufacture ?? null,
                     'latest_expiry'        => $variantStatus->latest_expiry ?? null,
+                    'min_rating'           => $variantStatus->min_rating ?? null,
+                    'max_rating'           => $variantStatus->max_rating ?? null,
                 ],
             ]
         );

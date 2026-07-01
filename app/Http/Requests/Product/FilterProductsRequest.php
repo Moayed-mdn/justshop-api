@@ -30,6 +30,9 @@ class FilterProductsRequest extends FormRequest
             'max_price' => ['nullable', 'numeric', 'min:0', 'gte:min_price'],
             'earliest_manufacture' => ['nullable', 'date'],
             'latest_expiry' => ['nullable', 'date', 'after_or_equal:earliest_manufacture'],
+            'brand_slugs' => ['nullable', 'array'],
+            'brand_slugs.*' => ['string'],
+            'min_rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ];
     }

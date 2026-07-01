@@ -114,6 +114,15 @@ class BrandRepository extends BaseRepository
         return $query->exists();
     }
 
+    public function getActiveBrandsForStore(int $storeId): array
+    {
+        return $this->scopedQuery()
+            ->active()
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug'])
+            ->toArray();
+    }
+
     public function hasProducts(int $id, int $storeId): bool
     {
         return Brand::query()
