@@ -213,13 +213,28 @@ Route::prefix('/v1/merchant')
 
 // ── 3. STOREFRONT CONTEXT ────────────────────────────────────────────────
 // Public ecommerce APIs (Customers and guests browsing stores).
+Route::prefix('/v1/storefront/runtime')
+    ->middleware([
+        'web',
+    ])
+    ->group(function (): void {
+        require 'api/v1/storefront/runtime.php';
+    });
 Route::prefix('/v1/storefront')
     ->middleware([
         'web',
         'identity.route:storefront_commerce,customer,enforce',
     ])
     ->group(function (): void {
-        require 'api/v1/storefront/runtime.php';
+        // Additional theme and navigation endpoints
+        Route::prefix('theme')->group(function (): void {
+            Route::get('/', [\App\Http\Controllers\Api\Storefront\StorefrontThemeController::class, 'show']);
+        });
+
+        Route::prefix('navigation')->group(function (): void {
+            Route::get('/{handle}', [\App\Http\Controllers\Api\Storefront\StorefrontNavigationController::class, 'show']);
+        });
+
         require 'api/v1/storefront/products.php';
         require 'api/v1/storefront/cart.php';
         require 'api/v1/storefront/orders.php';
