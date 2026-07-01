@@ -9,6 +9,7 @@ use App\DTOs\Cms\Marketing\Store\Admin\UpdateStoreMarketingPageDTO;
 use App\Enums\Cms\Marketing\MarketingPageStatusEnum;
 use App\Enums\Cms\Marketing\MarketingPageTemplateEnum;
 use App\Enums\Store\StoreStatusEnum;
+use App\Enums\Theme\TemplateTypeEnum;
 use App\Models\Category;
 use App\Models\Cms\Marketing\Store\StoreMarketingPage;
 use App\Models\Navigation\NavigationMenu;
@@ -16,6 +17,9 @@ use App\Models\Navigation\NavigationMenuItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Store;
+use App\Models\Theme\Theme;
+use App\Models\Theme\ThemeSection;
+use App\Models\Theme\ThemeTemplate;
 use App\Models\User;
 use App\Services\Storefront\Runtime\RuntimePreviewTokenService;
 use App\Services\Storefront\Runtime\StorefrontRuntimeService;
@@ -184,6 +188,96 @@ class StorefrontRuntimeTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.branding.storeName', $store->name)
             ->assertJsonPath('data.branding.tagline', 'Electronics, fashion, and home essentials — curated for everyday shopping.');
+    }
+
+    public function test_shop_page_payload_uses_template_override_values_for_chrome_sections(): void
+    {
+        [$store] = $this->seedRuntimeCatalog();
+
+        $theme = Theme::create([
+            'store_id' => $store->id,
+            'name' => 'Modern Light',
+            'slug' => 'modern-light',
+            'version' => '1.0.0',
+            'is_active' => true,
+            'is_published' => true,
+            'published_at' => now(),
+            'settings' => [],
+            'metadata' => [],
+        ]);
+
+        $announcement = ThemeSection::create([
+            'theme_id' => $theme->id,
+            'name' => 'Announcement Bar',
+            'type' => 'announcement_bar',
+            'handle' => 'announcement-bar',
+            'settings' => [
+                'enabled' => true,
+                'text' => ['en' => 'Base announcement', 'ar' => 'إعلان أساسي'],
+                'offer_text' => ['en' => 'Base announcement', 'ar' => 'إعلان أساسي'],
+                'phone' => '+001234567890',
+                'shop_now_text' => ['en' => 'Shop Now', 'ar' => 'تسوق الآن'],
+                'shop_now_link' => '/shop',
+                'bg_color' => '#111827',
+                'text_color' => '#FFFFFF',
+            ],
+            'position' => 0,
+            'is_enabled' => true,
+        ]);
+
+        $copyright = ThemeSection::create([
+            'theme_id' => $theme->id,
+            'name' => 'Copyright Bar',
+            'type' => 'copyright_bar',
+            'handle' => 'copyright-bar',
+            'settings' => [
+                'text' => ['en' => 'Base copyright', 'ar' => 'حقوق أساسية'],
+                'show_payment_icons' => true,
+            ],
+            'position' => 1,
+            'is_enabled' => true,
+        ]);
+
+        $template = ThemeTemplate::create([
+            'theme_id' => $theme->id,
+            'name' => 'Shop Template',
+            'handle' => 'system.shop',
+            'type' => TemplateTypeEnum::SHOP,
+            'is_default' => true,
+        ]);
+
+        $template->sections()->attach($announcement->id, [
+            'position' => 0,
+            'is_enabled' => true,
+            'overrides' => json_encode([
+                'phone' => '0995699498',
+                'text' => ['en' => 'Edited announcement', 'ar' => 'إعلان معدل'],
+                'offer_text' => ['en' => 'Edited announcement', 'ar' => 'إعلان معدل'],
+                'shop_now_link' => '/test',
+            ], JSON_UNESCAPED_UNICODE),
+        ]);
+
+        $template->sections()->attach($copyright->id, [
+            'position' => 1,
+            'is_enabled' => true,
+            'overrides' => json_encode([
+                'text' => ['en' => 'Edited copyright', 'ar' => 'حقوق معدلة'],
+            ], JSON_UNESCAPED_UNICODE),
+        ]);
+
+        $this->runtimeGet(
+            $store,
+            '/api/v1/storefront/runtime/page/shop',
+            ['path' => '/shop'],
+            'en',
+            ['X-Storefront-Version' => (string) config('storefront_runtime.contract_version')]
+        )
+            ->assertOk()
+            ->assertJsonPath('data.page.chrome_sections.announcement_bar.phone', '0995699498')
+            ->assertJsonPath('data.page.chrome_sections.announcement_bar.text', 'Edited announcement')
+            ->assertJsonPath('data.page.chrome_sections.announcement_bar.offer_text', 'Edited announcement')
+            ->assertJsonPath('data.page.chrome_sections.announcement_bar.shop_now_link', '/test')
+            ->assertJsonPath('data.page.chrome_sections.copyright_bar.text', 'Edited copyright');
     }
 
     public function test_navigation_endpoint_uses_database_main_and_footer_menus_when_present(): void

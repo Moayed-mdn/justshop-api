@@ -228,6 +228,25 @@ class StoreMarketingPageTest extends TestCase
             ->assertJsonPath('data.template', 'campaign');
     }
 
+    public function test_create_allows_null_page_template_id(): void
+    {
+        [$user, $store] = $this->merchantWithStore();
+        $this->givePermissions($user, [PermissionEnum::MARKETING_STORE_CREATE]);
+
+        $response = $this->asMerchant($user)
+            ->postJson($this->baseUrl($store), $this->validPayload([
+                'page_template_id' => null,
+            ]));
+
+        $response->assertStatus(201)
+            ->assertJsonPath('data.page_template_id', null);
+
+        $this->assertDatabaseHas('store_marketing_pages', [
+            'id' => $response->json('data.id'),
+            'page_template_id' => null,
+        ]);
+    }
+
     public function test_create_with_sections_persists_sections(): void
     {
         [$user, $store] = $this->merchantWithStore();
@@ -399,6 +418,35 @@ class StoreMarketingPageTest extends TestCase
                 'title' => ['en' => 'New Title', 'ar' => 'عنوان جديد'],
             ]))
             ->assertOk();
+    }
+
+    public function test_update_allows_clearing_page_template_id(): void
+    {
+        [$user, $store] = $this->merchantWithStore();
+        $this->givePermissions($user, [
+            PermissionEnum::MARKETING_STORE_CREATE,
+            PermissionEnum::MARKETING_STORE_UPDATE,
+        ]);
+
+        $createResponse = $this->asMerchant($user)
+            ->postJson($this->baseUrl($store), $this->validPayload([
+                'page_template_id' => null,
+            ]))
+            ->assertStatus(201);
+
+        $pageId = $createResponse->json('data.id');
+
+        $this->asMerchant($user)
+            ->putJson($this->baseUrl($store) . "/{$pageId}", $this->validPayload([
+                'page_template_id' => null,
+            ]))
+            ->assertOk()
+            ->assertJsonPath('data.page_template_id', null);
+
+        $this->assertDatabaseHas('store_marketing_pages', [
+            'id' => $pageId,
+            'page_template_id' => null,
+        ]);
     }
 
     // ── Delete ────────────────────────────────────────────────────────────

@@ -9,8 +9,10 @@ use App\Models\Store;
 use App\Models\Theme\Theme;
 use App\Models\Theme\ThemeSection;
 use App\Models\Theme\ThemeTemplate;
+use App\Services\Storefront\Runtime\RuntimeCacheService;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class SystemTemplateControllerTest extends TestCase
@@ -323,6 +325,37 @@ class SystemTemplateControllerTest extends TestCase
             'section_id' => $section2->id,
             'position' => 1,
         ]);
+    }
+
+    public function test_update_template_invalidates_storefront_runtime_cache(): void
+    {
+        $template = ThemeTemplate::create([
+            'theme_id' => $this->theme->id,
+            'name' => 'Cart Template',
+            'handle' => 'system.cart',
+            'type' => TemplateTypeEnum::CART,
+            'is_default' => false,
+        ]);
+
+        /** @var RuntimeCacheService $runtimeCache */
+        $runtimeCache = app(RuntimeCacheService::class);
+        $pageCacheKey = $runtimeCache->key($this->store, 'en', 'page', '/');
+        $registryKey = 'storefront_runtime_registry:tenant:' . $this->store->slug;
+
+        Cache::put($pageCacheKey, ['page' => ['id' => 'cached']], now()->addHour());
+        Cache::forever($registryKey, [
+            $pageCacheKey => [
+                'key' => $pageCacheKey,
+                'artifact' => 'page',
+            ],
+        ]);
+
+        $response = $this->putJson($this->templatePath($template->id), [
+            'name' => 'Updated Cart Template',
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertFalse(Cache::has($pageCacheKey));
     }
 
     public function test_update_template_makes_previous_default_false(): void
