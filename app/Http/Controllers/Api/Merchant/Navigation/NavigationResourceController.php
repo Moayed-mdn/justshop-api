@@ -258,7 +258,7 @@ class NavigationResourceController extends Controller
         
         // Suggest creating a page
         if (!str_starts_with($url, '/shop/')) {
-            $suggestion = 'Create a page with slug: ' . ltrim($url, '/');
+            $suggestion = ltrim($url, '/');
         }
 
         return $this->success([

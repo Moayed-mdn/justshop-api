@@ -31,6 +31,7 @@ class CreateStoreMarketingPageDTO
     public static function fromRequest(CreateStoreMarketingPageRequest $request, int $storeId): self
     {
         $templateValue = $request->input('template');
+        $pageTemplateId = $request->input('page_template_id');
 
         return new self(
             storeId: $storeId,
@@ -42,7 +43,7 @@ class CreateStoreMarketingPageDTO
             publishedAt: $request->input('published_at'),
             seo: $request->has('seo') ? $request->array('seo') : null,
             template: $templateValue ? MarketingPageTemplateEnum::from((string) $templateValue) : null,
-            pageTemplateId: $request->has('page_template_id') ? (int) $request->input('page_template_id') : null,
+            pageTemplateId: is_numeric($pageTemplateId) ? (int) $pageTemplateId : null,
             sortOrder: $request->integer('sort_order', 0),
             isHomepage: $request->boolean('is_homepage', false),
             sections: $request->array('sections'),
