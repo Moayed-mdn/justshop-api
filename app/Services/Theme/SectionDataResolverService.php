@@ -12,7 +12,7 @@ use App\Models\Store;
 use App\Repositories\Category\CategoryRepository;
 use App\Repositories\Navigation\NavigationMenuRepository;
 use App\Services\Cms\LocalizedContentResolver;
-use Illuminate\Support\Facades\Storage;
+use App\Support\Media\MediaUrl;
 
 class SectionDataResolverService
 {
@@ -332,19 +332,7 @@ class SectionDataResolverService
 
     private function resolvePublicImageUrl(string $path): string
     {
-        if ($path === '') {
-            return '';
-        }
-
-        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-            return $path;
-        }
-
-        if (preg_match('#^(?:cms|products|categories|brands|hero|variants|stores|tags)/#', $path)) {
-            return Storage::disk('public')->url($path);
-        }
-
-        return asset($path);
+        return (string) MediaUrl::resolve($path);
     }
 
     private function normalizeLocalizedSettings(array $settings, array $fields): array

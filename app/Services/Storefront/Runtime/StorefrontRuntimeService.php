@@ -19,6 +19,7 @@ use App\Services\Cms\LocalizedContentResolver;
 use App\Services\Cms\Seo\SeoResolutionService;
 use App\Services\Theme\SectionDataResolverService;
 use App\Services\Theme\TemplateResolutionService;
+use App\Support\Media\MediaUrl;
 use Throwable;
 
 class StorefrontRuntimeService
@@ -1450,7 +1451,7 @@ class StorefrontRuntimeService
                 $featured = Product::query()
                     ->where('store_id', $store->id)
                     ->active()
-                    ->with(['translations', 'defaultVariant', 'images'])
+                    ->with(['translations', 'defaultVariant.images', 'images'])
                     ->orderBy('sort_order')
                     ->orderByDesc('id')
                     ->limit($limit)
@@ -1648,10 +1649,8 @@ class StorefrontRuntimeService
     public function resolveBlockImageUrls(array $data): array
     {
         foreach ($data as $key => $value) {
-            if (is_string($value) && $value !== '' && !str_starts_with($value, 'http://') && !str_starts_with($value, 'https://')) {
-                if (preg_match('#^(?:cms|products|categories|brands|hero|variants|stores|tags)/#', $value)) {
-                    $data[$key] = $this->resolvePublicImageUrl($value);
-                }
+            if (is_string($value) && MediaUrl::shouldResolve($value)) {
+                $data[$key] = $this->resolvePublicImageUrl($value);
             }
         }
         return $data;
@@ -1659,20 +1658,7 @@ class StorefrontRuntimeService
 
     public function resolvePublicImageUrl(string $path): string
     {
-        if ($path === '') {
-            return '';
-        }
-
-        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-            return $path;
-        }
-
-        // For uploaded images, use Storage::url() to get the correct public URL
-        if (preg_match('#^(?:cms|products|categories|brands|hero|variants|stores|tags)/#', $path)) {
-            return \Illuminate\Support\Facades\Storage::disk('public')->url($path);
-        }
-
-        return asset($path);
+        return (string) MediaUrl::resolve($path);
     }
 
     /**
@@ -1690,7 +1676,7 @@ class StorefrontRuntimeService
         foreach ($data as $key => $value) {
             // Check for common image URL field names
             if (is_string($key) && in_array($key, ['imageUrl', 'image', 'url', 'src', 'thumbnail', 'avatar', 'icon'], true)) {
-                if (is_string($value) && $value !== '') {
+                if (is_string($value) && MediaUrl::shouldResolve($value)) {
                     $data[$key] = $this->resolvePublicImageUrl($value);
                 }
             }
@@ -1827,7 +1813,9 @@ class StorefrontRuntimeService
             ->whereIn('id', $productIds)
             ->where('status', 'active')
             ->with(['variants' => function ($query) {
-                $query->where('is_active', true)->orderBy('sort_order');
+                $query->where('is_active', true)
+                    ->with('images')
+                    ->orderBy('sort_order');
             }])
             ->get();
 

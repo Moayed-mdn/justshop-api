@@ -77,4 +77,16 @@ class ProductVariant extends Model
     {
         return $this->images()->where('is_primary', true)->first();
     }
+
+    public function getPrimaryImageUrlAttribute(): ?string
+    {
+        if ($this->relationLoaded('images')) {
+            $primary = $this->images->where('is_primary', true)->first()
+                ?? $this->images->first();
+
+            return $primary?->full_url;
+        }
+
+        return $this->primary_image?->full_url;
+    }
 }

@@ -4,10 +4,10 @@
 
 namespace App\Models;
 
+use App\Support\Media\MediaUrl;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Storage;
 
 class Image extends Model
 {
@@ -31,16 +31,11 @@ class Image extends Model
 
     public function getFullUrlAttribute(): string
     {
-        $path = $this->image_url;
+        return (string) MediaUrl::resolve($this->image_url);
+    }
 
-        // Already absolute (external URL) → return as-is
-        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-            return $path;
-        }
-
-        // Strip leading "/storage/" if stored that way
-        $path = preg_replace('#^/?storage/#', '', $path);
-
-        return Storage::disk('public')->url($path);
+    public function setImageUrlAttribute(?string $value): void
+    {
+        $this->attributes['image_url'] = MediaUrl::normalizeStorablePath($value);
     }
 }

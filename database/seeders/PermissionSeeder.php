@@ -15,6 +15,7 @@ class PermissionSeeder extends Seeder
         // Create all permissions from PermissionEnum
         $permissions = [
             PermissionEnum::USER_VIEW,
+            PermissionEnum::USER_CREATE,
             PermissionEnum::USER_BLOCK,
             PermissionEnum::USER_DELETE,
             PermissionEnum::USER_RESTORE,
@@ -85,6 +86,7 @@ class PermissionSeeder extends Seeder
         // Assign permissions to super_admin (ALL permissions)
         $superAdmin->syncPermissions([
             PermissionEnum::USER_VIEW,
+            PermissionEnum::USER_CREATE,
             PermissionEnum::USER_BLOCK,
             PermissionEnum::USER_DELETE,
             PermissionEnum::USER_RESTORE,
@@ -145,6 +147,7 @@ class PermissionSeeder extends Seeder
         // Assign permissions to store_admin
         $storeAdmin->syncPermissions([
             PermissionEnum::USER_VIEW,
+            PermissionEnum::USER_CREATE,
             PermissionEnum::USER_BLOCK,
             PermissionEnum::USER_DELETE,
             PermissionEnum::USER_RESTORE,

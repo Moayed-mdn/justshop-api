@@ -11,6 +11,7 @@ use App\Services\Auth\Membership\MembershipResolver;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Spatie\Permission\PermissionRegistrar;
 
 class StoreContext
 {
@@ -51,6 +52,14 @@ class StoreContext
 
         app()->instance('storeId', $store->id);
         app()->instance('currentStore', $store);
+
+        // Set Spatie Permission team context to current store
+        // This allows role/permission checks to be scoped to this specific store
+        $permissionRegistrar = app(PermissionRegistrar::class);
+        $permissionRegistrar->setPermissionsTeamId($store->id);
+        
+        // Clear cached permissions for this request to ensure fresh permission checks
+        $permissionRegistrar->forgetCachedPermissions();
 
         $membership = $user ? $this->membershipResolver->resolveForStore($user, $store) : null;
 

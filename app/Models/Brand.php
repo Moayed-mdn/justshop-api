@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\HasStoreScoping;
+use App\Support\Media\MediaUrl;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -53,5 +55,13 @@ class Brand extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    protected function logoUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value): ?string => MediaUrl::resolve($value),
+            set: fn (?string $value): ?string => MediaUrl::normalizeStorablePath($value),
+        );
     }
 }

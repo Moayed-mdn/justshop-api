@@ -7,6 +7,7 @@ use App\Exceptions\Product\ProductNotFoundException;
 use App\Models\Product;
 use App\Models\ProductOption;
 use App\Models\ProductVariant;
+use App\Support\Media\MediaUrl;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 class AdminProductRepository
@@ -294,21 +295,7 @@ class AdminProductRepository
      */
     private function normalizeImagePath(string $url): string
     {
-        // If it's an external URL (not from our storage), keep as-is
-        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
-            $appUrl = config('app.url');
-            // Only normalize if it's from our own domain
-            if (!str_starts_with($url, $appUrl)) {
-                return $url;
-            }
-            // Strip our domain
-            $url = str_replace($appUrl, '', $url);
-        }
-
-        // Strip leading /storage/ prefix
-        $url = preg_replace('#^/?storage/#', '', $url);
-
-        return $url;
+        return (string) MediaUrl::normalizeStorablePath($url);
     }
 
     /**

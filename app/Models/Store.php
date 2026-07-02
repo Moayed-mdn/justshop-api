@@ -7,6 +7,8 @@ use App\Enums\Store\ProvisioningStatusEnum;
 use App\Models\Asset\StoreAsset;
 use App\Models\Navigation\NavigationMenu;
 use App\Models\Theme\Theme;
+use App\Support\Media\MediaUrl;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -220,5 +222,21 @@ class Store extends Model
         }
 
         throw (new ModelNotFoundException())->setModel(self::class, [$value]);
+    }
+
+    protected function logoUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value): ?string => MediaUrl::resolve($value),
+            set: fn (?string $value): ?string => MediaUrl::normalizeStorablePath($value),
+        );
+    }
+
+    protected function faviconUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value): ?string => MediaUrl::resolve($value),
+            set: fn (?string $value): ?string => MediaUrl::normalizeStorablePath($value),
+        );
     }
 }

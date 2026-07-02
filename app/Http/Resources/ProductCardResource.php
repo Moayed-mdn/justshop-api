@@ -2,9 +2,9 @@
 
 namespace App\Http\Resources;
 
+use App\Support\Media\MediaUrl;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 class ProductCardResource extends JsonResource
 {
@@ -30,18 +30,6 @@ class ProductCardResource extends JsonResource
      */
     private function formatImageUrl(?string $path): ?string
     {
-        if (!$path) {
-            return null;
-        }
-
-        // Already absolute (external URL) → return as-is
-        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-            return $path;
-        }
-
-        // Strip leading "/storage/" if stored that way
-        $path = preg_replace('#^/?storage/#', '', $path);
-
-        return Storage::disk('public')->url($path);
+        return MediaUrl::resolve($path);
     }
 }
