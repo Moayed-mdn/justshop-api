@@ -25,3 +25,9 @@ venv/
 __pycache__/
 .playwright-mcp/
 scripts/node_modules/
+
+!/storage/
+!/storage/app/
+!/storage/app/public/
+!/storage/app/public/cms/
+!/storage/app/public/cms/default-logo.png

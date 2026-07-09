@@ -10,48 +10,38 @@ use App\Models\Store;
 use App\Models\User;
 use App\Policies\Concerns\HasStoreMembership;
 
-class TagPolicy
+class ThemePolicy
 {
     use HasStoreMembership;
 
-    public function viewAny(User $user, Store $store): bool
-    {
-        return $this->decision($user, 'viewAny', $this->canView($user, $store), $store, [
-            'authorization_domain' => 'tag',
-            'fallback_path_used' => false,
-        ]);
-    }
-
     public function view(User $user, Store $store): bool
     {
-        return $this->decision($user, 'view', $this->canView($user, $store), $store, [
-            'authorization_domain' => 'tag',
-            'fallback_path_used' => false,
-        ]);
+        return $this->decision($user, 'view', $this->canView($user, $store), $store);
+    }
+
+    public function viewAny(User $user, Store $store): bool
+    {
+        return $this->decision($user, 'viewAny', $this->canView($user, $store), $store);
     }
 
     public function create(User $user, Store $store): bool
     {
-        return $this->decision($user, 'create', $this->canManage($user, $store, PermissionEnum::TAG_CREATE, 'tag', 'create'), $store, [
-            'authorization_domain' => 'tag',
-            'fallback_path_used' => false,
-        ]);
+        return $this->decision($user, 'create', $this->canManage($user, $store, PermissionEnum::THEME_CREATE, 'theme', 'create'), $store);
     }
 
     public function update(User $user, Store $store): bool
     {
-        return $this->decision($user, 'update', $this->canManage($user, $store, PermissionEnum::TAG_UPDATE, 'tag', 'update'), $store, [
-            'authorization_domain' => 'tag',
-            'fallback_path_used' => false,
-        ]);
+        return $this->decision($user, 'update', $this->canManage($user, $store, PermissionEnum::THEME_UPDATE, 'theme', 'update'), $store);
     }
 
     public function delete(User $user, Store $store): bool
     {
-        return $this->decision($user, 'delete', $this->canManage($user, $store, PermissionEnum::TAG_DELETE, 'tag', 'delete'), $store, [
-            'authorization_domain' => 'tag',
-            'fallback_path_used' => false,
-        ]);
+        return $this->decision($user, 'delete', $this->canManage($user, $store, PermissionEnum::THEME_DELETE, 'theme', 'delete'), $store);
+    }
+
+    public function publish(User $user, Store $store): bool
+    {
+        return $this->decision($user, 'publish', $this->canManage($user, $store, PermissionEnum::THEME_PUBLISH, 'theme', 'publish'), $store);
     }
 
     private function canView(User $user, Store $store): bool
@@ -61,7 +51,7 @@ class TagPolicy
         }
 
         $isAdmin = $this->isAdmin($user, $store);
-        $hasPermission = $user->can(PermissionEnum::TAG_VIEW);
+        $hasPermission = $user->can(PermissionEnum::THEME_VIEW);
 
         if ($isAdmin) {
             return $hasPermission;
@@ -71,7 +61,7 @@ class TagPolicy
             if ($hasPermission) {
                 return true;
             }
-            $this->denyWithContext('tag', 'view', PermissionEnum::TAG_VIEW);
+            $this->denyWithContext('theme', 'view', PermissionEnum::THEME_VIEW);
         }
 
         return false;

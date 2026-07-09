@@ -29,7 +29,7 @@ class AdminTagController extends Controller
         Store $store,
         ListTagsAction $action,
     ): JsonResponse {
-        $this->authorize('viewAny', [Tag::class, $this->currentStore()]);
+        $this->authorize('viewAny', [Tag::class, $store]);
 
         $tags = $action->execute(
             ListTagsDTO::fromRequest($request, $store->id)
@@ -49,7 +49,7 @@ class AdminTagController extends Controller
         Store $store,
         CreateTagAction $action,
     ): JsonResponse {
-        $this->authorize('create', [Tag::class, $this->currentStore()]);
+        $this->authorize('create', [Tag::class, $store]);
 
         $tag = $action->execute(
             CreateTagDTO::fromRequest($request, $store->id)
@@ -70,7 +70,7 @@ class AdminTagController extends Controller
         int $tag,
         AdminTagRepository $repository,
     ): JsonResponse {
-        $this->authorize('view', [Tag::class, $this->currentStore()]);
+        $this->authorize('view', [Tag::class, $store]);
 
         $tagModel = $repository->findInStore($tag, $store->id);
 
@@ -86,7 +86,7 @@ class AdminTagController extends Controller
         int $tag,
         UpdateTagAction $action,
     ): JsonResponse {
-        $this->authorize('update', [Tag::class, $this->currentStore()]);
+        $this->authorize('update', [Tag::class, $store]);
 
         $tagModel = $action->execute(
             UpdateTagDTO::fromRequest($request, $store->id, $tag)
@@ -106,7 +106,7 @@ class AdminTagController extends Controller
         int $tag,
         DeleteTagAction $action,
     ): JsonResponse {
-        $this->authorize('delete', [Tag::class, $this->currentStore()]);
+        $this->authorize('delete', [Tag::class, $store]);
 
         $action->execute($store->id, $tag);
 

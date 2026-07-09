@@ -13,6 +13,7 @@ use App\Http\Requests\Merchant\Asset\UploadAssetRequest;
 use App\Http\Resources\Asset\StoreAssetResource;
 use App\Models\Asset\StoreAsset;
 use App\Models\Store;
+use App\Policies\ThemePolicy;
 use App\Repositories\Asset\StoreAssetRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,6 +32,8 @@ class StoreAssetController extends Controller
      */
     public function index(Request $request, Store $store): JsonResponse
     {
+        $this->authorize('view', [ThemePolicy::class, $store]);
+
         $type = $request->query('type');
         $typeEnum = $type ? AssetTypeEnum::from($type) : null;
 
@@ -47,6 +50,8 @@ class StoreAssetController extends Controller
      */
     public function store(UploadAssetRequest $request, Store $store): JsonResponse
     {
+        $this->authorize('create', [ThemePolicy::class, $store]);
+
         $validated = $request->validated();
         $type = AssetTypeEnum::from($validated['type']);
 
@@ -71,6 +76,8 @@ class StoreAssetController extends Controller
      */
     public function update(UpdateAssetRequest $request, Store $store, StoreAsset $asset): JsonResponse
     {
+        $this->authorize('update', [ThemePolicy::class, $store]);
+
         $asset = $this->assetRepository->update($asset, $request->validated());
 
         return $this->success(
@@ -84,6 +91,8 @@ class StoreAssetController extends Controller
      */
     public function destroy(Store $store, StoreAsset $asset): JsonResponse
     {
+        $this->authorize('delete', [ThemePolicy::class, $store]);
+
         $this->deleteAssetAction->execute($asset);
 
         return $this->success(null, __('theme.asset_deleted'));

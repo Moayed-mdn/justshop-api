@@ -32,4 +32,105 @@ return [
     'product_restore_failed' => 'Product restore failed.',
 
     'tag_not_found' => 'Tag not found.',
+
+    // Permission Denial Messages
+    'permission' => [
+        'generic' => 'You don\'t have permission to :action :resource. Contact your store administrator.',
+
+        'product' => [
+            'view' => 'You don\'t have permission to view products. Contact your store administrator.',
+            'create' => 'You don\'t have permission to create products. Contact your store administrator.',
+            'update' => 'You don\'t have permission to update products. This action requires Store Admin role.',
+            'delete' => 'You don\'t have permission to delete products. View-only access is granted.',
+            'restore' => 'You don\'t have permission to restore products. Contact your store administrator.',
+        ],
+
+        'category' => [
+            'view' => 'You don\'t have permission to view categories. Contact your store administrator.',
+            'create' => 'You don\'t have permission to create categories. Contact your store administrator.',
+            'update' => 'You don\'t have permission to update categories. This action requires Store Admin role.',
+            'delete' => 'You don\'t have permission to delete categories. View-only access is granted.',
+            'restore' => 'You don\'t have permission to restore categories. Contact your store administrator.',
+        ],
+
+        'brand' => [
+            'view' => 'You don\'t have permission to view brands. Contact your store administrator.',
+            'create' => 'You don\'t have permission to create brands. Contact your store administrator.',
+            'update' => 'You don\'t have permission to update brands. This action requires Store Admin role.',
+            'delete' => 'You don\'t have permission to delete brands. View-only access is granted.',
+            'restore' => 'You don\'t have permission to restore brands. Contact your store administrator.',
+        ],
+
+        'tag' => [
+            'view' => 'You don\'t have permission to view tags. Contact your store administrator.',
+            'create' => 'You don\'t have permission to create tags. This action requires Store Admin role.',
+            'update' => 'You don\'t have permission to update tags. Contact your store administrator.',
+            'delete' => 'You don\'t have permission to delete tags. View-only access is granted.',
+        ],
+
+        'order' => [
+            'view' => 'You don\'t have permission to view orders. Contact your store administrator.',
+            'update_status' => 'You don\'t have permission to update order status. This action requires Store Admin role.',
+            'cancel' => 'You don\'t have permission to cancel orders. Contact your store administrator.',
+            'refund' => 'You don\'t have permission to refund orders. This action requires Store Admin role.',
+        ],
+
+        'navigation' => [
+            'view' => 'You don\'t have permission to view navigation menus. Contact your store administrator.',
+            'create' => 'You don\'t have permission to create navigation menus. Contact your store administrator.',
+            'update' => 'You don\'t have permission to update navigation menus. Contact your store administrator.',
+            'delete' => 'You don\'t have permission to delete navigation menus. Contact your store administrator.',
+        ],
+
+        'page' => [
+            'view' => 'You don\'t have permission to view marketing pages. Contact your store administrator.',
+            'create' => 'You don\'t have permission to create marketing pages. Contact your store administrator.',
+            'update' => 'You don\'t have permission to update marketing pages. This action requires Store Admin role.',
+            'delete' => 'You don\'t have permission to delete marketing pages. View-only access is granted.',
+            'publish' => 'You don\'t have permission to publish marketing pages. This action requires Store Admin role.',
+        ],
+
+        'store' => [
+            'update' => 'You don\'t have permission to update store settings. This action requires Store Admin role.',
+            'delete' => 'You don\'t have permission to delete this store. Only the store owner can perform this action.',
+            'restore' => 'You don\'t have permission to restore this store. Contact your store administrator.',
+            'forceDelete' => 'You don\'t have permission to permanently delete this store. Contact your store administrator.',
+        ],
+
+        'system_template' => [
+            'view' => 'You don\'t have permission to view system templates. Contact your store administrator.',
+            'create' => 'You don\'t have permission to create system templates. Contact your store administrator.',
+            'update' => 'You don\'t have permission to update system templates. Contact your store administrator.',
+            'delete' => 'You don\'t have permission to delete system templates. Contact your store administrator.',
+        ],
+
+        'shipping' => [
+            'view' => 'You don\'t have permission to view shipping settings. Contact your store administrator.',
+            'create' => 'You don\'t have permission to create shipping zones or methods. Contact your store administrator.',
+            'update' => 'You don\'t have permission to update shipping settings. Contact your store administrator.',
+            'delete' => 'You don\'t have permission to delete shipping zones or methods. Contact your store administrator.',
+        ],
+
+        'template' => [
+            'view' => 'You don\'t have permission to view page templates. Contact your store administrator.',
+            'create' => 'You don\'t have permission to create page templates. Contact your store administrator.',
+            'update' => 'You don\'t have permission to update page templates. Contact your store administrator.',
+            'delete' => 'You don\'t have permission to delete page templates. Contact your store administrator.',
+        ],
+
+        'theme' => [
+            'view' => 'You don\'t have permission to view themes. Contact your store administrator.',
+            'create' => 'You don\'t have permission to create themes. Contact your store administrator.',
+            'update' => 'You don\'t have permission to update themes. Contact your store administrator.',
+            'delete' => 'You don\'t have permission to delete themes. Contact your store administrator.',
+            'publish' => 'You don\'t have permission to publish themes. Contact your store administrator.',
+        ],
+
+        'user' => [
+            'create' => 'You don\'t have permission to create users. Contact your store administrator.',
+            'block' => 'You don\'t have permission to block users. This action requires Store Admin role.',
+            'delete' => 'You don\'t have permission to delete users. Contact your store administrator.',
+            'restore' => 'You don\'t have permission to restore users. Contact your store administrator.',
+        ],
+    ],
 ];

@@ -89,4 +89,29 @@ class PermissionEnum
     public const MARKETING_STORE_UPDATE  = 'marketing.store.update';
     public const MARKETING_STORE_DELETE  = 'marketing.store.delete';
     public const MARKETING_STORE_PUBLISH = 'marketing.store.publish';
+
+    // --- Shipping ---
+    public const SHIPPING_VIEW   = 'shipping.view';
+    public const SHIPPING_CREATE = 'shipping.create';
+    public const SHIPPING_UPDATE = 'shipping.update';
+    public const SHIPPING_DELETE = 'shipping.delete';
+
+    // --- Navigation ---
+    public const NAVIGATION_VIEW   = 'navigation.view';
+    public const NAVIGATION_CREATE = 'navigation.create';
+    public const NAVIGATION_UPDATE = 'navigation.update';
+    public const NAVIGATION_DELETE = 'navigation.delete';
+
+    // --- Theme ---
+    public const THEME_VIEW    = 'theme.view';
+    public const THEME_CREATE  = 'theme.create';
+    public const THEME_UPDATE  = 'theme.update';
+    public const THEME_DELETE  = 'theme.delete';
+    public const THEME_PUBLISH = 'theme.publish';
+
+    // --- Page Template ---
+    public const TEMPLATE_VIEW   = 'template.view';
+    public const TEMPLATE_CREATE = 'template.create';
+    public const TEMPLATE_UPDATE = 'template.update';
+    public const TEMPLATE_DELETE = 'template.delete';
 }

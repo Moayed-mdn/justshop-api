@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Store;
 
+use App\Enums\RoleEnum;
+use App\Enums\Store\StoreRoleEnum;
 use App\Enums\Store\StoreStatusEnum;
 use App\Models\Store;
 use App\Models\User;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class MerchantStoreSlugRoutingTest extends TestCase
@@ -22,7 +26,11 @@ class MerchantStoreSlugRoutingTest extends TestCase
     {
         parent::setUp();
 
+        $this->seed(PermissionSeeder::class);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         $this->merchant = User::factory()->merchant()->verified()->create();
+        $this->merchant->assignRole(RoleEnum::STORE_ADMIN->value);
         $this->store = Store::factory()->create([
             'owner_id' => $this->merchant->id,
             'slug' => 'alpha-store',
@@ -30,7 +38,8 @@ class MerchantStoreSlugRoutingTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->merchant->stores()->attach($this->store->id, ['role' => 'owner']);
+        $this->merchant->stores()->attach($this->store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
+        $this->merchant = $this->merchant->fresh();
 
         Sanctum::actingAs($this->merchant, ['*'], 'merchant');
     }

@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Cms\Marketing\Store\StoreMarketingPage;
 use App\Models\Product;
 use App\Models\Store;
+use App\Policies\NavigationPolicy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -25,6 +26,8 @@ class NavigationResourceController extends Controller
      */
     public function pages(Request $request, Store $store): JsonResponse
     {
+        $this->authorize('view', [NavigationPolicy::class, $store]);
+
         $query = StoreMarketingPage::query()
             ->where('store_id', $store->id)
             ->published()
@@ -71,6 +74,8 @@ class NavigationResourceController extends Controller
      */
     public function categories(Request $request, Store $store): JsonResponse
     {
+        $this->authorize('view', [NavigationPolicy::class, $store]);
+
         $query = Category::query()
             ->where('store_id', $store->id)
             ->where('is_active', true)
@@ -109,6 +114,8 @@ class NavigationResourceController extends Controller
      */
     public function products(Request $request, Store $store): JsonResponse
     {
+        $this->authorize('view', [NavigationPolicy::class, $store]);
+
         $query = Product::query()
             ->where('store_id', $store->id)
             ->active()
@@ -150,6 +157,8 @@ class NavigationResourceController extends Controller
      */
     public function show(Request $request, Store $store, string $type, int $id): JsonResponse
     {
+        $this->authorize('view', [NavigationPolicy::class, $store]);
+
         $resource = match($type) {
             'page' => StoreMarketingPage::where('store_id', $store->id)->find($id),
             'category' => Category::where('store_id', $store->id)->with('translations')->find($id),
@@ -198,6 +207,8 @@ class NavigationResourceController extends Controller
      */
     public function validateUrl(Request $request, Store $store): JsonResponse
     {
+        $this->authorize('view', [NavigationPolicy::class, $store]);
+
         $url = $request->input('url');
         
         if (empty($url)) {

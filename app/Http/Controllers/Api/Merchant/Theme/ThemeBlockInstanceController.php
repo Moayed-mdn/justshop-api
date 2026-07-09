@@ -10,6 +10,7 @@ use App\Models\Store;
 use App\Models\Theme\Theme;
 use App\Models\Theme\ThemeBlockInstance;
 use App\Models\Theme\ThemeSection;
+use App\Policies\ThemePolicy;
 use App\Traits\ApiResponserTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,6 +21,8 @@ class ThemeBlockInstanceController extends Controller
 
     public function index(Store $store, Theme $theme, ThemeSection $section): JsonResponse
     {
+        $this->authorize('viewAny', [ThemePolicy::class, $store]);
+
         $blocks = $section->blockInstances()->enabled()->get();
 
         return $this->success(ThemeBlockInstanceResource::collection($blocks));
@@ -27,6 +30,8 @@ class ThemeBlockInstanceController extends Controller
 
     public function store(Request $request, Store $store, Theme $theme, ThemeSection $section): JsonResponse
     {
+        $this->authorize('create', [ThemePolicy::class, $store]);
+
         $validated = $request->validate([
             'type' => ['required', 'string'],
             'name' => ['nullable', 'string', 'max:255'],
@@ -45,11 +50,15 @@ class ThemeBlockInstanceController extends Controller
 
     public function show(Store $store, Theme $theme, ThemeSection $section, ThemeBlockInstance $blockInstance): JsonResponse
     {
+        $this->authorize('view', [ThemePolicy::class, $store]);
+
         return $this->success(new ThemeBlockInstanceResource($blockInstance));
     }
 
     public function update(Request $request, Store $store, Theme $theme, ThemeSection $section, ThemeBlockInstance $blockInstance): JsonResponse
     {
+        $this->authorize('update', [ThemePolicy::class, $store]);
+
         $validated = $request->validate([
             'type' => ['sometimes', 'string'],
             'name' => ['nullable', 'string', 'max:255'],
@@ -66,6 +75,8 @@ class ThemeBlockInstanceController extends Controller
 
     public function destroy(Store $store, Theme $theme, ThemeSection $section, ThemeBlockInstance $blockInstance): JsonResponse
     {
+        $this->authorize('delete', [ThemePolicy::class, $store]);
+
         $blockInstance->delete();
 
         return $this->success(null, 'success', 204);
@@ -73,6 +84,7 @@ class ThemeBlockInstanceController extends Controller
 
     public function reorder(Request $request, Store $store, Theme $theme, ThemeSection $section): JsonResponse
     {
+        $this->authorize('update', [ThemePolicy::class, $store]);
 
         $validated = $request->validate([
             'block_ids' => ['required', 'array'],

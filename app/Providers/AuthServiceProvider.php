@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Lead;
 use App\Models\Order;
 use App\Models\PaymentMethod;
+use App\Models\Product;
 use App\Models\Store;
 use App\Models\Tag;
 use App\Models\Theme\ThemeTemplate;
@@ -20,8 +21,12 @@ use App\Policies\DashboardPolicy;
 use App\Policies\LeadPolicy;
 use App\Policies\OrderPolicy;
 use App\Policies\PaymentMethodPolicy;
+use App\Policies\ProductPolicy;
 use App\Policies\StorePolicy;
+use App\Policies\NavigationPolicy;
+use App\Policies\ShippingPolicy;
 use App\Policies\TagPolicy;
+use App\Policies\ThemePolicy;
 use App\Models\Cms\Marketing\Platform\PlatformMarketingPage;
 use App\Models\Cms\Marketing\Store\StoreMarketingPage;
 use App\Models\Cms\MarketingPage;
@@ -43,6 +48,7 @@ class AuthServiceProvider extends ServiceProvider
         Lead::class => LeadPolicy::class,
         Order::class => OrderPolicy::class,
         PaymentMethod::class => PaymentMethodPolicy::class,
+        Product::class => ProductPolicy::class,
         Store::class => StorePolicy::class,
         Tag::class => TagPolicy::class,
         User::class => \App\Policies\MembershipPolicy::class,
@@ -50,6 +56,11 @@ class AuthServiceProvider extends ServiceProvider
         PlatformMarketingPage::class => PlatformMarketingPagePolicy::class,
         StoreMarketingPage::class => StoreMarketingPagePolicy::class,
         ThemeTemplate::class => SystemTemplatePolicy::class,
+        // Class-based policies (used with [PolicyClass::class, $store])
+        NavigationPolicy::class => NavigationPolicy::class,
+        ProductPolicy::class => ProductPolicy::class,
+        ShippingPolicy::class => ShippingPolicy::class,
+        ThemePolicy::class => ThemePolicy::class,
     ];
 
     public function boot()

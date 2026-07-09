@@ -13,6 +13,7 @@ use App\Http\Requests\Merchant\Navigation\UpdateMenuRequest;
 use App\Http\Resources\Navigation\NavigationMenuResource;
 use App\Models\Navigation\NavigationMenu;
 use App\Models\Store;
+use App\Policies\NavigationPolicy;
 use App\Repositories\Navigation\NavigationMenuRepository;
 use Illuminate\Http\JsonResponse;
 
@@ -30,6 +31,8 @@ class NavigationMenuController extends Controller
      */
     public function index(Store $store): JsonResponse
     {
+        $this->authorize('view', [NavigationPolicy::class, $store]);
+
         $menus = $this->menuRepository->getAllForStore($store->id);
 
         return $this->success(NavigationMenuResource::collection($menus));
@@ -40,6 +43,8 @@ class NavigationMenuController extends Controller
      */
     public function show(Store $store, NavigationMenu $menu): JsonResponse
     {
+        $this->authorize('view', [NavigationPolicy::class, $store]);
+
         $menu = $this->menuRepository->findWithItems($menu->id);
 
         return $this->success(new NavigationMenuResource($menu));
@@ -50,6 +55,8 @@ class NavigationMenuController extends Controller
      */
     public function store(CreateMenuRequest $request, Store $store): JsonResponse
     {
+        $this->authorize('create', [NavigationPolicy::class, $store]);
+
         $dto = CreateMenuDTO::fromArray(
             array_merge($request->validated(), ['store_id' => $store->id])
         );
@@ -68,6 +75,8 @@ class NavigationMenuController extends Controller
      */
     public function update(UpdateMenuRequest $request, Store $store, NavigationMenu $menu): JsonResponse
     {
+        $this->authorize('update', [NavigationPolicy::class, $store]);
+
         $menu = $this->updateMenuAction->execute($menu, $request->validated());
 
         return $this->success(
@@ -81,6 +90,8 @@ class NavigationMenuController extends Controller
      */
     public function destroy(Store $store, NavigationMenu $menu): JsonResponse
     {
+        $this->authorize('delete', [NavigationPolicy::class, $store]);
+
         $this->menuRepository->delete($menu);
 
         return $this->success(null, __('theme.menu_deleted'));

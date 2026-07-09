@@ -15,6 +15,7 @@ use App\Http\Resources\Navigation\NavigationMenuItemResource;
 use App\Models\Navigation\NavigationMenu;
 use App\Models\Navigation\NavigationMenuItem;
 use App\Models\Store;
+use App\Policies\NavigationPolicy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -35,6 +36,8 @@ class NavigationMenuItemController extends Controller
         Store $store,
         NavigationMenu $menu,
     ): JsonResponse {
+        $this->authorize('create', [NavigationPolicy::class, $store]);
+
         $dto = CreateMenuItemDTO::fromArray(
             array_merge($request->validated(), ['menu_id' => $menu->id])
         );
@@ -57,6 +60,8 @@ class NavigationMenuItemController extends Controller
         NavigationMenu $menu,
         NavigationMenuItem $item,
     ): JsonResponse {
+        $this->authorize('update', [NavigationPolicy::class, $store]);
+
         $item = $this->updateMenuItemAction->execute($item, $request->validated());
 
         return $this->success(
@@ -70,6 +75,8 @@ class NavigationMenuItemController extends Controller
      */
     public function destroy(Store $store, NavigationMenu $menu, NavigationMenuItem $item): JsonResponse
     {
+        $this->authorize('delete', [NavigationPolicy::class, $store]);
+
         $item->delete();
 
         return $this->success(null, __('theme.menu_item_deleted'));
@@ -80,6 +87,8 @@ class NavigationMenuItemController extends Controller
      */
     public function reorder(Request $request, Store $store, NavigationMenu $menu): JsonResponse
     {
+        $this->authorize('update', [NavigationPolicy::class, $store]);
+
         $validated = $request->validate([
             'item_ids' => ['required', 'array'],
             'item_ids.*' => ['required', 'integer', 'exists:navigation_menu_items,id'],

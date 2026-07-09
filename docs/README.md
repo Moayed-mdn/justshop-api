@@ -35,6 +35,7 @@
 ### Core Contracts & Architecture
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Project-wide architecture rules (SUPREME LAW)
 - **[AUTH_ROUTING.md](./AUTH_ROUTING.md)** - Auth routing, identity context, route ownership
+- **[auth/PERMISSIONS_AND_ROLES.md](./auth/PERMISSIONS_AND_ROLES.md)** - Complete permissions and roles guide ⭐
 - **[CMS_MARKETING_ARCHITECTURE.md](./CMS_MARKETING_ARCHITECTURE.md)** - CMS and marketing architecture
 - **[EXECUTION_GOVERNANCE.md](./EXECUTION_GOVERNANCE.md)** - Execution and rollout governance
 - **[OBSERVABILITY.md](./OBSERVABILITY.md)** - Observability and telemetry
@@ -81,7 +82,7 @@
 | **[implementation/](./implementation/)** | Implementation Guides | Step-by-step implementation docs |
 | **[migrations/](./migrations/)** | Migration Guides | Database and code migration docs |
 | **[plans/](./plans/)** | Planning Documents | Execution plans and roadmaps |
-| **[quick-reference/](./quick-reference/)** | Quick References | Cheat sheets and quick starts (4 files) |
+| **[quick-reference/](./quick-reference/)** | Quick References | Cheat sheets, permissions lookup (5 files) |
 | **[reference/](./reference/)** | Technical Reference | API references, route inventories |
 | **[reports/](./reports/)** | Status Reports | Project status and progress reports |
 | **[runbooks/](./runbooks/)** | Operational Runbooks | Incident response procedures |
@@ -121,6 +122,8 @@
 
 #### **Understand authentication**
 → Read [AUTH_ROUTING.md](./AUTH_ROUTING.md)  
+→ Read [auth/PERMISSIONS_AND_ROLES.md](./auth/PERMISSIONS_AND_ROLES.md) for permissions  
+→ Check [quick-reference/permissions-quick-reference.md](./quick-reference/permissions-quick-reference.md) for quick lookup  
 → Explore [auth/](./auth/) folder  
 → Review [security/](./security/) guidelines
 
@@ -205,12 +208,12 @@ public function __construct(
 
 | Category | Count | Status |
 |----------|-------|--------|
-| **Total Documents** | 180+ | ✅ Complete |
-| **Core Contracts** | 7 | ✅ Active |
+| **Total Documents** | 182+ | ✅ Complete |
+| **Core Contracts** | 8 | ✅ Active |
 | **Wave Migrations** | 12 waves | ✅ Complete |
 | **Feature Docs** | 20+ | ✅ Active |
 | **Bug Fixes** | 15+ | ✅ Documented |
-| **Quick References** | 4 | ✅ Ready |
+| **Quick References** | 5 | ✅ Ready |
 | **ADRs** | Multiple | ✅ Active |
 | **Runbooks** | Multiple | ✅ Ready |
 
@@ -274,6 +277,7 @@ grep -r "authorize" ARCHITECTURE.md
 ### Questions about...
 
 **Architecture**: [ARCHITECTURE.md](./ARCHITECTURE.md)  
+**Permissions**: [auth/PERMISSIONS_AND_ROLES.md](./auth/PERMISSIONS_AND_ROLES.md)  
 **AI Usage**: [AI_RULES_ENFORCEMENT_SYSTEM.md](./AI_RULES_ENFORCEMENT_SYSTEM.md)  
 **Execution**: [EXECUTION_GOVERNANCE.md](./EXECUTION_GOVERNANCE.md)  
 **Auth**: [AUTH_ROUTING.md](./AUTH_ROUTING.md), [auth/](./auth/)  
@@ -306,7 +310,7 @@ Take time to understand the architecture, follow the rules, and you'll be produc
 
 ---
 
-**Last Updated**: June 7, 2026  
+**Last Updated**: July 3, 2026  
 **Status**: Complete and organized  
-**Total Documents**: 180+  
+**Total Documents**: 182+  
 **Authority**: ARCHITECTURE.md

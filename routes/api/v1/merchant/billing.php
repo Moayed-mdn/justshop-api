@@ -65,9 +65,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         
         Route::post('/resume', [SubscriptionController::class, 'resume'])
             ->name('merchant.billing.subscription.resume');
-        
-        Route::post('/change-cycle', [SubscriptionController::class, 'changeCycle'])
-            ->name('merchant.billing.subscription.changeCycle');
     });
 
     // Invoice & Portal (Phase 6)

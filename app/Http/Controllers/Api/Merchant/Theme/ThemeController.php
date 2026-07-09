@@ -16,6 +16,7 @@ use App\Http\Requests\Merchant\Theme\UpdateThemeRequest;
 use App\Http\Resources\Theme\ThemeResource;
 use App\Models\Store;
 use App\Models\Theme\Theme;
+use App\Policies\ThemePolicy;
 use App\Repositories\Theme\ThemeRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -37,6 +38,8 @@ class ThemeController extends Controller
      */
     public function index(Store $store, Request $request): JsonResponse
     {
+        $this->authorize('view', [ThemePolicy::class, $store]);
+
         $perPage = (int) $request->input('per_page', 15);
         
         $themes = Theme::where('store_id', $store->id)
@@ -54,6 +57,8 @@ class ThemeController extends Controller
      */
     public function show(Store $store, Theme $theme): JsonResponse
     {
+        $this->authorize('view', [ThemePolicy::class, $store]);
+
         $theme->load(['sections.blocks', 'templates']);
 
         return $this->success(new ThemeResource($theme));
@@ -66,6 +71,8 @@ class ThemeController extends Controller
         CreateThemeRequest $request,
         Store $store,
     ): JsonResponse {
+        $this->authorize('create', [ThemePolicy::class, $store]);
+
         $dto = CreateThemeDTO::fromArray(
             array_merge($request->validated(), ['store_id' => $store->id])
         );
@@ -87,6 +94,8 @@ class ThemeController extends Controller
         Store $store,
         Theme $theme,
     ): JsonResponse {
+        $this->authorize('update', [ThemePolicy::class, $store]);
+
         $dto = UpdateThemeDTO::fromArray($request->validated());
         $theme = $this->updateThemeAction->execute($theme, $dto);
 
@@ -101,6 +110,8 @@ class ThemeController extends Controller
      */
     public function destroy(Store $store, Theme $theme): JsonResponse
     {
+        $this->authorize('delete', [ThemePolicy::class, $store]);
+
         if ($theme->is_active) {
             return response()->json([
                 'status' => false,
@@ -118,6 +129,8 @@ class ThemeController extends Controller
      */
     public function publish(Store $store, Theme $theme): JsonResponse
     {
+        $this->authorize('publish', [ThemePolicy::class, $store]);
+
         $theme = $this->publishThemeAction->execute($theme);
 
         return $this->success(
@@ -134,6 +147,8 @@ class ThemeController extends Controller
         Store $store,
         Theme $theme,
     ): JsonResponse {
+        $this->authorize('create', [ThemePolicy::class, $store]);
+
         $validated = $request->validate([
             'name' => ['nullable', 'string', 'max:255'],
         ]);
@@ -158,6 +173,8 @@ class ThemeController extends Controller
         Store $store,
         Theme $theme,
     ): JsonResponse {
+        $this->authorize('update', [ThemePolicy::class, $store]);
+
         $validated = $request->validate([
             'settings' => ['required', 'array'],
             'settings.colors' => ['sometimes', 'array'],

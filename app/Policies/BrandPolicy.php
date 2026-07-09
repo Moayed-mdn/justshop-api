@@ -32,7 +32,7 @@ class BrandPolicy
 
     public function create(User $user, Store $store): bool
     {
-        return $this->decision($user, 'create', $this->canManage($user, $store, PermissionEnum::BRAND_CREATE), $store, [
+        return $this->decision($user, 'create', $this->canManage($user, $store, PermissionEnum::BRAND_CREATE, 'brand', 'create'), $store, [
             'authorization_domain' => 'brand',
             'fallback_path_used' => false,
         ]);
@@ -40,7 +40,7 @@ class BrandPolicy
 
     public function update(User $user, Store $store): bool
     {
-        return $this->decision($user, 'update', $this->canManage($user, $store, PermissionEnum::BRAND_UPDATE), $store, [
+        return $this->decision($user, 'update', $this->canManage($user, $store, PermissionEnum::BRAND_UPDATE, 'brand', 'update'), $store, [
             'authorization_domain' => 'brand',
             'fallback_path_used' => false,
         ]);
@@ -48,7 +48,7 @@ class BrandPolicy
 
     public function delete(User $user, Store $store): bool
     {
-        return $this->decision($user, 'delete', $this->canManage($user, $store, PermissionEnum::BRAND_DELETE), $store, [
+        return $this->decision($user, 'delete', $this->canManage($user, $store, PermissionEnum::BRAND_DELETE, 'brand', 'delete'), $store, [
             'authorization_domain' => 'brand',
             'fallback_path_used' => false,
         ]);
@@ -56,7 +56,7 @@ class BrandPolicy
 
     public function restore(User $user, Store $store): bool
     {
-        return $this->decision($user, 'restore', $this->canManage($user, $store, PermissionEnum::BRAND_RESTORE), $store, [
+        return $this->decision($user, 'restore', $this->canManage($user, $store, PermissionEnum::BRAND_RESTORE, 'brand', 'restore'), $store, [
             'authorization_domain' => 'brand',
             'fallback_path_used' => false,
         ]);
@@ -68,15 +68,43 @@ class BrandPolicy
             return true;
         }
 
-        return $this->isMember($user, $store) && $user->can(PermissionEnum::BRAND_VIEW);
+        $isAdmin = $this->isAdmin($user, $store);
+        $hasPermission = $user->can(PermissionEnum::BRAND_VIEW);
+
+        if ($isAdmin) {
+            return $hasPermission;
+        }
+
+        if ($this->isMember($user, $store)) {
+            if ($hasPermission) {
+                return true;
+            }
+            $this->denyWithContext('brand', 'view', PermissionEnum::BRAND_VIEW);
+        }
+
+        return false;
     }
 
-    private function canManage(User $user, Store $store, string $permission): bool
+    private function canManage(User $user, Store $store, string $permission, string $resource, string $action): bool
     {
         if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
             return true;
         }
 
-        return $this->isAdmin($user, $store) && $user->can($permission);
+        $isAdmin = $this->isAdmin($user, $store);
+        $hasPermission = $user->can($permission);
+
+        if ($isAdmin) {
+            return $hasPermission;
+        }
+
+        if ($this->isMember($user, $store)) {
+            if ($hasPermission) {
+                return true;
+            }
+            $this->denyWithContext($resource, $action, $permission);
+        }
+
+        return false;
     }
 }

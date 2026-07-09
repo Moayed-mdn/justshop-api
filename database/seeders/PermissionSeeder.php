@@ -71,6 +71,25 @@ class PermissionSeeder extends Seeder
             PermissionEnum::MARKETING_STORE_UPDATE,
             PermissionEnum::MARKETING_STORE_DELETE,
             PermissionEnum::MARKETING_STORE_PUBLISH,
+
+            // New permissions
+            PermissionEnum::SHIPPING_VIEW,
+            PermissionEnum::SHIPPING_CREATE,
+            PermissionEnum::SHIPPING_UPDATE,
+            PermissionEnum::SHIPPING_DELETE,
+            PermissionEnum::NAVIGATION_VIEW,
+            PermissionEnum::NAVIGATION_CREATE,
+            PermissionEnum::NAVIGATION_UPDATE,
+            PermissionEnum::NAVIGATION_DELETE,
+            PermissionEnum::THEME_VIEW,
+            PermissionEnum::THEME_CREATE,
+            PermissionEnum::THEME_UPDATE,
+            PermissionEnum::THEME_DELETE,
+            PermissionEnum::THEME_PUBLISH,
+            PermissionEnum::TEMPLATE_VIEW,
+            PermissionEnum::TEMPLATE_CREATE,
+            PermissionEnum::TEMPLATE_UPDATE,
+            PermissionEnum::TEMPLATE_DELETE,
         ];
 
         foreach ($permissions as $permission) {
@@ -142,6 +161,25 @@ class PermissionSeeder extends Seeder
             PermissionEnum::MARKETING_STORE_UPDATE,
             PermissionEnum::MARKETING_STORE_DELETE,
             PermissionEnum::MARKETING_STORE_PUBLISH,
+
+            // New permissions
+            PermissionEnum::SHIPPING_VIEW,
+            PermissionEnum::SHIPPING_CREATE,
+            PermissionEnum::SHIPPING_UPDATE,
+            PermissionEnum::SHIPPING_DELETE,
+            PermissionEnum::NAVIGATION_VIEW,
+            PermissionEnum::NAVIGATION_CREATE,
+            PermissionEnum::NAVIGATION_UPDATE,
+            PermissionEnum::NAVIGATION_DELETE,
+            PermissionEnum::THEME_VIEW,
+            PermissionEnum::THEME_CREATE,
+            PermissionEnum::THEME_UPDATE,
+            PermissionEnum::THEME_DELETE,
+            PermissionEnum::THEME_PUBLISH,
+            PermissionEnum::TEMPLATE_VIEW,
+            PermissionEnum::TEMPLATE_CREATE,
+            PermissionEnum::TEMPLATE_UPDATE,
+            PermissionEnum::TEMPLATE_DELETE,
         ]);
 
         // Assign permissions to store_admin
@@ -182,6 +220,25 @@ class PermissionSeeder extends Seeder
             PermissionEnum::MARKETING_STORE_UPDATE,
             PermissionEnum::MARKETING_STORE_DELETE,
             PermissionEnum::MARKETING_STORE_PUBLISH,
+
+            // New permissions — management (no delete for store)
+            PermissionEnum::SHIPPING_VIEW,
+            PermissionEnum::SHIPPING_CREATE,
+            PermissionEnum::SHIPPING_UPDATE,
+            PermissionEnum::SHIPPING_DELETE,
+            PermissionEnum::NAVIGATION_VIEW,
+            PermissionEnum::NAVIGATION_CREATE,
+            PermissionEnum::NAVIGATION_UPDATE,
+            PermissionEnum::NAVIGATION_DELETE,
+            PermissionEnum::THEME_VIEW,
+            PermissionEnum::THEME_CREATE,
+            PermissionEnum::THEME_UPDATE,
+            PermissionEnum::THEME_DELETE,
+            PermissionEnum::THEME_PUBLISH,
+            PermissionEnum::TEMPLATE_VIEW,
+            PermissionEnum::TEMPLATE_CREATE,
+            PermissionEnum::TEMPLATE_UPDATE,
+            PermissionEnum::TEMPLATE_DELETE,
         ]);
 
         // Assign permissions to staff
@@ -193,6 +250,11 @@ class PermissionSeeder extends Seeder
             PermissionEnum::CATEGORY_VIEW,
             PermissionEnum::BRAND_VIEW,
             PermissionEnum::TAG_VIEW,
+            PermissionEnum::MARKETING_STORE_VIEW,
+            PermissionEnum::SHIPPING_VIEW,
+            PermissionEnum::NAVIGATION_VIEW,
+            PermissionEnum::THEME_VIEW,
+            PermissionEnum::TEMPLATE_VIEW,
         ]);
 
         // customer gets no permissions (role exists but no permissions assigned)

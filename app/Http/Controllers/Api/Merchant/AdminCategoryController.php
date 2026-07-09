@@ -32,7 +32,7 @@ class AdminCategoryController extends Controller
         Store $store,
         ListCategoriesAction $action,
     ): JsonResponse {
-        $this->authorize('viewAny', [Category::class, $this->currentStore()]);
+        $this->authorize('viewAny', [Category::class, $store]);
 
         $categories = $action->execute(
             dto:  ListCategoriesDTO::fromRequest($request, $store->id),
@@ -49,7 +49,7 @@ class AdminCategoryController extends Controller
         int $category,
         ShowCategoryAction $action,
     ): JsonResponse {
-        $this->authorize('view', [Category::class, $this->currentStore()]);
+        $this->authorize('view', [Category::class, $store]);
 
         $result = $action->execute(
             dto: new ShowCategoryDTO(
@@ -66,7 +66,7 @@ class AdminCategoryController extends Controller
         Store $store,
         CreateCategoryAction $action,
     ): JsonResponse {
-        $this->authorize('create', [Category::class, $this->currentStore()]);
+        $this->authorize('create', [Category::class, $store]);
 
         $result = $action->execute(
             dto:  CreateCategoryDTO::fromRequest($request, $store->id),
@@ -85,7 +85,7 @@ class AdminCategoryController extends Controller
         int $category,
         UpdateCategoryAction $action,
     ): JsonResponse {
-        $this->authorize('update', [Category::class, $this->currentStore()]);
+        $this->authorize('update', [Category::class, $store]);
 
         $result = $action->execute(
             dto:  UpdateCategoryDTO::fromRequest($request, $store->id, $category),
@@ -102,7 +102,7 @@ class AdminCategoryController extends Controller
         int $category,
         DeleteCategoryAction $action,
     ): JsonResponse {
-        $this->authorize('delete', [Category::class, $this->currentStore()]);
+        $this->authorize('delete', [Category::class, $store]);
 
         $action->execute(
             dto: new DeleteCategoryDTO(
@@ -121,7 +121,7 @@ class AdminCategoryController extends Controller
         int $category,
         RestoreCategoryAction $action,
     ): JsonResponse {
-        $this->authorize('restore', [Category::class, $this->currentStore()]);
+        $this->authorize('restore', [Category::class, $store]);
 
         $result = $action->execute(
             dto: new RestoreCategoryDTO(

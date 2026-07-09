@@ -20,58 +20,53 @@ use App\Http\Requests\Admin\Order\RefundOrderRequest;
 use App\Http\Requests\Admin\Order\UpdateOrderStatusRequest;
 use App\Http\Resources\Admin\Order\AdminOrderDetailResource;
 use App\Http\Resources\Admin\Order\AdminOrderResource;
+use App\Models\Order;
 use App\Models\Store;
+use App\Policies\OrderPolicy;
 use Illuminate\Http\JsonResponse;
 
 class AdminOrderController extends Controller
 {
     public function index(ListOrdersRequest $request, ListOrdersAction $action, Store $store): JsonResponse
     {
-        // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        // Admin order management uses Store-level authorization (membership-based)
-        $storeModel = $store;
-        $this->authorize('view', $storeModel);
-        
+        $this->authorize('viewAny', [OrderPolicy::class, $store]);
+
         $orders = $action->execute(ListOrdersDTO::fromRequest($request, $store->id));
         return $this->paginated($orders, AdminOrderResource::collection($orders));
     }
 
     public function show(GetOrderRequest $request, GetOrderAction $action, Store $store, int $order): JsonResponse
     {
-        // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        $storeModel = $store;
-        $this->authorize('view', $storeModel);
-        
+        $orderModel = Order::where('store_id', $store->id)->findOrFail($order);
+        $this->authorize('view', $orderModel);
+
         $orderModel = $action->execute(GetOrderDTO::fromRequest($request, $store->id, $order));
         return $this->success(new AdminOrderDetailResource($orderModel));
     }
 
     public function updateStatus(UpdateOrderStatusRequest $request, UpdateOrderStatusAction $action, Store $store, int $order): JsonResponse
     {
-        // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        $storeModel = $store;
-        $this->authorize('update', $storeModel);
-        
+        $orderModel = Order::where('store_id', $store->id)->findOrFail($order);
+        $this->authorize('updateStatus', $orderModel);
+
         $orderModel = $action->execute(UpdateOrderStatusDTO::fromRequest($request, $store->id, $order));
         return $this->success(new AdminOrderResource($orderModel), __('admin.order_status_updated'));
     }
 
     public function cancel(CancelOrderRequest $request, CancelOrderAction $action, Store $store, int $order): JsonResponse
     {
-        // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        $storeModel = $store;
-        $this->authorize('update', $storeModel);
-        
+        $orderModel = Order::where('store_id', $store->id)->findOrFail($order);
+        $this->authorize('cancel', $orderModel);
+
         $orderModel = $action->execute(CancelOrderDTO::fromRequest($request, $store->id, $order));
         return $this->success(new AdminOrderResource($orderModel), __('admin.order_cancelled'));
     }
 
     public function refund(RefundOrderRequest $request, RefundOrderAction $action, Store $store, int $order): JsonResponse
     {
-        // Wave 2 Remediation: Normalize policy ownership from generic currentStore to explicit Store model
-        $storeModel = $store;
-        $this->authorize('update', $storeModel);
-        
+        $orderModel = Order::where('store_id', $store->id)->findOrFail($order);
+        $this->authorize('refund', $orderModel);
+
         $orderModel = $action->execute(RefundOrderDTO::fromRequest($request, $store->id, $order));
         return $this->success(new AdminOrderResource($orderModel), __('admin.order_refunded'));
     }

@@ -4,6 +4,7 @@ namespace App\Exceptions;
 use App\Enums\ErrorCode;
 use App\Exceptions\Auth\AccountDisabledException;
 use App\Exceptions\Auth\InvalidCredentialsException;
+use App\Exceptions\Authorization\PermissionDeniedException;
 use App\Exceptions\BaseApiException;
 use App\Exceptions\Domain\DomainException;
 use App\Exceptions\Domain\InvalidStoreContextException;
@@ -41,6 +42,10 @@ class ExceptionRegistrar
                     'redirect' => '/dashboard',
                     'errors' => new \stdClass(),
                 ], 403));
+            }
+
+            if ($e instanceof PermissionDeniedException) {
+                return $this->attachTraceHeaders($e->render(request()));
             }
 
             if ($e instanceof BaseApiException) {
@@ -208,6 +213,16 @@ class ExceptionRegistrar
                 $exception instanceof UnauthorizedStoreAccessException => $securityEventLogger->record(
                     SecurityEventType::TENANT_STORE_MISMATCH,
                     ['path' => request()->path()],
+                    'warning',
+                ),
+                $exception instanceof PermissionDeniedException => $securityEventLogger->record(
+                    SecurityEventType::AUTHORIZATION_DENIED,
+                    [
+                        'path' => request()->path(),
+                        'resource' => $exception->getResource(),
+                        'action' => $exception->getAction(),
+                        'permission' => $exception->getPermission(),
+                    ],
                     'warning',
                 ),
                 $exception instanceof AuthorizationException => $securityEventLogger->record(

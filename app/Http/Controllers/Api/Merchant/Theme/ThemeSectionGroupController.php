@@ -9,6 +9,7 @@ use App\Http\Resources\Theme\ThemeSectionGroupResource;
 use App\Models\Store;
 use App\Models\Theme\Theme;
 use App\Models\Theme\ThemeSectionGroup;
+use App\Policies\ThemePolicy;
 use App\Traits\ApiResponserTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,8 @@ class ThemeSectionGroupController extends Controller
 
     public function index(Store $store, Theme $theme): JsonResponse
     {
+        $this->authorize('viewAny', [ThemePolicy::class, $store]);
+
         $groups = $theme->sectionGroups()->orderBy('handle')->get();
 
         return $this->success(ThemeSectionGroupResource::collection($groups));
@@ -26,6 +29,7 @@ class ThemeSectionGroupController extends Controller
 
     public function store(Request $request, Store $store, Theme $theme): JsonResponse
     {
+        $this->authorize('create', [ThemePolicy::class, $store]);
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
@@ -41,11 +45,15 @@ class ThemeSectionGroupController extends Controller
 
     public function show(Store $store, Theme $theme, ThemeSectionGroup $sectionGroup): JsonResponse
     {
+        $this->authorize('view', [ThemePolicy::class, $store]);
+
         return $this->success(new ThemeSectionGroupResource($sectionGroup));
     }
 
     public function update(Request $request, Store $store, Theme $theme, ThemeSectionGroup $sectionGroup): JsonResponse
     {
+        $this->authorize('update', [ThemePolicy::class, $store]);
+
         $validated = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
             'sections' => ['sometimes', 'array'],
@@ -59,6 +67,8 @@ class ThemeSectionGroupController extends Controller
 
     public function destroy(Store $store, Theme $theme, ThemeSectionGroup $sectionGroup): JsonResponse
     {
+        $this->authorize('delete', [ThemePolicy::class, $store]);
+
         $sectionGroup->delete();
 
         return $this->success(null, 'success', 204);

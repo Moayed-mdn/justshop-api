@@ -17,6 +17,7 @@ use App\Models\Store;
 use App\Models\Theme\Theme;
 use App\Models\Theme\ThemeBlock;
 use App\Models\Theme\ThemeSection;
+use App\Policies\ThemePolicy;
 use App\Repositories\Theme\ThemeBlockRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,6 +37,8 @@ class ThemeBlockController extends Controller
      */
     public function index(Store $store, Theme $theme, ThemeSection $section): JsonResponse
     {
+        $this->authorize('viewAny', [ThemePolicy::class, $store]);
+
         $blocks = $this->blockRepository->getAllForSection($section->id);
 
         return $this->success(ThemeBlockResource::collection($blocks));
@@ -46,6 +49,8 @@ class ThemeBlockController extends Controller
      */
     public function show(Store $store, Theme $theme, ThemeSection $section, ThemeBlock $block): JsonResponse
     {
+        $this->authorize('view', [ThemePolicy::class, $store]);
+
         return $this->success(new ThemeBlockResource($block));
     }
 
@@ -58,6 +63,8 @@ class ThemeBlockController extends Controller
         Theme $theme,
         ThemeSection $section,
     ): JsonResponse {
+        $this->authorize('create', [ThemePolicy::class, $store]);
+
         $dto = CreateBlockDTO::fromArray(
             array_merge($request->validated(), ['section_id' => $section->id])
         );
@@ -81,6 +88,8 @@ class ThemeBlockController extends Controller
         ThemeSection $section,
         ThemeBlock $block,
     ): JsonResponse {
+        $this->authorize('update', [ThemePolicy::class, $store]);
+
         $dto = UpdateBlockDTO::fromArray($request->validated());
         $block = $this->updateBlockAction->execute($block, $dto);
 
@@ -95,6 +104,8 @@ class ThemeBlockController extends Controller
      */
     public function destroy(Store $store, Theme $theme, ThemeSection $section, ThemeBlock $block): JsonResponse
     {
+        $this->authorize('delete', [ThemePolicy::class, $store]);
+
         if (!$block->is_removable) {
             return response()->json([
                 'status' => false,
@@ -112,6 +123,8 @@ class ThemeBlockController extends Controller
      */
     public function reorder(Request $request, Store $store, Theme $theme, ThemeSection $section): JsonResponse
     {
+        $this->authorize('update', [ThemePolicy::class, $store]);
+
         $validated = $request->validate([
             'block_ids' => ['required', 'array'],
             'block_ids.*' => ['required', 'integer', 'exists:theme_blocks,id'],

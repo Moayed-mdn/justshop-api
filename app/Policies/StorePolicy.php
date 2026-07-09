@@ -2,13 +2,13 @@
 
 namespace App\Policies;
 
+use App\Enums\PermissionEnum;
 use App\Enums\RoleEnum;
 use App\Enums\Store\StoreRoleEnum;
 use App\Models\Store;
 use App\Models\User;
-use App\Policies\Concerns\InteractsWithPolicyTelemetry;
-
 use App\Policies\Concerns\HasStoreMembership;
+use App\Policies\Concerns\InteractsWithPolicyTelemetry;
 
 class StorePolicy
 {
@@ -60,19 +60,19 @@ class StorePolicy
      */
     public function update(User $user, Store $store): bool
     {
-        // Rule: Merchant-only operation (customer actors denied)
         if ($this->isCustomer($user)) {
             return $this->decision($user, 'update', false, $store);
         }
 
-        $canUpdate = $user->id === $store->owner_id || $this->isAdmin($user, $store);
+        if ($user->id === $store->owner_id || $this->isAdmin($user, $store)) {
+            return $this->decision($user, 'update', true, $store);
+        }
 
-        return $this->decision(
-            $user,
-            'update',
-            $canUpdate,
-            $store,
-        );
+        if ($this->isMember($user, $store)) {
+            $this->denyWithContext('store', 'update', PermissionEnum::STORE_UPDATE);
+        }
+
+        return $this->decision($user, 'update', false, $store);
     }
 
     /**
@@ -80,15 +80,19 @@ class StorePolicy
      */
     public function delete(User $user, Store $store): bool
     {
-        // Rule: Merchant-only operation (customer actors denied)
         if ($this->isCustomer($user)) {
             return $this->decision($user, 'delete', false, $store);
         }
 
-        // Only owner or platform admin (via impersonation) can delete
-        $canDelete = $user->id === $store->owner_id || $this->isGovernedImpersonationActive($user);
+        if ($user->id === $store->owner_id || $this->isGovernedImpersonationActive($user)) {
+            return $this->decision($user, 'delete', true, $store);
+        }
 
-        return $this->decision($user, 'delete', $canDelete, $store);
+        if ($this->isMember($user, $store)) {
+            $this->denyWithContext('store', 'delete', PermissionEnum::STORE_DELETE);
+        }
+
+        return $this->decision($user, 'delete', false, $store);
     }
 
     /**
@@ -96,6 +100,10 @@ class StorePolicy
      */
     public function restore(User $user, Store $store): bool
     {
+        if ($this->isMember($user, $store)) {
+            $this->denyWithContext('store', 'restore', PermissionEnum::STORE_DELETE);
+        }
+
         return $this->decision($user, 'restore', false, $store);
     }
 
@@ -104,6 +112,10 @@ class StorePolicy
      */
     public function forceDelete(User $user, Store $store): bool
     {
+        if ($this->isMember($user, $store)) {
+            $this->denyWithContext('store', 'forceDelete', PermissionEnum::STORE_DELETE);
+        }
+
         return $this->decision($user, 'forceDelete', false, $store);
     }
 

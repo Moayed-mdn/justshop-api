@@ -77,41 +77,32 @@ Route::prefix('/v1/admin/stores/{store}')
     ->group(function (): void {
         Route::prefix('/dashboard')->group(function (): void {
             Route::get('/stats', [\App\Http\Controllers\Api\Merchant\AdminDashboardController::class, 'stats'])
-                ->middleware('permission:' . \App\Enums\PermissionEnum::DASHBOARD_VIEW)
                 ->name('merchant.admin.legacy.dashboard.stats');
 
             Route::get('/recent-orders', [\App\Http\Controllers\Api\Merchant\AdminDashboardController::class, 'recentOrders'])
-                ->middleware('permission:' . \App\Enums\PermissionEnum::DASHBOARD_VIEW)
                 ->name('merchant.admin.legacy.dashboard.recent-orders');
 
             Route::get('/top-products', [\App\Http\Controllers\Api\Merchant\AdminDashboardController::class, 'topProducts'])
-                ->middleware('permission:' . \App\Enums\PermissionEnum::DASHBOARD_VIEW)
                 ->name('merchant.admin.legacy.dashboard.top-products');
         });
 
         Route::prefix('/products')->group(function (): void {
             Route::get('/', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'index'])
-                ->middleware('permission:' . \App\Enums\PermissionEnum::PRODUCT_VIEW)
                 ->name('merchant.admin.legacy.products.index');
 
             Route::get('/{product}', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'show'])
-                ->middleware('permission:' . \App\Enums\PermissionEnum::PRODUCT_VIEW)
                 ->name('merchant.admin.legacy.products.show');
 
             Route::post('/', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'store'])
-                ->middleware('permission:' . \App\Enums\PermissionEnum::PRODUCT_CREATE)
                 ->name('merchant.admin.legacy.products.store');
 
             Route::patch('/{product}', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'update'])
-                ->middleware('permission:' . \App\Enums\PermissionEnum::PRODUCT_UPDATE)
                 ->name('merchant.admin.legacy.products.update');
 
             Route::delete('/{product}', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'destroy'])
-                ->middleware('permission:' . \App\Enums\PermissionEnum::PRODUCT_DELETE)
                 ->name('merchant.admin.legacy.products.destroy');
 
             Route::patch('/{product}/restore', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'restore'])
-                ->middleware('permission:' . \App\Enums\PermissionEnum::PRODUCT_RESTORE)
                 ->name('merchant.admin.legacy.products.restore');
         });
     });

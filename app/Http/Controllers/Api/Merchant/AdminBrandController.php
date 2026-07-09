@@ -32,7 +32,7 @@ class AdminBrandController extends Controller
         Store $store,
         ListBrandsAction $action,
     ): JsonResponse {
-        $this->authorize('viewAny', [Brand::class, $this->currentStore()]);
+        $this->authorize('viewAny', [Brand::class, $store]);
 
         $brands = $action->execute(
             dto:  ListBrandsDTO::fromRequest($request, $store->id),
@@ -49,7 +49,7 @@ class AdminBrandController extends Controller
         int $brand,
         ShowBrandAction $action,
     ): JsonResponse {
-        $this->authorize('view', [Brand::class, $this->currentStore()]);
+        $this->authorize('view', [Brand::class, $store]);
 
         $result = $action->execute(
             dto: new ShowBrandDTO(
@@ -66,7 +66,7 @@ class AdminBrandController extends Controller
         Store $store,
         CreateBrandAction $action,
     ): JsonResponse {
-        $this->authorize('create', [Brand::class, $this->currentStore()]);
+        $this->authorize('create', [Brand::class, $store]);
 
         $result = $action->execute(
             dto:  CreateBrandDTO::fromRequest($request, $store->id),
@@ -85,7 +85,7 @@ class AdminBrandController extends Controller
         int $brand,
         UpdateBrandAction $action,
     ): JsonResponse {
-        $this->authorize('update', [Brand::class, $this->currentStore()]);
+        $this->authorize('update', [Brand::class, $store]);
 
         $result = $action->execute(
             dto:  UpdateBrandDTO::fromRequest($request, $store->id, $brand),
@@ -102,7 +102,7 @@ class AdminBrandController extends Controller
         int $brand,
         DeleteBrandAction $action,
     ): JsonResponse {
-        $this->authorize('delete', [Brand::class, $this->currentStore()]);
+        $this->authorize('delete', [Brand::class, $store]);
 
         $action->execute(
             dto: new DeleteBrandDTO(
@@ -121,7 +121,7 @@ class AdminBrandController extends Controller
         int $brand,
         RestoreBrandAction $action,
     ): JsonResponse {
-        $this->authorize('restore', [Brand::class, $this->currentStore()]);
+        $this->authorize('restore', [Brand::class, $store]);
 
         $result = $action->execute(
             dto: new RestoreBrandDTO(

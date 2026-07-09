@@ -10,11 +10,15 @@ use App\Policies\BrandPolicy;
 use App\Policies\CategoryPolicy;
 use App\Policies\DashboardPolicy;
 use App\Policies\MembershipPolicy;
+use App\Policies\NavigationPolicy;
 use App\Policies\OrderPolicy;
+use App\Policies\PageTemplatePolicy;
 use App\Policies\PaymentMethodPolicy;
 use App\Policies\ProductPolicy;
+use App\Policies\ShippingPolicy;
 use App\Policies\StorePolicy;
 use App\Policies\TagPolicy;
+use App\Policies\ThemePolicy;
 
 class PolicyCapabilityCatalog
 {
@@ -49,9 +53,11 @@ class PolicyCapabilityCatalog
                 'delete' => 'product.delete',
             ][$ability] ?? null,
             OrderPolicy::class => [
+                'viewAny' => 'order.view',
                 'view' => 'order.view',
-                'update' => 'order.update_status',
+                'updateStatus' => 'order.update_status',
                 'cancel' => 'order.cancel',
+                'refund' => 'order.refund',
             ][$ability] ?? null,
             MembershipPolicy::class => [
                 'viewAny' => 'membership.view',
@@ -106,6 +112,35 @@ class PolicyCapabilityCatalog
                 'viewStats' => 'dashboard.view',
                 'viewRecentOrders' => 'dashboard.view',
                 'viewTopProducts' => 'dashboard.view',
+            ][$ability] ?? null,
+            ThemePolicy::class => [
+                'viewAny' => 'theme.view',
+                'view' => 'theme.view',
+                'create' => 'theme.create',
+                'update' => 'theme.update',
+                'delete' => 'theme.delete',
+                'publish' => 'theme.publish',
+            ][$ability] ?? null,
+            NavigationPolicy::class => [
+                'viewAny' => 'navigation.view',
+                'view' => 'navigation.view',
+                'create' => 'navigation.create',
+                'update' => 'navigation.update',
+                'delete' => 'navigation.delete',
+            ][$ability] ?? null,
+            PageTemplatePolicy::class => [
+                'viewAny' => 'template.view',
+                'view' => 'template.view',
+                'create' => 'template.create',
+                'update' => 'template.update',
+                'delete' => 'template.delete',
+            ][$ability] ?? null,
+            ShippingPolicy::class => [
+                'viewAny' => 'shipping.view',
+                'view' => 'shipping.view',
+                'create' => 'shipping.create',
+                'update' => 'shipping.update',
+                'delete' => 'shipping.delete',
             ][$ability] ?? null,
             default => null,
         };

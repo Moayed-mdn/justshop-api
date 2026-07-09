@@ -9,11 +9,17 @@ use App\Models\Store;
 use App\Enums\RoleEnum;
 use App\Enums\Store\StoreRoleEnum;
 use App\Enums\Auth\ActorContextEnum;
+use App\Exceptions\Authorization\PermissionDeniedException;
 use App\Services\Platform\Impersonation\ImpersonationLifecycleManager;
 
 trait HasStoreMembership
 {
     use InteractsWithPolicyTelemetry;
+
+    protected function denyWithContext(string $resource, string $action, ?string $permission = null): never
+    {
+        throw new PermissionDeniedException($resource, $action, $permission);
+    }
 
     /**
      * Check if the user is a merchant actor.

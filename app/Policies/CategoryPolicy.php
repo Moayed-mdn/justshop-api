@@ -32,7 +32,7 @@ class CategoryPolicy
 
     public function create(User $user, Store $store): bool
     {
-        return $this->decision($user, 'create', $this->canManage($user, $store, PermissionEnum::CATEGORY_CREATE), $store, [
+        return $this->decision($user, 'create', $this->canManage($user, $store, PermissionEnum::CATEGORY_CREATE, 'category', 'create'), $store, [
             'authorization_domain' => 'category',
             'fallback_path_used' => false,
         ]);
@@ -40,7 +40,7 @@ class CategoryPolicy
 
     public function update(User $user, Store $store): bool
     {
-        return $this->decision($user, 'update', $this->canManage($user, $store, PermissionEnum::CATEGORY_UPDATE), $store, [
+        return $this->decision($user, 'update', $this->canManage($user, $store, PermissionEnum::CATEGORY_UPDATE, 'category', 'update'), $store, [
             'authorization_domain' => 'category',
             'fallback_path_used' => false,
         ]);
@@ -48,7 +48,7 @@ class CategoryPolicy
 
     public function delete(User $user, Store $store): bool
     {
-        return $this->decision($user, 'delete', $this->canManage($user, $store, PermissionEnum::CATEGORY_DELETE), $store, [
+        return $this->decision($user, 'delete', $this->canManage($user, $store, PermissionEnum::CATEGORY_DELETE, 'category', 'delete'), $store, [
             'authorization_domain' => 'category',
             'fallback_path_used' => false,
         ]);
@@ -56,7 +56,7 @@ class CategoryPolicy
 
     public function restore(User $user, Store $store): bool
     {
-        return $this->decision($user, 'restore', $this->canManage($user, $store, PermissionEnum::CATEGORY_RESTORE), $store, [
+        return $this->decision($user, 'restore', $this->canManage($user, $store, PermissionEnum::CATEGORY_RESTORE, 'category', 'restore'), $store, [
             'authorization_domain' => 'category',
             'fallback_path_used' => false,
         ]);
@@ -68,15 +68,43 @@ class CategoryPolicy
             return true;
         }
 
-        return $this->isMember($user, $store) && $user->can(PermissionEnum::CATEGORY_VIEW);
+        $isAdmin = $this->isAdmin($user, $store);
+        $hasPermission = $user->can(PermissionEnum::CATEGORY_VIEW);
+
+        if ($isAdmin) {
+            return $hasPermission;
+        }
+
+        if ($this->isMember($user, $store)) {
+            if ($hasPermission) {
+                return true;
+            }
+            $this->denyWithContext('category', 'view', PermissionEnum::CATEGORY_VIEW);
+        }
+
+        return false;
     }
 
-    private function canManage(User $user, Store $store, string $permission): bool
+    private function canManage(User $user, Store $store, string $permission, string $resource, string $action): bool
     {
         if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
             return true;
         }
 
-        return $this->isAdmin($user, $store) && $user->can($permission);
+        $isAdmin = $this->isAdmin($user, $store);
+        $hasPermission = $user->can($permission);
+
+        if ($isAdmin) {
+            return $hasPermission;
+        }
+
+        if ($this->isMember($user, $store)) {
+            if ($hasPermission) {
+                return true;
+            }
+            $this->denyWithContext($resource, $action, $permission);
+        }
+
+        return false;
     }
 }

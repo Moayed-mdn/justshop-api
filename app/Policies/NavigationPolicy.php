@@ -10,14 +10,9 @@ use App\Models\Store;
 use App\Models\User;
 use App\Policies\Concerns\HasStoreMembership;
 
-class ProductPolicy
+class NavigationPolicy
 {
     use HasStoreMembership;
-
-    public function viewAny(User $user, Store $store): bool
-    {
-        return $this->decision($user, 'viewAny', $this->canView($user, $store), $store);
-    }
 
     public function view(User $user, Store $store): bool
     {
@@ -26,22 +21,17 @@ class ProductPolicy
 
     public function create(User $user, Store $store): bool
     {
-        return $this->decision($user, 'create', $this->canManage($user, $store, PermissionEnum::PRODUCT_CREATE, 'product', 'create'), $store);
+        return $this->decision($user, 'create', $this->canManage($user, $store, PermissionEnum::NAVIGATION_CREATE, 'navigation', 'create'), $store);
     }
 
     public function update(User $user, Store $store): bool
     {
-        return $this->decision($user, 'update', $this->canManage($user, $store, PermissionEnum::PRODUCT_UPDATE, 'product', 'update'), $store);
+        return $this->decision($user, 'update', $this->canManage($user, $store, PermissionEnum::NAVIGATION_UPDATE, 'navigation', 'update'), $store);
     }
 
     public function delete(User $user, Store $store): bool
     {
-        return $this->decision($user, 'delete', $this->canManage($user, $store, PermissionEnum::PRODUCT_DELETE, 'product', 'delete'), $store);
-    }
-
-    public function restore(User $user, Store $store): bool
-    {
-        return $this->decision($user, 'restore', $this->canManage($user, $store, PermissionEnum::PRODUCT_RESTORE, 'product', 'restore'), $store);
+        return $this->decision($user, 'delete', $this->canManage($user, $store, PermissionEnum::NAVIGATION_DELETE, 'navigation', 'delete'), $store);
     }
 
     private function canView(User $user, Store $store): bool
@@ -51,22 +41,20 @@ class ProductPolicy
         }
 
         $isAdmin = $this->isAdmin($user, $store);
-        $hasPermission = $user->can(PermissionEnum::PRODUCT_VIEW);
+        $hasPermission = $user->can(PermissionEnum::NAVIGATION_VIEW);
 
-        if ($isAdmin && $hasPermission) {
-            return true;
+        if ($isAdmin) {
+            return $hasPermission;
         }
 
         if ($this->isMember($user, $store)) {
             if ($hasPermission) {
                 return true;
             }
-            // Member without permission - throw detailed error
-            $this->denyWithContext('product', 'view', PermissionEnum::PRODUCT_VIEW);
+            $this->denyWithContext('navigation', 'view', PermissionEnum::NAVIGATION_VIEW);
         }
 
-        // Not a member of this store at all
-        $this->denyWithContext('product', 'view', PermissionEnum::PRODUCT_VIEW);
+        return false;
     }
 
     private function canManage(User $user, Store $store, string $permission, string $resource, string $action): bool
@@ -78,19 +66,17 @@ class ProductPolicy
         $isAdmin = $this->isAdmin($user, $store);
         $hasPermission = $user->can($permission);
 
-        if ($isAdmin && $hasPermission) {
-            return true;
+        if ($isAdmin) {
+            return $hasPermission;
         }
 
         if ($this->isMember($user, $store)) {
             if ($hasPermission) {
                 return true;
             }
-            // Member without permission - throw detailed error
             $this->denyWithContext($resource, $action, $permission);
         }
 
-        // Not a member of this store at all
-        $this->denyWithContext($resource, $action, $permission);
+        return false;
     }
 }

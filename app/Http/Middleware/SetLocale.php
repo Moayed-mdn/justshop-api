@@ -33,6 +33,8 @@ class SetLocale
         }
 
         App::setLocale($locale ?: config('app.locale', 'en'));
+        
+        Log::info('the selected', ['locale' => $locale ?: config('app.locale', 'en')]);
 
         return $next($request);
     }

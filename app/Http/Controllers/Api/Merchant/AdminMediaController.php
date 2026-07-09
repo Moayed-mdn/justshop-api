@@ -32,6 +32,8 @@ class AdminMediaController extends Controller
         UploadImageRequest $request,
         Store $store,
     ): JsonResponse {
+        $this->authorize('update', $store);
+
         $result = $this->uploadAction->execute(
             UploadImageDTO::fromRequest($request, $store->id)
         );
@@ -53,6 +55,8 @@ class AdminMediaController extends Controller
         DeleteImageRequest $request,
         Store $store,
     ): JsonResponse {
+        $this->authorize('update', $store);
+
         $this->deleteAction->execute(
             DeleteImageDTO::fromRequest($request, $store->id)
         );

@@ -20,6 +20,7 @@ use App\Http\Requests\Cms\Marketing\Store\Admin\UpdateStoreMarketingPageRequest;
 use App\Http\Resources\Admin\Cms\Marketing\Store\AdminStoreMarketingPageResource;
 use App\Models\Cms\Marketing\Store\StoreMarketingPage;
 use App\Models\Store;
+use App\Policies\Cms\Marketing\Store\StoreMarketingPagePolicy;
 use App\Repositories\Cms\Marketing\Store\StoreMarketingPageRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,7 +33,7 @@ class AdminStoreMarketingPageController extends Controller
 
     public function index(Request $request, Store $store): JsonResponse
     {
-        $this->authorize('viewAny', [StoreMarketingPage::class, $store]);
+        $this->authorize('viewAny', [StoreMarketingPagePolicy::class, $store]);
 
         $pages = $this->repository->paginateAdmin(
             (int) $store->id,
@@ -50,7 +51,7 @@ class AdminStoreMarketingPageController extends Controller
 
     public function show(Store $store, int $id): JsonResponse
     {
-        $this->authorize('view', [StoreMarketingPage::class, $store]);
+        $this->authorize('view', [StoreMarketingPagePolicy::class, $store]);
 
         $page = $this->repository->findByIdOrFail((int) $store->id, $id);
 
@@ -63,7 +64,7 @@ class AdminStoreMarketingPageController extends Controller
      */
     public function checkHomepage(Request $request, Store $store): JsonResponse
     {
-        $this->authorize('viewAny', [StoreMarketingPage::class, $store]);
+        $this->authorize('viewAny', [StoreMarketingPagePolicy::class, $store]);
 
         $excludeId = $request->integer('exclude_id', 0);
 
@@ -91,7 +92,7 @@ class AdminStoreMarketingPageController extends Controller
         Store $store,
         CreateStoreMarketingPageAction $action,
     ): JsonResponse {
-        $this->authorize('create', [StoreMarketingPage::class, $store]);
+        $this->authorize('create', [StoreMarketingPagePolicy::class, $store]);
 
         $page = $action->execute(
             CreateStoreMarketingPageDTO::fromRequest($request, (int) $store->id)
@@ -110,7 +111,7 @@ class AdminStoreMarketingPageController extends Controller
         int $id,
         UpdateStoreMarketingPageAction $action,
     ): JsonResponse {
-        $this->authorize('update', [StoreMarketingPage::class, $store]);
+        $this->authorize('update', [StoreMarketingPagePolicy::class, $store]);
 
         $page = $action->execute(
             UpdateStoreMarketingPageDTO::fromRequest($request, (int) $store->id, $id)
@@ -127,7 +128,7 @@ class AdminStoreMarketingPageController extends Controller
         int $id,
         DeleteStoreMarketingPageAction $action,
     ): JsonResponse {
-        $this->authorize('delete', [StoreMarketingPage::class, $store]);
+        $this->authorize('delete', [StoreMarketingPagePolicy::class, $store]);
 
         $action->execute(new DeleteStoreMarketingPageDTO($id, (int) $store->id));
 
@@ -140,7 +141,7 @@ class AdminStoreMarketingPageController extends Controller
         int $id,
         PublishStoreMarketingPageAction $action,
     ): JsonResponse {
-        $this->authorize('publish', [StoreMarketingPage::class, $store]);
+        $this->authorize('publish', [StoreMarketingPagePolicy::class, $store]);
 
         $page = $action->execute(
             PublishStoreMarketingPageDTO::fromRequest($request, (int) $store->id, $id)
@@ -158,7 +159,7 @@ class AdminStoreMarketingPageController extends Controller
         int $id,
         UnpublishStoreMarketingPageAction $action,
     ): JsonResponse {
-        $this->authorize('publish', [StoreMarketingPage::class, $store]);
+        $this->authorize('publish', [StoreMarketingPagePolicy::class, $store]);
 
         $page = $action->execute(
             PublishStoreMarketingPageDTO::fromRequest($request, (int) $store->id, $id)

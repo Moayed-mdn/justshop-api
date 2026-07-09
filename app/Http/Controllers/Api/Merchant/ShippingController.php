@@ -34,6 +34,7 @@ use App\Http\Resources\Shipping\StoreAddressSettingResource;
 use App\Models\ShippingMethod;
 use App\Models\ShippingZone;
 use App\Models\Store;
+use App\Policies\ShippingPolicy;
 use App\Services\StoreAddressSettingsService;
 use Illuminate\Http\JsonResponse;
 
@@ -61,6 +62,8 @@ class ShippingController extends Controller
      */
     public function getAddressSettings(Store $store): JsonResponse
     {
+        $this->authorize('view', [ShippingPolicy::class, $store]);
+
         $settings = $this->storeAddressSettingsService->getSettings($store);
 
         return $this->success(new StoreAddressSettingResource($settings));
@@ -73,6 +76,8 @@ class ShippingController extends Controller
         UpdateStoreAddressSettingsRequest $request,
         Store $store
     ): JsonResponse {
+        $this->authorize('update', [ShippingPolicy::class, $store]);
+
         $dto = UpdateStoreAddressSettingsDTO::fromArray($request->validated(), $store->id);
         $settings = $this->updateAddressSettingsAction->execute($store, $dto);
 
@@ -89,6 +94,8 @@ class ShippingController extends Controller
      */
     public function listZones(Store $store): JsonResponse
     {
+        $this->authorize('view', [ShippingPolicy::class, $store]);
+
         $zones = $store->shippingZones()->with('methods')->get();
 
         return $this->success(ShippingZoneResource::collection($zones));
@@ -99,6 +106,8 @@ class ShippingController extends Controller
      */
     public function createZone(StoreShippingZoneRequest $request, Store $store): JsonResponse
     {
+        $this->authorize('create', [ShippingPolicy::class, $store]);
+
         $dto = CreateShippingZoneDTO::fromArray($request->validated(), $store->id);
         $zone = $this->createZoneAction->execute($dto);
 
@@ -117,6 +126,8 @@ class ShippingController extends Controller
         Store $store,
         ShippingZone $zone
     ): JsonResponse {
+        $this->authorize('update', [ShippingPolicy::class, $store]);
+
         // Ensure zone belongs to this store
         if ($zone->store_id !== $store->id) {
             return $this->error('Zone not found.', 404);
@@ -136,6 +147,8 @@ class ShippingController extends Controller
      */
     public function deleteZone(Store $store, ShippingZone $zone): JsonResponse
     {
+        $this->authorize('delete', [ShippingPolicy::class, $store]);
+
         // Ensure zone belongs to this store
         if ($zone->store_id !== $store->id) {
             return $this->error('Zone not found.', 404);
@@ -153,6 +166,8 @@ class ShippingController extends Controller
      */
     public function listMethods(Store $store): JsonResponse
     {
+        $this->authorize('view', [ShippingPolicy::class, $store]);
+
         $methods = $store->shippingMethods()->with('zones')->ordered()->get();
 
         return $this->success(ShippingMethodResource::collection($methods));
@@ -163,6 +178,8 @@ class ShippingController extends Controller
      */
     public function createMethod(StoreShippingMethodRequest $request, Store $store): JsonResponse
     {
+        $this->authorize('create', [ShippingPolicy::class, $store]);
+
         $dto = CreateShippingMethodDTO::fromArray($request->validated(), $store->id);
         $method = $this->createMethodAction->execute($dto);
 
@@ -181,6 +198,8 @@ class ShippingController extends Controller
         Store $store,
         ShippingMethod $method
     ): JsonResponse {
+        $this->authorize('update', [ShippingPolicy::class, $store]);
+
         // Ensure method belongs to this store
         if ($method->store_id !== $store->id) {
             return $this->error('Shipping method not found.', 404);
@@ -200,6 +219,8 @@ class ShippingController extends Controller
      */
     public function deleteMethod(Store $store, ShippingMethod $method): JsonResponse
     {
+        $this->authorize('delete', [ShippingPolicy::class, $store]);
+
         // Ensure method belongs to this store
         if ($method->store_id !== $store->id) {
             return $this->error('Shipping method not found.', 404);
@@ -228,6 +249,8 @@ class ShippingController extends Controller
         Store $store,
         ShippingZone $zone
     ): JsonResponse {
+        $this->authorize('update', [ShippingPolicy::class, $store]);
+
         // Ensure zone belongs to this store
         if ($zone->store_id !== $store->id) {
             return $this->error('Zone not found.', 404);
@@ -256,6 +279,8 @@ class ShippingController extends Controller
         ShippingZone $zone,
         ShippingMethod $method
     ): JsonResponse {
+        $this->authorize('update', [ShippingPolicy::class, $store]);
+
         // Ensure zone and method belong to this store
         if ($zone->store_id !== $store->id || $method->store_id !== $store->id) {
             return $this->error('Resource not found.', 404);
@@ -263,7 +288,10 @@ class ShippingController extends Controller
 
         $this->removeMethodFromZoneAction->execute($zone, $method);
 
-        return $this->success(null, 'Shipping method removed from zone successfully.');
+        return $this->success(
+            new ShippingZoneResource($zone->load('methods')),
+            'Shipping method removed from zone successfully.'
+        );
     }
 
     /**
@@ -275,6 +303,8 @@ class ShippingController extends Controller
         ShippingZone $zone,
         ShippingMethod $method
     ): JsonResponse {
+        $this->authorize('update', [ShippingPolicy::class, $store]);
+
         // Ensure zone and method belong to this store
         if ($zone->store_id !== $store->id || $method->store_id !== $store->id) {
             return $this->error('Resource not found.', 404);

@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Theme;
 
+use App\Enums\RoleEnum;
+use App\Enums\Store\StoreRoleEnum;
 use App\Models\Cms\Marketing\Store\StoreMarketingPage;
 use App\Models\PageTemplate;
 use App\Models\Store;
 use App\Models\User;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class ThemeTemplateControllerTest extends TestCase
@@ -22,11 +26,15 @@ class ThemeTemplateControllerTest extends TestCase
     {
         parent::setUp();
 
+        $this->seed(PermissionSeeder::class);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
         $this->merchant = User::factory()->merchant()->verified()->create();
+        $this->merchant->assignRole(RoleEnum::STORE_ADMIN->value);
         $this->store = Store::factory()->create(['owner_id' => $this->merchant->id]);
         
-        // Attach user to store
-        $this->merchant->stores()->attach($this->store->id, ['role' => 'owner']);
+        $this->merchant->stores()->attach($this->store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
+        $this->merchant = $this->merchant->fresh();
         
         $this->actingAs($this->merchant);
     }
@@ -59,7 +67,7 @@ class ThemeTemplateControllerTest extends TestCase
         $response->assertStatus(200);
         
         // Should only return templates for this store
-        $templates = $response->json('data');
+        $templates = $response->json('data.data');
         $this->assertCount(3, $templates);
         
         // All should belong to this store
@@ -91,7 +99,7 @@ class ThemeTemplateControllerTest extends TestCase
         $response = $this->getJson($this->templatesPath());
 
         $response->assertStatus(200);
-        $names = collect($response->json('data'))->pluck('name')->toArray();
+        $names = collect($response->json('data.data'))->pluck('name')->toArray();
         
         // Default first, then alphabetical
         $this->assertEquals(['A Template', 'B Template', 'Z Template'], $names);
