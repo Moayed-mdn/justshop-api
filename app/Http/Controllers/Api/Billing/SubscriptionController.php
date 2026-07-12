@@ -13,10 +13,13 @@ use App\Enums\Subscription\BillingCycleEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Billing\CancelSubscriptionRequest;
 use App\Http\Requests\Billing\ChangePlanRequest;
+use App\Models\Store;
+use App\Policies\Billing\SubscriptionPolicy;
 use App\Repositories\Billing\BillingAccountRepository;
 use App\Repositories\Subscription\SubscriptionRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class SubscriptionController extends Controller
 {
@@ -39,7 +42,7 @@ class SubscriptionController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $billingAccount = $this->billingAccountRepo->findByOwner($user->id);
+        $billingAccount = $this->billingAccountRepo->findByUserAccess($user);
 
         if (!$billingAccount) {
             return $this->success([
@@ -48,6 +51,8 @@ class SubscriptionController extends Controller
                 'needs_billing_account' => true,
             ]);
         }
+
+        $this->authorize('view', [SubscriptionPolicy::class, $billingAccount]);
 
         $subscription = $this->subscriptionRepo->getActiveForAccount($billingAccount->id);
 
@@ -74,7 +79,7 @@ class SubscriptionController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $billingAccount = $this->billingAccountRepo->findByOwner($user->id);
+        $billingAccount = $this->billingAccountRepo->findByUserAccess($user);
 
         if (!$billingAccount) {
             return $this->success([
@@ -90,6 +95,8 @@ class SubscriptionController extends Controller
                 ],
             ]);
         }
+
+        $this->authorize('viewUsage', [SubscriptionPolicy::class, $billingAccount]);
 
         // Get all store entitlement snapshots for this account
         $snapshots = \App\Models\StoreEntitlementSnapshot::where(
@@ -121,7 +128,7 @@ class SubscriptionController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $billingAccount = $this->billingAccountRepo->findByOwner($user->id);
+        $billingAccount = $this->billingAccountRepo->findByUserAccess($user);
 
         if (!$billingAccount) {
             return $this->error(
@@ -131,12 +138,15 @@ class SubscriptionController extends Controller
             );
         }
 
+        $store = Store::findOrFail((int) $request->validated('store_id'));
+        $this->authorize('upgrade', [SubscriptionPolicy::class, $billingAccount, $store]);
+
         try {
             $subscription = $this->upgradePlan->execute(new ChangePlanDTO(
                 billingAccountId: $billingAccount->id,
                 planCode: $request->validated('plan_code'),
                 billingCycle: BillingCycleEnum::from($request->validated('billing_cycle')),
-                storeId: $request->validated('store_id'),
+                storeId: $store->id,
                 actorUserId: $user->id,
             ));
 
@@ -151,7 +161,7 @@ class SubscriptionController extends Controller
                 statusCode: 422
             );
         } catch (\Exception $e) {
-            \Log::error('Subscription upgrade failed', [
+            Log::error('Subscription upgrade failed', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'billing_account_id' => $billingAccount->id,
@@ -176,7 +186,7 @@ class SubscriptionController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $billingAccount = $this->billingAccountRepo->findByOwner($user->id);
+        $billingAccount = $this->billingAccountRepo->findByUserAccess($user);
 
         if (!$billingAccount) {
             return $this->error(
@@ -186,12 +196,15 @@ class SubscriptionController extends Controller
             );
         }
 
+        $store = Store::findOrFail((int) $request->validated('store_id'));
+        $this->authorize('downgrade', [SubscriptionPolicy::class, $billingAccount, $store]);
+
         try {
             $subscription = $this->downgradePlan->execute(new ChangePlanDTO(
                 billingAccountId: $billingAccount->id,
                 planCode: $request->validated('plan_code'),
                 billingCycle: BillingCycleEnum::from($request->validated('billing_cycle')),
-                storeId: $request->validated('store_id'),
+                storeId: $store->id,
                 actorUserId: $user->id,
             ));
 
@@ -231,7 +244,7 @@ class SubscriptionController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $billingAccount = $this->billingAccountRepo->findByOwner($user->id);
+        $billingAccount = $this->billingAccountRepo->findByUserAccess($user);
 
         if (!$billingAccount) {
             return $this->error(
@@ -240,6 +253,8 @@ class SubscriptionController extends Controller
                 statusCode: 404
             );
         }
+
+        $this->authorize('cancel', [SubscriptionPolicy::class, $billingAccount]);
 
         try {
             $subscription = $this->cancelSubscription->execute(new CancelSubscriptionDTO(
@@ -282,7 +297,7 @@ class SubscriptionController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $billingAccount = $this->billingAccountRepo->findByOwner($user->id);
+        $billingAccount = $this->billingAccountRepo->findByUserAccess($user);
 
         if (!$billingAccount) {
             return $this->error(
@@ -291,6 +306,8 @@ class SubscriptionController extends Controller
                 statusCode: 404
             );
         }
+
+        $this->authorize('resume', [SubscriptionPolicy::class, $billingAccount]);
 
         try {
             $subscription = $this->resumeSubscription->execute(

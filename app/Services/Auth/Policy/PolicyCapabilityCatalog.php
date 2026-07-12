@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Auth\Policy;
 
 use App\Policies\AddressPolicy;
+use App\Policies\Billing\BillingPortalPolicy;
+use App\Policies\Billing\InvoicePolicy;
+use App\Policies\Billing\SubscriptionPolicy;
 use App\Policies\BlogPostPolicy;
 use App\Policies\BrandPolicy;
 use App\Policies\CategoryPolicy;
@@ -141,6 +144,22 @@ class PolicyCapabilityCatalog
                 'create' => 'shipping.create',
                 'update' => 'shipping.update',
                 'delete' => 'shipping.delete',
+            ][$ability] ?? null,
+            SubscriptionPolicy::class => [
+                'view' => 'subscription.view',
+                'viewUsage' => 'subscription.view',
+                'upgrade' => 'subscription.upgrade',
+                'downgrade' => 'subscription.downgrade',
+                'cancel' => 'subscription.cancel',
+                'resume' => 'subscription.resume',
+            ][$ability] ?? null,
+            InvoicePolicy::class => [
+                'viewAny' => 'invoice.view',
+                'view' => 'invoice.view',
+                'download' => 'invoice.download',
+            ][$ability] ?? null,
+            BillingPortalPolicy::class => [
+                'createSession' => 'billing.portal',
             ][$ability] ?? null,
             default => null,
         };

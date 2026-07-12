@@ -39,7 +39,15 @@ class AppServiceProvider extends ServiceProvider
         // Phase 3: Stripe Provider Binding
         $this->app->singleton(
             \App\Contracts\Billing\BillingProviderInterface::class,
-            \App\Services\Billing\StripeProvider::class
+            function () {
+                $provider = config('app.billing_provider', env('BILLING_PROVIDER', 'stripe'));
+                
+                return match ($provider) {
+                    'test' => new \App\Services\Billing\TestBillingProvider(),
+                    'stripe' => new \App\Services\Billing\StripeProvider(),
+                    default => throw new \InvalidArgumentException("Unsupported billing provider: {$provider}"),
+                };
+            }
         );
 
         // Stripe Client for enhanced checkout

@@ -7,6 +7,7 @@ use App\DTOs\Billing\CreatePortalSessionDTO;
 use App\Enums\ErrorCode;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Billing\CreatePortalSessionRequest;
+use App\Policies\Billing\BillingPortalPolicy;
 use App\Repositories\Billing\BillingAccountRepository;
 use Illuminate\Http\JsonResponse;
 
@@ -27,7 +28,7 @@ class BillingPortalController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $billingAccount = $this->billingAccountRepo->findByOwner($user->id);
+        $billingAccount = $this->billingAccountRepo->findByUserAccess($user);
 
         if (!$billingAccount) {
             return $this->error(
@@ -36,6 +37,8 @@ class BillingPortalController extends Controller
                 statusCode: 404
             );
         }
+
+        $this->authorize('createSession', [BillingPortalPolicy::class, $billingAccount]);
 
         try {
             $session = $this->createPortalSession->execute(

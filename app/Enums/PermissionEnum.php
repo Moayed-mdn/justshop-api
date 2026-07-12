@@ -114,4 +114,22 @@ class PermissionEnum
     public const TEMPLATE_CREATE = 'template.create';
     public const TEMPLATE_UPDATE = 'template.update';
     public const TEMPLATE_DELETE = 'template.delete';
+
+    // --- Subscription ---
+    public const SUBSCRIPTION_VIEW     = 'subscription.view';
+    public const SUBSCRIPTION_UPGRADE  = 'subscription.upgrade';
+    public const SUBSCRIPTION_DOWNGRADE = 'subscription.downgrade';
+    public const SUBSCRIPTION_CANCEL   = 'subscription.cancel';
+    public const SUBSCRIPTION_RESUME   = 'subscription.resume';
+
+    // --- Invoice ---
+    public const INVOICE_VIEW     = 'invoice.view';
+    public const INVOICE_DOWNLOAD = 'invoice.download';
+
+    // --- Billing Portal ---
+    public const BILLING_PORTAL = 'billing.portal';
+
+    // --- Payment Method ---
+    public const PAYMENT_METHOD_UPDATE = 'payment_method.update';
+    public const PAYMENT_METHOD_DELETE = 'payment_method.delete';
 }

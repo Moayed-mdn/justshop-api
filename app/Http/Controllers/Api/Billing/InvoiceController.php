@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Billing;
 
 use App\Enums\ErrorCode;
 use App\Http\Controllers\Controller;
+use App\Policies\Billing\InvoicePolicy;
 use App\Repositories\Billing\BillingAccountRepository;
 use App\Repositories\Billing\InvoiceRepository;
 use Illuminate\Http\JsonResponse;
@@ -26,7 +27,7 @@ class InvoiceController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $billingAccount = $this->billingAccountRepo->findByOwner($user->id);
+        $billingAccount = $this->billingAccountRepo->findByUserAccess($user);
 
         if (!$billingAccount) {
             return $this->error(
@@ -35,6 +36,8 @@ class InvoiceController extends Controller
                 statusCode: 404
             );
         }
+
+        $this->authorize('viewAny', [InvoicePolicy::class, $billingAccount]);
 
         $perPage = $request->integer('per_page', 15);
         $invoices = $this->invoiceRepo->getPaginatedForAccount($billingAccount->id, $perPage);
@@ -52,7 +55,7 @@ class InvoiceController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $billingAccount = $this->billingAccountRepo->findByOwner($user->id);
+        $billingAccount = $this->billingAccountRepo->findByUserAccess($user);
 
         if (!$billingAccount) {
             return $this->error(
@@ -61,6 +64,8 @@ class InvoiceController extends Controller
                 statusCode: 404
             );
         }
+
+        $this->authorize('viewAny', [InvoicePolicy::class, $billingAccount]);
 
         $invoiceModel = $this->invoiceRepo->findForAccount($invoice, $billingAccount->id);
 
@@ -71,6 +76,8 @@ class InvoiceController extends Controller
                 statusCode: 404
             );
         }
+
+        $this->authorize('view', [InvoicePolicy::class, $invoiceModel]);
 
         return $this->success(new \App\Http\Resources\Billing\InvoiceResource($invoiceModel));
     }
@@ -85,7 +92,7 @@ class InvoiceController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        $billingAccount = $this->billingAccountRepo->findByOwner($user->id);
+        $billingAccount = $this->billingAccountRepo->findByUserAccess($user);
 
         if (!$billingAccount) {
             return $this->error(
@@ -94,6 +101,8 @@ class InvoiceController extends Controller
                 statusCode: 404
             );
         }
+
+        $this->authorize('viewAny', [InvoicePolicy::class, $billingAccount]);
 
         $invoiceModel = $this->invoiceRepo->findForAccount($invoice, $billingAccount->id);
 
@@ -104,6 +113,8 @@ class InvoiceController extends Controller
                 statusCode: 404
             );
         }
+
+        $this->authorize('download', [InvoicePolicy::class, $invoiceModel]);
 
         if (!$invoiceModel->invoice_pdf_url) {
             return $this->error(

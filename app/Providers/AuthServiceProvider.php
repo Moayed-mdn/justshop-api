@@ -2,18 +2,24 @@
 namespace App\Providers;
 
 use App\Models\Address;
+use App\Models\BillingAccount;
 use App\Models\BlogPost;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\Order;
 use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\Store;
+use App\Models\Subscription;
 use App\Models\Tag;
 use App\Models\Theme\ThemeTemplate;
 use App\Models\User;
 use App\Policies\AddressPolicy;
+use App\Policies\Billing\BillingPortalPolicy;
+use App\Policies\Billing\InvoicePolicy;
+use App\Policies\Billing\SubscriptionPolicy;
 use App\Policies\BlogPostPolicy;
 use App\Policies\BrandPolicy;
 use App\Policies\CategoryPolicy;
@@ -61,6 +67,9 @@ class AuthServiceProvider extends ServiceProvider
         ProductPolicy::class => ProductPolicy::class,
         ShippingPolicy::class => ShippingPolicy::class,
         ThemePolicy::class => ThemePolicy::class,
+        SubscriptionPolicy::class => SubscriptionPolicy::class,
+        InvoicePolicy::class => InvoicePolicy::class,
+        BillingPortalPolicy::class => BillingPortalPolicy::class,
     ];
 
     public function boot()

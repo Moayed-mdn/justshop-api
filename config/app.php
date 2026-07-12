@@ -126,4 +126,16 @@ return [
 
     'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Billing Provider
+    |--------------------------------------------------------------------------
+    |
+    | This option controls the billing provider used for subscription management.
+    | Available options: "stripe", "test".
+    |
+    */
+
+    'billing_provider' => env('BILLING_PROVIDER', 'stripe'),
+
 ];

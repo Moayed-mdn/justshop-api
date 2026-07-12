@@ -49,6 +49,31 @@ class BillingAccountRepository
     }
 
     /**
+     * Find billing account accessible by the user.
+     *
+     * Checks direct ownership first, then falls back to stores
+     * the user is a member of that are linked to a billing account.
+     */
+    public function findByUserAccess(User $user): ?BillingAccount
+    {
+        $account = $this->findByOwner($user->id);
+
+        if ($account) {
+            return $account;
+        }
+
+        $storeIds = $user->stores()->pluck('stores.id');
+
+        if ($storeIds->isEmpty()) {
+            return null;
+        }
+
+        return BillingAccount::whereHas('entitlementSnapshots', function ($q) use ($storeIds) {
+            $q->whereIn('store_id', $storeIds);
+        })->first();
+    }
+
+    /**
      * Create a new billing account.
      */
     public function create(array $data): BillingAccount

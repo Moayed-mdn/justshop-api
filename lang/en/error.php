@@ -132,5 +132,27 @@ return [
             'delete' => 'You don\'t have permission to delete users. Contact your store administrator.',
             'restore' => 'You don\'t have permission to restore users. Contact your store administrator.',
         ],
+
+        'subscription' => [
+            'view' => 'You don\'t have permission to view subscription details. Contact your store administrator.',
+            'upgrade' => 'You don\'t have permission to upgrade the subscription plan. This action requires the Store Admin role.',
+            'downgrade' => 'You don\'t have permission to downgrade the subscription plan. This action requires the Store Admin role.',
+            'cancel' => 'You don\'t have permission to cancel the subscription. This action requires the Store Admin role.',
+            'resume' => 'You don\'t have permission to resume the subscription. This action requires the Store Admin role.',
+        ],
+
+        'invoice' => [
+            'view' => 'You don\'t have permission to view invoices. Contact your store administrator.',
+            'download' => 'You don\'t have permission to download invoices. Contact your store administrator.',
+        ],
+
+        'billing' => [
+            'portal' => 'You don\'t have permission to access the billing portal. Contact your store administrator.',
+        ],
+
+        'payment_method' => [
+            'update' => 'You don\'t have permission to update payment methods. Contact your store administrator.',
+            'delete' => 'You don\'t have permission to delete payment methods. Contact your store administrator.',
+        ],
     ],
 ];

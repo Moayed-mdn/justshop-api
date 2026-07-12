@@ -1,7 +1,12 @@
 <?php
-// app/Policies/PaymentMethodPolicy.php
+
+declare(strict_types=1);
+
 namespace App\Policies;
 
+use App\Enums\PermissionEnum;
+use App\Enums\RoleEnum;
+use App\Exceptions\Authorization\PermissionDeniedException;
 use App\Models\PaymentMethod;
 use App\Models\User;
 use App\Policies\Concerns\InteractsWithPolicyTelemetry;
@@ -12,11 +17,32 @@ class PaymentMethodPolicy
 
     public function update(User $user, PaymentMethod $paymentMethod): bool
     {
-        return $this->decision($user, 'update', $user->id === $paymentMethod->user_id, $paymentMethod);
+        if ($user->id === $paymentMethod->user_id) {
+            return $this->decision($user, 'update', true, $paymentMethod);
+        }
+
+        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value) && $user->can(PermissionEnum::PAYMENT_METHOD_UPDATE)) {
+            return $this->decision($user, 'update', true, $paymentMethod);
+        }
+
+        $this->denyWithContext('payment_method', 'update', PermissionEnum::PAYMENT_METHOD_UPDATE);
     }
 
     public function delete(User $user, PaymentMethod $paymentMethod): bool
     {
-        return $this->decision($user, 'delete', $user->id === $paymentMethod->user_id, $paymentMethod);
+        if ($user->id === $paymentMethod->user_id) {
+            return $this->decision($user, 'delete', true, $paymentMethod);
+        }
+
+        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value) && $user->can(PermissionEnum::PAYMENT_METHOD_DELETE)) {
+            return $this->decision($user, 'delete', true, $paymentMethod);
+        }
+
+        $this->denyWithContext('payment_method', 'delete', PermissionEnum::PAYMENT_METHOD_DELETE);
+    }
+
+    private function denyWithContext(string $resource, string $action, string $permission): never
+    {
+        throw new PermissionDeniedException($resource, $action, $permission);
     }
 }
