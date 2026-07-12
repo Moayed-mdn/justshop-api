@@ -66,6 +66,7 @@ class AuthServiceProvider extends ServiceProvider
         NavigationPolicy::class => NavigationPolicy::class,
         ProductPolicy::class => ProductPolicy::class,
         ShippingPolicy::class => ShippingPolicy::class,
+        StoreMarketingPagePolicy::class => StoreMarketingPagePolicy::class,
         ThemePolicy::class => ThemePolicy::class,
         SubscriptionPolicy::class => SubscriptionPolicy::class,
         InvoicePolicy::class => InvoicePolicy::class,
