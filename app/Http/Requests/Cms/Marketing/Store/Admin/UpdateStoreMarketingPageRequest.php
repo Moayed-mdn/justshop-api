@@ -7,7 +7,6 @@ namespace App\Http\Requests\Cms\Marketing\Store\Admin;
 use App\Enums\Cms\Marketing\MarketingPageStatusEnum;
 use App\Enums\Cms\Marketing\MarketingPageTemplateEnum;
 use App\Enums\Cms\Marketing\MarketingSectionTypeEnum;
-use App\Enums\PermissionEnum;
 use App\Models\Store;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -16,7 +15,7 @@ class UpdateStoreMarketingPageRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()?->can(PermissionEnum::MARKETING_STORE_UPDATE) === true;
+        return true;
     }
 
     public function rules(): array

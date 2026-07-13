@@ -6,9 +6,11 @@ use App\Models\BillingAccount;
 use App\Models\BlogPost;
 use App\Models\Brand;
 use App\Models\Category;
+use App\Models\Cms\CmsDocument;
 use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\Order;
+use App\Models\PageTemplate;
 use App\Models\PaymentMethod;
 use App\Models\Product;
 use App\Models\Store;
@@ -23,9 +25,11 @@ use App\Policies\Billing\SubscriptionPolicy;
 use App\Policies\BlogPostPolicy;
 use App\Policies\BrandPolicy;
 use App\Policies\CategoryPolicy;
+use App\Policies\CmsDocumentPolicy;
 use App\Policies\DashboardPolicy;
 use App\Policies\LeadPolicy;
 use App\Policies\OrderPolicy;
+use App\Policies\PageTemplatePolicy;
 use App\Policies\PaymentMethodPolicy;
 use App\Policies\ProductPolicy;
 use App\Policies\StorePolicy;
@@ -50,9 +54,11 @@ class AuthServiceProvider extends ServiceProvider
         BlogPost::class => BlogPostPolicy::class,
         Brand::class => BrandPolicy::class,
         Category::class => CategoryPolicy::class,
+        CmsDocument::class => CmsDocumentPolicy::class,
         DashboardAuthorization::class => DashboardPolicy::class,
         Lead::class => LeadPolicy::class,
         Order::class => OrderPolicy::class,
+        PageTemplate::class => PageTemplatePolicy::class,
         PaymentMethod::class => PaymentMethodPolicy::class,
         Product::class => ProductPolicy::class,
         Store::class => StorePolicy::class,
@@ -63,7 +69,9 @@ class AuthServiceProvider extends ServiceProvider
         StoreMarketingPage::class => StoreMarketingPagePolicy::class,
         ThemeTemplate::class => SystemTemplatePolicy::class,
         // Class-based policies (used with [PolicyClass::class, $store])
+        CmsDocumentPolicy::class => CmsDocumentPolicy::class,
         NavigationPolicy::class => NavigationPolicy::class,
+        PageTemplatePolicy::class => PageTemplatePolicy::class,
         ProductPolicy::class => ProductPolicy::class,
         ShippingPolicy::class => ShippingPolicy::class,
         StoreMarketingPagePolicy::class => StoreMarketingPagePolicy::class,
@@ -71,6 +79,7 @@ class AuthServiceProvider extends ServiceProvider
         SubscriptionPolicy::class => SubscriptionPolicy::class,
         InvoicePolicy::class => InvoicePolicy::class,
         BillingPortalPolicy::class => BillingPortalPolicy::class,
+        OrderPolicy::class => OrderPolicy::class,
     ];
 
     public function boot()

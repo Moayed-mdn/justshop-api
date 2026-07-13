@@ -9,11 +9,10 @@ use App\Enums\RoleEnum;
 use App\Models\Store;
 use App\Models\User;
 use App\Policies\Concerns\HasStoreMembership;
-use Illuminate\Auth\Access\HandlesAuthorization;
 
 class StoreMarketingPagePolicy
 {
-    use HandlesAuthorization, HasStoreMembership;
+    use HasStoreMembership;
 
     public function viewAny(User $user, Store $store): bool
     {
@@ -76,24 +75,22 @@ class StoreMarketingPagePolicy
             return true;
         }
 
-        // Check if user is a member of the store
-        if (!$this->isMember($user, $store)) {
-            // Not a member at all
+        $isAdmin = $this->isAdmin($user, $store);
+        $hasPermission = $user->can($permission);
+
+        if ($isAdmin && $hasPermission) {
+            return true;
+        }
+
+        if ($this->isMember($user, $store)) {
+            if ($hasPermission) {
+                return true;
+            }
+            // Member without permission - throw detailed error
             $this->denyWithContext($resource, $action, $permission);
         }
 
-        // User is a member - check if they are an admin
-        if (!$this->isAdmin($user, $store)) {
-            // Member but not admin - management actions require admin role
-            $this->denyWithContext($resource, $action, $permission);
-        }
-
-        // User is an admin - check if they have the required permission
-        if (!$user->can($permission)) {
-            // Admin without the required permission
-            $this->denyWithContext($resource, $action, $permission);
-        }
-
-        return true;
+        // Not a member of this store at all
+        $this->denyWithContext($resource, $action, $permission);
     }
 }
