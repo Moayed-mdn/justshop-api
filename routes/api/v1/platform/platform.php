@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Route;
 // Platform dashboard & analytics
 Route::get('/dashboard', [\App\Http\Controllers\Api\Platform\PlatformDashboardController::class, 'index'])->name('platform.dashboard');
 Route::get('/analytics', [\App\Http\Controllers\Api\Platform\PlatformAnalyticsController::class, 'index'])->name('platform.analytics');
+Route::get('/cms/stats', [\App\Http\Controllers\Api\Platform\PlatformDashboardController::class, 'cmsStats'])->name('platform.cms.stats');
 
 // Platform user management (NOT merchant user management)
 Route::prefix('/users')->name('platform.users.')->group(function (): void {

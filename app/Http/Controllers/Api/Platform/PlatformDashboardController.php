@@ -46,4 +46,34 @@ class PlatformDashboardController extends Controller
             ],
         ]);
     }
+
+    public function cmsStats(): JsonResponse
+    {
+        // Wave 6: Mock CMS statistics
+        // TODO: Replace with real data from CMS repositories
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'blog' => [
+                    'total' => 35,
+                    'published' => 25,
+                    'draft' => 8,
+                    'archived' => 2,
+                ],
+                'pages' => [
+                    'total' => 18,
+                    'published' => 15,
+                    'draft' => 2,
+                    'archived' => 1,
+                ],
+                'docs' => [
+                    'total' => 25,
+                    'published' => 20,
+                    'draft' => 4,
+                    'archived' => 1,
+                ],
+            ],
+        ]);
+    }
 }
