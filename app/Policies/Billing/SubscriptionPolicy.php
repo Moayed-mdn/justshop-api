@@ -26,7 +26,7 @@ class SubscriptionPolicy
             return $this->decision($user, 'view', true, $billingAccount);
         }
 
-        return $this->decision($user, 'view', false, $billingAccount);
+        $this->denyWithContext('subscription', 'view', PermissionEnum::SUBSCRIPTION_VIEW);
     }
 
     public function viewUsage(User $user, BillingAccount $billingAccount): bool
@@ -39,7 +39,7 @@ class SubscriptionPolicy
             return $this->decision($user, 'viewUsage', true, $billingAccount);
         }
 
-        return $this->decision($user, 'viewUsage', false, $billingAccount);
+        $this->denyWithContext('subscription', 'view', PermissionEnum::SUBSCRIPTION_VIEW);
     }
 
     public function upgrade(User $user, BillingAccount $billingAccount, Store $store): bool
@@ -56,7 +56,7 @@ class SubscriptionPolicy
             $this->denyWithContext('subscription', 'upgrade', PermissionEnum::SUBSCRIPTION_UPGRADE);
         }
 
-        return $this->decision($user, 'upgrade', false, $billingAccount);
+        $this->denyWithContext('subscription', 'upgrade', PermissionEnum::SUBSCRIPTION_UPGRADE);
     }
 
     public function downgrade(User $user, BillingAccount $billingAccount, Store $store): bool
@@ -73,7 +73,7 @@ class SubscriptionPolicy
             $this->denyWithContext('subscription', 'downgrade', PermissionEnum::SUBSCRIPTION_DOWNGRADE);
         }
 
-        return $this->decision($user, 'downgrade', false, $billingAccount);
+        $this->denyWithContext('subscription', 'downgrade', PermissionEnum::SUBSCRIPTION_DOWNGRADE);
     }
 
     public function cancel(User $user, BillingAccount $billingAccount): bool
@@ -86,7 +86,7 @@ class SubscriptionPolicy
             return $this->decision($user, 'cancel', true, $billingAccount);
         }
 
-        return $this->decision($user, 'cancel', false, $billingAccount);
+        $this->denyWithContext('subscription', 'cancel', PermissionEnum::SUBSCRIPTION_CANCEL);
     }
 
     public function resume(User $user, BillingAccount $billingAccount): bool
@@ -99,17 +99,17 @@ class SubscriptionPolicy
             return $this->decision($user, 'resume', true, $billingAccount);
         }
 
-        return $this->decision($user, 'resume', false, $billingAccount);
+        $this->denyWithContext('subscription', 'resume', PermissionEnum::SUBSCRIPTION_RESUME);
     }
 
     private function isOwnerOrLinkedMember(User $user, BillingAccount $billingAccount, string $permission): bool
     {
-        if ($user->id === $billingAccount->owner_user_id) {
-            return true;
-        }
-
         if (!$user->can($permission)) {
             return false;
+        }
+
+        if ($user->id === $billingAccount->owner_user_id) {
+            return true;
         }
 
         return StoreEntitlementSnapshot::where('billing_account_id', $billingAccount->id)

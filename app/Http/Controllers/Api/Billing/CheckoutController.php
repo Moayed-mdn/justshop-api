@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers\Api\Billing;
 
-use App\Actions\Billing\CreateBillingAccountAction;
 use App\Actions\Billing\CreateCheckoutSessionAction;
-use App\DTOs\Billing\CreateBillingAccountDTO;
 use App\DTOs\Billing\CreateCheckoutSessionDTO;
 use App\Enums\ErrorCode;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Billing\CreateCheckoutSessionRequest;
+use App\Policies\Billing\CheckoutPolicy;
 use App\Repositories\Billing\BillingAccountRepository;
 use Illuminate\Http\JsonResponse;
 
@@ -16,7 +15,6 @@ class CheckoutController extends Controller
 {
     public function __construct(
         private CreateCheckoutSessionAction $createCheckoutSessionAction,
-        private CreateBillingAccountAction $createBillingAccountAction,
         private BillingAccountRepository $billingAccountRepository,
     ) {}
 
@@ -30,17 +28,18 @@ class CheckoutController extends Controller
         /** @var \App\Models\User $user */
         $user = $request->user();
 
-        // Get or create billing account
-        $billingAccount = $this->billingAccountRepository->findByOwner($user->id);
+        // Get billing account (by owner first, then by store membership)
+        $billingAccount = $this->billingAccountRepository->findByUserAccess($user);
 
         if (!$billingAccount) {
-            $billingAccount = $this->createBillingAccountAction->execute(
-                new CreateBillingAccountDTO(
-                    ownerUserId: $user->id,
-                    billingEmail: $user->email,
-                )
+            return $this->error(
+                message: 'Billing account not found',
+                errorCode: ErrorCode::BIL_001->value,
+                statusCode: 404
             );
         }
+
+        $this->authorize('createSession', [CheckoutPolicy::class, $billingAccount]);
 
         // Create checkout session
         $session = $this->createCheckoutSessionAction->execute(

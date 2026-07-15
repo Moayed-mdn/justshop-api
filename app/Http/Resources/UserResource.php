@@ -15,6 +15,7 @@ class UserResource extends JsonResource
             'email'             => $this->email,
             'phone'             => $this->phone,
             'avatar'            => $this->getAvatarUrl(),
+            'email_verified'    => !is_null($this->email_verified_at),
             'email_verified_at' => $this->email_verified_at,
             'onboarding_step'   => $this->onboarding_step,
             'has_password'      => !is_null($this->password),

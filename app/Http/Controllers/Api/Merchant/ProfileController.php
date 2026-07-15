@@ -21,6 +21,7 @@ use App\Http\Requests\Profile\UpdateAvatarRequest;
 use App\Http\Requests\Profile\UpdateInfoRequest;
 use App\Http\Requests\Profile\UpdatePasswordRequest;
 use App\Http\Resources\ProfileResource;
+use App\Policies\ProfilePolicy;
 use Illuminate\Http\JsonResponse;
 
 class ProfileController extends Controller
@@ -35,6 +36,9 @@ class ProfileController extends Controller
 
     public function show(GetProfileRequest $request): JsonResponse
     {
+        $user = $request->user();
+        $this->authorize('view', [ProfilePolicy::class, $user]);
+
         $user = $this->getProfileAction->execute(
             GetProfileDTO::fromRequest($request)
         );
@@ -44,6 +48,9 @@ class ProfileController extends Controller
 
     public function updateInfo(UpdateInfoRequest $request): JsonResponse
     {
+        $user = $request->user();
+        $this->authorize('updateInfo', [ProfilePolicy::class, $user]);
+
         $user = $this->updateProfileInfoAction->execute(
             UpdateProfileInfoDTO::fromRequest($request)
         );
@@ -53,6 +60,9 @@ class ProfileController extends Controller
 
     public function updatePassword(UpdatePasswordRequest $request): JsonResponse
     {
+        $user = $request->user();
+        $this->authorize('updatePassword', [ProfilePolicy::class, $user]);
+
         $this->updateProfilePasswordAction->execute(
             UpdateProfilePasswordDTO::fromRequest($request)
         );
@@ -62,6 +72,9 @@ class ProfileController extends Controller
 
     public function updateAvatar(UpdateAvatarRequest $request): JsonResponse
     {
+        $user = $request->user();
+        $this->authorize('updateAvatar', [ProfilePolicy::class, $user]);
+
         $avatarUrl = $this->updateProfileAvatarAction->execute(
             UpdateProfileAvatarDTO::fromRequest($request)
         );
@@ -71,6 +84,9 @@ class ProfileController extends Controller
 
     public function destroy(DeleteAccountRequest $request): JsonResponse
     {
+        $user = $request->user();
+        $this->authorize('delete', [ProfilePolicy::class, $user]);
+
         $this->deleteAccountAction->execute(
             DeleteAccountDTO::fromRequest($request)
         );

@@ -16,6 +16,19 @@ use Illuminate\Support\Facades\Route;
 
 // ── 1. PLATFORM CONTEXT ──────────────────────────────────────────────────
 // Internal SaaS operator tooling (SUPER_ADMIN only).
+
+// Platform Authentication Routes (without platform.authority middleware)
+Route::prefix('/v1/platform')
+    ->middleware([
+        'web',
+        'auth:sanctum',
+        'identity.route:platform,platform,enforce',
+    ])
+    ->group(function (): void {
+        require 'api/v1/platform/auth.php';
+    });
+
+// Other Platform Routes (with platform.authority middleware)
 Route::prefix('/v1/platform')
     ->middleware([
         'web',

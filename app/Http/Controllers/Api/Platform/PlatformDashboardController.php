@@ -17,12 +17,33 @@ class PlatformDashboardController extends Controller
 {
     public function index(): JsonResponse
     {
-        // Wave 6: Stub implementation
-        // Future: Implement platform dashboard
+        // Wave 6: Mock implementation for frontend development
+        // TODO: Replace with real data from repositories
+        
         return response()->json([
-            'message' => 'Platform dashboard',
-            'wave' => 6,
-            'authority_domain' => 'platform',
+            'success' => true,
+            'data' => [
+                'totalUsers' => 1250,
+                'totalStores' => 85,
+                'totalRevenue' => 125000.50,
+                'totalLeads' => 42,
+                'usersTrend' => [
+                    'change' => 12.5,
+                    'direction' => 'up',
+                ],
+                'storesTrend' => [
+                    'change' => 8.3,
+                    'direction' => 'up',
+                ],
+                'revenueTrend' => [
+                    'change' => 15.7,
+                    'direction' => 'up',
+                ],
+                'leadsTrend' => [
+                    'change' => -3.2,
+                    'direction' => 'down',
+                ],
+            ],
         ]);
     }
 }

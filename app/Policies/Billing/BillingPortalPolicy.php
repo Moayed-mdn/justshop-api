@@ -25,17 +25,17 @@ class BillingPortalPolicy
             return $this->decision($user, 'createSession', true, $billingAccount);
         }
 
-        return $this->decision($user, 'createSession', false, $billingAccount);
+        $this->denyWithContext('billing', 'portal', PermissionEnum::BILLING_PORTAL);
     }
 
     private function isOwnerOrLinkedMember(User $user, BillingAccount $billingAccount, string $permission): bool
     {
-        if ($user->id === $billingAccount->owner_user_id) {
-            return true;
-        }
-
         if (!$user->can($permission)) {
             return false;
+        }
+
+        if ($user->id === $billingAccount->owner_user_id) {
+            return true;
         }
 
         return StoreEntitlementSnapshot::where('billing_account_id', $billingAccount->id)

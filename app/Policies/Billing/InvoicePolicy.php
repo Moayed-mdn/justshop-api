@@ -26,7 +26,7 @@ class InvoicePolicy
             return $this->decision($user, 'viewAny', true, $billingAccount);
         }
 
-        return $this->decision($user, 'viewAny', false, $billingAccount);
+        $this->denyWithContext('invoice', 'view', PermissionEnum::INVOICE_VIEW);
     }
 
     public function view(User $user, Invoice $invoice): bool
@@ -41,7 +41,7 @@ class InvoicePolicy
             return $this->decision($user, 'view', true, $invoice);
         }
 
-        return $this->decision($user, 'view', false, $invoice);
+        $this->denyWithContext('invoice', 'view', PermissionEnum::INVOICE_VIEW);
     }
 
     public function download(User $user, Invoice $invoice): bool
@@ -56,17 +56,17 @@ class InvoicePolicy
             return $this->decision($user, 'download', true, $invoice);
         }
 
-        return $this->decision($user, 'download', false, $invoice);
+        $this->denyWithContext('invoice', 'download', PermissionEnum::INVOICE_DOWNLOAD);
     }
 
     private function isOwnerOrLinkedMember(User $user, BillingAccount $billingAccount, string $permission): bool
     {
-        if ($user->id === $billingAccount->owner_user_id) {
-            return true;
-        }
-
         if (!$user->can($permission)) {
             return false;
+        }
+
+        if ($user->id === $billingAccount->owner_user_id) {
+            return true;
         }
 
         return StoreEntitlementSnapshot::where('billing_account_id', $billingAccount->id)

@@ -53,8 +53,8 @@ class ProductPolicy
         $isAdmin = $this->isAdmin($user, $store);
         $hasPermission = $user->can(PermissionEnum::PRODUCT_VIEW);
 
-        if ($isAdmin && $hasPermission) {
-            return true;
+        if ($isAdmin) {
+            return $hasPermission;
         }
 
         if ($this->isMember($user, $store)) {
@@ -66,7 +66,7 @@ class ProductPolicy
         }
 
         // Not a member of this store at all
-        $this->denyWithContext('product', 'view', PermissionEnum::PRODUCT_VIEW);
+        return false;
     }
 
     private function canManage(User $user, Store $store, string $permission, string $resource, string $action): bool
@@ -78,8 +78,8 @@ class ProductPolicy
         $isAdmin = $this->isAdmin($user, $store);
         $hasPermission = $user->can($permission);
 
-        if ($isAdmin && $hasPermission) {
-            return true;
+        if ($isAdmin) {
+            return $hasPermission;
         }
 
         if ($this->isMember($user, $store)) {
@@ -91,6 +91,6 @@ class ProductPolicy
         }
 
         // Not a member of this store at all
-        $this->denyWithContext($resource, $action, $permission);
+        return false;
     }
 }

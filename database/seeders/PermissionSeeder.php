@@ -90,6 +90,25 @@ class PermissionSeeder extends Seeder
             PermissionEnum::TEMPLATE_CREATE,
             PermissionEnum::TEMPLATE_UPDATE,
             PermissionEnum::TEMPLATE_DELETE,
+
+            // Billing permissions
+            PermissionEnum::SUBSCRIPTION_VIEW,
+            PermissionEnum::SUBSCRIPTION_UPGRADE,
+            PermissionEnum::SUBSCRIPTION_DOWNGRADE,
+            PermissionEnum::SUBSCRIPTION_CANCEL,
+            PermissionEnum::SUBSCRIPTION_RESUME,
+            PermissionEnum::INVOICE_VIEW,
+            PermissionEnum::INVOICE_DOWNLOAD,
+            PermissionEnum::BILLING_PORTAL,
+            PermissionEnum::PAYMENT_METHOD_UPDATE,
+            PermissionEnum::PAYMENT_METHOD_DELETE,
+
+            // Profile permissions
+            PermissionEnum::PROFILE_VIEW,
+            PermissionEnum::PROFILE_UPDATE_INFO,
+            PermissionEnum::PROFILE_UPDATE_PASSWORD,
+            PermissionEnum::PROFILE_UPDATE_AVATAR,
+            PermissionEnum::PROFILE_DELETE,
         ];
 
         foreach ($permissions as $permission) {
@@ -180,6 +199,25 @@ class PermissionSeeder extends Seeder
             PermissionEnum::TEMPLATE_CREATE,
             PermissionEnum::TEMPLATE_UPDATE,
             PermissionEnum::TEMPLATE_DELETE,
+
+            // Billing permissions
+            PermissionEnum::SUBSCRIPTION_VIEW,
+            PermissionEnum::SUBSCRIPTION_UPGRADE,
+            PermissionEnum::SUBSCRIPTION_DOWNGRADE,
+            PermissionEnum::SUBSCRIPTION_CANCEL,
+            PermissionEnum::SUBSCRIPTION_RESUME,
+            PermissionEnum::INVOICE_VIEW,
+            PermissionEnum::INVOICE_DOWNLOAD,
+            PermissionEnum::BILLING_PORTAL,
+            PermissionEnum::PAYMENT_METHOD_UPDATE,
+            PermissionEnum::PAYMENT_METHOD_DELETE,
+
+            // Profile permissions
+            PermissionEnum::PROFILE_VIEW,
+            PermissionEnum::PROFILE_UPDATE_INFO,
+            PermissionEnum::PROFILE_UPDATE_PASSWORD,
+            PermissionEnum::PROFILE_UPDATE_AVATAR,
+            PermissionEnum::PROFILE_DELETE,
         ]);
 
         // Assign permissions to store_admin
@@ -239,6 +277,25 @@ class PermissionSeeder extends Seeder
             PermissionEnum::TEMPLATE_CREATE,
             PermissionEnum::TEMPLATE_UPDATE,
             PermissionEnum::TEMPLATE_DELETE,
+
+            // Billing permissions
+            PermissionEnum::SUBSCRIPTION_VIEW,
+            PermissionEnum::SUBSCRIPTION_UPGRADE,
+            PermissionEnum::SUBSCRIPTION_DOWNGRADE,
+            PermissionEnum::SUBSCRIPTION_CANCEL,
+            PermissionEnum::SUBSCRIPTION_RESUME,
+            PermissionEnum::INVOICE_VIEW,
+            PermissionEnum::INVOICE_DOWNLOAD,
+            PermissionEnum::BILLING_PORTAL,
+            PermissionEnum::PAYMENT_METHOD_UPDATE,
+            PermissionEnum::PAYMENT_METHOD_DELETE,
+
+            // Profile permissions
+            PermissionEnum::PROFILE_VIEW,
+            PermissionEnum::PROFILE_UPDATE_INFO,
+            PermissionEnum::PROFILE_UPDATE_PASSWORD,
+            PermissionEnum::PROFILE_UPDATE_AVATAR,
+            PermissionEnum::PROFILE_DELETE,
         ]);
 
         // Assign permissions to staff
@@ -255,6 +312,12 @@ class PermissionSeeder extends Seeder
             PermissionEnum::NAVIGATION_VIEW,
             PermissionEnum::THEME_VIEW,
             PermissionEnum::TEMPLATE_VIEW,
+            PermissionEnum::SUBSCRIPTION_VIEW,
+            PermissionEnum::INVOICE_VIEW,
+
+            // Profile permissions
+            PermissionEnum::PROFILE_VIEW,
+
         ]);
 
         // customer gets no permissions (role exists but no permissions assigned)

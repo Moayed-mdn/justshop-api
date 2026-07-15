@@ -17,11 +17,15 @@ class PaymentMethodPolicy
 
     public function update(User $user, PaymentMethod $paymentMethod): bool
     {
+        if (!$user->can(PermissionEnum::PAYMENT_METHOD_UPDATE)) {
+            $this->denyWithContext('payment_method', 'update', PermissionEnum::PAYMENT_METHOD_UPDATE);
+        }
+
         if ($user->id === $paymentMethod->user_id) {
             return $this->decision($user, 'update', true, $paymentMethod);
         }
 
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value) && $user->can(PermissionEnum::PAYMENT_METHOD_UPDATE)) {
+        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
             return $this->decision($user, 'update', true, $paymentMethod);
         }
 
@@ -30,11 +34,15 @@ class PaymentMethodPolicy
 
     public function delete(User $user, PaymentMethod $paymentMethod): bool
     {
+        if (!$user->can(PermissionEnum::PAYMENT_METHOD_DELETE)) {
+            $this->denyWithContext('payment_method', 'delete', PermissionEnum::PAYMENT_METHOD_DELETE);
+        }
+
         if ($user->id === $paymentMethod->user_id) {
             return $this->decision($user, 'delete', true, $paymentMethod);
         }
 
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value) && $user->can(PermissionEnum::PAYMENT_METHOD_DELETE)) {
+        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
             return $this->decision($user, 'delete', true, $paymentMethod);
         }
 

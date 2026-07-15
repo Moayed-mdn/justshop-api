@@ -110,6 +110,13 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function checkPermissionTo($permission, ?string $guardName = null): bool
     {
+        $ability = $permission instanceof BackedEnum ? $permission->value : (string) $permission;
+
+        // Bypass store scoping for profile permissions only, force use of web guard
+        if (str_starts_with($ability, 'profile.')) {
+            return $this->spatieCheckPermissionTo($permission, 'web');
+        }
+
         if (! app()->bound('currentStore')) {
             return $this->spatieCheckPermissionTo($permission, $guardName);
         }
@@ -120,7 +127,6 @@ class User extends Authenticatable implements MustVerifyEmail
             return $this->spatieCheckPermissionTo($permission, $guardName);
         }
 
-        $ability = $permission instanceof BackedEnum ? $permission->value : (string) $permission;
         $permissions = app(PermissionResolver::class)->resolve($this, $store);
 
         return in_array($ability, $permissions, true);

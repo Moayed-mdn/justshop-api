@@ -21,6 +21,7 @@ class StoreSeeder extends Seeder
                 'name' => 'Merchant User',
                 'password' => Hash::make('password'),
                 'onboarding_step' => OnboardingStepEnum::COMPLETED->value,
+                
             ]
         );
         $merchantUser->markEmailAsVerified();
@@ -32,6 +33,7 @@ class StoreSeeder extends Seeder
                 'name' => 'Super Admin',
                 'password' => Hash::make('password'),
                 'onboarding_step' => OnboardingStepEnum::COMPLETED->value,
+                'email_verified_at' => now()
             ]
         );
         $superAdminUser->markEmailAsVerified();

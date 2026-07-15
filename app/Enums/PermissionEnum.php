@@ -132,4 +132,11 @@ class PermissionEnum
     // --- Payment Method ---
     public const PAYMENT_METHOD_UPDATE = 'payment_method.update';
     public const PAYMENT_METHOD_DELETE = 'payment_method.delete';
+
+    // --- Profile ---
+    public const PROFILE_VIEW = 'profile.view';
+    public const PROFILE_UPDATE_INFO = 'profile.update_info';
+    public const PROFILE_UPDATE_PASSWORD = 'profile.update_password';
+    public const PROFILE_UPDATE_AVATAR = 'profile.update_avatar';
+    public const PROFILE_DELETE = 'profile.delete';
 }

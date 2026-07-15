@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Diagnostic Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        h1 { color: #4ec9b0; }
+        h2 { color: #ce9178; margin-top: 30px; }
+        .test { background: #252526; padding: 15px; margin: 10px 0; border-left: 3px solid #007acc; }
+        .pass { border-left-color: #4ec9b0; }
+        .fail { border-left-color: #f48771; }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 5px;
+            border-radius: 4px;
+        }
+        button:hover { background: #005a9e; }
+        pre { background: #1e1e1e; padding: 10px; overflow-x: auto; }
+        .info { color: #569cd6; }
+        .success { color: #4ec9b0; }
+        .error { color: #f48771; }
+        .warning { color: #dcdcaa; }
+    </style>
+</head>
+<body>
+    <h1>🍪 Cookie & Session Diagnostic Test</h1>
+    <p>This page tests cookie behavior and session persistence for localhost:8000</p>
+    
+    <div>
+        <button onclick="runAllTests()">🚀 Run All Tests</button>
+        <button onclick="clearAllCookies()">🗑️ Clear Cookies</button>
+        <button onclick="location.reload()">🔄 Reload Page</button>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        const resultsDiv = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const color = {info: '#569cd6', success: '#4ec9b0', error: '#f48771', warning: '#dcdcaa'}[type];
+            resultsDiv.innerHTML += `<div style="color: ${color};">${message}</div>`;
+        }
+        
+        function logSection(title) {
+            resultsDiv.innerHTML += `<h2>${title}</h2>`;
+        }
+        
+        function logTest(name, passed, details) {
+            const status = passed ? '✅ PASS' : '❌ FAIL';
+            const className = passed ? 'pass' : 'fail';
+            resultsDiv.innerHTML += `
+                <div class="test ${className}">
+                    <strong>${status}</strong> ${name}<br>
+                    <small>${details}</small>
+                </div>
+            `;
+        }
+        
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            return parts.length === 2 ? parts.pop().split(';').shift() : null;
+        }
+        
+        function clearAllCookies() {
+            document.cookie.split(";").forEach(function(c) {
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+            });
+            log('All cookies cleared', 'warning');
+            location.reload();
+        }
+        
+        async function runAllTests() {
+            resultsDiv.innerHTML = '';
+            
+            logSection('📋 Test 1: Initial Cookie State');
+            const initialCookies = document.cookie;
+            log(`Current cookies: ${initialCookies || '(none)'}`, initialCookies ? 'success' : 'info');
+            
+            logSection('📋 Test 2: Fetch CSRF Cookie');
+            try {
+                const csrfStart = Date.now();
+                const csrfResponse = await fetch(`${API_BASE}/sanctum/csrf-cookie`, {
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                const csrfTime = Date.now() - csrfStart;
+                
+                logTest(
+                    'CSRF Cookie Request',
+                    csrfResponse.ok,
+                    `Status: ${csrfResponse.status}, Time: ${csrfTime}ms`
+                );
+                
+                // Wait for cookies to be set
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                const xsrfToken = getCookie('XSRF-TOKEN');
+                const laravelSession = getCookie('ecommerce_session');
+                
+                logTest(
+                    'XSRF-TOKEN Cookie Present',
+                    !!xsrfToken,
+                    xsrfToken ? `Token: ${xsrfToken.substring(0, 40)}...` : 'Cookie not found'
+                );
+                
+                logTest(
+                    'Laravel Session Cookie Present',
+                    !!laravelSession,
+                    laravelSession ? `Session: ${laravelSession.substring(0, 40)}...` : 'Cookie not found'
+                );
+                
+                log(`All cookies after CSRF: ${document.cookie}`, 'info');
+                
+                if (!xsrfToken) {
+                    log('⚠️ XSRF token missing - Cannot proceed with login test', 'error');
+                    return;
+                }
+                
+                logSection('📋 Test 3: Login Request');
+                const loginStart = Date.now();
+                const loginResponse = await fetch(`${API_BASE}/api/v1/platform/auth/login`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-XSRF-TOKEN': decodeURIComponent(xsrfToken)
+                    },
+                    body: JSON.stringify({
+                        email: 'super@test.com',
+                        password: 'password'
+                    })
+                });
+                const loginTime = Date.now() - loginStart;
+                
+                const loginData = await loginResponse.json();
+                
+                logTest(
+                    'Login Request',
+                    loginResponse.ok,
+                    `Status: ${loginResponse.status}, Time: ${loginTime}ms`
+                );
+                
+                if (loginResponse.ok) {
+                    log(`✅ Login successful: ${loginData.data.user.email}`, 'success');
+                    log(`All cookies after login: ${document.cookie}`, 'info');
+                } else {
+                    log(`❌ Login failed: ${loginData.message || 'Unknown error'}`, 'error');
+                    return;
+                }
+                
+                // Wait for cookies to be set
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                logSection('📋 Test 4: Session Persistence Check');
+                const xsrfAfterLogin = getCookie('XSRF-TOKEN');
+                const sessionAfterLogin = getCookie('ecommerce_session');
+                
+                logTest(
+                    'XSRF Token Still Present',
+                    !!xsrfAfterLogin,
+                    xsrfAfterLogin ? `Token: ${xsrfAfterLogin.substring(0, 40)}...` : 'Cookie lost'
+                );
+                
+                logTest(
+                    'Session Cookie Still Present',
+                    !!sessionAfterLogin,
+                    sessionAfterLogin ? `Session: ${sessionAfterLogin.substring(0, 40)}...` : 'Cookie lost'
+                );
+                
+                logSection('📋 Test 5: Authenticated Request (/me)');
+                const meStart = Date.now();
+                const meResponse = await fetch(`${API_BASE}/api/v1/platform/auth/me`, {
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                const meTime = Date.now() - meStart;
+                
+                const meData = await meResponse.json();
+                
+                logTest(
+                    '/me Endpoint Request',
+                    meResponse.ok,
+                    `Status: ${meResponse.status}, Time: ${meTime}ms`
+                );
+                
+                if (meResponse.ok) {
+                    log(`✅ Authenticated as: ${meData.data.user.email}`, 'success');
+                    log(`Actor Context: ${meData.data.actor_context}`, 'info');
+                    log(`Auth Domain: ${meData.data.auth_domain}`, 'info');
+                } else {
+                    log(`❌ Authentication failed: ${meData.message || 'Session not recognized'}`, 'error');
+                }
+                
+                logSection('📋 Test 6: Cookie Analysis');
+                log('All cookies in browser:', 'info');
+                log(`<pre>${document.cookie}</pre>`, 'info');
+                
+                log('Cookie breakdown:', 'info');
+                document.cookie.split(';').forEach(cookie => {
+                    const [name, value] = cookie.trim().split('=');
+                    log(`  ${name}: ${value ? value.substring(0, 60) + (value.length > 60 ? '...' : '') : '(empty)'}`, 'info');
+                });
+                
+                logSection('🎉 Test Complete!');
+                if (meResponse.ok) {
+                    log('✅ All systems working! Cookies are persisting correctly.', 'success');
+                } else {
+                    log('⚠️ Session is not persisting. Check Laravel logs and session configuration.', 'warning');
+                }
+                
+            } catch (error) {
+                log(`❌ Test failed with error: ${error.message}`, 'error');
+                console.error('Test error:', error);
+            }
+        }
+        
+        // Run tests on page load
+        window.addEventListener('load', () => {
+            log('Page loaded. Click "Run All Tests" to begin.', 'info');
+        });
+    </script>
+</body>
+</html>
