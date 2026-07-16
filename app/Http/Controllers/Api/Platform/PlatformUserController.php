@@ -71,6 +71,11 @@ class PlatformUserController extends Controller
                 'last_login_at' => now()->subDays(rand(0, 7))->toISOString(),
                 'stores_count' => rand(1, 5),
                 'orders_count' => rand(0, 100),
+                'stats' => [
+                    'last_login' => now()->subDays(rand(0, 7))->toISOString(),
+                    'total_orders' => rand(0, 100),
+                    'total_spent' => rand(0, 10000),
+                ],
             ],
         ]);
     }

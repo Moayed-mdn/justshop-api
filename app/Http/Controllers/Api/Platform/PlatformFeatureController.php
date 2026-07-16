@@ -22,6 +22,7 @@ class PlatformFeatureController extends Controller
                 'description' => 'Allow new stores to register on the platform',
                 'enabled' => true,
                 'critical' => true,
+                'usage_count' => 1234,
                 'updated_at' => now()->subDays(5)->toISOString(),
             ],
             [
@@ -31,6 +32,7 @@ class PlatformFeatureController extends Controller
                 'description' => 'Send email notifications to users and stores',
                 'enabled' => true,
                 'critical' => false,
+                'usage_count' => 5678,
                 'updated_at' => now()->subDays(10)->toISOString(),
             ],
             [
@@ -40,6 +42,7 @@ class PlatformFeatureController extends Controller
                 'description' => 'Allow stores to process payments',
                 'enabled' => true,
                 'critical' => true,
+                'usage_count' => 9012,
                 'updated_at' => now()->subDays(2)->toISOString(),
             ],
             [
@@ -49,6 +52,7 @@ class PlatformFeatureController extends Controller
                 'description' => 'Provide advanced analytics features to stores',
                 'enabled' => false,
                 'critical' => false,
+                'usage_count' => 0,
                 'updated_at' => now()->subDays(15)->toISOString(),
             ],
             [
@@ -58,6 +62,7 @@ class PlatformFeatureController extends Controller
                 'description' => 'Put the platform in maintenance mode',
                 'enabled' => false,
                 'critical' => true,
+                'usage_count' => 0,
                 'updated_at' => now()->subDays(30)->toISOString(),
             ],
         ];
