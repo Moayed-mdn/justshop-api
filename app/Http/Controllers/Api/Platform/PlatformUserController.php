@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\Platform;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 
 class PlatformUserController extends Controller
@@ -53,68 +54,66 @@ class PlatformUserController extends Controller
         ]);
     }
 
-    public function show(int $user): JsonResponse
+    public function show(User $user): JsonResponse
     {
-        // Wave 6: Mock user details
-        // TODO: Replace with real user repository query
-        
         return response()->json([
             'success' => true,
             'data' => [
-                'id' => $user,
-                'name' => 'User ' . $user,
-                'email' => 'user' . $user . '@example.com',
-                'role' => 'store_admin',
-                'status' => 'active',
-                'created_at' => now()->subDays(rand(1, 365))->toISOString(),
-                'updated_at' => now()->subDays(rand(0, 30))->toISOString(),
-                'last_login_at' => now()->subDays(rand(0, 7))->toISOString(),
-                'stores_count' => rand(1, 5),
-                'orders_count' => rand(0, 100),
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => null, // TODO: Get user role from roles table
+                'status' => 'active', // TODO: Add status field to users table
+                'email_verified' => $user->email_verified_at !== null,
+                'created_at' => $user->created_at->toISOString(),
+                'updated_at' => $user->updated_at->toISOString(),
+                'last_login_at' => null, // TODO: Track last login
+                'stores_count' => $user->stores()->count(),
+                'orders_count' => 0, // TODO: Count user orders
                 'stats' => [
-                    'last_login' => now()->subDays(rand(0, 7))->toISOString(),
-                    'total_orders' => rand(0, 100),
-                    'total_spent' => rand(0, 10000),
+                    'last_login' => null, // TODO: Track last login
+                    'total_orders' => 0, // TODO: Count orders
+                    'total_spent' => 0, // TODO: Sum order totals
                 ],
             ],
         ]);
     }
 
-    public function suspend(int $user): JsonResponse
+    public function suspend(User $user): JsonResponse
     {
-        // Wave 6: Mock suspend
         // TODO: Implement actual suspend logic
+        // For now, just return success with user data
         
         return response()->json([
             'success' => true,
             'message' => 'User suspended successfully',
             'data' => [
-                'id' => $user,
-                'name' => 'User ' . $user,
-                'email' => 'user' . $user . '@example.com',
-                'role' => 'store_admin',
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => null,
                 'status' => 'suspended',
-                'created_at' => now()->subDays(rand(1, 365))->toISOString(),
+                'created_at' => $user->created_at->toISOString(),
                 'updated_at' => now()->toISOString(),
             ],
         ]);
     }
 
-    public function activate(int $user): JsonResponse
+    public function activate(User $user): JsonResponse
     {
-        // Wave 6: Mock activate
         // TODO: Implement actual activate logic
+        // For now, just return success with user data
         
         return response()->json([
             'success' => true,
             'message' => 'User activated successfully',
             'data' => [
-                'id' => $user,
-                'name' => 'User ' . $user,
-                'email' => 'user' . $user . '@example.com',
-                'role' => 'store_admin',
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => null,
                 'status' => 'active',
-                'created_at' => now()->subDays(rand(1, 365))->toISOString(),
+                'created_at' => $user->created_at->toISOString(),
                 'updated_at' => now()->toISOString(),
             ],
         ]);
