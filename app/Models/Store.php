@@ -195,6 +195,7 @@ class Store extends Model
 
     /**
      * Resolve merchant-facing store route segments by slug only.
+     * For platform admin routes, support both ID and slug.
      */
     public function resolveRouteBinding($value, $field = null): ?Model
     {
@@ -202,6 +203,15 @@ class Store extends Model
             return parent::resolveRouteBinding($value, $field);
         }
 
+        // If value is numeric, treat as ID (for platform admin routes)
+        if (is_numeric($value)) {
+            $resolved = $this->newQuery()->where('id', (int) $value)->first();
+            if ($resolved instanceof self) {
+                return $resolved;
+            }
+        }
+
+        // Otherwise, treat as slug (for merchant-facing routes)
         $resolved = $this->newQuery()
             ->where('slug', (string) $value)
             ->first();
