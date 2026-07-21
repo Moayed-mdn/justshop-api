@@ -19,6 +19,7 @@ class ListPlatformMarketingPagesRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'type' => ['sometimes', 'nullable', 'string', Rule::in(\App\Enums\Cms\MarketingPage\MarketingPageTypeEnum::values())],
             'status' => ['sometimes', 'nullable', 'string', Rule::in([...MarketingPageStatusEnum::values(), 'all'])],
             'search' => ['sometimes', 'nullable', 'string', 'max:255'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],

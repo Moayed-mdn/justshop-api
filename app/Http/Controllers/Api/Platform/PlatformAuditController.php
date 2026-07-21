@@ -5,58 +5,76 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\Platform;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditLog;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class PlatformAuditController extends Controller
 {
     public function index(): JsonResponse
     {
-        // Wave 6: Mock implementation for frontend development
-        // TODO: Replace with real audit log repository queries
+        $page = max(1, (int) request()->get('page', 1));
+        $perPage = min(100, max(1, (int) request()->get('per_page', 25)));
+        $action = request()->string('action')->trim()->toString();
+        $search = request()->string('search')->trim()->toString();
         
-        // Generate mock audit logs
-        $logs = [];
-        $actions = ['user_created', 'user_suspended', 'user_activated', 'store_created', 'store_suspended', 'store_activated', 'feature_toggled'];
-        $actors = ['Super Admin', 'Support Agent 1', 'Support Agent 2', 'System'];
-        $resources = ['User', 'Store', 'Feature'];
+        $query = AuditLog::query()
+            ->orderByDesc('created_at');
         
-        for ($i = 1; $i <= 100; $i++) {
-            $action = $actions[array_rand($actions)];
-            $resource = $resources[array_rand($resources)];
-            
-            $logs[] = [
-                'id' => $i,
-                'actor_name' => $actors[array_rand($actors)],
-                'actor_email' => 'admin' . ($i % 3 + 1) . '@example.com',
-                'action' => $action,
-                'resource_type' => $resource,
-                'resource_id' => rand(1, 50),
-                'resource_name' => $resource . ' ' . rand(1, 50),
-                'description' => ucfirst(str_replace('_', ' ', $action)),
-                'ip_address' => '192.168.1.' . rand(1, 255),
-                'user_agent' => 'Mozilla/5.0',
-                'metadata' => json_encode(['reason' => 'Administrative action']),
-                'created_at' => now()->subDays(rand(0, 30))->toISOString(),
-            ];
+        // Filter by action/event
+        if ($action && $action !== 'all') {
+            $query->where('event', $action);
         }
         
-        // Simple pagination mock
-        $page = (int) request()->get('page', 1);
-        $perPage = (int) request()->get('per_page', 25);
-        $total = count($logs);
-        $offset = ($page - 1) * $perPage;
+        // Search by actor email or event
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('event', 'like', "%{$search}%")
+                    ->orWhere('ip_address', 'like', "%{$search}%");
+            });
+        }
         
-        $paginatedLogs = array_slice($logs, $offset, $perPage);
+        $total = $query->count();
+        $offset = ($page - 1) * $perPage;
+        $lastPage = (int) ceil($total / $perPage);
+        
+        $logs = $query
+            ->offset($offset)
+            ->limit($perPage)
+            ->get()
+            ->map(function (AuditLog $log) {
+                // Get actor information
+                $actor = null;
+                if ($log->actor_id && $log->actor_type === 'App\\Models\\User') {
+                    $actor = User::find($log->actor_id);
+                }
+                
+                return [
+                    'id' => $log->id,
+                    'actor_name' => $actor?->name ?? 'System',
+                    'actor_email' => $actor?->email ?? null,
+                    'action' => $log->event,
+                    'resource_type' => $log->metadata['resource_type'] ?? null,
+                    'resource_id' => $log->metadata['resource_id'] ?? null,
+                    'resource_name' => $log->metadata['resource_name'] ?? null,
+                    'description' => ucfirst(str_replace('_', ' ', $log->event)),
+                    'ip_address' => $log->ip_address,
+                    'user_agent' => $log->user_agent,
+                    'metadata' => $log->metadata,
+                    'created_at' => $log->created_at->toISOString(),
+                ];
+            });
         
         return response()->json([
             'success' => true,
-            'data' => $paginatedLogs,
+            'data' => $logs,
             'meta' => [
-                'current_page' => (int) $page,
-                'last_page' => (int) ceil($total / $perPage),
-                'per_page' => (int) $perPage,
+                'current_page' => $page,
+                'last_page' => $lastPage,
+                'per_page' => $perPage,
                 'total' => $total,
-                'from' => $offset + 1,
+                'from' => $total > 0 ? $offset + 1 : 0,
                 'to' => min($offset + $perPage, $total),
             ],
         ]);
@@ -64,25 +82,33 @@ class PlatformAuditController extends Controller
 
     public function show(int $log): JsonResponse
     {
-        // Wave 6: Mock audit log details
-        // TODO: Replace with real audit log repository query
+        $auditLog = AuditLog::findOrFail($log);
+        
+        // Get actor information
+        $actor = null;
+        if ($auditLog->actor_id && $auditLog->actor_type === 'App\\Models\\User') {
+            $actor = User::find($auditLog->actor_id);
+        }
         
         return response()->json([
             'success' => true,
             'data' => [
-                'id' => $log,
-                'actor_name' => 'Super Admin',
-                'actor_email' => 'admin@example.com',
-                'action' => 'user_suspended',
-                'resource_type' => 'User',
-                'resource_id' => 5,
-                'resource_name' => 'User 5',
-                'description' => 'User suspended',
-                'ip_address' => '192.168.1.100',
-                'user_agent' => 'Mozilla/5.0',
-                'metadata' => json_encode(['reason' => 'Policy violation', 'duration' => 'indefinite']),
-                'created_at' => now()->subDays(rand(0, 7))->toISOString(),
+                'id' => $auditLog->id,
+                'actor_name' => $actor?->name ?? 'System',
+                'actor_email' => $actor?->email ?? null,
+                'action' => $auditLog->event,
+                'resource_type' => $auditLog->metadata['resource_type'] ?? null,
+                'resource_id' => $auditLog->metadata['resource_id'] ?? null,
+                'resource_name' => $auditLog->metadata['resource_name'] ?? null,
+                'description' => ucfirst(str_replace('_', ' ', $auditLog->event)),
+                'ip_address' => $auditLog->ip_address,
+                'user_agent' => $auditLog->user_agent,
+                'metadata' => $auditLog->metadata,
+                'correlation_id' => $auditLog->correlation_id,
+                'store_id' => $auditLog->store_id,
+                'created_at' => $auditLog->created_at->toISOString(),
             ],
         ]);
     }
 }
+

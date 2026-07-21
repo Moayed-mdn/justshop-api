@@ -108,50 +108,62 @@ class PlatformStoreController extends Controller
 
     public function suspend(Store $store): JsonResponse
     {
-        // Wave 6: Mock suspend
-        // TODO: Implement actual suspend logic
+        // Update store status to suspended
+        $store->status = StoreStatusEnum::SUSPENDED;
+        $store->is_active = false;
+        $store->save();
         
-        $storeId = $store->id ?? request()->route('store');
+        // Reload with relationships
+        $store->load('owner');
         
         return response()->json([
             'success' => true,
             'message' => 'Store suspended successfully',
             'data' => [
-                'id' => $storeId,
-                'name' => 'Store ' . $storeId,
-                'slug' => 'store-' . $storeId,
-                'domain' => 'store' . $storeId . '.example.com',
-                'status' => 'suspended',
-                'owner_name' => 'Owner ' . $storeId,
-                'owner_email' => 'owner' . $storeId . '@example.com',
-                'plan' => 'pro',
-                'created_at' => now()->subDays(rand(1, 365))->toISOString(),
-                'updated_at' => now()->toISOString(),
+                'id' => $store->id,
+                'name' => $store->name,
+                'slug' => $store->slug,
+                'domain' => $store->domain,
+                'status' => $store->status->value,
+                'is_active' => $store->is_active,
+                'owner' => $store->owner ? [
+                    'id' => $store->owner->id,
+                    'name' => $store->owner->name,
+                    'email' => $store->owner->email,
+                ] : null,
+                'created_at' => $store->created_at->toISOString(),
+                'updated_at' => $store->updated_at->toISOString(),
             ],
         ]);
     }
 
     public function activate(Store $store): JsonResponse
     {
-        // Wave 6: Mock activate
-        // TODO: Implement actual activate logic
+        // Update store status to active
+        $store->status = StoreStatusEnum::ACTIVE;
+        $store->is_active = true;
+        $store->save();
         
-        $storeId = $store->id ?? request()->route('store');
+        // Reload with relationships
+        $store->load('owner');
         
         return response()->json([
             'success' => true,
             'message' => 'Store activated successfully',
             'data' => [
-                'id' => $storeId,
-                'name' => 'Store ' . $storeId,
-                'slug' => 'store-' . $storeId,
-                'domain' => 'store' . $storeId . '.example.com',
-                'status' => 'active',
-                'owner_name' => 'Owner ' . $storeId,
-                'owner_email' => 'owner' . $storeId . '@example.com',
-                'plan' => 'pro',
-                'created_at' => now()->subDays(rand(1, 365))->toISOString(),
-                'updated_at' => now()->toISOString(),
+                'id' => $store->id,
+                'name' => $store->name,
+                'slug' => $store->slug,
+                'domain' => $store->domain,
+                'status' => $store->status->value,
+                'is_active' => $store->is_active,
+                'owner' => $store->owner ? [
+                    'id' => $store->owner->id,
+                    'name' => $store->owner->name,
+                    'email' => $store->owner->email,
+                ] : null,
+                'created_at' => $store->created_at->toISOString(),
+                'updated_at' => $store->updated_at->toISOString(),
             ],
         ]);
     }

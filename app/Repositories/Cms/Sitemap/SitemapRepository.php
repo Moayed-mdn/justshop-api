@@ -8,6 +8,7 @@ use App\Models\BlogPost;
 use App\Models\Cms\Marketing\Platform\PlatformMarketingPage;
 use App\Models\Cms\MarketingPage;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Repository for sitemap data retrieval.
@@ -28,21 +29,22 @@ final class SitemapRepository
      */
     public function getPublishedMarketingPages(): Collection
     {
-        // 1. Get platform marketing pages
         $platformPages = PlatformMarketingPage::query()
             ->select(['id', 'template as type', 'slug', 'status', 'published_at', 'updated_at'])
             ->published()
             ->orderBy('id')
             ->get();
 
-        // 2. Get legacy marketing pages (optional, during migration)
+        if (!Schema::hasTable('marketing_pages')) {
+            return $platformPages;
+        }
+
         $legacyPages = MarketingPage::query()
             ->select(['id', 'type', 'slug', 'status', 'published_at', 'updated_at'])
             ->published()
             ->orderBy('id')
             ->get();
 
-        // Merge them for now to ensure no loss of visibility during migration
         return $platformPages->concat($legacyPages);
     }
 

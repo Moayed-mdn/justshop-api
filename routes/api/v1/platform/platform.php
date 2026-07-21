@@ -25,6 +25,7 @@ Route::get('/cms/stats', [\App\Http\Controllers\Api\Platform\PlatformDashboardCo
 Route::prefix('/users')->name('platform.users.')->group(function (): void {
     Route::get('/', [\App\Http\Controllers\Api\Platform\PlatformUserController::class, 'index'])->name('index');
     Route::get('/{user}', [\App\Http\Controllers\Api\Platform\PlatformUserController::class, 'show'])->name('show');
+    Route::put('/{user}', [\App\Http\Controllers\Api\Platform\PlatformUserController::class, 'update'])->name('update');
     Route::patch('/{user}/suspend', [\App\Http\Controllers\Api\Platform\PlatformUserController::class, 'suspend'])->name('suspend');
     Route::patch('/{user}/activate', [\App\Http\Controllers\Api\Platform\PlatformUserController::class, 'activate'])->name('activate');
 });

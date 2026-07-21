@@ -2,14 +2,14 @@
 
 namespace Database\Seeders;
 
-use App\Enums\Cms\MarketingPage\MarketingPageStatusEnum;
+use App\Enums\Cms\Marketing\MarketingPageStatusEnum;
 use App\Enums\Cms\MarketingPage\MarketingPageTypeEnum;
 use App\Models\BlogCategory;
 use App\Models\BlogPost;
 use App\Models\BlogTag;
 use App\Models\Cms\CmsDocument;
 use App\Models\Cms\CmsDocumentSection;
-use App\Models\Cms\MarketingPage;
+use App\Models\Cms\Marketing\Platform\PlatformMarketingPage;
 use App\Models\User;
 use App\Support\System\FrontendUrlBuilder;
 use Illuminate\Database\Seeder;
@@ -45,7 +45,7 @@ class CmsMarketingSeeder extends Seeder
      */
     private function seedHomePage(): void
     {
-        MarketingPage::updateOrCreate(
+        PlatformMarketingPage::updateOrCreate(
             ['type' => MarketingPageTypeEnum::HOME],
             [
                 'title' => ['en' => 'The Commerce Platform for Next-Gen Brands', 'ar' => 'منصة التجارة لجيل القادم من العلامات التجارية'],
@@ -53,7 +53,7 @@ class CmsMarketingSeeder extends Seeder
                 'status' => MarketingPageStatusEnum::PUBLISHED,
                 'published_at' => now(),
                 'created_by' => $this->admin->id,
-                'sections' => [
+                'content' => [
                     'hero' => $this->buildHeroSection(
                         title: ['en' => 'Build Your Global Commerce Empire', 'ar' => 'ابنِ إمبراطوريتك التجارية العالمية'],
                         subtitle: ['en' => 'A production-grade commerce engine for brands that scale. Multi-store, multi-currency, and fully CMS-driven.', 'ar' => 'محرك تجارة من الدرجة الإنتاجية للعلامات التجارية التي تتوسع. متاجر متعددة، عملات متعددة، ومدفوع بالكامل بنظام إدارة المحتوى.'],
@@ -126,7 +126,7 @@ class CmsMarketingSeeder extends Seeder
      */
     private function seedAboutPage(): void
     {
-        MarketingPage::updateOrCreate(
+        PlatformMarketingPage::updateOrCreate(
             ['type' => MarketingPageTypeEnum::ABOUT],
             [
                 'title' => ['en' => 'Our Mission & Story', 'ar' => 'مهمتنا وقصتنا'],
@@ -134,7 +134,7 @@ class CmsMarketingSeeder extends Seeder
                 'status' => MarketingPageStatusEnum::PUBLISHED,
                 'published_at' => now(),
                 'created_by' => $this->admin->id,
-                'sections' => [
+                'content' => [
                     'hero' => $this->buildHeroSection(
                         title: ['en' => 'Empowering Commerce Everywhere', 'ar' => 'تمكين التجارة في كل مكان'],
                         subtitle: ['en' => 'We started with a simple goal: to make enterprise-grade commerce accessible to every ambitious brand.', 'ar' => 'بدأنا بهدف بسيط: جعل التجارة على مستوى المؤسسات متاحة لكل علامة تجارية طموحة.'],
@@ -177,7 +177,7 @@ class CmsMarketingSeeder extends Seeder
      */
     private function seedContactPage(): void
     {
-        MarketingPage::updateOrCreate(
+        PlatformMarketingPage::updateOrCreate(
             ['type' => MarketingPageTypeEnum::CONTACT],
             [
                 'title' => ['en' => 'Get in Touch', 'ar' => 'اتصل بنا'],
@@ -185,7 +185,7 @@ class CmsMarketingSeeder extends Seeder
                 'status' => MarketingPageStatusEnum::PUBLISHED,
                 'published_at' => now(),
                 'created_by' => $this->admin->id,
-                'sections' => [
+                'content' => [
                     'hero' => $this->buildHeroSection(
                         title: ['en' => 'We are Here to Help', 'ar' => 'نحن هنا للمساعدة'],
                         subtitle: ['en' => 'Have questions? Our team of experts is ready to assist you with your commerce journey.', 'ar' => 'لديك أسئلة؟ فريق الخبراء لدينا جاهز لمساعدتك في رحلتك التجارية.'],
@@ -221,7 +221,7 @@ class CmsMarketingSeeder extends Seeder
      */
     private function seedFeaturesPage(): void
     {
-        MarketingPage::updateOrCreate(
+        PlatformMarketingPage::updateOrCreate(
             ['type' => MarketingPageTypeEnum::FEATURES],
             [
                 'title' => ['en' => 'Platform Features', 'ar' => 'مميزات المنصة'],
@@ -229,7 +229,7 @@ class CmsMarketingSeeder extends Seeder
                 'status' => MarketingPageStatusEnum::PUBLISHED,
                 'published_at' => now(),
                 'created_by' => $this->admin->id,
-                'sections' => [
+                'content' => [
                     'hero' => $this->buildHeroSection(
                         title: ['en' => 'Everything You Need to Sell Online', 'ar' => 'كل ما تحتاجه للبيع عبر الإنترنت'],
                         subtitle: ['en' => 'Powerful tools designed to help you manage products, orders, and customers at scale.', 'ar' => 'أدوات قوية مصممة لمساعدتك في إدارة المنتجات والطلبات والعملاء على نطاق واسع.'],
@@ -288,7 +288,7 @@ class CmsMarketingSeeder extends Seeder
      */
     private function seedEnterprisePage(): void
     {
-        MarketingPage::updateOrCreate(
+        PlatformMarketingPage::updateOrCreate(
             ['type' => MarketingPageTypeEnum::ENTERPRISE],
             [
                 'title' => ['en' => 'Enterprise Solutions', 'ar' => 'حلول المؤسسات'],
@@ -296,7 +296,7 @@ class CmsMarketingSeeder extends Seeder
                 'status' => MarketingPageStatusEnum::PUBLISHED,
                 'published_at' => now(),
                 'created_by' => $this->admin->id,
-                'sections' => [
+                'content' => [
                     'hero' => $this->buildHeroSection(
                         title: ['en' => 'Scale Without Limits', 'ar' => 'توسع بدون حدود'],
                         subtitle: ['en' => 'The ultimate commerce infrastructure for global enterprises requiring high performance and dedicated support.', 'ar' => 'البنية التحتية التجارية النهائية للمؤسسات العالمية التي تتطلب أداءً عاليًا ودعمًا مخصصًا.'],
@@ -345,7 +345,7 @@ class CmsMarketingSeeder extends Seeder
      */
     private function seedPricingPage(): void
     {
-        MarketingPage::updateOrCreate(
+        PlatformMarketingPage::updateOrCreate(
             ['type' => MarketingPageTypeEnum::PRICING],
             [
                 'title' => ['en' => 'Simple, Transparent Pricing', 'ar' => 'تسعير بسيط وشفاف'],
@@ -353,7 +353,7 @@ class CmsMarketingSeeder extends Seeder
                 'status' => MarketingPageStatusEnum::PUBLISHED,
                 'published_at' => now(),
                 'created_by' => $this->admin->id,
-                'sections' => [
+                'content' => [
                     'hero' => $this->buildHeroSection(
                         title: ['en' => 'Plans for Every Stage of Growth', 'ar' => 'خطط لكل مرحلة من مراحل النمو'],
                         subtitle: ['en' => 'From startups to global enterprises, we have a plan that fits your needs.', 'ar' => 'من الشركات الناشئة إلى المؤسسات العالمية، لدينا خطة تناسب احتياجاتك.'],
@@ -422,7 +422,7 @@ class CmsMarketingSeeder extends Seeder
      */
     private function seedDemoPage(): void
     {
-        MarketingPage::updateOrCreate(
+        PlatformMarketingPage::updateOrCreate(
             ['type' => MarketingPageTypeEnum::DEMO],
             [
                 'title' => ['en' => 'Interactive Product Demo', 'ar' => 'عرض تجريبي تفاعلي للمنتج'],
@@ -430,7 +430,7 @@ class CmsMarketingSeeder extends Seeder
                 'status' => MarketingPageStatusEnum::PUBLISHED,
                 'published_at' => now(),
                 'created_by' => $this->admin->id,
-                'sections' => [
+                'content' => [
                     'hero' => $this->buildHeroSection(
                         title: ['en' => 'See the Future of Commerce in Action', 'ar' => 'شاهد مستقبل التجارة في العمل'],
                         subtitle: ['en' => 'Take a guided tour of the most powerful commerce engine ever built. No credit card required.', 'ar' => 'قم بجولة إرشادية في أقوى محرك تجارة تم بناؤه على الإطلاق. لا يلزم وجود بطاقة ائتمان.'],
@@ -535,7 +535,7 @@ class CmsMarketingSeeder extends Seeder
      */
     private function seedTemplatesPage(): void
     {
-        MarketingPage::updateOrCreate(
+        PlatformMarketingPage::updateOrCreate(
             ['type' => MarketingPageTypeEnum::TEMPLATES],
             [
                 'title' => ['en' => 'Storefront Templates', 'ar' => 'قوالب واجهة المتجر'],
@@ -543,7 +543,7 @@ class CmsMarketingSeeder extends Seeder
                 'status' => MarketingPageStatusEnum::PUBLISHED,
                 'published_at' => now(),
                 'created_by' => $this->admin->id,
-                'sections' => [
+                'content' => [
                     'hero' => $this->buildHeroSection(
                         title: ['en' => 'Beautiful, High-Performance Templates', 'ar' => 'قوالب جميلة وعالية الأداء'],
                         subtitle: ['en' => 'Launch your store with world-class designs optimized for speed and conversion.', 'ar' => 'أطلق متجرك بتصاميم عالمية المستوى محسنة للسرعة والتحويل.'],
@@ -643,7 +643,7 @@ class CmsMarketingSeeder extends Seeder
     private function seedBlogSystem(): void
     {
         // 1. Blog Landing Page
-        MarketingPage::updateOrCreate(
+        PlatformMarketingPage::updateOrCreate(
             ['type' => MarketingPageTypeEnum::BLOG],
             [
                 'title' => ['en' => 'Commerce Insights & Blog', 'ar' => 'رؤى التجارة والمدونة'],
@@ -651,7 +651,7 @@ class CmsMarketingSeeder extends Seeder
                 'status' => MarketingPageStatusEnum::PUBLISHED,
                 'published_at' => now(),
                 'created_by' => $this->admin->id,
-                'sections' => [
+                'content' => [
                     'hero' => $this->buildHeroSection(
                         title: ['en' => 'The Future of Commerce, Delivered', 'ar' => 'مستقبل التجارة، بين يديك'],
                         subtitle: ['en' => 'Insights, trends, and tutorials from the experts building the worlds best commerce engine.', 'ar' => 'رؤى واتجاهات ودروس من الخبراء الذين يبنون أفضل محرك تجارة في العالم.'],
@@ -781,7 +781,7 @@ class CmsMarketingSeeder extends Seeder
     private function seedDocumentationSystem(): void
     {
         // 1. Landing Page
-        MarketingPage::updateOrCreate(
+        PlatformMarketingPage::updateOrCreate(
             ['type' => MarketingPageTypeEnum::DOCUMENTATION],
             [
                 'title' => ['en' => 'Platform Documentation', 'ar' => 'وثائق المنصة'],
@@ -789,7 +789,7 @@ class CmsMarketingSeeder extends Seeder
                 'status' => MarketingPageStatusEnum::PUBLISHED,
                 'published_at' => now(),
                 'created_by' => $this->admin->id,
-                'sections' => [
+                'content' => [
                     'hero' => $this->buildHeroSection(
                         title: ['en' => 'Developer Hub & Docs', 'ar' => 'مركز المطورين والوثائق'],
                         subtitle: ['en' => 'Everything you need to build, integrate, and scale with our commerce APIs.', 'ar' => 'كل ما تحتاجه للبناء والتكامل والتوسع باستخدام واجهات برمجة تطبيقات التجارة الخاصة بنا.'],

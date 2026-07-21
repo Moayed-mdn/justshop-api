@@ -20,6 +20,8 @@ return [
         'http://127.0.0.1:8000',
         'http://laratenant.local',
         'https://laratenant.local',
+        'http://laratenant.local:3001',
+        'https://laratenant.local:3001',
         'http://www.laratenant.local',
         'https://www.laratenant.local',
         'http://app.laratenant.local',

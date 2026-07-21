@@ -11,6 +11,7 @@ use App\Http\Requests\Cms\Marketing\Platform\Admin\CreatePlatformMarketingPageRe
 class CreatePlatformMarketingPageDTO
 {
     public function __construct(
+        public readonly ?\App\Enums\Cms\MarketingPage\MarketingPageTypeEnum $type,
         public readonly array $title,
         public readonly array $slug,
         public readonly ?array $excerpt,
@@ -27,6 +28,7 @@ class CreatePlatformMarketingPageDTO
     public static function fromRequest(CreatePlatformMarketingPageRequest $request): self
     {
         return new self(
+            type: $request->has('type') ? \App\Enums\Cms\MarketingPage\MarketingPageTypeEnum::from($request->string('type')->toString()) : null,
             title: $request->array('title'),
             slug: $request->array('slug'),
             excerpt: $request->array('excerpt'),

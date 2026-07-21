@@ -26,6 +26,7 @@ class CreatePlatformMarketingPageAction
 
         $page = DB::transaction(function () use ($dto, $publishedAt): PlatformMarketingPage {
             return $this->repository->create([
+                'type' => $dto->type?->value,
                 'title' => $dto->title,
                 'slug' => $dto->slug,
                 'excerpt' => $dto->excerpt,

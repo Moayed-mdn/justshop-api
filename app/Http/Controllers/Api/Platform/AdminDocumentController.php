@@ -33,7 +33,10 @@ class AdminDocumentController extends Controller
 
     public function index(): JsonResponse
     {
-        $this->authorize('viewAny', CmsDocument::class);
+        // Platform-level permission check (not store-scoped policy)
+        if (!auth()->user()?->can(\App\Enums\PermissionEnum::CMS_DOC_VIEW)) {
+            abort(403, 'This action is unauthorized.');
+        }
 
         $documents = $this->repository->getPublishedDocuments();
         return $this->success(AdminDocumentResource::collection($documents));
@@ -41,7 +44,9 @@ class AdminDocumentController extends Controller
 
     public function store(CreateDocumentRequest $request): JsonResponse
     {
-        $this->authorize('create', CmsDocument::class);
+        if (!auth()->user()?->can(\App\Enums\PermissionEnum::CMS_DOC_CREATE)) {
+            abort(403, 'This action is unauthorized.');
+        }
 
         $document = $this->createAction->execute(
             CreateDocumentDTO::fromRequest($request)
@@ -58,7 +63,9 @@ class AdminDocumentController extends Controller
             return $this->error('Document not found', 404);
         }
 
-        $this->authorize('view', $document);
+        if (!auth()->user()?->can(\App\Enums\PermissionEnum::CMS_DOC_VIEW)) {
+            abort(403, 'This action is unauthorized.');
+        }
 
         return $this->success(new AdminDocumentResource($document));
     }
@@ -71,7 +78,9 @@ class AdminDocumentController extends Controller
             return $this->error('Document not found', 404);
         }
 
-        $this->authorize('update', $document);
+        if (!auth()->user()?->can(\App\Enums\PermissionEnum::CMS_DOC_UPDATE)) {
+            abort(403, 'This action is unauthorized.');
+        }
 
         $document = $this->updateAction->execute(
             $document,
@@ -89,7 +98,9 @@ class AdminDocumentController extends Controller
             return $this->error('Document not found', 404);
         }
 
-        $this->authorize('delete', $document);
+        if (!auth()->user()?->can(\App\Enums\PermissionEnum::CMS_DOC_DELETE)) {
+            abort(403, 'This action is unauthorized.');
+        }
 
         $this->repository->delete($document);
 
@@ -104,7 +115,9 @@ class AdminDocumentController extends Controller
             return $this->error('Document not found', 404);
         }
 
-        $this->authorize('publish', $document);
+        if (!auth()->user()?->can(\App\Enums\PermissionEnum::CMS_DOC_PUBLISH)) {
+            abort(403, 'This action is unauthorized.');
+        }
 
         $document = $this->publishAction->execute(
             $document,

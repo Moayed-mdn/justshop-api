@@ -12,6 +12,7 @@ class AdminPlatformMarketingPageResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'type' => $this->type?->value,
             'title' => $this->title,
             'slug' => $this->slug,
             'excerpt' => $this->excerpt,

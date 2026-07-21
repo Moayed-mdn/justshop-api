@@ -1,17 +1,12 @@
 <?php
 
-use App\Http\Controllers\Api\Platform\AdminBlogController;
-use App\Http\Controllers\Api\Platform\Mock\PlatformBlogController;
+use App\Http\Controllers\Api\Platform\PlatformBlogController;
 use Illuminate\Support\Facades\Route;
 
-// Use mock controller for frontend development
-// TODO: Switch back to AdminBlogController when backend is ready
-$useMock = true;
-$controller = $useMock ? PlatformBlogController::class : AdminBlogController::class;
-
+// Real blog controller implementation
 Route::prefix('cms/blog')
     ->name('platform.cms.blog.')
-    ->controller($controller)
+    ->controller(PlatformBlogController::class)
     ->group(function (): void {
         Route::get('/', 'index')->name('index');
         Route::post('/', 'store')->name('store');

@@ -3,12 +3,15 @@
 namespace App\Http\Requests\Admin\Product;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class UpdateProductRequest extends FormRequest
 {
     public function authorize(): bool
     {
+        Log::info('hereNEW',[]);
+               
         return true;
     }
 

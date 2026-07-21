@@ -14,15 +14,43 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+Route::get('/debug/sanctum', function () {
+    $request = request();
+    
+    return response()->json([
+        'stateful_domains' => config('sanctum.stateful'),
+        'request_origin' => $request->header('origin'),
+        'request_referer' => $request->header('referer'),
+        'request_host' => $request->getHost(),
+        'cookies_received' => array_keys($request->cookies->all()),
+        'has_ecommerce_session' => $request->cookies->has('ecommerce_session'),
+        'has_xsrf_token' => $request->cookies->has('XSRF-TOKEN'),
+        'session_driver' => config('session.driver'),
+        'session_id' => session()->getId(),
+        'session_keys' => array_keys(session()->all()),
+        'auth_merchant_check' => auth('merchant')->check(),
+        'auth_merchant_id' => auth('merchant')->id(),
+        'auth_web_check' => auth('web')->check(),
+        'auth_web_id' => auth('web')->id(),
+        'default_guard' => config('auth.defaults.guard'),
+        'all_guards' => array_keys(config('auth.guards')),
+    ]);
+});
+
+
+
+
 // ── 1. PLATFORM CONTEXT ──────────────────────────────────────────────────
 // Internal SaaS operator tooling (SUPER_ADMIN only).
 
 // Platform Authentication Routes (without platform.authority middleware)
+
 Route::prefix('/v1/platform')
     ->middleware([
         'web',
         'auth:sanctum',
         'identity.route:platform,platform,enforce',
+        'platform.context',
     ])
     ->group(function (): void {
         require 'api/v1/platform/auth.php';
@@ -34,6 +62,7 @@ Route::prefix('/v1/platform')
         'web',
         'auth:sanctum',
         'identity.route:platform,platform,enforce',
+        'platform.context',
         'platform.authority:platform_admin',
     ])
     ->group(function (): void {
@@ -282,6 +311,7 @@ Route::prefix('/v1/support')
         'web',
         'auth:sanctum',
         'identity.route:support,platform,enforce',
+        'platform.context',
         'support.authority',
     ])
     ->group(function (): void {

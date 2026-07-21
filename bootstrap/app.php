@@ -14,6 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
+        // $middleware->web(remove: [
+        //     \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+        // ]);
         $middleware->validateCsrfTokens(except: [
             'api/v1/storefront/runtime/preview/validate',
             'api/v1/merchant/stores/*/media/upload',
@@ -34,6 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'store.context' => \App\Http\Middleware\StoreContext::class,
+            'platform.context' => \App\Http\Middleware\PlatformContext::class,
             'storefront.runtime' => \App\Http\Middleware\ResolveStorefrontRuntimeContext::class,
             'onboarding.completed' => \App\Http\Middleware\EnsureOnboardingIsCompleted::class,
             'identity.route' => \App\Http\Middleware\ApplyIdentityRouteContext::class,

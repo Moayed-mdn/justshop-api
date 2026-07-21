@@ -29,6 +29,7 @@ class PlatformMarketingPage extends Model implements HasLocalizedContent, HasSeo
     use HasFactory, SoftDeletes, LocalizedContentTrait;
 
     protected $fillable = [
+        'type',
         'title',
         'slug',
         'excerpt',
@@ -45,6 +46,7 @@ class PlatformMarketingPage extends Model implements HasLocalizedContent, HasSeo
     protected function casts(): array
     {
         return [
+            'type' => \App\Enums\Cms\MarketingPage\MarketingPageTypeEnum::class,
             'title' => 'array',
             'slug' => 'array',
             'excerpt' => 'array',
@@ -99,6 +101,18 @@ class PlatformMarketingPage extends Model implements HasLocalizedContent, HasSeo
     public function scopeByTemplate(Builder $query, string $template): void
     {
         $query->where('template', $template);
+    }
+
+    public function scopeByType(Builder $query, string $type): void
+    {
+        $query->where('type', $type);
+    }
+
+    public function scopeFilterByType(Builder $query, ?string $type): void
+    {
+        if ($type !== null) {
+            $query->where('type', $type);
+        }
     }
 
     // ── SEO Contract ───────────────────────────────────────────

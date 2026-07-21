@@ -118,13 +118,13 @@ class User extends Authenticatable implements MustVerifyEmail
         }
 
         if (! app()->bound('currentStore')) {
-            return $this->spatieCheckPermissionTo($permission, $guardName);
+            return $this->spatieCheckPermissionTo($permission, $guardName ?? 'web');
         }
 
         $store = app('currentStore');
 
         if (! $store instanceof Store) {
-            return $this->spatieCheckPermissionTo($permission, $guardName);
+            return $this->spatieCheckPermissionTo($permission, $guardName ?? 'web');
         }
 
         $permissions = app(PermissionResolver::class)->resolve($this, $store);

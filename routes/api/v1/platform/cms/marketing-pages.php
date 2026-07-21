@@ -1,12 +1,9 @@
 <?php
 
-use App\Http\Controllers\Api\Platform\AdminMarketingPageController;
-use App\Http\Controllers\Api\Platform\Mock\PlatformMarketingPageController;
+use App\Http\Controllers\Api\Platform\AdminPlatformMarketingPageController;
 use Illuminate\Support\Facades\Route;
 
-// Toggle between mock and real controller
-$useMock = true;
-$controller = $useMock ? PlatformMarketingPageController::class : AdminMarketingPageController::class;
+$controller = AdminPlatformMarketingPageController::class;
 
 Route::prefix('cms/pages')
     ->name('platform.cms.pages.')
@@ -18,6 +15,4 @@ Route::prefix('cms/pages')
         Route::put('/{id}', 'update')->name('update');
         Route::delete('/{id}', 'destroy')->name('destroy');
         Route::post('/{id}/publish', 'publish')->name('publish');
-        Route::post('/{id}/unpublish', 'unpublish')->name('unpublish');
     });
-

@@ -7,7 +7,6 @@ namespace App\Services\Cms;
 use App\Models\Cms\MarketingPage;
 use App\Services\Cms\Seo\SitemapService;
 use Closure;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -27,7 +26,7 @@ class MarketingPageCacheService
         private readonly SitemapService $sitemapService,
     ) {}
 
-    // ── Legacy path (used by legacy PublicMarketingController) ────────────
+    // Legacy path retained while fallback code still exists.
 
     public function remember(string $locale, string $slug, Closure $callback): MarketingPage
     {
@@ -42,10 +41,6 @@ class MarketingPageCacheService
         return $page;
     }
 
-    /**
-     * Legacy invalidation — accepts the legacy MarketingPage model.
-     * Kept for backward compatibility with legacy actions.
-     */
     public function invalidateForPage(MarketingPage $page, array $additionalSlugs = []): void
     {
         Cache::tags($this->pageTypeTags($page))->flush();
@@ -56,8 +51,6 @@ class MarketingPageCacheService
         $this->flushSlugKeys($slugs);
         $this->sitemapService->invalidateMarketing();
     }
-
-    // ── Model-agnostic path (used by platform + store actions) ────────────
 
     /**
      * Invalidate cache entries by slug map.
@@ -112,9 +105,6 @@ class MarketingPageCacheService
     }
 
     /**
-     * Legacy type-tagged invalidation — only valid for the legacy MarketingPage model
-     * which carries a `type` enum attribute.
-     *
      * @return string[]
      */
     private function pageTypeTags(MarketingPage $page): array

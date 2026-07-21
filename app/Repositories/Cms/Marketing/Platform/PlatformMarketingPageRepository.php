@@ -22,6 +22,10 @@ class PlatformMarketingPageRepository
             ->orderBy('sort_order')
             ->orderBy('id');
 
+        if ($dto->type !== null) {
+            $query->where('type', $dto->type);
+        }
+
         if ($dto->status !== null && $dto->status !== 'all') {
             $query->where('status', $dto->status);
         }
@@ -31,7 +35,8 @@ class PlatformMarketingPageRepository
 
             $query->where(function (Builder $builder) use ($like): void {
                 $builder->whereRaw('LOWER(CAST(title AS CHAR)) LIKE ?', [$like])
-                    ->orWhereRaw('LOWER(CAST(slug AS CHAR)) LIKE ?', [$like]);
+                    ->orWhereRaw('LOWER(CAST(slug AS CHAR)) LIKE ?', [$like])
+                    ->orWhereRaw('LOWER(type) LIKE ?', [$like]);
             });
         }
 

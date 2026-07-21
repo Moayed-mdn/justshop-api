@@ -29,6 +29,7 @@ class UpdatePlatformMarketingPageAction
 
         $page = DB::transaction(function () use ($page, $dto, $publishedAt): PlatformMarketingPage {
             return $this->repository->update($page, [
+                'type' => $dto->type?->value,
                 'title' => $dto->title,
                 'slug' => $dto->slug,
                 'excerpt' => $dto->excerpt,

@@ -20,6 +20,7 @@ class CreatePlatformMarketingPageRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'type' => ['sometimes', 'nullable', 'string', Rule::in(\App\Enums\Cms\MarketingPage\MarketingPageTypeEnum::values())],
             'title' => ['required', 'array'],
             'title.*' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'array'],

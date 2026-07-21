@@ -18,6 +18,8 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             PlansTableSeeder::class,
             StoreSeeder::class,
+            PlatformUsersSeeder::class, // Add diverse test users for platform dashboard
+            PlatformAuditLogsSeeder::class, // Add audit logs for platform dashboard
             CategorySeeder::class,
             BrandSeeder::class,
             ProductSeeder::class,
