@@ -18,6 +18,7 @@ class AdminProductDetailResource extends JsonResource
         return [
             'id'                => $this->id,
             'store_id'          => $this->store_id,
+            'default_variant_id' => $this->product_variant_id,
             'available_locales' => $this->resolveAvailableLocales(),
             'default_locale'    => config('content.default_locale'),
             'translations'      => $this->buildTranslations($request),

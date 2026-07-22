@@ -47,6 +47,12 @@ class UpdateProductRequest extends FormRequest
                 'boolean',
             ],
 
+            'default_variant_id' => [
+                'sometimes',
+                'nullable',
+                'integer',
+            ],
+
             'sync_variants' => [
                 'sometimes',
                 'nullable',

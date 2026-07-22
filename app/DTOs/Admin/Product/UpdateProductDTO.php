@@ -15,6 +15,7 @@ class UpdateProductDTO
      * @param  bool       $brandIdProvided     true when brand_id key was present in the request
      * @param  bool|null  $isActive
      * @param  bool|null  $isFeatured
+     * @param  int|null   $defaultVariantId   ID of the variant whose first image is the product thumbnail
      * @param  array|null $translations  Locale-keyed translation data arrays.
      * @param  array|null $options       Canonical product option definitions.
      * @param  array|null $variants      Variant data arrays (each may include media[]).
@@ -34,6 +35,7 @@ class UpdateProductDTO
         public ?int    $brandId       = null,
         public ?bool   $isActive      = null,
         public ?bool   $isFeatured    = null,
+        public ?int    $defaultVariantId = null,
         public ?array  $translations  = null,
         public ?array  $options       = null,
         public ?array  $variants      = null,
@@ -66,6 +68,7 @@ class UpdateProductDTO
             brandId:       self::nullableInteger($request, 'brand_id'),
             isActive:      self::optionalBoolean($request, 'is_active'),
             isFeatured:    self::optionalBoolean($request, 'is_featured'),
+            defaultVariantId: self::nullableInteger($request, 'default_variant_id'),
             translations:  $request->input('translations'),
             options:       $request->input('options'),
             variants:      $request->input('variants'),

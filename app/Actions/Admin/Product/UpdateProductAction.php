@@ -54,6 +54,10 @@ class UpdateProductAction
                 $productData['is_featured'] = $dto->isFeatured;
             }
 
+            if (!is_null($dto->defaultVariantId)) {
+                $productData['product_variant_id'] = $dto->defaultVariantId;
+            }
+
             if (!empty($productData)) {
                 $this->repository->update($product, $productData);
             }
