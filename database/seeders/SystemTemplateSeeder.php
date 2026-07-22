@@ -81,7 +81,7 @@ class SystemTemplateSeeder extends Seeder
             ],
             TemplateTypeEnum::SEARCH => [
                 'header', 'announcement_bar',
-                'search_form', 'search_results', 'search_filters',
+                'search_results', 'search_filters',
                 'footer', 'copyright_bar',
             ],
             TemplateTypeEnum::LOGIN => [
