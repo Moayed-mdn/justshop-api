@@ -36,12 +36,23 @@ class UpdateProductAction
         return DB::transaction(function () use ($dto, $product) {
 
             // ── 1. Update product fields ───────────────────────
-            $productData = array_filter([
-                'category_id' => $dto->categoryId,
-                'brand_id'    => $dto->brandId,
-                'is_active'   => $dto->isActive,
-                'is_featured' => $dto->isFeatured,
-            ], fn($v) => !is_null($v));
+            $productData = [];
+
+            if ($dto->categoryIdProvided) {
+                $productData['category_id'] = $dto->categoryId;
+            }
+
+            if ($dto->brandIdProvided) {
+                $productData['brand_id'] = $dto->brandId;
+            }
+
+            if (!is_null($dto->isActive)) {
+                $productData['is_active'] = $dto->isActive;
+            }
+
+            if (!is_null($dto->isFeatured)) {
+                $productData['is_featured'] = $dto->isFeatured;
+            }
 
             if (!empty($productData)) {
                 $this->repository->update($product, $productData);
@@ -66,6 +77,10 @@ class UpdateProductAction
                     $product,
                     $dto->options,
                 );
+            // Bug #13: Unreachable from the current frontend (structure saves always send
+            // options + sync_variants together), but kept as a tested capability for
+            // direct API consumers that sync variants without resending option definitions.
+            // See: tests/Feature/Admin/UpdateProductWithoutOptionsTest.php
             } elseif ($dto->syncVariants === true) {
                 $product->load('productOptions.values');
                 foreach ($product->productOptions as $option) {
@@ -83,11 +98,16 @@ class UpdateProductAction
                 $processedVariantIds = [];
 
                 foreach ($dto->variants as $variantData) {
+                    $isExisting = !empty($variantData['id']);
 
-                    $sku = $variantData['sku'] ?? null;
-                    if (empty($sku)) {
-                        $productName = $product->name ?? 'product';
-                        $sku = 'AUTO-' . strtoupper(Str::slug($productName, '-')) . '-' . now()->timestamp . '-' . Str::random(4);
+                    if ($isExisting) {
+                        $sku = array_key_exists('sku', $variantData) ? $variantData['sku'] : null;
+                    } else {
+                        $sku = $variantData['sku'] ?? null;
+                        if (empty($sku)) {
+                            $productName = $product->translation()?->name ?? 'product';
+                            $sku = 'AUTO-' . strtoupper(Str::slug($productName, '-')) . '-' . now()->timestamp . '-' . Str::random(4);
+                        }
                     }
 
                     $payload = [
@@ -97,7 +117,9 @@ class UpdateProductAction
                         'compare_at_price'    => $variantData['compare_at_price'] ?? null,
                         'cost_price'          => $variantData['cost_price'] ?? null,
                         'quantity'            => $variantData['quantity'],
-                        'low_stock_threshold' => $variantData['low_stock_threshold'] ?? 5,
+                        'low_stock_threshold' => $isExisting
+                            ? ($variantData['low_stock_threshold'] ?? null)
+                            : ($variantData['low_stock_threshold'] ?? 5),
                         'track_inventory'     => $variantData['track_inventory'] ?? true,
                         'is_active'           => $variantData['is_active'] ?? true,
                         'weight'              => $variantData['weight'] ?? null,
@@ -107,7 +129,7 @@ class UpdateProductAction
                         'batch_number'        => $variantData['batch_number'] ?? null,
                     ];
 
-                    if (!empty($variantData['id'])) {
+                    if ($isExisting) {
                         $variant = $product->variants()
                             ->where('id', $variantData['id'])
                             ->firstOrFail();

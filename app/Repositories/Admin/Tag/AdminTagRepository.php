@@ -51,13 +51,14 @@ class AdminTagRepository extends BaseRepository
         bool    $includeGlobal = true,
         int     $perPage = 15,
     ): LengthAwarePaginator {
-        $query = $this->scopedQuery()
-            ->with($this->editorRelations());
+        $query = Tag::query()->with($this->editorRelations());
 
-        if ($includeGlobal) {
-            // Step 5 Hardening: Explicitly allow global tags if requested
-            $query->orWhereNull('store_id');
-        }
+        $query->where(function ($q) use ($storeId, $includeGlobal) {
+            $q->where('store_id', $storeId);
+            if ($includeGlobal) {
+                $q->orWhereNull('store_id');
+            }
+        });
 
         if ($search) {
             $query->whereHas('translations', function ($q) use ($search) {
@@ -87,10 +88,13 @@ class AdminTagRepository extends BaseRepository
      */
     public function findInStore(int $tagId, int $storeId): Tag
     {
-        $tag = $this->scopedQuery()
+        $tag = Tag::query()
             ->with($this->editorRelations())
             ->where('id', $tagId)
-            ->orWhereNull('store_id')
+            ->where(function ($q) use ($storeId) {
+                $q->where('store_id', $storeId)
+                    ->orWhereNull('store_id');
+            })
             ->first();
 
         if ($tag === null) {
@@ -136,9 +140,12 @@ class AdminTagRepository extends BaseRepository
             return [];
         }
 
-        $accessibleIds = $this->scopedQuery()
+        $accessibleIds = Tag::query()
             ->whereIn('id', $tagIds)
-            ->orWhereNull('store_id')
+            ->where(function ($q) use ($storeId) {
+                $q->where('store_id', $storeId)
+                    ->orWhereNull('store_id');
+            })
             ->pluck('id')
             ->toArray();
 

@@ -54,6 +54,8 @@ class AdminProductRepository
             // ── Variant-level media ────────────────────────────
             'variants.images',
 
+            'defaultVariant',
+
             // ── Common ─────────────────────────────────────────
             'category',
             'translations',
@@ -95,6 +97,7 @@ class AdminProductRepository
         return $query
             ->with([
                 'category',
+                'defaultVariant',
                 'images',
                 'variants',
                 'variants.images',
@@ -299,38 +302,60 @@ class AdminProductRepository
     }
 
     /**
-     * Replace all product-level media.
-     *
-     * Deletes existing product images then recreates from the given list.
-     * Used by UpdateProductAction for full sync replacement.
-     * Passing an empty array clears all product media.
-     *
-     * @param  array  $mediaItems  [['url' => '...', 'alt' => '...', 'position' => 0], ...]
+     * Replace all product-level media using upsert-by-id semantics.
      */
     public function syncProductMedia(Product $product, array $mediaItems): void
     {
-        $product->images()->delete();
-
-        if (!empty($mediaItems)) {
-            $this->createProductMedia($product, $mediaItems);
-        }
+        $this->syncMediaFor($product->images(), $mediaItems);
     }
 
     /**
-     * Replace all variant-level media.
-     *
-     * Deletes existing variant images then recreates from the given list.
-     * Used by UpdateProductAction for full sync replacement.
-     * Passing an empty array clears all variant media.
-     *
-     * @param  array  $mediaItems  [['url' => '...', 'alt' => '...', 'position' => 0], ...]
+     * Replace all variant-level media using upsert-by-id semantics.
      */
     public function syncVariantMedia(ProductVariant $variant, array $mediaItems): void
     {
-        $variant->images()->delete();
+        $this->syncMediaFor($variant->images(), $mediaItems);
+    }
 
-        if (!empty($mediaItems)) {
-            $this->createVariantMedia($variant, $mediaItems);
+    /**
+     * Shared upsert-by-id sync logic for product- and variant-level media.
+     *
+     * - Items with a positive id matching an existing row are updated in place.
+     * - Items without an id (or an id that isn't among the existing rows) are created.
+     * - Existing rows whose id is not present in $mediaItems are deleted.
+     * - The item at index 0 in the resulting order is marked primary (same rule as today).
+     *
+     * @param  array  $mediaItems  [['id' => 12, 'url' => '...', 'alt' => '...', 'position' => 0], ...]
+     */
+    private function syncMediaFor($relation, array $mediaItems): void
+    {
+        $existingIds = $relation->pluck('id')->all();
+        $keepIds     = [];
+
+        foreach ($mediaItems as $index => $mediaData) {
+            $payload = [
+                'image_url'  => $this->normalizeImagePath($mediaData['url']),
+                'alt_text'   => $mediaData['alt'] ?? null,
+                'sort_order' => $mediaData['position'] ?? $index,
+                'is_primary' => $index === 0,
+            ];
+
+            $id = $mediaData['id'] ?? null;
+
+            if ($id && in_array($id, $existingIds, true)) {
+                $relation->where('id', $id)->update($payload);
+                $keepIds[] = $id;
+                continue;
+            }
+
+            $created = $relation->create($payload);
+            $keepIds[] = $created->id;
+        }
+
+        $idsToDelete = array_diff($existingIds, $keepIds);
+
+        if (!empty($idsToDelete)) {
+            $relation->whereIn('id', $idsToDelete)->delete();
         }
     }
 
@@ -353,15 +378,42 @@ class AdminProductRepository
         $incomingNames = array_column($options, 'name');
 
         foreach ($options as $optionData) {
-            $option = $product->productOptions()->updateOrCreate(
-                ['name' => $optionData['name']],
-                ['position' => $optionData['position']],
-            );
+            // Bug #11 fix: restore soft-deleted options instead of creating duplicates.
+            // There's a unique constraint on (product_id, name), so creating a new row
+            // when a trashed one exists would cause a constraint violation.
+            $option = $product->productOptions()
+                ->withTrashed()
+                ->where('name', $optionData['name'])
+                ->first();
+
+            if ($option) {
+                if ($option->trashed()) {
+                    $option->restore();
+                }
+                $option->update(['position' => $optionData['position']]);
+            } else {
+                $option = $product->productOptions()->create([
+                    'name'     => $optionData['name'],
+                    'position' => $optionData['position'],
+                ]);
+            }
 
             $incomingValues = $optionData['values'] ?? [];
 
             foreach ($incomingValues as $value) {
-                $option->values()->firstOrCreate(['value' => $value]);
+                // Same restore logic for option values - unique constraint on (option_id, value)
+                $optionValue = $option->values()
+                    ->withTrashed()
+                    ->where('value', $value)
+                    ->first();
+
+                if ($optionValue) {
+                    if ($optionValue->trashed()) {
+                        $optionValue->restore();
+                    }
+                } else {
+                    $option->values()->create(['value' => $value]);
+                }
             }
 
             $option->values()

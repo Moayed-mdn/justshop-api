@@ -14,32 +14,6 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/debug/sanctum', function () {
-    $request = request();
-    
-    return response()->json([
-        'stateful_domains' => config('sanctum.stateful'),
-        'request_origin' => $request->header('origin'),
-        'request_referer' => $request->header('referer'),
-        'request_host' => $request->getHost(),
-        'cookies_received' => array_keys($request->cookies->all()),
-        'has_ecommerce_session' => $request->cookies->has('ecommerce_session'),
-        'has_xsrf_token' => $request->cookies->has('XSRF-TOKEN'),
-        'session_driver' => config('session.driver'),
-        'session_id' => session()->getId(),
-        'session_keys' => array_keys(session()->all()),
-        'auth_merchant_check' => auth('merchant')->check(),
-        'auth_merchant_id' => auth('merchant')->id(),
-        'auth_web_check' => auth('web')->check(),
-        'auth_web_id' => auth('web')->id(),
-        'default_guard' => config('auth.defaults.guard'),
-        'all_guards' => array_keys(config('auth.guards')),
-    ]);
-});
-
-
-
-
 // ── 1. PLATFORM CONTEXT ──────────────────────────────────────────────────
 // Internal SaaS operator tooling (SUPER_ADMIN only).
 
@@ -106,47 +80,6 @@ Route::prefix('/v1/stores')
                 Route::put('/{store}', [\App\Http\Controllers\Api\Merchant\StoreController::class, 'update'])
                     ->name('merchant.stores.legacy.update');
             });
-    });
-
-Route::prefix('/v1/admin/stores/{store}')
-    ->middleware([
-        'web',
-        'api.deprecated',
-        'auth:sanctum',
-        'identity.route:merchant_admin,merchant,enforce',
-        'store.context',
-    ])
-    ->group(function (): void {
-        Route::prefix('/dashboard')->group(function (): void {
-            Route::get('/stats', [\App\Http\Controllers\Api\Merchant\AdminDashboardController::class, 'stats'])
-                ->name('merchant.admin.legacy.dashboard.stats');
-
-            Route::get('/recent-orders', [\App\Http\Controllers\Api\Merchant\AdminDashboardController::class, 'recentOrders'])
-                ->name('merchant.admin.legacy.dashboard.recent-orders');
-
-            Route::get('/top-products', [\App\Http\Controllers\Api\Merchant\AdminDashboardController::class, 'topProducts'])
-                ->name('merchant.admin.legacy.dashboard.top-products');
-        });
-
-        Route::prefix('/products')->group(function (): void {
-            Route::get('/', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'index'])
-                ->name('merchant.admin.legacy.products.index');
-
-            Route::get('/{product}', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'show'])
-                ->name('merchant.admin.legacy.products.show');
-
-            Route::post('/', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'store'])
-                ->name('merchant.admin.legacy.products.store');
-
-            Route::patch('/{product}', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'update'])
-                ->name('merchant.admin.legacy.products.update');
-
-            Route::delete('/{product}', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'destroy'])
-                ->name('merchant.admin.legacy.products.destroy');
-
-            Route::patch('/{product}/restore', [\App\Http\Controllers\Api\Merchant\AdminProductController::class, 'restore'])
-                ->name('merchant.admin.legacy.products.restore');
-        });
     });
 
 Route::prefix('/v1')

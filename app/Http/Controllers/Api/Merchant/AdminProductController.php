@@ -26,7 +26,6 @@ use App\Http\Resources\Admin\Product\AdminProductResource;
 use App\Models\Store;
 use App\Policies\ProductPolicy;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log;
 
 class AdminProductController extends Controller
 {
@@ -55,7 +54,7 @@ class AdminProductController extends Controller
     }
 
     public function update(UpdateProductRequest $request, UpdateProductAction $action, Store $store, int $product): JsonResponse
-    {   Log::info('here',['store'=>$store,'product'=>$product]);
+    {
         $this->authorize('update', [ProductPolicy::class, $store]);
 
         $productModel = $action->execute(UpdateProductDTO::fromRequest($request, $store->id, $product));

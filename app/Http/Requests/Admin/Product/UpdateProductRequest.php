@@ -2,16 +2,14 @@
 
 namespace App\Http\Requests\Admin\Product;
 
+use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class UpdateProductRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        Log::info('hereNEW',[]);
-               
         return true;
     }
 
@@ -170,15 +168,10 @@ class UpdateProductRequest extends FormRequest
             |------------------------------------------------------------------
             */
 
-            // FIX: was ['required', 'string', 'max:100']
-            // Changed to nullable + distinct to match CreateProductRequest
-            // and to prevent 422 on structure saves with auto-generated variants
-            // that have no SKU yet.
             'variants.*.sku' => [
                 'nullable',
                 'string',
                 'max:100',
-                'distinct',
             ],
 
             'variants.*.barcode' => [
@@ -261,7 +254,6 @@ class UpdateProductRequest extends FormRequest
             'variants.*.expiry_date' => [
                 'nullable',
                 'date',
-                'after_or_equal:variants.*.manufacture_date',
             ],
 
             'variants.*.batch_number' => [
@@ -300,6 +292,12 @@ class UpdateProductRequest extends FormRequest
                 'array',
             ],
 
+            'variants.*.media.*.id' => [
+                'sometimes',
+                'nullable',
+                'integer',
+            ],
+
             'variants.*.media.*.url' => [
                 'required',
                 'string',
@@ -327,6 +325,12 @@ class UpdateProductRequest extends FormRequest
                 'sometimes',
                 'nullable',
                 'array',
+            ],
+
+            'media.*.id' => [
+                'sometimes',
+                'nullable',
+                'integer',
             ],
 
             'media.*.url' => [
@@ -370,5 +374,101 @@ class UpdateProductRequest extends FormRequest
                 'exists:tags,id',
             ],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            $this->validateSkuUniqueness($validator);
+            $this->validateVariantOptionAssignments($validator);
+            $this->validateVariantDateConsistency($validator);
+        });
+    }
+
+    /**
+     * Bug #5 fix: Laravel's `distinct` rule treats multiple `null` SKUs as
+     * duplicates of each other, which breaks auto-generated variants that
+     * legitimately have no SKU yet. Only flag genuine duplicate non-empty SKUs.
+     */
+    private function validateSkuUniqueness($validator): void
+    {
+        $skus = collect($this->input('variants', []))
+            ->pluck('sku')
+            ->filter(fn ($sku) => is_string($sku) && trim($sku) !== '')
+            ->map(fn ($sku) => strtolower(trim($sku)));
+
+        $duplicates = $skus->duplicates();
+
+        if ($duplicates->isNotEmpty()) {
+            $validator->errors()->add(
+                'variants',
+                'Duplicate SKU(s): ' . $duplicates->unique()->implode(', '),
+            );
+        }
+    }
+
+    /**
+     * Bug #12 fix: variants.*.options.* only validated value type, never that the
+     * key is a real option name or the value is one of that option's defined
+     * values. syncVariantOptionValues() silently skips mismatches, so bad data was
+     * failing silently instead of surfacing here.
+     */
+    private function validateVariantOptionAssignments($validator): void
+    {
+        $options = collect($this->input('options', []));
+
+        if ($options->isEmpty()) {
+            return;
+        }
+
+        $allowedValuesByOption = $options->mapWithKeys(function ($option) {
+            $name   = $option['name'] ?? null;
+            $values = collect($option['values'] ?? [])->filter()->all();
+            return [$name => $values];
+        })->filter(fn ($values, $name) => $name !== null);
+
+        foreach ($this->input('variants', []) as $index => $variant) {
+            foreach (($variant['options'] ?? []) as $optionName => $optionValue) {
+                if (!$allowedValuesByOption->has($optionName)) {
+                    $validator->errors()->add(
+                        "variants.{$index}.options.{$optionName}",
+                        "Unknown option \"{$optionName}\" is not defined on this product.",
+                    );
+                    continue;
+                }
+
+                if (!in_array($optionValue, $allowedValuesByOption->get($optionName), true)) {
+                    $validator->errors()->add(
+                        "variants.{$index}.options.{$optionName}",
+                        "\"{$optionValue}\" is not a defined value for option \"{$optionName}\".",
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Bug #23 fix: replaces the static after_or_equal:variants.*.manufacture_date
+     * rule, whose behavior when manufacture_date is null/absent was unverified and
+     * risked rejecting a valid expiry-date-only variant. Mirrors the frontend's
+     * validateProductStructure.ts, which only checks when BOTH dates are present.
+     */
+    private function validateVariantDateConsistency($validator): void
+    {
+        foreach ($this->input('variants', []) as $index => $variant) {
+            $manufactureDate = $variant['manufacture_date'] ?? null;
+            $expiryDate      = $variant['expiry_date'] ?? null;
+
+            if (!$manufactureDate || !$expiryDate) {
+                continue;
+            }
+
+            if (Carbon::parse($expiryDate)->lt(Carbon::parse($manufactureDate))) {
+                $validator->errors()->add(
+                    "variants.{$index}.expiry_date",
+                    'Expiry date cannot be before manufacture date.',
+                );
+            }
+        }
     }
 }

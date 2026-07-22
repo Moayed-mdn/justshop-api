@@ -3,10 +3,10 @@
 namespace App\Http\Resources\Admin\Product;
 
 use App\Enums\Product\ProductStatusEnum;
+use App\Models\Product;
 use App\Models\ProductVariant;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Log;
 
 class AdminProductDetailResource extends JsonResource
 {
@@ -28,10 +28,10 @@ class AdminProductDetailResource extends JsonResource
             'price'             => $defaultVariant
                 ? (float) $defaultVariant->price
                 : 0,
-            'compare_at_price'  => $defaultVariant?->compare_at_price
+            'compare_at_price'  => $defaultVariant?->compare_at_price !== null
                 ? (float) $defaultVariant->compare_at_price
                 : null,
-            'cost_per_item'     => $defaultVariant?->cost_price
+            'cost_per_item'     => $defaultVariant?->cost_price !== null
                 ? (float) $defaultVariant->cost_price
                 : null,
             'sku'               => $defaultVariant?->sku,
@@ -66,15 +66,10 @@ class AdminProductDetailResource extends JsonResource
 
     private function resolveDefaultVariant(): ?ProductVariant
     {
-        if (!$this->relationLoaded('variants')) {
-            return null;
-        }
+        /** @var Product $product */
+        $product = $this->resource;
 
-        return $this->variants
-            ->where('is_active', true)
-            ->sortBy('price')
-            ->first()
-            ?? $this->variants->first();
+        return $product->primaryVariant();
     }
 
     private function resolveTotalStock(): int
@@ -83,7 +78,13 @@ class AdminProductDetailResource extends JsonResource
             return 0;
         }
 
-        return (int) $this->variants->sum('quantity');
+        // Bug #24: Exclude inactive variants to match "in stock" semantics.
+        // This represents what's available to buy, not total warehouse inventory.
+        // If accounting needs a true warehouse-total independent of active status,
+        // that should be a separate field.
+        return (int) $this->variants
+            ->where('is_active', true)
+            ->sum('quantity');
     }
 
     private function resolveAvailableLocales(): array
@@ -133,23 +134,10 @@ class AdminProductDetailResource extends JsonResource
      */
     private function buildProductMedia(): array
     {
-        
         if (!$this->relationLoaded('images')) {
             return [];
         }
-        
-        $image =  $this->images
-        ->sortBy('sort_order')
-        ->map(fn($image) => [
-            'id'         => $image->id,
-            'url'        => $image->full_url,
-            'alt'        => $image->alt_text ?? null,
-            'position'   => $image->sort_order ?? 0,
-            'is_primary' => (bool) $image->is_primary,
-        ])
-        ->values()
-        ->all();
-        Log::info('images',[ 'images' => $image]);
+
         return $this->images
             ->sortBy('sort_order')
             ->map(fn($image) => [
@@ -282,10 +270,10 @@ class AdminProductDetailResource extends JsonResource
             'sku'                 => $variant->sku,
             'barcode'             => $variant->barcode,
             'price'               => (float) $variant->price,
-            'compare_at_price'    => $variant->compare_at_price
+            'compare_at_price'    => $variant->compare_at_price !== null
                 ? (float) $variant->compare_at_price
                 : null,
-            'cost_price'          => $variant->cost_price
+            'cost_price'          => $variant->cost_price !== null
                 ? (float) $variant->cost_price
                 : null,
             'quantity'            => $variant->quantity,
@@ -304,6 +292,9 @@ class AdminProductDetailResource extends JsonResource
 
     private function buildVariantOptions($optionValues): array
     {
+        // Read shape: array of {option_id, option_name, value_id, value} objects.
+        // Write shape from buildStructurePayload.ts is {optionName: value} map —
+        // see mapProductDetail's normalizeVariant() for reconciliation.
         return $optionValues
             ->map(fn($ov) => [
                 'option_id'    => $ov->option_id,

@@ -28,6 +28,24 @@ class AdminProductDtoTest extends TestCase
         $this->assertNull($dto->categoryId);
         $this->assertNull($dto->brandId);
         $this->assertNull($dto->isActive);
+        $this->assertFalse($dto->categoryIdProvided);
+        $this->assertFalse($dto->brandIdProvided);
+    }
+
+    public function test_update_dto_tracks_explicit_null_category_and_brand(): void
+    {
+        /** @var UpdateProductRequest $request */
+        $request = UpdateProductRequest::create('/api/v1/merchant/stores/1/products/39', 'PATCH', [
+            'category_id' => null,
+            'brand_id'    => null,
+        ]);
+
+        $dto = UpdateProductDTO::fromRequest($request, 1, 39);
+
+        $this->assertNull($dto->categoryId);
+        $this->assertNull($dto->brandId);
+        $this->assertTrue($dto->categoryIdProvided);
+        $this->assertTrue($dto->brandIdProvided);
     }
 
     public function test_create_dto_keeps_nullable_brand_id_as_null_when_omitted(): void

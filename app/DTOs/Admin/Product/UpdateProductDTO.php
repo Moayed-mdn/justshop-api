@@ -9,8 +9,10 @@ class UpdateProductDTO
     /**
      * @param  int        $storeId
      * @param  int        $productId
-     * @param  int|null   $categoryId
-     * @param  int|null   $brandId
+     * @param  int|null   $categoryId       null when key absent (no change) or explicitly cleared
+     * @param  int|null   $brandId          null when key absent (no change) or explicitly cleared
+     * @param  bool       $categoryIdProvided  true when category_id key was present in the request
+     * @param  bool       $brandIdProvided     true when brand_id key was present in the request
      * @param  bool|null  $isActive
      * @param  bool|null  $isFeatured
      * @param  array|null $translations  Locale-keyed translation data arrays.
@@ -38,6 +40,8 @@ class UpdateProductDTO
         public ?array  $media         = null,
         public ?array  $tags          = null,
         public ?bool   $syncVariants  = null,
+        public bool    $categoryIdProvided = false,
+        public bool    $brandIdProvided    = false,
     ) {}
 
     public static function fromRequest(
@@ -67,7 +71,9 @@ class UpdateProductDTO
             variants:      $request->input('variants'),
             media:         $request->input('media'),
             tags:          $tags,
-            syncVariants:  self::optionalBoolean($request, 'sync_variants'),
+            syncVariants:       self::optionalBoolean($request, 'sync_variants'),
+            categoryIdProvided: $request->exists('category_id'),
+            brandIdProvided:    $request->exists('brand_id'),
         );
     }
 

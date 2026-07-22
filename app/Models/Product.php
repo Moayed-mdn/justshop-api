@@ -6,9 +6,9 @@ use App\Models\Concerns\HasStoreScoping;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
@@ -89,7 +89,7 @@ class Product extends Model
             ->orderBy('sort_order');
     }
 
-    public function tags(): BelongsToMany
+    public function tags(): MorphToMany
     {
         return $this->morphToMany(Tag::class, 'taggable');
     }
@@ -119,15 +119,9 @@ class Product extends Model
             return $this->defaultVariant;
         }
 
-        if ($this->relationLoaded('activeVariants')) {
-            $active = $this->activeVariants->first();
-            if ($active) {
-                return $active;
-            }
-        }
-
         if ($this->relationLoaded('variants')) {
-            return $this->variants->first();
+            $active = $this->variants->where('is_active', true)->first();
+            return $active ?? $this->variants->first();
         }
 
         return null;
