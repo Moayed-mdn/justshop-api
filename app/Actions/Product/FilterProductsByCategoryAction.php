@@ -23,10 +23,18 @@ class FilterProductsByCategoryAction
 
         // Find the main category
         $category = $this->categoryRepository->findBySlugOrFail($dto->slug, $dto->storeId);
-        $category->loadMissing(['translations', 'descendants.translations']);
+        $category->loadMissing(['translations', 'children.translations']);
 
-        // Flatten descendants for filters
-        $descendantCategories = $this->categoryRepository->flattenDescendantsWithTranslations($category, $locale);
+        // ✅ FIX: Get only immediate children for filters, not all descendants
+        $descendantCategories = $category->children->map(function ($child) use ($locale) {
+            $translation = $child->translation($locale);
+            
+            return [
+                'id'   => $child->id,
+                'name' => $translation?->name ?? $child->slug,
+                'slug' => $translation?->slug ?? $child->slug,
+            ];
+        })->toArray();
 
         // Build base query
         $query = $this->productRepository->buildBaseQuery($dto->storeId)
@@ -37,11 +45,11 @@ class FilterProductsByCategoryAction
             $subCategory = $this->categoryRepository->findBySlug($dto->categorySlug, $dto->storeId);
             if ($subCategory) {
                 $subIds = $subCategory->allDescendantIds();
-                $query = $this->productRepository->filterByCategory($query, $subIds->toArray());
+                $query = $this->productRepository->filterByCategory($query, $subIds);
             }
         } else {
             $allIds = $category->allDescendantIds();
-            $query = $this->productRepository->filterByCategory($query, $allIds->toArray());
+            $query = $this->productRepository->filterByCategory($query, $allIds);
         }
 
         // Get filter ranges

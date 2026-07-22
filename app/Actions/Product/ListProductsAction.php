@@ -18,8 +18,11 @@ class ListProductsAction
     {
         $query = $this->productService->buildBaseProductQuery($dto->storeId);
 
+        // ✅ Always show root categories in filter sidebar for /shop page
+        // This is different from /shop/category/{slug} which shows children
         $descendants = $this->productService->getCategoryDescendants($dto->storeId);
 
+        // If category filter is applied, restrict products to that category tree
         if ($dto->categorySlug) {
             $category = $this->productService->findCategoryBySlugOrFail($dto->categorySlug, $dto->storeId);
             $descendantsWithSelf = $category->allDescendantIds();

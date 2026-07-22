@@ -106,7 +106,7 @@ class StorefrontRuntimeDevSeeder extends Seeder
                             'subheadline' => ['en' => 'Free shipping on orders over $49 · 60-day risk-free returns · Price match guarantee', 'ar' => 'شحن مجاني للطلبات فوق $49 · إرجاع بدون مخاطرة لمدة 60 يوم · ضمان مطابقة السعر'],
                             'eyebrow' => ['en' => '', 'ar' => ''],
                             'ctaText' => ['en' => 'Shop Best Sellers', 'ar' => 'تسوق الأكثر مبيعًا'],
-                            'ctaUrl' => '/products',
+                            'ctaUrl' => '/shop',
                             'visualType' => 'gradient',
                             'gradientFrom' => '#4F46E5',
                             'gradientTo' => '#7C3AED',
@@ -181,58 +181,15 @@ class StorefrontRuntimeDevSeeder extends Seeder
                     'ar' => 'تصفح مجموعاتنا المختارة — كل ما تحتاجه في مكان واحد.',
                 ],
                 'content' => [
-                    'categories' => [
-                        [
-                            'id' => 'cat-electronics',
-                            'name' => ['en' => 'Electronics', 'ar' => 'الإلكترونيات'],
-                            'slug' => 'electronics',
-                            'path' => ['en' => '/shop/category/electronics', 'ar' => '/ar/shop/category/electronics'],
-                            'productCount' => 24,
-                            'image' => null,
-                        ],
-                        [
-                            'id' => 'cat-home-living',
-                            'name' => ['en' => 'Home & Living', 'ar' => 'المنزل والمعيشة'],
-                            'slug' => 'home-living',
-                            'path' => ['en' => '/shop/category/home-living', 'ar' => '/ar/shop/category/home-living'],
-                            'productCount' => 36,
-                            'image' => null,
-                        ],
-                        [
-                            'id' => 'cat-fashion',
-                            'name' => ['en' => 'Fashion', 'ar' => 'الأزياء'],
-                            'slug' => 'fashion',
-                            'path' => ['en' => '/shop/category/fashion', 'ar' => '/ar/shop/category/fashion'],
-                            'productCount' => 48,
-                            'image' => null,
-                        ],
-                        [
-                            'id' => 'cat-beauty-health',
-                            'name' => ['en' => 'Beauty & Health', 'ar' => 'الجمال والصحة'],
-                            'slug' => 'beauty-health',
-                            'path' => ['en' => '/shop/category/beauty-health', 'ar' => '/ar/shop/category/beauty-health'],
-                            'productCount' => 30,
-                            'image' => null,
-                        ],
-                        [
-                            'id' => 'cat-sports-outdoors',
-                            'name' => ['en' => 'Sports & Outdoors', 'ar' => 'الرياضة والهواء الطلق'],
-                            'slug' => 'sports-outdoors',
-                            'path' => ['en' => '/shop/category/sports-outdoors', 'ar' => '/ar/shop/category/sports-outdoors'],
-                            'productCount' => 18,
-                            'image' => null,
-                        ],
-                        [
-                            'id' => 'cat-toys-games',
-                            'name' => ['en' => 'Toys & Games', 'ar' => 'الألعاب'],
-                            'slug' => 'toys-games',
-                            'path' => ['en' => '/shop/category/toys-games', 'ar' => '/ar/shop/category/toys-games'],
-                            'productCount' => 22,
-                            'image' => null,
-                        ],
-                    ],
+                    // Categories are dynamically loaded from database at runtime
+                    // Product counts are calculated recursively including all descendant categories
                 ],
-                'settings' => ['layout' => 'grid', 'columns' => 3, 'card_style' => 'elevated'],
+                'settings' => [
+                    'layout' => 'grid',
+                    'columns' => 3,
+                    'card_style' => 'elevated',
+                    'limit' => 8, // Max number of categories to display
+                ],
                 'is_active' => true,
             ],
         );

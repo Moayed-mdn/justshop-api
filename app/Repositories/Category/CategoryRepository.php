@@ -23,17 +23,70 @@ class CategoryRepository extends BaseRepository
     {
         $storeId = $this->getCurrentStoreId();
 
-        return $this->scopedQuery()
+        $categories = $this->scopedQuery()
             ->whereHas('translations', function (Builder $q) use ($term) {
                 $q->where('category_translations.name', 'LIKE', "%{$term}%");
             })
-            ->withCount(['products' => fn (Builder $q) => $q
-                ->where('store_id', $storeId)
-                ->where('is_active', true),
-            ])
             ->with('translations')
             ->limit($limit)
             ->get();
+
+        // Add products_count including descendants using recursive CTE
+        foreach ($categories as $category) {
+            $category->products_count = $this->countProductsWithDescendants($category->id, $storeId);
+        }
+
+        return $categories;
+    }
+
+    /**
+     * Count all active products in a category and its descendants using recursive CTE
+     */
+    private function countProductsWithDescendants(int $categoryId, int $storeId): int
+    {
+        // Use recursive CTE to get all descendant category IDs
+        $query = "
+            WITH RECURSIVE category_tree AS (
+                -- Base case: the category itself
+                SELECT id FROM categories WHERE id = ? AND store_id = ?
+                
+                UNION ALL
+                
+                -- Recursive case: all descendants
+                SELECT c.id 
+                FROM categories c
+                INNER JOIN category_tree ct ON c.parent_id = ct.id
+                WHERE c.store_id = ?
+            )
+            SELECT COUNT(*) as count
+            FROM products p
+            WHERE p.category_id IN (SELECT id FROM category_tree)
+              AND p.store_id = ?
+              AND p.is_active = 1
+              AND p.deleted_at IS NULL
+        ";
+
+        $result = \DB::select($query, [$categoryId, $storeId, $storeId, $storeId]);
+        
+        return (int) $result[0]->count;
+    }
+
+    /**
+     * Get all descendant IDs recursively (fallback method, not used)
+     */
+    private function getAllDescendantIds(Category $category): array
+    {
+        $ids = [];
+        
+        if ($category->relationLoaded('children')) {
+            foreach ($category->children as $child) {
+                $ids[] = $child->id;
+                $child->loadMissing('children');
+                $ids = array_merge($ids, $this->getAllDescendantIds($child));
+            }
+        }
+
+        return $ids;
     }
 
     public function getRootCategories(
@@ -43,17 +96,20 @@ class CategoryRepository extends BaseRepository
         $query = $this->scopedQuery()
             ->whereNull('parent_id')
             ->with(['translations', 'children.translations'])
-            ->withCount(['products' => fn(Builder $q) => $q
-                ->where('is_active', true)
-                ->where('store_id', $storeId),
-            ])
             ->orderBy('sort_order');
 
         if ($type !== null) {
             $query->where('type', $type);
         }
 
-        return $query->get();
+        $categories = $query->get();
+        
+        // Calculate product count including descendants using recursive CTE
+        foreach ($categories as $category) {
+            $category->products_count = $this->countProductsWithDescendants($category->id, $storeId);
+        }
+        
+        return $categories;
     }
 
     public function getChildCategories(
@@ -144,7 +200,7 @@ class CategoryRepository extends BaseRepository
     ): ?Category {
         return $this->scopedQuery()
             ->where('slug', $slug)
-            ->with(['translations', 'children.translations', 'brand'])
+            ->with(['translations', 'children.translations'])
             ->withCount(['products' => fn(Builder $q) => $q
                 ->where('is_active', true)
                 ->where('store_id', $storeId),

@@ -1728,7 +1728,13 @@ class StorefrontRuntimeService
         ], static fn (mixed $value): bool => $value !== null);
 
         if (in_array($type, ['category_grid', 'category_summary'], true)) {
-            $props['categories'] = $content['categories'] ?? [];
+            // If content has hardcoded categories, use them; otherwise resolve dynamically
+            if (isset($content['categories']) && is_array($content['categories']) && !empty($content['categories'])) {
+                $props['categories'] = $content['categories'];
+            } else {
+                // Dynamically resolve categories from database with calculated product counts
+                $props['categories'] = $this->resolveCategoriesForGrid($settings);
+            }
             $props['settings'] = $settings ?? [];
             return $props;
         }
@@ -1844,6 +1850,42 @@ class StorefrontRuntimeService
         ->filter() // Remove null entries (products without variants)
         ->values()
         ->all();
+    }
+
+    /**
+     * Resolve categories dynamically with calculated product counts for category grid sections.
+     * Returns categories in the format expected by RuntimeCategoryGridSection.vue
+     */
+    private function resolveCategoriesForGrid(?array $settings): array
+    {
+        $store = $this->currentStore();
+        $locale = app()->getLocale();
+        $limit = min((int) ($settings['limit'] ?? 8), 24);
+
+        // Get root categories with dynamic product counts
+        $categories = $this->categoryRepository
+            ->getRootCategories($store->id)
+            ->take($limit)
+            ->map(function (Category $category) use ($locale): array {
+                $translation = $category->translations->firstWhere('locale', $locale);
+                $fallbackTranslation = $category->translations->firstWhere('locale', config('app.fallback_locale', 'en'));
+                
+                $name = $translation?->name ?? $fallbackTranslation?->name ?? $category->slug;
+                $slug = $translation?->slug ?? $fallbackTranslation?->slug ?? $category->slug;
+
+                return [
+                    'id' => $category->id,
+                    'name' => ['en' => $name, 'ar' => $name], // Simplified for now
+                    'slug' => $slug,
+                    'path' => ['en' => "/shop/category/{$slug}", 'ar' => "/ar/shop/category/{$slug}"],
+                    'productCount' => $category->products_count ?? 0, // Dynamic count from repository
+                    'image' => null,
+                ];
+            })
+            ->values()
+            ->all();
+
+        return $categories;
     }
 
     /**

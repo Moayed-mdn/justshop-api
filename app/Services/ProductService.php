@@ -84,6 +84,24 @@ class ProductService
     }
 
     /**
+     * Get immediate children of a category for filters.
+     */
+    public function getImmediateChildren(Category $category, string $locale): array
+    {
+        $category->loadMissing('children.translations');
+        
+        return $category->children->map(function ($child) use ($locale) {
+            $translation = $child->translation($locale);
+            
+            return [
+                'id'   => $child->id,
+                'name' => $translation?->name ?? $child->slug,
+                'slug' => $translation?->slug ?? $child->slug,
+            ];
+        })->toArray();
+    }
+
+    /**
      * Find a category by its localized slug.
      */
     public function findCategoryBySlug(string $slug, int $storeId): ?Category
