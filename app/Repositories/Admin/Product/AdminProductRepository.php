@@ -377,7 +377,13 @@ class AdminProductRepository
         $optionMap     = [];
         $incomingNames = array_column($options, 'name');
 
-        foreach ($options as $optionData) {
+        foreach ($options as $index => $optionData) {
+            // Normalize position: never trust stored values < 1
+            $position = (int) ($optionData['position'] ?? ($index + 1));
+            if ($position < 1) {
+                $position = $index + 1;
+            }
+
             // Bug #11 fix: restore soft-deleted options instead of creating duplicates.
             // There's a unique constraint on (product_id, name), so creating a new row
             // when a trashed one exists would cause a constraint violation.
@@ -390,11 +396,11 @@ class AdminProductRepository
                 if ($option->trashed()) {
                     $option->restore();
                 }
-                $option->update(['position' => $optionData['position']]);
+                $option->update(['position' => $position]);
             } else {
                 $option = $product->productOptions()->create([
                     'name'     => $optionData['name'],
-                    'position' => $optionData['position'],
+                    'position' => $position,
                 ]);
             }
 
