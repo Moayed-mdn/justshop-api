@@ -158,13 +158,13 @@ Route::prefix('/v1/users')
 
 Route::prefix('/v1/merchant')
     ->middleware([
-        'web',
+        // 'web',
         'identity.route:merchant_users,merchant,enforce',
     ])
     ->group(function (): void {
         // Canonical bootstrap endpoint
         Route::get('/me', [\App\Http\Controllers\Api\Merchant\AuthController::class, 'bootstrap'])
-            ->middleware(['auth:sanctum','identity.route:merchant_users,merchant,enforce']) // disabled temporarily, use 'identity.route:merchant_users,merchant,enforce'
+            ->middleware(['auth:sanctum','identity.route:merchant_users,merchant,enforce'])
             ->name('merchant.me');
 
         require 'api/v1/merchant/auth.php';

@@ -84,11 +84,17 @@ class ApplyIdentityRouteContext
                         'cookie_names' => array_keys($request->cookies->all()),
                         'has_session' => $request->hasSession(),
                         'session_id' => $request->hasSession() ? $request->session()->getId() : null,
+                        'session_cookie_name_seen' => $request->hasSession()
+                            && in_array($request->session()->getName(), array_keys($request->cookies->all()), true),
+                        'resolved_session_id' => $request->hasSession() ? $request->session()->getId() : null,
                         'session_auth_domain' => $request->hasSession() ? $request->session()->get('auth_domain') : null,
                         'route_domain' => $routeDomain,
                         'owner_auth_domain' => $ownerAuthDomain,
                         'enforcement_mode' => $enforcementMode,
                         'default_guard' => Auth::getDefaultDriver(),
+                        'merchant_guard_check' => Auth::guard('merchant')->check(),
+                        'merchant_guard_user_id' => Auth::guard('merchant')->id(),
+                        'raw_host_header' => $request->header('host'),
                     ],
                     'ts' => (int) round(microtime(true) * 1000),
                 ];
