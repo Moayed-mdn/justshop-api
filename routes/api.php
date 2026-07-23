@@ -51,7 +51,7 @@ Route::prefix('/v1/platform')
 // Tenant/store administration (Store owners and staff).
 Route::get('/v1/me', [\App\Http\Controllers\Api\Merchant\AuthController::class, 'bootstrap'])
     ->middleware([
-        'web',
+        //'web',
         'auth:sanctum',
         'identity.route:merchant_users,merchant,enforce',
         'api.deprecated',
@@ -60,7 +60,7 @@ Route::get('/v1/me', [\App\Http\Controllers\Api\Merchant\AuthController::class, 
 
 Route::prefix('/v1/stores')
     ->middleware([
-        'web',
+        //'web',
         'api.deprecated',
     ])
     ->group(function (): void {
@@ -84,7 +84,7 @@ Route::prefix('/v1/stores')
 
 Route::prefix('/v1')
     ->middleware([
-        'web',
+        //'web',
         'api.deprecated',
     ])
     ->group(function (): void {
@@ -95,7 +95,7 @@ Route::prefix('/v1')
 
 Route::prefix('/v1/users')
     ->middleware([
-        'web',
+        //'web',
         'identity.route:merchant_users,merchant,observe',
         'api.deprecated',
     ])
@@ -158,7 +158,7 @@ Route::prefix('/v1/users')
 
 Route::prefix('/v1/merchant')
     ->middleware([
-        // 'web',
+        //'web',
         'identity.route:merchant_users,merchant,enforce',
     ])
     ->group(function (): void {
@@ -181,14 +181,14 @@ Route::prefix('/v1/merchant')
 // Public ecommerce APIs (Customers and guests browsing stores).
 Route::prefix('/v1/storefront/runtime')
     ->middleware([
-        'web',
+        //'web',
     ])
     ->group(function (): void {
         require 'api/v1/storefront/runtime.php';
     });
 Route::prefix('/v1/storefront')
     ->middleware([
-        'web',
+        //'web',
         'identity.route:storefront_commerce,customer,enforce',
     ])
     ->group(function (): void {
@@ -212,7 +212,7 @@ Route::prefix('/v1/storefront')
 
 Route::prefix('/v1/storefront/account')
     ->middleware([
-        'web',
+        //'web',
         'api.deprecated',
         'identity.route:customer_account,customer,enforce',
     ])
@@ -241,7 +241,7 @@ Route::prefix('/v1/customer')
 // Internal support operations (SUPPORT_AGENT, SUPER_ADMIN).
 Route::prefix('/v1/support')
     ->middleware([
-        'web',
+        //'web',
         'auth:sanctum',
         'identity.route:support,platform,enforce',
         'platform.context',
