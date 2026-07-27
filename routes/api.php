@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('/v1/platform')
     ->middleware([
-        'web',
+        // 'web',
         'auth:sanctum',
         'identity.route:platform,platform,enforce',
         'platform.context',
@@ -33,7 +33,7 @@ Route::prefix('/v1/platform')
 // Other Platform Routes (with platform.authority middleware)
 Route::prefix('/v1/platform')
     ->middleware([
-        'web',
+        // 'web',
         'auth:sanctum',
         'identity.route:platform,platform,enforce',
         'platform.context',
@@ -164,7 +164,7 @@ Route::prefix('/v1/merchant')
     ->group(function (): void {
         // Canonical bootstrap endpoint
         Route::get('/me', [\App\Http\Controllers\Api\Merchant\AuthController::class, 'bootstrap'])
-            ->middleware(['auth:sanctum','identity.route:merchant_users,merchant,enforce'])
+            ->middleware(['auth:sanctum',])//'identity.route:merchant_users,merchant,enforce'
             ->name('merchant.me');
 
         require 'api/v1/merchant/auth.php';
@@ -188,7 +188,6 @@ Route::prefix('/v1/storefront/runtime')
     });
 Route::prefix('/v1/storefront')
     ->middleware([
-        //'web',
         'identity.route:storefront_commerce,customer,enforce',
     ])
     ->group(function (): void {
@@ -230,7 +229,7 @@ Route::prefix('/v1/storefront/account')
 // Customer identity and account management.
 Route::prefix('/v1/customer')
     ->middleware([
-        'web',
+        // 'web',
         'identity.route:customer_account,customer,enforce',
     ])
     ->group(function (): void {
@@ -269,5 +268,5 @@ Route::middleware('identity.route:shared_transitional,merchant,observe')
     });
 
 // CSRF Ownership Preparation
-Route::get('/sanctum/csrf-cookie', [CsrfOwnershipPreparationController::class, 'show'])
-    ->middleware(['web', 'identity.route:shared_transitional,merchant,observe']);
+// Route::get('/sanctum/csrf-cookie', [CsrfOwnershipPreparationController::class, 'show'])
+//     ->middleware(['web', 'identity.route:shared_transitional,merchant,observe']);

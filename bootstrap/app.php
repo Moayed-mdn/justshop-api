@@ -27,9 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
         //     'api/v1/webhooks/stripe',
         // ]);
 
-        $middleware->web(remove: [
-            \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
-        ]);
+        // $middleware->web(remove: [
+        //     \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+        // ]);
 
         $middleware->api(prepend: [
             \App\Http\Middleware\InitializeRequestTraceContext::class,
