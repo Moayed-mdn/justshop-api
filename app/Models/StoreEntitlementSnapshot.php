@@ -18,7 +18,7 @@ class StoreEntitlementSnapshot extends Model
         'plan_id',
         'entitlement_status',
         'features',
-        'limits',
+        'products_count',
         'expires_at',
         'refreshed_at',
     ];
@@ -30,7 +30,7 @@ class StoreEntitlementSnapshot extends Model
         'plan_id'            => 'integer',
         'entitlement_status' => EntitlementStatusEnum::class,
         'features'           => 'array',
-        'limits'             => 'array',
+        'products_count'     => 'integer',
         'expires_at'         => 'datetime',
         'refreshed_at'       => 'datetime',
     ];
@@ -77,14 +77,6 @@ class StoreEntitlementSnapshot extends Model
     public function getFeature(string $key): mixed
     {
         return $this->features[$key] ?? null;
-    }
-
-    /**
-     * Get limit value by key.
-     */
-    public function getLimit(string $key): ?int
-    {
-        return $this->limits[$key] ?? null;
     }
 
     /**

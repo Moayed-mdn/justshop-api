@@ -20,9 +20,10 @@ class CreateCheckoutSessionAction
     ) {}
 
     /**
-     * Create a Stripe Checkout Session for subscription signup.
+     * Create a Stripe Checkout Session for subscription signup or upgrade.
      * 
-     * Creates a local subscription record first, then redirects to Stripe.
+     * Cancels existing active subscriptions in Stripe first (to prevent double billing),
+     * creates a local subscription record, then redirects to Stripe.
      * 
      * @return array ['session_id' => string, 'url' => string, 'expires_at' => int]
      */
@@ -37,24 +38,55 @@ class CreateCheckoutSessionAction
         // Get plan price
         $planPrice = PlanPrice::with('plan')->findOrFail($dto->planPriceId);
 
-        // Create or update local subscription BEFORE redirecting to Stripe
-        // This allows webhooks to find and update it
-        $subscription = Subscription::updateOrCreate(
-            [
-                'billing_account_id' => $billingAccount->id,
-                'status' => 'incomplete',
-            ],
-            [
-                'plan_id' => $planPrice->plan_id,
-                'plan_price_id' => $planPrice->id,
-                'billing_cycle' => $planPrice->billing_cycle,
-                'status' => 'incomplete',
-                'provider' => 'stripe',
-                'trial_ends_at' => Carbon::now()->addDays(14),
-            ]
-        );
+        // Cancel existing active subscriptions (both in Stripe AND locally)
+        // This prevents double billing and duplicate provider_subscription_id issues
+        $existingSubscriptions = Subscription::where('billing_account_id', $billingAccount->id)
+            ->whereIn('status', ['active', 'trialing', 'past_due', 'incomplete'])
+            ->get();
 
-        // Create checkout session
+        foreach ($existingSubscriptions as $existingSub) {
+            // Cancel in Stripe first (if linked)
+            if ($existingSub->provider_subscription_id) {
+                try {
+                    $this->billingProvider->cancelSubscription(
+                        $existingSub,
+                        immediately: true
+                    );
+                    
+                    Log::channel('billing')->info('checkout.existing_subscription_canceled_in_stripe', [
+                        'subscription_id' => $existingSub->id,
+                        'provider_subscription_id' => $existingSub->provider_subscription_id,
+                    ]);
+                } catch (\Exception $e) {
+                    Log::channel('billing')->error('checkout.stripe_cancellation_failed', [
+                        'subscription_id' => $existingSub->id,
+                        'provider_subscription_id' => $existingSub->provider_subscription_id,
+                        'error' => $e->getMessage(),
+                    ]);
+                    // Continue anyway - local cancellation will proceed
+                }
+            }
+
+            // Cancel locally
+            $existingSub->update([
+                'status' => 'canceled',
+                'canceled_at' => Carbon::now(),
+            ]);
+        }
+
+        // Create new local subscription BEFORE redirecting to Stripe
+        $subscription = Subscription::create([
+            'billing_account_id' => $billingAccount->id,
+            'plan_id' => $planPrice->plan_id,
+            'plan_price_id' => $planPrice->id,
+            'billing_cycle' => $planPrice->billing_cycle,
+            'status' => 'incomplete',
+            'provider' => 'stripe',
+            'trial_ends_at' => Carbon::now()->addDays(14),
+        ]);
+
+        // Create checkout session with local_subscription_id in metadata
+        // This allows webhooks to find the exact subscription without ambiguity
         $session = $this->billingProvider->createCheckoutSession(
             $billingCustomer,
             $planPrice->provider_price_id,
@@ -65,6 +97,7 @@ class CreateCheckoutSessionAction
                 'plan_price_id' => $planPrice->id,
                 'store_id' => $dto->storeId ?? null,
                 'billing_account_id' => $billingAccount->id,
+                'local_subscription_id' => $subscription->id, // ← Critical: enables precise webhook matching
             ]
         );
 
@@ -73,6 +106,7 @@ class CreateCheckoutSessionAction
             'plan_price_id' => $dto->planPriceId,
             'subscription_id' => $subscription->id,
             'session_id' => $session['session_id'],
+            'canceled_existing' => $existingSubscriptions->count(),
         ]);
 
         return $session;

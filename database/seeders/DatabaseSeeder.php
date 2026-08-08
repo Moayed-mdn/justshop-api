@@ -18,6 +18,9 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             PlansTableSeeder::class,
             StoreSeeder::class,
+            TrialSubscriptionSeeder::class, // Add trial subscription for merchant-store
+            StoreAddressSettingsSeeder::class, // Must run after StoreSeeder
+            ShippingMethodsSeeder::class, // Must run after StoreSeeder
             PlatformUsersSeeder::class, // Add diverse test users for platform dashboard
             PlatformAuditLogsSeeder::class, // Add audit logs for platform dashboard
             CategorySeeder::class,
@@ -51,5 +54,10 @@ class DatabaseSeeder extends Seeder
                 $invalidated,
             ));
         }
+
+        // ── Fix entitlement counters after seeding ──────────────────────
+        // Seeders may create stores before billing_accounts exist, causing drift.
+        // Reconcile to sync counters with actual data.
+        $this->call(ReconcileEntitlementsSeeder::class);
     }
 }

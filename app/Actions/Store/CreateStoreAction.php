@@ -14,7 +14,9 @@ use App\Services\Auth\OnboardingTransitionService;
 use App\Services\Store\StoreSlugService;
 use App\Domain\Shared\Events\StoreCreated;
 use App\Enums\Auth\ActorContextEnum;
+use App\Enums\Entitlement\FeatureKeyEnum;
 use App\Exceptions\Domain\InvalidIdentityDomainAccessException;
+use App\Exceptions\Entitlement\QuotaExceededException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -50,8 +52,6 @@ class CreateStoreAction
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            // Reject stale duplicate first-store submissions that were started
-            // before a concurrent request already advanced onboarding.
             if (
                 $initialOnboardingStep === OnboardingStepEnum::CREATE_STORE
                 && $lockedUser->onboarding_step === OnboardingStepEnum::STORE_CREATION_IN_PROGRESS
@@ -71,15 +71,30 @@ class CreateStoreAction
                 ]);
             }
 
-            // Final availability check within transaction to prevent race conditions.
+            // ── Atomic quota guard, race-condition safe ─────────────────────
+            // No billing account = first store = always allowed (trial starts below).
+            // lockForUpdate() here serializes any concurrent requests for the same owner
+            // on this check specifically — this was the missing piece in the earlier solution.
+            $billingAccount = $this->billingAccountRepository->findByOwnerForUpdate($lockedUser->id);
+
+            if (
+                $billingAccount
+                && $billingAccount->stores_max !== null
+                && $billingAccount->stores_count >= $billingAccount->stores_max
+            ) {
+                throw new QuotaExceededException(
+                    featureKey: FeatureKeyEnum::STORES_MAX->value,
+                    limit: $billingAccount->stores_max,
+                );
+            }
+            // ─────────────────────────────────────────────────────────────────
+
             if (!$this->slugService->isAvailable($normalizedSlug)) {
                 throw ValidationException::withMessages([
                     'slug' => __('store.slug_taken'),
                 ]);
             }
 
-            // Mark onboarding as in-progress to prevent duplicate concurrent creation.
-            // This is idempotent — if already past this step, the service is a no-op.
             if ($lockedUser->onboarding_step === OnboardingStepEnum::CREATE_STORE) {
                 $this->onboardingTransitionService->transition(
                     $lockedUser,
@@ -87,14 +102,11 @@ class CreateStoreAction
                 );
             }
 
-            // Create store with normalized slug.
             $dto->slug = $normalizedSlug;
             $store = $this->storeRepository->create($dto);
 
-            // Reload user to get fresh onboarding_step after the transition above.
             $lockedUser->refresh();
 
-            // Advance to STORE_CREATED.
             if ($lockedUser->onboarding_step === OnboardingStepEnum::STORE_CREATION_IN_PROGRESS) {
                 $this->onboardingTransitionService->transition(
                     $lockedUser,
@@ -102,22 +114,16 @@ class CreateStoreAction
                 );
             }
 
-            // Set as last active store.
             $lockedUser->update(['last_active_store_id' => $store->id]);
 
-            // ─────────────────────────────────────────────────────────────────
-            // 🎯 Phase 2: Auto-start trial for new stores (if no billing account exists)
-            // ─────────────────────────────────────────────────────────────────
-            $billingAccount = $this->billingAccountRepository->findByOwner($lockedUser->id);
-
-            // If no billing account exists, create one and start trial
+            // Reuse same $billingAccount from check above — no second query
             if (!$billingAccount) {
                 try {
                     $this->startTrialAction->execute(
                         new StartTrialDTO(
                             ownerUserId: $lockedUser->id,
                             storeId: $store->id,
-                            planCode: 'starter', // Default to starter plan
+                            planCode: 'starter',
                         )
                     );
 
@@ -127,8 +133,6 @@ class CreateStoreAction
                         'trigger' => 'store_creation',
                     ]);
                 } catch (\Exception $e) {
-                    // Log error but don't fail store creation
-                    // Trial can be manually started later if needed
                     Log::channel('billing')->error('trial.auto_start_failed', [
                         'store_id' => $store->id,
                         'owner_user_id' => $lockedUser->id,
@@ -137,14 +141,8 @@ class CreateStoreAction
                 }
             }
 
-            // Dispatch Domain Event after commit.
             DB::afterCommit(function () use ($store, $lockedUser) {
-                StoreCreated::dispatch(
-                    $store->id,
-                    $lockedUser->id,
-                    $store->slug,
-                    $store->name
-                );
+                StoreCreated::dispatch($store->id, $lockedUser->id, $store->slug, $store->name);
             });
 
             return $store;

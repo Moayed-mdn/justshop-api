@@ -6,13 +6,19 @@ namespace App\Policies;
 
 use App\Enums\PermissionEnum;
 use App\Enums\RoleEnum;
+use App\Enums\Entitlement\FeatureKeyEnum;
 use App\Models\Store;
 use App\Models\User;
 use App\Policies\Concerns\HasStoreMembership;
+use App\Services\Entitlement\FeatureGateService;
 
 class ProductPolicy
 {
     use HasStoreMembership;
+
+    public function __construct(
+        private FeatureGateService $featureGateService,
+    ) {}
 
     public function viewAny(User $user, Store $store): bool
     {
@@ -26,7 +32,16 @@ class ProductPolicy
 
     public function create(User $user, Store $store): bool
     {
-        return $this->decision($user, 'create', $this->canManage($user, $store, PermissionEnum::PRODUCT_CREATE, 'product', 'create'), $store);
+        $canManage = $this->canManage($user, $store, PermissionEnum::PRODUCT_CREATE, 'product', 'create');
+
+        if (!$canManage) {
+            return $this->decision($user, 'create', false, $store);
+        }
+
+        // Fast-path quota check: throws QuotaExceededException (→402) if limit reached.
+        $this->featureGateService->ensureQuota($store->id, FeatureKeyEnum::PRODUCTS_MAX);
+
+        return $this->decision($user, 'create', true, $store);
     }
 
     public function update(User $user, Store $store): bool

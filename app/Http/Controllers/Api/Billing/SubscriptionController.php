@@ -106,12 +106,18 @@ class SubscriptionController extends Controller
 
         $usage = [
             'stores' => [
-                'count' => $snapshots->count(),
-                'limit' => $snapshots->first()?->features['stores.max'] ?? 0,
+                // Read from billing_accounts table (account-level counter)
+                'count' => $billingAccount->stores_count,
+                // Read stores.max from its new location (billing_accounts.stores_max)
+                // after migration moved it from features JSON to dedicated column
+                'limit' => $billingAccount->stores_max,
             ],
             'products' => [
-                'count' => $snapshots->sum(fn($s) => $s->limits['products.count'] ?? 0),
-                'limit' => $snapshots->first()?->features['products.max'] ?? 0,
+                // Read from atomic columns in snapshots (store-level counters)
+                'count' => $snapshots->sum('products_count'),
+                // Don't use ?? 0 fallback - let null pass through for unlimited plans
+                // (null means unlimited per system convention used in FeatureGateService)
+                'limit' => $snapshots->first()?->features[\App\Enums\Entitlement\FeatureKeyEnum::PRODUCTS_MAX->value] ?? null,
             ],
         ];
 

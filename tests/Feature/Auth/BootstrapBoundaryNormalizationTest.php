@@ -8,10 +8,10 @@ use App\Enums\Auth\OnboardingStepEnum;
 use App\Enums\Store\StoreRoleEnum;
 use App\Models\Store;
 use App\Models\User;
+use App\Support\FeatureFlags\FeatureFlag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Mockery;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -21,11 +21,18 @@ class BootstrapBoundaryNormalizationTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Cache::flush();
+    }
+
     public function test_bootstrap_shadow_read_reports_zero_drift_for_current_contract(): void
     {
-        config()->set('migration.bootstrap.shadow_read', true);
-        config()->set('migration.bootstrap.v2_enabled', false);
-        config()->set('migration.rbac.dual_resolve', true);
+        $this->setFlag('bootstrap.shadow_read', true);
+        $this->setFlag('bootstrap.v2.enabled', false);
+        $this->setFlag('rbac.dual_resolve', true);
 
         Log::spy();
 
@@ -36,7 +43,7 @@ class BootstrapBoundaryNormalizationTest extends TestCase
 
         /** @var User $user */
 
-        $response = $this->actingAs($user)->getJson('/api/v1/users/auth/bootstrap');
+        $response = $this->withSession([])->actingAs($user)->getJson('/api/v1/users/auth/bootstrap');
 
         $response->assertOk()
             ->assertJsonPath('data.active_store.id', $store->id)
@@ -55,7 +62,7 @@ class BootstrapBoundaryNormalizationTest extends TestCase
      */
     public function test_bootstrap_contract_snapshot_remains_unchanged(): void
     {
-        config()->set('migration.bootstrap.v2_enabled', false);
+        $this->setFlag('bootstrap.v2.enabled', false);
 
         /** @var User $user */
         $user = User::factory()->create([
@@ -73,7 +80,7 @@ class BootstrapBoundaryNormalizationTest extends TestCase
         \Spatie\Permission\Models\Permission::findOrCreate('product.view', 'web');
         $user->givePermissionTo(['product.view']);
 
-        $response = $this->actingAs($user)->getJson('/api/v1/users/auth/bootstrap');
+        $response = $this->withSession([])->actingAs($user)->getJson('/api/v1/users/auth/bootstrap');
 
         $response->assertOk();
 
@@ -98,6 +105,7 @@ class BootstrapBoundaryNormalizationTest extends TestCase
         $user = User::factory()->merchant()->create([
             'last_active_store_id' => null,
         ]);
+        /** @var User $user */
 
         $accessibleStore = Store::factory()->for($user, 'owner')->create([
             'name' => 'Accessible Store',
@@ -112,7 +120,7 @@ class BootstrapBoundaryNormalizationTest extends TestCase
         $user->stores()->attach($accessibleStore->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
         $user->update(['last_active_store_id' => $inaccessibleStore->id]);
 
-        $response = $this->actingAs($user)->getJson('/api/v1/users/auth/bootstrap');
+        $response = $this->withSession([])->actingAs($user)->getJson('/api/v1/users/auth/bootstrap');
 
         $response->assertOk()
             ->assertJsonPath('data.active_store.id', $accessibleStore->id);
@@ -164,5 +172,10 @@ class BootstrapBoundaryNormalizationTest extends TestCase
         $role->syncPermissions($permissions);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+    }
+
+    private function setFlag(string $flag, mixed $value): void
+    {
+        FeatureFlag::setValue($flag, $value);
     }
 }

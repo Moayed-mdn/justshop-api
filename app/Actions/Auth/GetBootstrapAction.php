@@ -20,6 +20,7 @@ use App\Services\Auth\Bootstrap\BootstrapTelemetry;
 use App\Services\Auth\Bootstrap\LegacyBootstrapCompatibilityAdapter;
 use App\Services\Auth\FrontendSessionMetadataResolver;
 use App\Services\Auth\Permission\PermissionTransformer;
+use App\Support\FeatureFlags\FeatureFlag;
 
 class GetBootstrapAction
 {
@@ -40,9 +41,9 @@ class GetBootstrapAction
     public function execute(GetBootstrapDTO $dto): GetBootstrapResponseDTO
     {
         $user = User::findOrFail($dto->userId);
-        $responseVersion = (string) config('migration.bootstrap.response_version', 'v1');
-        $useDecomposedAuthority = (bool) config('migration.bootstrap.v2_enabled', false);
-        $shadowReadEnabled = (bool) config('migration.bootstrap.shadow_read', false);
+        $responseVersion = (string) FeatureFlag::value('bootstrap.response_version');
+        $useDecomposedAuthority = FeatureFlag::enabled('bootstrap.v2.enabled');
+        $shadowReadEnabled = FeatureFlag::enabled('bootstrap.shadow_read');
         $authorityPath = $useDecomposedAuthority ? 'decomposed' : 'legacy';
 
         $this->telemetry->logStarted($user, $authorityPath, $responseVersion);

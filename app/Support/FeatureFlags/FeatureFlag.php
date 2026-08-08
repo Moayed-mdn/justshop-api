@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Support\FeatureFlags;
 
+use Illuminate\Support\Facades\Cache;
+
 class FeatureFlag
 {
     /**
@@ -11,18 +13,15 @@ class FeatureFlag
      */
     public static function enabled(string $flag): bool
     {
-        $features = static::all();
-        $config = $features[$flag] ?? null;
+        $value = static::value($flag);
 
-        if ($config === null) {
-            throw new \InvalidArgumentException("Feature flag '{$flag}' is not registered in config/features.php");
+        if (!is_bool($value)) {
+            throw new \InvalidArgumentException(
+                "Feature flag '{$flag}' is not boolean; use " . self::class . "::value() instead."
+            );
         }
 
-        if (is_array($config)) {
-            return (bool) ($config['default'] ?? false);
-        }
-
-        return (bool) $config;
+        return $value;
     }
 
     /**
@@ -31,6 +30,33 @@ class FeatureFlag
     public static function disabled(string $flag): bool
     {
         return !static::enabled($flag);
+    }
+
+    /**
+     * Get the resolved runtime value for a feature flag.
+     */
+    public static function value(string $flag): mixed
+    {
+        $config = static::config($flag);
+        $default = is_array($config) ? ($config['default'] ?? false) : $config;
+
+        return Cache::get(static::overrideCacheKey($flag), $default);
+    }
+
+    /**
+     * Get all resolved feature flag values.
+     *
+     * @return array<string, mixed>
+     */
+    public static function values(): array
+    {
+        $values = [];
+
+        foreach (array_keys(static::all()) as $flag) {
+            $values[$flag] = static::value($flag);
+        }
+
+        return $values;
     }
 
     /**
@@ -46,6 +72,44 @@ class FeatureFlag
         }
 
         return $config;
+    }
+
+    /**
+     * Determine whether a runtime override exists for a feature flag.
+     */
+    public static function hasOverride(string $flag): bool
+    {
+        static::config($flag);
+
+        return Cache::has(static::overrideCacheKey($flag));
+    }
+
+    /**
+     * Persist a runtime override for a feature flag.
+     */
+    public static function setValue(string $flag, mixed $value): void
+    {
+        $config = static::config($flag);
+        $default = is_array($config) ? ($config['default'] ?? false) : $config;
+
+        if (gettype($value) !== gettype($default)) {
+            throw new \InvalidArgumentException(
+                "Feature flag '{$flag}' expects a value of type " . gettype($default) . '.'
+            );
+        }
+
+        Cache::forever(static::overrideCacheKey($flag), $value);
+        Cache::forever(static::updatedAtCacheKey($flag), now()->toISOString());
+    }
+
+    /**
+     * Get the timestamp of the last runtime override.
+     */
+    public static function updatedAt(string $flag): ?string
+    {
+        static::config($flag);
+
+        return Cache::get(static::updatedAtCacheKey($flag));
     }
 
     /**
@@ -163,5 +227,27 @@ class FeatureFlag
         }
 
         return $allErrors;
+    }
+
+    private static function config(string $flag): mixed
+    {
+        $features = static::all();
+        $config = $features[$flag] ?? null;
+
+        if ($config === null) {
+            throw new \InvalidArgumentException("Feature flag '{$flag}' is not registered in config/features.php");
+        }
+
+        return $config;
+    }
+
+    private static function overrideCacheKey(string $flag): string
+    {
+        return "feature_registry.{$flag}.value";
+    }
+
+    private static function updatedAtCacheKey(string $flag): string
+    {
+        return "feature_registry.{$flag}.updated_at";
     }
 }

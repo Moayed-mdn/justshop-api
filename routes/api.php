@@ -47,7 +47,7 @@ Route::get('/debug/sanctum', function () {
 
 Route::prefix('/v1/platform')
     ->middleware([
-        'web',
+       //  'web',
         'auth:sanctum',
         'identity.route:platform,platform,enforce',
         'platform.context',
@@ -59,7 +59,7 @@ Route::prefix('/v1/platform')
 // Other Platform Routes (with platform.authority middleware)
 Route::prefix('/v1/platform')
     ->middleware([
-        'web',
+       //  'web',
         'auth:sanctum',
         'identity.route:platform,platform,enforce',
         'platform.context',
@@ -77,7 +77,7 @@ Route::prefix('/v1/platform')
 // Tenant/store administration (Store owners and staff).
 Route::get('/v1/me', [\App\Http\Controllers\Api\Merchant\AuthController::class, 'bootstrap'])
     ->middleware([
-        'web',
+       //  'web',
         'auth:sanctum',
         'identity.route:merchant_users,merchant,enforce',
         'api.deprecated',
@@ -86,7 +86,7 @@ Route::get('/v1/me', [\App\Http\Controllers\Api\Merchant\AuthController::class, 
 
 Route::prefix('/v1/stores')
     ->middleware([
-        'web',
+       //  'web',
         'api.deprecated',
     ])
     ->group(function (): void {
@@ -110,7 +110,7 @@ Route::prefix('/v1/stores')
 
 Route::prefix('/v1/admin/stores/{store}')
     ->middleware([
-        'web',
+       //  'web',
         'api.deprecated',
         'auth:sanctum',
         'identity.route:merchant_admin,merchant,enforce',
@@ -151,7 +151,7 @@ Route::prefix('/v1/admin/stores/{store}')
 
 Route::prefix('/v1')
     ->middleware([
-        'web',
+       //  'web',
         'api.deprecated',
     ])
     ->group(function (): void {
@@ -162,7 +162,7 @@ Route::prefix('/v1')
 
 Route::prefix('/v1/users')
     ->middleware([
-        'web',
+       //  'web',
         'identity.route:merchant_users,merchant,observe',
         'api.deprecated',
     ])
@@ -194,6 +194,7 @@ Route::prefix('/v1/users')
                     ->name('google.redirect');
 
                 Route::get('/google/callback', [\App\Http\Controllers\Api\Merchant\SocialAuthController::class, 'callback'])
+                    ->middleware('web')
                     ->name('google.callback');
 
                 Route::post('/logout', [\App\Http\Controllers\Api\Merchant\AuthController::class, 'logout'])
@@ -225,7 +226,7 @@ Route::prefix('/v1/users')
 
 Route::prefix('/v1/merchant')
     ->middleware([
-        'web',
+       //  'web',
         'identity.route:merchant_users,merchant,enforce',
     ])
     ->group(function (): void {
@@ -248,14 +249,14 @@ Route::prefix('/v1/merchant')
 // Public ecommerce APIs (Customers and guests browsing stores).
 Route::prefix('/v1/storefront/runtime')
     ->middleware([
-        'web',
+       //  'web',
     ])
     ->group(function (): void {
         require 'api/v1/storefront/runtime.php';
     });
 Route::prefix('/v1/storefront')
     ->middleware([
-        'web',
+       //  'web',
         'identity.route:storefront_commerce,customer,enforce',
     ])
     ->group(function (): void {
@@ -279,7 +280,7 @@ Route::prefix('/v1/storefront')
 
 Route::prefix('/v1/storefront/account')
     ->middleware([
-        'web',
+       //  'web',
         'api.deprecated',
         'identity.route:customer_account,customer,enforce',
     ])
@@ -297,7 +298,7 @@ Route::prefix('/v1/storefront/account')
 // Customer identity and account management.
 Route::prefix('/v1/customer')
     ->middleware([
-        'web',
+       //  'web',
         'identity.route:customer_account,customer,enforce',
     ])
     ->group(function (): void {
@@ -308,7 +309,7 @@ Route::prefix('/v1/customer')
 // Internal support operations (SUPPORT_AGENT, SUPER_ADMIN).
 Route::prefix('/v1/support')
     ->middleware([
-        'web',
+       //  'web',
         'auth:sanctum',
         'identity.route:support,platform,enforce',
         'platform.context',
@@ -335,6 +336,6 @@ Route::middleware('identity.route:shared_transitional,merchant,observe')
         require 'api/v1/stripe/webhook.php';
     });
 
-// CSRF Ownership Preparation
-Route::get('/sanctum/csrf-cookie', [CsrfOwnershipPreparationController::class, 'show'])
-    ->middleware(['web', 'identity.route:shared_transitional,merchant,observe']);
+// // CSRF Ownership Preparation
+// Route::get('/sanctum/csrf-cookie', [CsrfOwnershipPreparationController::class, 'show'])
+//     ->middleware(['web', 'identity.route:shared_transitional,merchant,observe']);

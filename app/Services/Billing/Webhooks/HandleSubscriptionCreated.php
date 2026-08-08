@@ -12,31 +12,28 @@ class HandleSubscriptionCreated
      * Handle customer.subscription.created webhook.
      * 
      * Updates local subscription with Stripe subscription data.
+     * Uses local_subscription_id from metadata for precise matching.
      */
     public function handle(array $event): void
     {
         $stripeSubscription = $event['data']['object'];
-        $billingAccountId = $stripeSubscription['metadata']['billing_account_id'] ?? null;
+        $localSubscriptionId = $stripeSubscription['metadata']['local_subscription_id'] ?? null;
 
-        if (!$billingAccountId) {
-            Log::channel('billing')->warning('webhook.subscription.created.no_account_id', [
+        if (!$localSubscriptionId) {
+            Log::channel('billing')->warning('webhook.subscription.created.no_local_id', [
                 'stripe_subscription_id' => $stripeSubscription['id'],
+                'metadata' => $stripeSubscription['metadata'],
             ]);
             return;
         }
 
-        // Find local subscription
-        $subscription = Subscription::where('billing_account_id', $billingAccountId)
-            ->where(function ($q) use ($stripeSubscription) {
-                $q->where('provider_subscription_id', $stripeSubscription['id'])
-                    ->orWhereNull('provider_subscription_id');
-            })
-            ->first();
+        // Find local subscription by exact ID (no ambiguity, no race condition)
+        $subscription = Subscription::find($localSubscriptionId);
 
         if (!$subscription) {
             Log::channel('billing')->warning('webhook.subscription.created.not_found', [
                 'stripe_subscription_id' => $stripeSubscription['id'],
-                'billing_account_id' => $billingAccountId,
+                'local_subscription_id' => $localSubscriptionId,
             ]);
             return;
         }

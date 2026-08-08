@@ -5,14 +5,20 @@ namespace App\Policies;
 use App\Enums\PermissionEnum;
 use App\Enums\RoleEnum;
 use App\Enums\Store\StoreRoleEnum;
+use App\Enums\Entitlement\FeatureKeyEnum;
 use App\Models\Store;
 use App\Models\User;
 use App\Policies\Concerns\HasStoreMembership;
 use App\Policies\Concerns\InteractsWithPolicyTelemetry;
+use App\Services\Entitlement\FeatureGateService;
 
 class StorePolicy
 {
     use HasStoreMembership;
+
+    public function __construct(
+        private FeatureGateService $featureGateService,
+    ) {}
 
     /**
      * Determine whether the user can view any models.
@@ -51,6 +57,10 @@ class StorePolicy
         if ($this->isCustomer($user)) {
             return $this->decision($user, 'create', false);
         }
+
+        // Fast-path quota check: throws QuotaExceededException (→402) if limit reached.
+        // This is for UX only — CreateStoreAction is the real race-safe checkpoint.
+        $this->featureGateService->ensureAccountQuota($user->id, FeatureKeyEnum::STORES_MAX);
 
         return $this->decision($user, 'create', true);
     }

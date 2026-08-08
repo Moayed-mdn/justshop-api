@@ -33,6 +33,17 @@ class BillingAccountRepository
     }
 
     /**
+     * Find billing account by owner user ID with row lock for update.
+     * Used for atomic quota checks within transactions.
+     */
+    public function findByOwnerForUpdate(int $ownerUserId): ?BillingAccount
+    {
+        return BillingAccount::where('owner_user_id', $ownerUserId)
+            ->lockForUpdate()
+            ->first();
+    }
+
+    /**
      * Find billing account by owner user ID or fail.
      */
     public function findByOwnerOrFail(int $ownerUserId): BillingAccount

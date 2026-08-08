@@ -85,11 +85,6 @@ class BootstrapPayloadSerializer
 
     private static function resolveFeatureFlags(): array
     {
-        $features = [];
-        foreach (\App\Support\FeatureFlags\FeatureFlag::all() as $name => $_config) {
-            $features[$name] = \App\Support\FeatureFlags\FeatureFlag::enabled($name);
-        }
-
-        return $features;
+        return \App\Support\FeatureFlags\FeatureFlag::values();
     }
 }

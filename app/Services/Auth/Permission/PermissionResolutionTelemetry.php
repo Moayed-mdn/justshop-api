@@ -6,6 +6,7 @@ namespace App\Services\Auth\Permission;
 
 use App\DTOs\Auth\Permission\CapabilityResolutionResult;
 use App\Models\User;
+use App\Support\FeatureFlags\FeatureFlag;
 use Illuminate\Support\Facades\Log;
 
 class PermissionResolutionTelemetry
@@ -15,10 +16,7 @@ class PermissionResolutionTelemetry
         Log::info('authorization.permission.resolved', [
             'actor_id' => (int) $user->id,
             'resolution_mode' => $mode,
-            'flag_state' => [
-                'rbac.resolver.v2' => (bool) config('migration.rbac.resolver_v2', false),
-                'rbac.dual_resolve' => (bool) config('migration.rbac.dual_resolve', false),
-            ],
+            'flag_state' => $this->flagState(),
             ...$result->toLogContext(),
         ]);
     }
@@ -42,10 +40,7 @@ class PermissionResolutionTelemetry
             'drift_count' => $driftCount,
             'missing_from_shadow' => $missingFromShadow,
             'extra_in_shadow' => $extraInShadow,
-            'flag_state' => [
-                'rbac.resolver.v2' => (bool) config('migration.rbac.resolver_v2', false),
-                'rbac.dual_resolve' => (bool) config('migration.rbac.dual_resolve', false),
-            ],
+            'flag_state' => $this->flagState(),
         ]);
 
         if ($driftCount > 0) {
@@ -56,11 +51,19 @@ class PermissionResolutionTelemetry
                 'drift_count' => $driftCount,
                 'missing_from_shadow' => $missingFromShadow,
                 'extra_in_shadow' => $extraInShadow,
-                'flag_state' => [
-                    'rbac.resolver.v2' => (bool) config('migration.rbac.resolver_v2', false),
-                    'rbac.dual_resolve' => (bool) config('migration.rbac.dual_resolve', false),
-                ],
+                'flag_state' => $this->flagState(),
             ]);
         }
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    private function flagState(): array
+    {
+        return [
+            'rbac.resolver.v2' => FeatureFlag::enabled('rbac.resolver.v2'),
+            'rbac.dual_resolve' => FeatureFlag::enabled('rbac.dual_resolve'),
+        ];
     }
 }

@@ -51,6 +51,27 @@ class SubscriptionRepository
     }
 
     /**
+     * Find active subscription for a billing account with row lock.
+     * 
+     * Use this for operations that modify the subscription (upgrade, downgrade)
+     * to prevent race conditions from concurrent requests.
+     */
+    public function findActiveForAccountOrFailWithLock(int $billingAccountId): Subscription
+    {
+        $subscription = Subscription::where('billing_account_id', $billingAccountId)
+            ->withAccess()
+            ->lockForUpdate()
+            ->latest()
+            ->first();
+
+        if (!$subscription) {
+            throw new \DomainException('No active subscription found for this account.');
+        }
+
+        return $subscription;
+    }
+
+    /**
      * Find active subscription for a billing account.
      */
     public function findActiveForAccount(int $billingAccountId): ?Subscription

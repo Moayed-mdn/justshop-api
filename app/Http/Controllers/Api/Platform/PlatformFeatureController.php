@@ -5,73 +5,22 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\Platform;
 
 use App\Http\Controllers\Controller;
-use App\Models\Store;
+use App\Support\FeatureFlags\FeatureFlag;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Cache;
+use Symfony\Component\HttpFoundation\Response;
 
 class PlatformFeatureController extends Controller
 {
     /**
-     * Get hardcoded platform feature flags
-     * 
-     * Note: These are configuration-based feature flags for platform-level features.
-     * For per-plan features, see PlanFeature model.
+     * Expose the canonical feature flag registry with resolved runtime values.
      */
     public function index(): JsonResponse
     {
-        $features = [
-            [
-                'id' => 'allow_new_store_registrations',
-                'key' => 'allow_new_store_registrations',
-                'name' => 'Allow New Store Registrations',
-                'description' => 'Allow new stores to register on the platform',
-                'enabled' => $this->isFeatureEnabled('allow_new_store_registrations', true),
-                'critical' => true,
-                'usage_count' => Store::count(), // Number of stores as usage
-                'updated_at' => Cache::get('feature.allow_new_store_registrations.updated_at', now()->toISOString()),
-            ],
-            [
-                'id' => 'enable_email_notifications',
-                'key' => 'enable_email_notifications',
-                'name' => 'Enable Email Notifications',
-                'description' => 'Send email notifications to users and stores',
-                'enabled' => $this->isFeatureEnabled('enable_email_notifications', true),
-                'critical' => false,
-                'usage_count' => 0,
-                'updated_at' => Cache::get('feature.enable_email_notifications.updated_at', now()->toISOString()),
-            ],
-            [
-                'id' => 'enable_payment_processing',
-                'key' => 'enable_payment_processing',
-                'name' => 'Enable Payment Processing',
-                'description' => 'Allow stores to process payments',
-                'enabled' => $this->isFeatureEnabled('enable_payment_processing', true),
-                'critical' => true,
-                'usage_count' => 0,
-                'updated_at' => Cache::get('feature.enable_payment_processing.updated_at', now()->toISOString()),
-            ],
-            [
-                'id' => 'enable_advanced_analytics',
-                'key' => 'enable_advanced_analytics',
-                'name' => 'Enable Advanced Analytics',
-                'description' => 'Provide advanced analytics features to stores',
-                'enabled' => $this->isFeatureEnabled('enable_advanced_analytics', false),
-                'critical' => false,
-                'usage_count' => 0,
-                'updated_at' => Cache::get('feature.enable_advanced_analytics.updated_at', now()->toISOString()),
-            ],
-            [
-                'id' => 'maintenance_mode',
-                'key' => 'maintenance_mode',
-                'name' => 'Maintenance Mode',
-                'description' => 'Put the platform in maintenance mode',
-                'enabled' => $this->isFeatureEnabled('maintenance_mode', false),
-                'critical' => true,
-                'usage_count' => 0,
-                'updated_at' => Cache::get('feature.maintenance_mode.updated_at', now()->toISOString()),
-            ],
-        ];
-        
+        $features = collect(FeatureFlag::all())
+            ->map(fn ($config, string $feature) => $this->formatFeature($feature, $config))
+            ->values()
+            ->all();
+
         return response()->json([
             'success' => true,
             'data' => $features,
@@ -80,30 +29,100 @@ class PlatformFeatureController extends Controller
 
     public function update(string $feature): JsonResponse
     {
-        $enabled = (bool) request()->get('enabled', false);
-        
-        // Store feature flag state in cache
-        Cache::forever("feature.{$feature}.enabled", $enabled);
-        Cache::forever("feature.{$feature}.updated_at", now()->toISOString());
-        
+        $metadata = FeatureFlag::metadata($feature);
+        if ($metadata === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Feature flag not found',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $input = request()->has('value')
+            ? request()->input('value')
+            : request()->input('enabled');
+
+        if ($input === null) {
+            return response()->json([
+                'success' => false,
+                'message' => 'A value or enabled field is required',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        try {
+            $value = $this->coerceValue($input, $metadata['default'] ?? null, $feature);
+            FeatureFlag::setValue($feature, $value);
+        } catch (\InvalidArgumentException $exception) {
+            return response()->json([
+                'success' => false,
+                'message' => $exception->getMessage(),
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Feature flag updated successfully',
-            'data' => [
-                'id' => $feature,
-                'key' => $feature,
-                'enabled' => $enabled,
-                'updated_at' => now()->toISOString(),
-            ],
+            'data' => $this->formatFeature($feature, $metadata),
         ]);
     }
-    
+
     /**
-     * Check if a feature is enabled
+     * @param mixed $config
+     * @return array<string, mixed>
      */
-    private function isFeatureEnabled(string $feature, bool $default = false): bool
+    private function formatFeature(string $feature, mixed $config): array
     {
-        return Cache::get("feature.{$feature}.enabled", $default);
+        $metadata = is_array($config) ? $config : ['default' => $config];
+        $value = FeatureFlag::value($feature);
+        $type = gettype($metadata['default'] ?? null);
+
+        return [
+            'id' => $feature,
+            'key' => $feature,
+            'name' => $feature,
+            'description' => $metadata['description'] ?? $feature,
+            'type' => $type,
+            'value' => $value,
+            'enabled' => $type === 'boolean' ? $value : null,
+            'critical' => (bool) ($metadata['kill_switch'] ?? false),
+            'owner' => $metadata['owner'] ?? null,
+            'business_owner' => $metadata['business_owner'] ?? null,
+            'category' => $metadata['category'] ?? null,
+            'blast_radius' => $metadata['blast_radius'] ?? null,
+            'kill_switch' => (bool) ($metadata['kill_switch'] ?? false),
+            'has_override' => FeatureFlag::hasOverride($feature),
+            'updated_at' => FeatureFlag::updatedAt($feature),
+        ];
+    }
+
+    private function coerceValue(mixed $input, mixed $default, string $feature): mixed
+    {
+        if (is_bool($default)) {
+            if (is_bool($input)) {
+                return $input;
+            }
+
+            if (is_string($input)) {
+                $normalized = filter_var($input, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+                if ($normalized !== null) {
+                    return $normalized;
+                }
+            }
+
+            if (is_int($input)) {
+                return (bool) $input;
+            }
+
+            throw new \InvalidArgumentException("Feature flag '{$feature}' expects a boolean value.");
+        }
+
+        if (is_string($default)) {
+            if (!is_scalar($input)) {
+                throw new \InvalidArgumentException("Feature flag '{$feature}' expects a scalar string value.");
+            }
+
+            return (string) $input;
+        }
+
+        return $input;
     }
 }
-

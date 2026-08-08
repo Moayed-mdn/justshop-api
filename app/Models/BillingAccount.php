@@ -23,6 +23,8 @@ class BillingAccount extends Model
         'tax_id',
         'status',
         'trial_used',
+        'stores_count',
+        'stores_max',
         'metadata',
     ];
 
@@ -30,6 +32,8 @@ class BillingAccount extends Model
         'owner_user_id'    => 'integer',
         'status'           => BillingAccountStatusEnum::class,
         'trial_used'       => 'boolean',
+        'stores_count'     => 'integer',
+        'stores_max'       => 'integer',
         'metadata'         => 'array',
     ];
 

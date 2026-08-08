@@ -7,12 +7,14 @@ use App\Exceptions\Entitlement\FeatureNotAvailableException;
 use App\Exceptions\Entitlement\QuotaExceededException;
 use App\Exceptions\Subscription\SubscriptionRequiredException;
 use App\Models\StoreEntitlementSnapshot;
+use App\Repositories\Billing\BillingAccountRepository;
 use App\Repositories\Entitlement\EntitlementSnapshotRepository;
 
 class FeatureGateService
 {
     public function __construct(
         private EntitlementSnapshotRepository $snapshotRepository,
+        private BillingAccountRepository $billingAccountRepository,
     ) {}
 
     /**
@@ -66,33 +68,57 @@ class FeatureGateService
     }
 
     /**
-     * Ensure quota/limit is not exceeded for a feature.
+     * Ensure quota/limit is not exceeded for a store-scoped feature.
      * 
      * @throws QuotaExceededException
      */
-    public function ensureQuota(int $storeId, FeatureKeyEnum $feature, int $currentCount): void
+    public function ensureQuota(int $storeId, FeatureKeyEnum $feature): void
     {
         $snapshot = $this->snapshotRepository->findByStoreId($storeId);
 
         if (!$snapshot) {
-            throw new SubscriptionRequiredException(
-                'An active subscription is required.'
-            );
+            throw new SubscriptionRequiredException('An active subscription is required.');
         }
 
-        $featureKey = $feature->value;
-        $limit = $snapshot->features[$featureKey] ?? null;
-
-        // null = unlimited
+        $limit = $snapshot->features[$feature->value] ?? null;
         if ($limit === null) {
             return;
         }
 
-        // Check if current usage exceeds limit
+        $currentCount = match ($feature) {
+            FeatureKeyEnum::PRODUCTS_MAX => $snapshot->products_count,
+            default => throw new \LogicException("No store-scoped counter mapped for {$feature->value}"),
+        };
+
         if ($currentCount >= $limit) {
-            throw new QuotaExceededException(
-                "You have reached the limit for {$featureKey}. Current: {$currentCount}, Limit: {$limit}"
-            );
+            throw new QuotaExceededException(featureKey: $feature->value, limit: $limit);
+        }
+    }
+
+    /**
+     * Ensure quota/limit is not exceeded for an account-scoped feature.
+     * 
+     * @throws QuotaExceededException
+     */
+    public function ensureAccountQuota(int $ownerUserId, FeatureKeyEnum $feature): void
+    {
+        $account = $this->billingAccountRepository->findByOwner($ownerUserId);
+
+        if (!$account) {
+            return; // No account yet = first resource = allowed
+        }
+
+        $limit = match ($feature) {
+            FeatureKeyEnum::STORES_MAX => $account->stores_max,
+            default => throw new \LogicException("No account-scoped limit mapped for {$feature->value}"),
+        };
+
+        if ($limit === null) {
+            return;
+        }
+
+        if ($account->stores_count >= $limit) {
+            throw new QuotaExceededException(featureKey: $feature->value, limit: $limit);
         }
     }
 
@@ -139,31 +165,6 @@ class FeatureGateService
 
         // Return limit if it's a number, null if unlimited or doesn't exist
         return is_numeric($featureValue) ? (int) $featureValue : null;
-    }
-
-    /**
-     * Get current usage count for a feature from the snapshot.
-     */
-    public function getCurrentUsage(int $storeId, FeatureKeyEnum $feature): ?int
-    {
-        $snapshot = $this->snapshotRepository->findByStoreId($storeId);
-
-        if (!$snapshot || !isset($snapshot->limits)) {
-            return null;
-        }
-
-        // Map feature keys to usage count keys
-        $usageKey = match ($feature) {
-            FeatureKeyEnum::PRODUCTS_MAX => 'products.count',
-            FeatureKeyEnum::STORES_MAX => 'stores.count',
-            default => null,
-        };
-
-        if (!$usageKey) {
-            return null;
-        }
-
-        return $snapshot->limits[$usageKey] ?? null;
     }
 
     /**

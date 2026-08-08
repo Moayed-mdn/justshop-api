@@ -40,11 +40,12 @@ class HandleSubscriptionUpdated
         $oldStatus = $subscription->status;
 
         // Check for out-of-order webhook (provider_synced_at protection)
-        $stripeUpdatedAt = Carbon::createFromTimestamp($stripeSubscription['created']);
-        if ($subscription->provider_synced_at && $stripeUpdatedAt < $subscription->provider_synced_at) {
+        // Use event timestamp, not subscription.created (which is fixed)
+        $eventCreatedAt = Carbon::createFromTimestamp($event['created']);
+        if ($subscription->provider_synced_at && $eventCreatedAt < $subscription->provider_synced_at) {
             Log::channel('billing')->warning('webhook.subscription.out_of_order', [
                 'subscription_id' => $subscription->id,
-                'stripe_updated_at' => $stripeUpdatedAt->toDateTimeString(),
+                'event_created_at' => $eventCreatedAt->toDateTimeString(),
                 'local_synced_at' => $subscription->provider_synced_at->toDateTimeString(),
             ]);
             return;

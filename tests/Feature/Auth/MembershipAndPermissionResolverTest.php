@@ -9,8 +9,10 @@ use App\Models\Store;
 use App\Models\User;
 use App\Services\Auth\Membership\MembershipResolver;
 use App\Services\Auth\PermissionResolver;
+use App\Support\FeatureFlags\FeatureFlag;
 use App\Support\Observability\RequestTraceContextManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +25,13 @@ use Tests\TestCase;
 class MembershipAndPermissionResolverTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Cache::flush();
+    }
 
     public function test_store_context_enrichment_uses_membership_resolver_consistently(): void
     {
@@ -49,8 +58,8 @@ class MembershipAndPermissionResolverTest extends TestCase
 
     public function test_permission_resolution_preserves_current_outcome_while_dual_resolving(): void
     {
-        config()->set('migration.rbac.dual_resolve', true);
-        config()->set('migration.rbac.resolver_v2', false);
+        $this->setFlag('rbac.dual_resolve', true);
+        $this->setFlag('rbac.resolver.v2', false);
 
         Log::spy();
 
@@ -101,5 +110,10 @@ class MembershipAndPermissionResolverTest extends TestCase
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
         return [$user->fresh(), $store->fresh(), $membershipId];
+    }
+
+    private function setFlag(string $flag, mixed $value): void
+    {
+        FeatureFlag::setValue($flag, $value);
     }
 }

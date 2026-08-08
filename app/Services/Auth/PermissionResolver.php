@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Auth\Permission\LegacyPermissionAuthority;
 use App\Services\Auth\Permission\NormalizedPermissionAuthority;
 use App\Services\Auth\Permission\PermissionResolutionTelemetry;
+use App\Support\FeatureFlags\FeatureFlag;
 
 class PermissionResolver
 {
@@ -32,8 +33,8 @@ class PermissionResolver
     public function resolveResult(User $user, ?Store $activeStore): CapabilityResolutionResult
     {
         $legacy = $this->legacyAuthority->resolve($user, $activeStore);
-        $useNormalizedAuthority = (bool) config('migration.rbac.resolver_v2', false);
-        $dualResolve = (bool) config('migration.rbac.dual_resolve', false);
+        $useNormalizedAuthority = FeatureFlag::enabled('rbac.resolver.v2');
+        $dualResolve = FeatureFlag::enabled('rbac.dual_resolve');
 
         if (!$useNormalizedAuthority) {
             $this->telemetry->recordResolved($user, $legacy, 'legacy');

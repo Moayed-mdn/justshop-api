@@ -72,6 +72,8 @@ class AuthController extends \App\Http\Controllers\Controller
                 }
             }
 
+            $session = $request->hasSession() ? $request->session() : null;
+
             $payload = [
                 'sessionId' => $debugSessionId,
                 'runId' => 'pre-fix',
@@ -80,12 +82,12 @@ class AuthController extends \App\Http\Controllers\Controller
                 'msg' => '[DEBUG] Merchant bootstrap controller resolved authenticated user',
                 'data' => [
                     'route_name' => $request->route()?->getName(),
-                    'session_id' => $request->session()->getId(),
+                    'session_id' => $session?->getId(),
                     'request_user_id' => $request->user()?->id,
                     'default_guard' => Auth::getDefaultDriver(),
                     'web_guard_check' => Auth::guard('web')->check(),
                     'merchant_guard_check' => Auth::guard('merchant')->check(),
-                    'session_auth_domain' => $request->session()->get('auth_domain'),
+                    'session_auth_domain' => $session?->get('auth_domain'),
                 ],
                 'ts' => (int) round(microtime(true) * 1000),
             ];

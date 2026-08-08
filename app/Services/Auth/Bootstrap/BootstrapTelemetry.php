@@ -7,6 +7,7 @@ namespace App\Services\Auth\Bootstrap;
 use App\DTOs\Auth\Bootstrap\BootstrapResolutionMetadata;
 use App\DTOs\Auth\Bootstrap\GetBootstrapResponseDTO;
 use App\Models\User;
+use App\Support\FeatureFlags\FeatureFlag;
 use Illuminate\Support\Facades\Log;
 
 class BootstrapTelemetry
@@ -38,12 +39,7 @@ class BootstrapTelemetry
             'actor_id' => (int) $user->id,
             'authority_path' => $authorityPath,
             'response_version' => $responseVersion,
-            'flag_state' => [
-                'bootstrap.v2.enabled' => (bool) config('migration.bootstrap.v2_enabled', false),
-                'bootstrap.shadow_read' => (bool) config('migration.bootstrap.shadow_read', false),
-                'rbac.resolver.v2' => (bool) config('migration.rbac.resolver_v2', false),
-                'rbac.dual_resolve' => (bool) config('migration.rbac.dual_resolve', false),
-            ],
+            'flag_state' => $this->flagState(),
         ]);
     }
 
@@ -56,12 +52,7 @@ class BootstrapTelemetry
             'store_count' => count($response->stores),
             'has_active_store' => $response->activeStore !== null,
             'permission_count' => count($response->permissions),
-            'flag_state' => [
-                'bootstrap.v2.enabled' => (bool) config('migration.bootstrap.v2_enabled', false),
-                'bootstrap.shadow_read' => (bool) config('migration.bootstrap.shadow_read', false),
-                'rbac.resolver.v2' => (bool) config('migration.rbac.resolver_v2', false),
-                'rbac.dual_resolve' => (bool) config('migration.rbac.dual_resolve', false),
-            ],
+            'flag_state' => $this->flagState(),
             ...$dependencyProfile,
             ...$metadata->toLogContext(),
         ]);
@@ -82,5 +73,18 @@ class BootstrapTelemetry
         }
 
         return '>50.0ms';
+    }
+
+    /**
+     * @return array<string, bool>
+     */
+    private function flagState(): array
+    {
+        return [
+            'bootstrap.v2.enabled' => FeatureFlag::enabled('bootstrap.v2.enabled'),
+            'bootstrap.shadow_read' => FeatureFlag::enabled('bootstrap.shadow_read'),
+            'rbac.resolver.v2' => FeatureFlag::enabled('rbac.resolver.v2'),
+            'rbac.dual_resolve' => FeatureFlag::enabled('rbac.dual_resolve'),
+        ];
     }
 }

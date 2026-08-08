@@ -75,6 +75,9 @@ class BillingReconcileCommand extends Command
         // Display summary
         $this->displaySummary($results);
 
+        // Check for duplicate provider_subscription_id (critical data integrity issue)
+        $this->checkForDuplicates($isDryRun);
+
         // Display webhook health
         $this->displayWebhookHealth();
 
@@ -278,5 +281,77 @@ class BillingReconcileCommand extends Command
         $this->newLine();
         $this->info('✓ Reconciliation complete');
         $this->info('═══════════════════════════════════════════════');
+    }
+
+    /**
+     * Check for duplicate provider_subscription_id across ALL statuses.
+     * 
+     * This is a critical data integrity check. The UNIQUE constraint prevents
+     * new duplicates, but this detects existing corruption from the old bug.
+     */
+    private function checkForDuplicates(bool $isDryRun): void
+    {
+        $this->newLine();
+        $this->info('─────────────────────────────────────────────────');
+        $this->info('Duplicate Detection (ALL statuses)');
+        $this->info('─────────────────────────────────────────────────');
+
+        // Find all provider_subscription_ids that appear more than once
+        // Check ALL statuses (including canceled) to find data corruption
+        $duplicates = Subscription::select('provider_subscription_id')
+            ->whereNotNull('provider_subscription_id')
+            ->groupBy('provider_subscription_id')
+            ->havingRaw('COUNT(*) > 1')
+            ->pluck('provider_subscription_id');
+
+        if ($duplicates->isEmpty()) {
+            $this->info('✓ No duplicate provider_subscription_id found');
+            return;
+        }
+
+        $this->error("⚠ Found {$duplicates->count()} duplicate provider_subscription_id values!");
+        $this->newLine();
+
+        foreach ($duplicates as $providerSubId) {
+            $affectedSubscriptions = Subscription::where('provider_subscription_id', $providerSubId)
+                ->orderBy('id')
+                ->get();
+
+            $this->warn("Provider Subscription ID: {$providerSubId}");
+            $this->line("  Affects {$affectedSubscriptions->count()} local subscriptions:");
+            
+            foreach ($affectedSubscriptions as $sub) {
+                $this->line("    - Subscription #{$sub->id}: Plan #{$sub->plan_id}, Status: {$sub->status}, Created: {$sub->created_at}");
+            }
+
+            if (!$isDryRun) {
+                // Auto-fix strategy: Keep the ACTIVE/TRIALING one, clear provider_subscription_id from others
+                $keepSubscription = $affectedSubscriptions->whereIn('status', ['active', 'trialing'])->first()
+                    ?? $affectedSubscriptions->first(); // fallback to first if none active
+
+                $this->info("  → Keeping Subscription #{$keepSubscription->id} (Status: {$keepSubscription->status})");
+
+                foreach ($affectedSubscriptions as $sub) {
+                    if ($sub->id !== $keepSubscription->id) {
+                        $sub->update(['provider_subscription_id' => null]);
+                        $this->info("  → Cleared provider_subscription_id from Subscription #{$sub->id}");
+                        
+                        Log::channel('billing')->warning('billing.duplicate_fixed', [
+                            'provider_subscription_id' => $providerSubId,
+                            'cleared_from_subscription_id' => $sub->id,
+                            'kept_subscription_id' => $keepSubscription->id,
+                        ]);
+                    }
+                }
+            } else {
+                $this->warn("  → DRY RUN: Would fix by keeping one subscription and clearing others");
+            }
+
+            $this->newLine();
+        }
+
+        if (!$isDryRun) {
+            $this->info("✓ Fixed {$duplicates->count()} duplicate(s)");
+        }
     }
 }

@@ -4,6 +4,9 @@ namespace App\Actions\Admin\Product;
 
 use App\DTOs\Admin\Product\CreateProductDTO;
 use App\Models\Product;
+use App\Models\StoreEntitlementSnapshot;
+use App\Enums\Entitlement\FeatureKeyEnum;
+use App\Exceptions\Entitlement\QuotaExceededException;
 use App\Repositories\Admin\Product\AdminProductRepository;
 use App\Repositories\Admin\Tag\AdminTagRepository;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +29,29 @@ class CreateProductAction
         $this->validateTagStoreScope($dto->tags, $dto->storeId);
 
         return DB::transaction(function () use ($dto) {
+
+            // ── 0. Atomic quota guard, inside same transaction ──────────
+            // lockForUpdate() here serializes any concurrent product creation
+            // requests for the same store on this row specifically, same pattern
+            // as CreateStoreAction.
+            $snapshot = StoreEntitlementSnapshot::where('store_id', $dto->storeId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($snapshot) {
+                $limit = $snapshot->features[FeatureKeyEnum::PRODUCTS_MAX->value] ?? null;
+
+                if ($limit !== null && $snapshot->products_count >= $limit) {
+                    throw new QuotaExceededException(
+                        featureKey: FeatureKeyEnum::PRODUCTS_MAX->value,
+                        limit: $limit,
+                    );
+                }
+            }
+            // $snapshot === null means no active subscription — this should be
+            // blocked earlier (via FeatureGateService::ensureWriteAccess in
+            // middleware/policy). Don't duplicate that check here, only check the counter.
+            // ─────────────────────────────────────────────────────────
 
             // ── 1. Create the product record ───────────────────
             $product = $this->repository->create([

@@ -138,10 +138,15 @@ class PlatformUsersSeeder extends Seeder
         ];
 
         // Create users using factory for more diverse data
-        $this->command->info('Creating 40 additional users via factory...');
+        // Reduced from 40 to 10 for faster seeding (set env SEED_LARGE_DATASET=true for full data)
+        $factoryUserCount = env('SEED_LARGE_DATASET', false) ? 40 : 10;
+        $this->command->info("Creating {$factoryUserCount} additional users via factory...");
         
-        $factoryUsers = User::factory(40)->create([
-            'password' => Hash::make('password'),
+        // Pre-hash password once instead of per-user
+        $hashedPassword = Hash::make('password');
+        
+        $factoryUsers = User::factory($factoryUserCount)->create([
+            'password' => $hashedPassword,
             'email_verified_at' => now(),
         ]);
 
@@ -152,12 +157,16 @@ class PlatformUsersSeeder extends Seeder
             RoleEnum::CUSTOMER,
         ];
 
+        // Batch operations for better performance
+        $userUpdates = [];
+        $storeAttachments = [];
+
         foreach ($factoryUsers as $index => $user) {
             $role = $roles[array_rand($roles)];
             $isGlobalRole = $role === RoleEnum::CUSTOMER;
             $isActive = $index % 7 !== 0; // Every 7th user is suspended
             
-            $user->update(['is_active' => $isActive]);
+            $userUpdates[$user->id] = ['is_active' => $isActive];
 
             if ($isGlobalRole) {
                 // Global role (customer)
@@ -169,27 +178,42 @@ class PlatformUsersSeeder extends Seeder
                 $permissionRegistrar->setPermissionsTeamId($store->id);
                 $user->assignRole($role->value);
                 
-                // Attach to store
-                if (!$store->users()->where('user_id', $user->id)->exists()) {
-                    $storeRole = $role === RoleEnum::STORE_ADMIN 
-                        ? StoreRoleEnum::STORE_ADMIN 
-                        : StoreRoleEnum::STAFF;
-                    $store->users()->attach($user->id, ['role' => $storeRole->value]);
-                }
+                // Prepare batch attachment
+                $storeRole = $role === RoleEnum::STORE_ADMIN 
+                    ? StoreRoleEnum::STORE_ADMIN 
+                    : StoreRoleEnum::STAFF;
                 
-                $user->update(['last_active_store_id' => $store->id]);
+                if (!isset($storeAttachments[$store->id])) {
+                    $storeAttachments[$store->id] = [];
+                }
+                $storeAttachments[$store->id][$user->id] = ['role' => $storeRole->value];
+                
+                $userUpdates[$user->id]['last_active_store_id'] = $store->id;
             }
+        }
+
+        // Batch update users
+        foreach ($userUpdates as $userId => $updates) {
+            User::where('id', $userId)->update($updates);
+        }
+
+        // Batch attach to stores
+        foreach ($storeAttachments as $storeId => $users) {
+            Store::find($storeId)->users()->syncWithoutDetaching($users);
         }
 
         // Create named test users
         $this->command->info('Creating named test users...');
+        
+        // Re-use the same hashed password for all test users
+        $hashedPassword = Hash::make('password');
         
         foreach ($testUsers as $userData) {
             $user = User::updateOrCreate(
                 ['email' => $userData['email']],
                 [
                     'name' => $userData['name'],
-                    'password' => Hash::make('password'),
+                    'password' => $hashedPassword,
                     'onboarding_step' => $userData['role'] === RoleEnum::CUSTOMER 
                         ? null 
                         : OnboardingStepEnum::COMPLETED->value,

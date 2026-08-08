@@ -4,8 +4,8 @@ namespace App\Actions\Entitlement;
 
 use App\DTOs\Entitlement\RecomputeEntitlementsDTO;
 use App\Enums\Entitlement\EntitlementStatusEnum;
+use App\Enums\Entitlement\FeatureKeyEnum;
 use App\Models\BillingAccount;
-use App\Models\Product;
 use App\Models\Store;
 use App\Models\StoreEntitlementSnapshot;
 use App\Repositories\Entitlement\EntitlementSnapshotRepository;
@@ -19,51 +19,38 @@ class RecomputeEntitlementsAction
         private SubscriptionRepository $subscriptionRepository,
     ) {}
 
-    /**
-     * Recompute and materialize entitlements for a store.
-     * 
-     * This creates/updates the store_entitlement_snapshots record with:
-     * - Current subscription status
-     * - Plan features (limits and boolean flags)
-     * - Current usage counts
-     * - Access expiry timestamp
-     */
     public function execute(RecomputeEntitlementsDTO $dto): StoreEntitlementSnapshot
     {
         $billingAccount = BillingAccount::findOrFail($dto->billingAccountId);
-        $store = Store::findOrFail($dto->storeId);
+        Store::findOrFail($dto->storeId); // fail fast
 
-        // Get active subscription for this billing account
         $subscription = $this->subscriptionRepository->getActiveForAccount($dto->billingAccountId);
 
-        // Handle grandfathered stores
         if ($dto->isGrandfathered) {
             return $this->createGrandfatheredSnapshot($dto, $subscription, $billingAccount);
         }
 
-        // If no subscription, set to NONE status
         if (!$subscription) {
+            // No subscription: EnsureActiveSubscription/entitlement_status=NONE blocks write access
             return $this->snapshotRepository->upsert($dto->storeId, [
                 'billing_account_id' => $dto->billingAccountId,
                 'subscription_id' => null,
                 'plan_id' => null,
                 'entitlement_status' => EntitlementStatusEnum::NONE->value,
                 'features' => [],
-                'limits' => $this->getCurrentUsageCounts($dto->storeId, $billingAccount->owner_user_id),
                 'expires_at' => null,
             ]);
         }
 
-        // Derive entitlement status from subscription status
         $entitlementStatus = EntitlementStatusEnum::fromSubscriptionStatus($subscription->status);
-
-        // Materialize features from plan_features
         $features = $this->materializeFeatures($subscription->plan);
 
-        // Get current usage counts
-        $limits = $this->getCurrentUsageCounts($dto->storeId, $billingAccount->owner_user_id);
+        // stores.max is account-scoped (billing_accounts.stores_count),
+        // not store-scoped. Store it there, remove from snapshot to prevent
+        // duplication and stale reads.
+        $this->syncAccountScopedLimits($billingAccount, $features);
+        unset($features[FeatureKeyEnum::STORES_MAX->value]);
 
-        // Determine access expiry
         $expiresAt = match ($subscription->status->value) {
             'trialing' => $subscription->trial_ends_at,
             'active', 'canceled' => $subscription->current_period_ends_at,
@@ -71,14 +58,12 @@ class RecomputeEntitlementsAction
             default => null,
         };
 
-        // Upsert snapshot
         $snapshot = $this->snapshotRepository->upsert($dto->storeId, [
             'billing_account_id' => $dto->billingAccountId,
             'subscription_id' => $subscription->id,
             'plan_id' => $subscription->plan_id,
             'entitlement_status' => $entitlementStatus->value,
             'features' => $features,
-            'limits' => $limits,
             'expires_at' => $expiresAt,
         ]);
 
@@ -93,31 +78,22 @@ class RecomputeEntitlementsAction
         return $snapshot;
     }
 
-    /**
-     * Materialize plan features into a flat array structure.
-     * 
-     * Returns format:
-     * [
-     *     'products.max' => 1000,
-     *     'stores.max' => 1,
-     *     'analytics.advanced' => false,
-     *     'support.priority' => false,
-     * ]
-     */
     private function materializeFeatures($plan): array
     {
-        if (!$plan || !$plan->relationLoaded('features')) {
+        if (!$plan) {
+            return []; // Bug fix: was crashing on null
+        }
+
+        if (!$plan->relationLoaded('features')) {
             $plan = $plan->load('features');
         }
 
         $features = [];
-
         foreach ($plan->features as $feature) {
             $key = $feature->feature_key->value;
-
             $features[$key] = match ($feature->value_type) {
                 'limit' => $feature->limit_value,
-                'unlimited' => null, // null = unlimited
+                'unlimited' => null,
                 'boolean' => $feature->boolean_value,
                 default => null,
             };
@@ -127,64 +103,48 @@ class RecomputeEntitlementsAction
     }
 
     /**
-     * Get current usage counts for limits enforcement.
-     * 
-     * Returns format:
-     * [
-     *     'products.count' => 42,
-     *     'stores.count' => 1,
-     * ]
+     * Single source of truth for account-scoped limits.
+     * Currently: stores.max only.
      */
-    private function getCurrentUsageCounts(int $storeId, int $ownerUserId): array
+    private function syncAccountScopedLimits(BillingAccount $billingAccount, array $features): void
     {
-        // Products count for this store
-        $productsCount = Product::where('store_id', $storeId)->count();
+        $storesMax = array_key_exists(FeatureKeyEnum::STORES_MAX->value, $features)
+            ? $features[FeatureKeyEnum::STORES_MAX->value]
+            : null;
 
-        // Stores count for this owner (across all stores)
-        $storesCount = Store::where('owner_id', $ownerUserId)->count();
-
-        return [
-            'products.count' => $productsCount,
-            'stores.count' => $storesCount,
-        ];
+        if ($billingAccount->stores_max !== $storesMax) {
+            $billingAccount->update(['stores_max' => $storesMax]);
+        }
     }
 
-    /**
-     * Create entitlement snapshot for grandfathered store.
-     */
     private function createGrandfatheredSnapshot(
         RecomputeEntitlementsDTO $dto,
         $subscription,
         BillingAccount $billingAccount
     ): StoreEntitlementSnapshot {
-        // Grandfathered stores get GRANDFATHERED status with full access
         $entitlementStatus = EntitlementStatusEnum::GRANDFATHERED;
 
-        // Use subscription plan if exists, otherwise use default starter features
         if ($subscription && $subscription->plan) {
             $features = $this->materializeFeatures($subscription->plan);
             $planId = $subscription->plan_id;
             $subscriptionId = $subscription->id;
             $expiresAt = $subscription->current_period_ends_at;
         } else {
-            // Default to starter plan features for grandfathered accounts
             $features = $this->getDefaultStarterFeatures();
             $planId = null;
             $subscriptionId = null;
             $expiresAt = null;
         }
 
-        // Get current usage counts
-        $limits = $this->getCurrentUsageCounts($dto->storeId, $billingAccount->owner_user_id);
+        $this->syncAccountScopedLimits($billingAccount, $features);
+        unset($features[FeatureKeyEnum::STORES_MAX->value]);
 
-        // Upsert snapshot
         $snapshot = $this->snapshotRepository->upsert($dto->storeId, [
             'billing_account_id' => $dto->billingAccountId,
             'subscription_id' => $subscriptionId,
             'plan_id' => $planId,
             'entitlement_status' => $entitlementStatus->value,
             'features' => $features,
-            'limits' => $limits,
             'expires_at' => $expiresAt,
         ]);
 
@@ -199,17 +159,14 @@ class RecomputeEntitlementsAction
         return $snapshot;
     }
 
-    /**
-     * Get default starter features for grandfathered accounts without a plan.
-     */
     private function getDefaultStarterFeatures(): array
     {
         return [
-            'products.max' => 1000,
-            'stores.max' => 1,
-            'analytics.advanced' => false,
-            'api.access' => false,
-            'support.priority' => false,
+            FeatureKeyEnum::PRODUCTS_MAX->value => 1000,
+            FeatureKeyEnum::STORES_MAX->value => 1,
+            FeatureKeyEnum::ANALYTICS_ADVANCED->value => false,
+            FeatureKeyEnum::API_ACCESS->value => false,
+            FeatureKeyEnum::PRIORITY_SUPPORT->value => false,
         ];
     }
 }

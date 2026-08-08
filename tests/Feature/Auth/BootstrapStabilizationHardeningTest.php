@@ -9,9 +9,10 @@ use App\Enums\Store\StoreRoleEnum;
 use App\Enums\RoleEnum;
 use App\Models\Store;
 use App\Models\User;
+use App\Support\FeatureFlags\FeatureFlag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
-use Mockery;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -21,10 +22,17 @@ class BootstrapStabilizationHardeningTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Cache::flush();
+    }
+
     public function test_super_admin_bootstrap_parity_matches_legacy_and_records_timing_and_parity_counters(): void
     {
-        config()->set('migration.bootstrap.shadow_read', true);
-        config()->set('migration.bootstrap.v2_enabled', false);
+        $this->setFlag('bootstrap.shadow_read', true);
+        $this->setFlag('bootstrap.v2.enabled', false);
 
         Log::spy();
         app(PermissionRegistrar::class)->forgetCachedPermissions();
@@ -41,6 +49,7 @@ class BootstrapStabilizationHardeningTest extends TestCase
             'last_active_store_id' => null,
             'onboarding_step' => OnboardingStepEnum::COMPLETED,
         ]);
+        /** @var User $superAdmin */
         $superAdmin->assignRole($superAdminRole);
 
         $firstStore = Store::factory()->create(['name' => 'First Active Store']);
@@ -50,7 +59,7 @@ class BootstrapStabilizationHardeningTest extends TestCase
         $superAdmin->stores()->attach($secondStore, ['role' => RoleEnum::SUPER_ADMIN->value]);
         $superAdmin->update(['last_active_store_id' => $firstStore->id]);
 
-        $response = $this->actingAs($superAdmin)->getJson('/api/v1/users/auth/bootstrap');
+        $response = $this->withSession([])->actingAs($superAdmin)->getJson('/api/v1/users/auth/bootstrap');
 
         $response->assertOk()
             ->assertJsonPath('data.permissions', ['platform.settings.manage', 'platform.stores.view']);
@@ -157,6 +166,8 @@ class BootstrapStabilizationHardeningTest extends TestCase
 
         // Exclude dynamic session data from parity check
         unset($legacy['session'], $decomposed['session']);
+        // Exclude runtime feature mirrors because the test intentionally flips flags between calls.
+        unset($legacy['features'], $decomposed['features']);
         // Exclude timestamps that might drift by a second
         unset($legacy['user']['email_verified_at'], $decomposed['user']['email_verified_at']);
 
@@ -169,12 +180,17 @@ class BootstrapStabilizationHardeningTest extends TestCase
      */
     private function bootstrapPayload(User $user, bool $decomposed): array
     {
-        config()->set('migration.bootstrap.v2_enabled', $decomposed);
-        config()->set('migration.bootstrap.shadow_read', false);
+        $this->setFlag('bootstrap.v2.enabled', $decomposed);
+        $this->setFlag('bootstrap.shadow_read', false);
 
-        $response = $this->actingAs($user)->getJson('/api/v1/users/auth/bootstrap');
+        $response = $this->withSession([])->actingAs($user)->getJson('/api/v1/users/auth/bootstrap');
         $response->assertOk();
 
         return $response->json('data');
+    }
+
+    private function setFlag(string $flag, mixed $value): void
+    {
+        FeatureFlag::setValue($flag, $value);
     }
 }

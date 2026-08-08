@@ -2,6 +2,7 @@
 
 namespace App\Actions\Billing;
 
+use App\Enums\Entitlement\FeatureKeyEnum;
 use App\Models\User;
 use App\Repositories\Billing\BillingAccountRepository;
 use App\Repositories\Entitlement\EntitlementSnapshotRepository;
@@ -69,7 +70,16 @@ class GetBillingBootstrapAction
                 $activeStoreEntitlements = [
                     'status' => $snapshot->entitlement_status->value,
                     'features' => $snapshot->features,
-                    'limits' => $snapshot->limits,
+                    'usage' => [
+                        'products' => [
+                            'count' => $snapshot->products_count,
+                            'limit' => $snapshot->features[FeatureKeyEnum::PRODUCTS_MAX->value] ?? null,
+                        ],
+                        'stores' => [
+                            'count' => $billingAccount->stores_count,
+                            'limit' => $billingAccount->stores_max,
+                        ],
+                    ],
                     'expires_at' => $snapshot->expires_at?->toIso8601String(),
                 ];
             }

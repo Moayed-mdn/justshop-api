@@ -93,7 +93,7 @@ class CategoryPolicy
 
         $isAdmin = $this->isAdmin($user, $store);
         $hasPermission = $user->can($permission);
-
+       
         if ($isAdmin) {
             return $hasPermission;
         }

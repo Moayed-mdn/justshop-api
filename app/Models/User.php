@@ -112,9 +112,28 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $ability = $permission instanceof BackedEnum ? $permission->value : (string) $permission;
 
-        // Bypass store scoping for profile permissions only, force use of web guard
-        if (str_starts_with($ability, 'profile.')) {
-            return $this->spatieCheckPermissionTo($permission, 'web');
+        // Bypass store scoping for billing-account-scoped permissions (not store-specific)
+        // These permissions are checked against user's store roles, not store-specific resolution
+        $billingPermissions = ['profile.', 'subscription.', 'invoice.', 'billing.', 'payment_method.'];
+        foreach ($billingPermissions as $prefix) {
+            if (str_starts_with($ability, $prefix)) {
+                // First check global permissions
+                if ($this->spatieCheckPermissionTo($permission, 'web')) {
+                    return true;
+                }
+                
+                // Then check if user has the permission through any of their store roles
+                // This handles the case where billing permissions are assigned to store_admin role
+                $storeRoles = $this->stores()->get()->pluck('pivot.role')->unique();
+                foreach ($storeRoles as $roleName) {
+                    $role = \Spatie\Permission\Models\Role::where('name', $roleName)->first();
+                    if ($role && $role->hasPermissionTo($permission, 'web')) {
+                        return true;
+                    }
+                }
+                
+                return false;
+            }
         }
 
         if (! app()->bound('currentStore')) {
@@ -240,6 +259,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Store::class, 'store_user')
             ->withPivot('id', 'role')
             ->withTimestamps();
+    }
+
+    public function billingAccount(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(BillingAccount::class, 'owner_user_id');
     }
 
     public function carts(): \Illuminate\Database\Eloquent\Relations\HasMany

@@ -174,6 +174,12 @@ class AppServiceProvider extends ServiceProvider
         // Register Theme observer for cache invalidation
         \App\Models\Theme\Theme::observe(\App\Observers\ThemeObserver::class);
 
+        // Register Product observer for atomic entitlement count updates
+        \App\Models\Product::observe(\App\Observers\ProductObserver::class);
+
+        // Register Store observer for atomic entitlement count updates
+        \App\Models\Store::observe(\App\Observers\StoreObserver::class);
+
           // Step 4 Hardening: Queue Isolation with Safety Assertions
           // Automatically clear tenant context after every job execution to prevent state leakage.
           Queue::after(function (\Illuminate\Queue\Events\JobProcessed $event) {
