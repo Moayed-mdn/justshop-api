@@ -17,7 +17,7 @@ class UpdateActiveStoreDTO
     {
         return new self(
             userId: (int) $request->user()->id,
-            storeId: (int) $request->validated('store_id'),
+            storeId: (int) $request->input('store_id'),
         );
     }
 }
