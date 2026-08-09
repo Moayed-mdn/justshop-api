@@ -98,30 +98,41 @@ class SubscriptionController extends Controller
 
         $this->authorize('viewUsage', [SubscriptionPolicy::class, $billingAccount]);
 
-        // Get all store entitlement snapshots for this account
+        return $this->success(['usage' => $this->resolveUsage($billingAccount)]);
+    }
+
+    /**
+     * Build the current usage/limits payload for a billing account.
+     *
+     * Bug fix: previously used $snapshots->first() with no ordering, which
+     * returned an arbitrary (effectively oldest-inserted) row. For multi-store
+     * accounts this could report a stale products limit even right after a
+     * successful plan change. Now takes the most-recently-refreshed snapshot.
+     *
+     * IMPORTANT: pass a FRESH $billingAccount (->fresh()) when calling this
+     * right after a mutation (upgrade/downgrade), since stores_max was just
+     * updated in the DB by RecomputeEntitlementsAction and the in-memory
+     * instance loaded earlier in the request won't reflect that automatically.
+     */
+    private function resolveUsage(\App\Models\BillingAccount $billingAccount): array
+    {
         $snapshots = \App\Models\StoreEntitlementSnapshot::where(
             'billing_account_id',
             $billingAccount->id
-        )->with('store')->get();
+        )->get();
 
-        $usage = [
+        $latestSnapshot = $snapshots->sortByDesc('refreshed_at')->first();
+
+        return [
             'stores' => [
-                // Read from billing_accounts table (account-level counter)
                 'count' => $billingAccount->stores_count,
-                // Read stores.max from its new location (billing_accounts.stores_max)
-                // after migration moved it from features JSON to dedicated column
                 'limit' => $billingAccount->stores_max,
             ],
             'products' => [
-                // Read from atomic columns in snapshots (store-level counters)
                 'count' => $snapshots->sum('products_count'),
-                // Don't use ?? 0 fallback - let null pass through for unlimited plans
-                // (null means unlimited per system convention used in FeatureGateService)
-                'limit' => $snapshots->first()?->features[\App\Enums\Entitlement\FeatureKeyEnum::PRODUCTS_MAX->value] ?? null,
+                'limit' => $latestSnapshot?->features[\App\Enums\Entitlement\FeatureKeyEnum::PRODUCTS_MAX->value] ?? null,
             ],
         ];
-
-        return $this->success(['usage' => $usage]);
     }
 
     /**
@@ -157,7 +168,12 @@ class SubscriptionController extends Controller
             ));
 
             return $this->success(
-                data: ['subscription' => $subscription->load('plan')],
+                data: [
+                    'subscription' => $subscription->load('plan'),
+                    // Bug fix: return fresh usage/limits so the client can update
+                    // "Usage & Limits" immediately without a second request.
+                    'usage' => $this->resolveUsage($billingAccount->fresh()),
+                ],
                 message: 'Plan upgraded successfully'
             );
         } catch (\DomainException $e) {
@@ -215,7 +231,10 @@ class SubscriptionController extends Controller
             ));
 
             return $this->success(
-                data: ['subscription' => $subscription->load(['plan', 'pendingPlan'])],
+                data: [
+                    'subscription' => $subscription->load(['plan', 'pendingPlan']),
+                    'usage' => $this->resolveUsage($billingAccount->fresh()),
+                ],
                 message: 'Plan downgrade scheduled for period end'
             );
         } catch (\DomainException $e) {
