@@ -10,6 +10,8 @@ return new class extends Migration
     {
         Schema::create('blog_tags', function (Blueprint $table) {
             $table->id();
+            $table->json('name');
+            $table->json('slug');
             $table->timestamps();
         });
     }

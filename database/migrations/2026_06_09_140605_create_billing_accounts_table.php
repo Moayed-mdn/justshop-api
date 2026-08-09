@@ -20,7 +20,9 @@ return new class extends Migration
             $table->string('default_currency', 3)->default('USD');
             $table->string('tax_id')->nullable();
             $table->string('status')->default('active'); // BillingAccountStatusEnum
-            $table->boolean('trial_used')->default(false); // prevents trial gaming
+            $table->boolean('trial_used')->default(false);
+            $table->unsignedInteger('stores_count')->default(0);
+            $table->unsignedInteger('stores_max')->nullable(); // prevents trial gaming
             $table->json('metadata')->nullable();
             $table->timestamps();
             $table->softDeletes();

@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -16,12 +17,18 @@ return new class extends Migration
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
             $table->string('locale',5);
             $table->string('name');
-            $table->string('description');
+            $table->text('description')->nullable();
+            $table->string('seo_title')->nullable();
+            $table->text('seo_description')->nullable();
             $table->string('slug');
             $table->timestamps();
 
             $table->unique(['product_id','locale']);
             $table->unique(['slug','locale']);
+
+            if (DB::getDriverName() !== 'sqlite') {
+                $table->fullText(['name', 'description'], 'pt_search_fulltext');
+            }
         });
     }
 

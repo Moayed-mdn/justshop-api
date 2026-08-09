@@ -18,6 +18,7 @@ return new class extends Migration
     {
         Schema::create('platform_marketing_pages', function (Blueprint $table) {
             $table->id();
+            $table->string('type', 50)->nullable();
             
             // Content fields (JSON-localized)
             $table->json('title');
@@ -47,6 +48,8 @@ return new class extends Migration
             $table->index('status');
             $table->index(['status', 'published_at']);
             $table->index('sort_order');
+            $table->unique('type', 'platform_marketing_pages_type_unique');
+            $table->index('type', 'platform_marketing_pages_type_index');
         });
     }
 

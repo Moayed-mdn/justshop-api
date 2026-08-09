@@ -26,7 +26,7 @@ return new class extends Migration
             $table->json('title');
             $table->json('slug');
             $table->json('excerpt')->nullable();
-            $table->json('content');
+            $table->json('content')->nullable();
             
             // Publishing
             $table->string('status'); // draft, published, scheduled
@@ -36,8 +36,10 @@ return new class extends Migration
             $table->json('seo')->nullable();
             
             // Metadata
+            $table->foreignId('page_template_id')->nullable()->constrained('page_templates')->nullOnDelete();
             $table->string('template')->nullable(); // landing, campaign, promotion, generic
             $table->integer('sort_order')->default(0);
+            $table->boolean('is_homepage')->default(false);
             
             // Audit
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
@@ -50,6 +52,8 @@ return new class extends Migration
             $table->index(['store_id', 'status']);
             $table->index(['store_id', 'status', 'published_at']);
             $table->index(['store_id', 'sort_order']);
+            $table->index(['store_id', 'is_homepage', 'status']);
+            $table->index('page_template_id');
         });
     }
 

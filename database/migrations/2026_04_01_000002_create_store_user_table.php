@@ -17,6 +17,13 @@ return new class extends Migration
                 ->constrained('users')
                 ->cascadeOnDelete();
             $table->string('role');
+            $table->string('lifecycle_status')
+                ->default('active')
+                ->index()
+                ->comment('Wave 6: MembershipLifecycleEnum value');
+            $table->timestamp('lifecycle_changed_at')->nullable();
+            $table->string('lifecycle_changed_by_actor_type')->nullable();
+            $table->unsignedBigInteger('lifecycle_changed_by_actor_id')->nullable();
             $table->timestamps();
 
             $table->unique(['store_id', 'user_id']);

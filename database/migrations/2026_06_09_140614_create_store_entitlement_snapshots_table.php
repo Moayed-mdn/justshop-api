@@ -20,7 +20,7 @@ return new class extends Migration
 
             $table->string('entitlement_status');   // EntitlementStatusEnum
             $table->json('features');               // materialized {"products.max": 1000, "analytics.advanced": false}
-            $table->json('limits')->nullable();     // current usage {"products.count": 42, "stores.count": 1}
+            $table->unsignedInteger('products_count')->default(0);
             $table->timestamp('expires_at')->nullable();    // mirrors subscription access boundary
             $table->timestamp('refreshed_at')->nullable();
 

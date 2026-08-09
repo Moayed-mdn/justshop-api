@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -23,6 +24,9 @@ return new class extends Migration
             $table->string('slug');
             $table->timestamps();
             $table->unique(['tag_id', 'locale']);
+            if (DB::getDriverName() !== 'sqlite') {
+                $table->fullText(['name'], 'tags_search_fulltext');
+            }
             $table->unique(['locale', 'slug']);
         });
     }

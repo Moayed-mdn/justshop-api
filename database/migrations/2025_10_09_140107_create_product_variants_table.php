@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->string('sku')->unique();
+            $table->string('barcode', 100)->nullable();
             $table->decimal('price', 12, 2);
             $table->decimal('compare_at_price', 12, 2)->nullable();
             $table->decimal('cost_price', 12, 2)->nullable();
@@ -24,6 +25,8 @@ return new class extends Migration
             $table->date('manufacture_date')->nullable();
             $table->date('expiry_date')->nullable();
             $table->string('batch_number')->nullable();
+            $table->decimal('weight', 10, 3)->nullable();
+            $table->string('weight_unit', 10)->nullable();
             $table->unsignedTinyInteger('position')->default(0);
             $table->boolean('is_active')->default(true);
             $table->softDeletes();

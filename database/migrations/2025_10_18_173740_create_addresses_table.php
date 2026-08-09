@@ -13,9 +13,12 @@ return new class extends Migration
     {
         Schema::create('addresses', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('name')->nullable()->comment('Friendly name like Home or Office');
             $table->string('type')->default('shipping');
-            $table->boolean('is_default')->default(false);
+            $table->boolean('is_default_shipping')->default(false);
+            $table->boolean('is_default_billing')->default(false);
             $table->string('first_name');
             $table->string('last_name');
             $table->string('company')->nullable();
@@ -32,6 +35,11 @@ return new class extends Migration
             $table->text('delivery_instructions')->nullable();
             $table->softDeletes();
             $table->timestamps();
+            $table->index('store_id');
+            $table->index(['store_id', 'id']);
+            $table->index(['user_id', 'is_default_shipping']);
+            $table->index(['user_id', 'is_default_billing']);
+            $table->index(['user_id', 'store_id']);
         });
     }
 

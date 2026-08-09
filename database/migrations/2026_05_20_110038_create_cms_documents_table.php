@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('cms_documents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('store_id')->constrained()->cascadeOnDelete();
             $table->foreignId('section_id')->nullable()->constrained('cms_document_sections')->nullOnDelete();
             $table->foreignId('parent_id')->nullable()->constrained('cms_documents')->nullOnDelete();
             $table->string('version')->nullable();
@@ -28,17 +27,12 @@ return new class extends Migration
             $table->timestamp('published_at')->nullable();
 
             // SEO fields
-            $table->json('meta_title')->nullable();
-            $table->json('meta_description')->nullable();
-            $table->json('canonical_url')->nullable();
-            $table->json('og_image')->nullable();
-            $table->json('robots')->nullable();
-            $table->json('index_controls')->nullable();
+            $table->json('seo')->nullable();
 
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index(['store_id', 'is_published', 'published_at']);
+            $table->index(['is_published', 'published_at']);
             $table->index('section_id');
         });
     }

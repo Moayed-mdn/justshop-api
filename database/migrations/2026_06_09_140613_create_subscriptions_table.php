@@ -51,6 +51,7 @@ return new class extends Migration
 
             $table->index(['billing_account_id', 'status']);
             $table->index(['provider', 'provider_subscription_id']);
+            $table->unique('provider_subscription_id');
             $table->index('status');
             $table->index('trial_ends_at');
             $table->index('current_period_ends_at');

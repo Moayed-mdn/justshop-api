@@ -13,7 +13,6 @@ return new class extends Migration
     {
         Schema::create('cms_document_sections', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('store_id')->constrained()->cascadeOnDelete();
             $table->foreignId('parent_id')->nullable()->constrained('cms_document_sections')->nullOnDelete();
             $table->string('version')->nullable();
             $table->json('title');
@@ -25,7 +24,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->index(['store_id', 'is_published', 'published_at']);
+            $table->index(['is_published', 'published_at']);
         });
     }
 

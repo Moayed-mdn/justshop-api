@@ -16,7 +16,8 @@ return new class extends Migration
             $table->foreignId('template_id')->constrained('theme_templates')->onDelete('cascade');
             $table->foreignId('section_id')->constrained('theme_sections')->onDelete('cascade');
             $table->integer('position')->default(0); // Display order of section within template
-            $table->json('overrides')->nullable(); // Template-specific overrides for section settings
+            $table->json('overrides')->nullable();
+            $table->boolean('is_enabled')->default(true); // Template-specific overrides for section settings
             $table->timestamps();
 
             // Indexes

@@ -10,6 +10,11 @@ return new class extends Migration
     {
         Schema::create('blog_posts', function (Blueprint $table) {
             $table->id();
+            $table->json('title');
+            $table->json('slug');
+            $table->json('excerpt')->nullable();
+            $table->json('content');
+            $table->json('seo')->nullable();
             $table->foreignId('author_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('blog_category_id')->nullable()->constrained('blog_categories')->nullOnDelete();
             $table->boolean('featured')->default(false);

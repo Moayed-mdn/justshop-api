@@ -11,6 +11,7 @@ return new class extends Migration
     {
         Schema::create('reviews', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
             $table->foreignId('order_id')->nullable()->constrained()->nullOnDelete(); // Optional: only allow reviews from verified purchases
@@ -22,6 +23,8 @@ return new class extends Migration
             $table->integer('helpful_count')->default(0);
             $table->softDeletes();
             $table->timestamps();
+            $table->index('store_id');
+            $table->index(['store_id', 'id']);
 
             $table->unique(['user_id', 'product_id']); // one review per user per product
             $table->index(['product_id', 'rating']);    // fast avg calculation

@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('cart_items', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('store_id')->nullable()->constrained('stores')->cascadeOnDelete();
             $table->foreignId('cart_id')->constrained()->onDelete('cascade');
             $table->foreignId('product_variant_id')->constrained()->onDelete('cascade');
             $table->integer('quantity')->default(1);
@@ -20,6 +21,8 @@ return new class extends Migration
             $table->json('attributes')->nullable(); // Selected variant attributes
             $table->softDeletes();
             $table->timestamps();
+            $table->index('store_id');
+            $table->index(['store_id', 'id']);
             
             $table->unique(['cart_id', 'product_variant_id']);
         });
