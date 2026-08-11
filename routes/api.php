@@ -243,6 +243,7 @@ Route::prefix('/v1/merchant')
         require 'api/v1/merchant/theme.php';
         require 'api/v1/merchant/billing.php'; // Phase 3: Subscription & Billing
         require 'api/v1/merchant/shipping.php'; // Shipping Management
+        require 'api/v1/merchant/stripe-connect.php'; // Stripe Connect Onboarding
     });
 
 // ── 3. STOREFRONT CONTEXT ────────────────────────────────────────────────
@@ -276,6 +277,14 @@ Route::prefix('/v1/storefront')
         require 'api/v1/storefront/checkout.php';
         require 'api/v1/storefront/search.php';
         require 'api/v1/storefront/homepage.php';
+    });
+
+// Storefront webhooks (no auth/identity middleware - Stripe signature verification only)
+Route::middleware([
+   //  'web',
+])
+    ->group(function (): void {
+        require 'api/v1/storefront/webhooks.php';
     });
 
 Route::prefix('/v1/storefront/account')

@@ -46,6 +46,12 @@ class Store extends Model
         'provisioning_last_error',
         'is_grandfathered',
         'grandfathered_until',
+        'stripe_account_id',
+        'stripe_account_type',
+        'stripe_details_submitted',
+        'stripe_charges_enabled',
+        'stripe_payouts_enabled',
+        'stripe_onboarded_at',
     ];
 
     protected function casts(): array
@@ -66,6 +72,10 @@ class Store extends Model
             'is_grandfathered' => 'boolean',
             'grandfathered_until' => 'datetime',
             'address_settings' => 'array',
+            'stripe_details_submitted' => 'boolean',
+            'stripe_charges_enabled' => 'boolean',
+            'stripe_payouts_enabled' => 'boolean',
+            'stripe_onboarded_at' => 'datetime',
         ];
     }
 
@@ -248,5 +258,26 @@ class Store extends Model
             get: fn (?string $value): ?string => MediaUrl::resolve($value),
             set: fn (?string $value): ?string => MediaUrl::normalizeStorablePath($value),
         );
+    }
+
+    // ── Stripe Connect Helpers ────────────────────────────────
+
+    /**
+     * Check if the store has a Stripe Connect account linked.
+     */
+    public function hasStripeAccount(): bool
+    {
+        return !empty($this->stripe_account_id);
+    }
+
+    /**
+     * Check if the store can receive payments via Stripe Connect.
+     * Requires a linked account with charges enabled.
+     * Payouts may still be pending review, but funds are safely held on the connected account.
+     */
+    public function canReceivePayments(): bool
+    {
+        return $this->hasStripeAccount()
+            && $this->stripe_charges_enabled;
     }
 }

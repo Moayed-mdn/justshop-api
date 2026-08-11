@@ -264,7 +264,7 @@ class EnhancedCheckoutService
             }
 
             // Create Stripe PaymentIntent
-            $paymentIntent = $this->stripe->paymentIntents->create([
+            $paymentIntentParams = [
                 'amount' => (int)($total * 100), // Convert to cents
                 'currency' => strtolower($store->currency ?? 'usd'),
                 'metadata' => [
@@ -273,7 +273,35 @@ class EnhancedCheckoutService
                     'user_id' => $user->id,
                 ],
                 'description' => "Order #{$order->order_number} from {$store->name}",
-            ]);
+            ];
+
+            // Add Stripe Connect split payment if store can receive payments
+            if ($store->canReceivePayments()) {
+                $platformFeePercent = config('services.stripe.platform_fee_percent', 3.0);
+                $applicationFeeAmount = (int) round($total * $platformFeePercent / 100 * 100);
+
+                $paymentIntentParams['application_fee_amount'] = $applicationFeeAmount;
+                $paymentIntentParams['transfer_data'] = [
+                    'destination' => $store->stripe_account_id,
+                ];
+
+                Log::info('Creating PaymentIntent with split payment', [
+                    'order_id' => $order->id,
+                    'total' => $total,
+                    'platform_fee_percent' => $platformFeePercent,
+                    'application_fee_amount' => $applicationFeeAmount,
+                    'destination' => $store->stripe_account_id,
+                ]);
+            } else {
+                // DECISION: Block checkout when store cannot receive payments
+                throw new BaseApiException(
+                    message: 'This store has not completed payment setup. Please contact the merchant.',
+                    statusCode: 422,
+                    errorCode: \App\Enums\ErrorCode::SYS_001->value
+                );
+            }
+
+            $paymentIntent = $this->stripe->paymentIntents->create($paymentIntentParams);
 
             // Store PaymentIntent ID
             $order->update([

@@ -45,6 +45,9 @@ return [
         'key'            => env('STRIPE_KEY'),
         'secret'         => env('STRIPE_SECRET'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        'ecommerce_webhook_secret' => env('STRIPE_ECOMMERCE_WEBHOOK_SECRET'),
+        'platform_fee_percent' => env('STRIPE_PLATFORM_FEE_PERCENT', 3.0),
+        'connect_return_base_url' => env('STRIPE_CONNECT_RETURN_BASE_URL', env('FRONTEND_URL', 'http://localhost:3000')),
     ],
 
 
