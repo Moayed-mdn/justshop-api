@@ -57,15 +57,33 @@ class SubscriptionController extends Controller
         $subscription = $this->subscriptionRepo->getActiveForAccount($billingAccount->id);
 
         if (!$subscription) {
+            // Check for pending checkout even if no active subscription
+            $incompleteSubscription = $this->subscriptionRepo->getLatestIncompleteForAccount($billingAccount->id);
+
             return $this->success([
                 'subscription' => null,
                 'has_active_subscription' => false,
+                'pending_checkout' => $incompleteSubscription ? [
+                    'subscription_id' => $incompleteSubscription->id,
+                    'plan_id' => $incompleteSubscription->plan_id,
+                    'plan_price_id' => $incompleteSubscription->plan_price_id,
+                    'created_at' => $incompleteSubscription->created_at,
+                ] : null,
             ]);
         }
+
+        // Check for pending checkout alongside active subscription
+        $incompleteSubscription = $this->subscriptionRepo->getLatestIncompleteForAccount($billingAccount->id);
 
         return $this->success([
             'subscription' => $subscription->load(['plan.prices', 'planPrice', 'pendingPlan']),
             'has_active_subscription' => true,
+            'pending_checkout' => $incompleteSubscription ? [
+                'subscription_id' => $incompleteSubscription->id,
+                'plan_id' => $incompleteSubscription->plan_id,
+                'plan_price_id' => $incompleteSubscription->plan_price_id,
+                'created_at' => $incompleteSubscription->created_at,
+            ] : null,
         ]);
     }
 

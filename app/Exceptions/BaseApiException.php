@@ -29,4 +29,14 @@ class BaseApiException extends Exception
             'errors' => $this->errors ?? new \stdClass(),
         ], $this->statusCode);
     }
+
+    public function getErrorCode(): string
+    {
+        return $this->errorCode;
+    }
+
+    public function getStatusCode(): int
+    {
+        return $this->statusCode;
+    }
 }
