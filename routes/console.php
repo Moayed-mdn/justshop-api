@@ -2,6 +2,7 @@
 
 use App\Console\Commands\Billing\BillingApplyScheduledDowngradesCommand;
 use App\Console\Commands\Billing\BillingReconcileCommand;
+use App\Console\Commands\Billing\ExpireStaleIncompleteSubscriptionsCommand;
 use App\Console\Commands\Billing\ExpireTrialsCommand;
 use App\Console\Commands\Billing\ExpireGracePeriodsCommand;
 use Illuminate\Foundation\Inspiring;
@@ -24,6 +25,12 @@ Schedule::command(ExpireTrialsCommand::class)
 Schedule::command(ExpireGracePeriodsCommand::class)
     ->hourly()
     ->name('billing-expire-grace-periods')
+    ->withoutOverlapping(1800) // Prevent overlapping for 30 minutes
+    ->runInBackground();
+
+Schedule::command(ExpireStaleIncompleteSubscriptionsCommand::class)
+    ->hourly()
+    ->name('billing-expire-stale-incomplete')
     ->withoutOverlapping(1800) // Prevent overlapping for 30 minutes
     ->runInBackground();
 

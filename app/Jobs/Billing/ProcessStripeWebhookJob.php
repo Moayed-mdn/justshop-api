@@ -127,6 +127,7 @@ class ProcessStripeWebhookJob implements ShouldQueue
         }
 
         return match ($eventType) {
+            'checkout.session.expired' => app(\App\Services\Billing\Webhooks\HandleCheckoutSessionExpired::class),
             'customer.subscription.created' => app(\App\Services\Billing\Webhooks\HandleSubscriptionCreated::class),
             'customer.subscription.updated' => app(\App\Services\Billing\Webhooks\HandleSubscriptionUpdated::class),
             'customer.subscription.deleted' => app(\App\Services\Billing\Webhooks\HandleSubscriptionDeleted::class),

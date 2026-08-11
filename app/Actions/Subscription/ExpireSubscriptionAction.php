@@ -59,7 +59,7 @@ final readonly class ExpireSubscriptionAction
 
             // Recompute entitlements for all stores owned by this account
             // Status: expired → entitlement_status: none (full block)
-            $stores = $subscription->billingAccount->user->stores;
+            $stores = $subscription->billingAccount->owner->stores;
             foreach ($stores as $store) {
                 $this->recomputeEntitlements->execute(
                     new RecomputeEntitlementsDTO(
