@@ -36,6 +36,19 @@ final readonly class RecordInvoiceDTO
      */
     public static function fromStripeInvoice(array $stripeInvoice, int $billingAccountId, ?int $subscriptionId = null): self
     {
+        // Extract period dates from line items (actual subscription period)
+        // instead of invoice-level period (which is just the billing moment).
+        // For subscription invoices, the first line item period represents the
+        // actual service period being billed.
+        $periodStart = $stripeInvoice['period_start'] ?? null;
+        $periodEnd = $stripeInvoice['period_end'] ?? null;
+        
+        if (isset($stripeInvoice['lines']['data'][0]['period'])) {
+            $lineItemPeriod = $stripeInvoice['lines']['data'][0]['period'];
+            $periodStart = $lineItemPeriod['start'] ?? $periodStart;
+            $periodEnd = $lineItemPeriod['end'] ?? $periodEnd;
+        }
+        
         return new self(
             billingAccountId: $billingAccountId,
             subscriptionId: $subscriptionId,
@@ -50,8 +63,8 @@ final readonly class RecordInvoiceDTO
             totalCents: $stripeInvoice['total'],
             amountPaidCents: $stripeInvoice['amount_paid'],
             amountDueCents: $stripeInvoice['amount_due'],
-            periodStartsAt: isset($stripeInvoice['period_start']) ? Carbon::createFromTimestamp($stripeInvoice['period_start']) : null,
-            periodEndsAt: isset($stripeInvoice['period_end']) ? Carbon::createFromTimestamp($stripeInvoice['period_end']) : null,
+            periodStartsAt: $periodStart ? Carbon::createFromTimestamp($periodStart) : null,
+            periodEndsAt: $periodEnd ? Carbon::createFromTimestamp($periodEnd) : null,
             issuedAt: isset($stripeInvoice['created']) ? Carbon::createFromTimestamp($stripeInvoice['created']) : null,
             dueAt: isset($stripeInvoice['due_date']) ? Carbon::createFromTimestamp($stripeInvoice['due_date']) : null,
             paidAt: isset($stripeInvoice['status_transitions']['paid_at']) 

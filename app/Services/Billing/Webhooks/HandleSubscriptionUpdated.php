@@ -2,8 +2,11 @@
 
 namespace App\Services\Billing\Webhooks;
 
+use App\Actions\Entitlement\RecomputeEntitlementsAction;
+use App\DTOs\Entitlement\RecomputeEntitlementsDTO;
 use App\Enums\Subscription\SubscriptionStatusEnum;
 use App\Events\Subscription\SubscriptionStatusChanged;
+use App\Models\PlanPrice;
 use App\Models\Subscription;
 use App\Services\Subscription\SubscriptionStateMachine;
 use Carbon\Carbon;
@@ -13,6 +16,7 @@ class HandleSubscriptionUpdated
 {
     public function __construct(
         private SubscriptionStateMachine $stateMachine,
+        private RecomputeEntitlementsAction $recomputeEntitlements,
     ) {}
 
     /**
@@ -62,6 +66,8 @@ class HandleSubscriptionUpdated
                 : null,
         ];
         
+        $planChanged = false;
+        
         if (!empty($items)) {
             $firstItem = $items[0];
             
@@ -71,10 +77,61 @@ class HandleSubscriptionUpdated
             if (isset($firstItem['current_period_end'])) {
                 $updateData['current_period_ends_at'] = Carbon::createFromTimestamp($firstItem['current_period_end']);
             }
+
+            // CRITICAL FIX: Plan changes made through Stripe's hosted Customer/Billing
+            // Portal don't go through UpgradePlanAction/DowngradePlanAction — they
+            // land here as customer.subscription.updated. Without this, local
+            // plan_id/plan_price_id (and therefore entitlements) silently drift
+            // from what the merchant is actually being billed for.
+            $stripePriceId = $firstItem['price']['id'] ?? null;
+
+            if ($stripePriceId) {
+                $planPrice = PlanPrice::where('provider_price_id', $stripePriceId)->first();
+
+                if ($planPrice && $planPrice->plan_id !== $subscription->plan_id) {
+                    $updateData['plan_id'] = $planPrice->plan_id;
+                    $updateData['plan_price_id'] = $planPrice->id;
+                    $planChanged = true;
+
+                    Log::channel('billing')->info('webhook.subscription.plan_changed_via_portal', [
+                        'subscription_id' => $subscription->id,
+                        'old_plan_id' => $subscription->plan_id,
+                        'new_plan_id' => $planPrice->plan_id,
+                        'old_plan_price_id' => $subscription->plan_price_id,
+                        'new_plan_price_id' => $planPrice->id,
+                        'stripe_price_id' => $stripePriceId,
+                    ]);
+                } elseif (!$planPrice) {
+                    Log::channel('billing')->warning('webhook.subscription.unknown_price_id', [
+                        'subscription_id' => $subscription->id,
+                        'stripe_price_id' => $stripePriceId,
+                    ]);
+                }
+            }
         }
         
         // Update subscription data
         $subscription->update($updateData);
+
+        // Recompute entitlements for every store on this account if the plan changed
+        // This ensures stores_max, products_max, and all feature flags match the
+        // plan the merchant is actually being charged for.
+        if ($planChanged) {
+            $stores = $subscription->billingAccount->owner->stores;
+            foreach ($stores as $store) {
+                $this->recomputeEntitlements->execute(
+                    new RecomputeEntitlementsDTO(
+                        billingAccountId: $subscription->billing_account_id,
+                        storeId: $store->id,
+                    )
+                );
+            }
+
+            Log::channel('billing')->info('webhook.subscription.entitlements_recomputed', [
+                'subscription_id' => $subscription->id,
+                'stores_count' => $stores->count(),
+            ]);
+        }
 
         // Transition status if changed
         if ($newStatus !== $oldStatus && $oldStatus->canTransitionTo($newStatus)) {

@@ -74,26 +74,81 @@ class HandleInvoicePaymentSucceeded
             )
         );
 
-        // Record payment transaction if charge exists
-        if (isset($invoiceData['charge']) && $invoiceData['charge']) {
-            // Get charge data from Stripe
-            $chargeId = $invoiceData['charge'];
+        // Record payment transaction
+        // Stripe invoices can have either 'charge' or 'payment_intent' depending on
+        // the payment flow. For automatic collection (subscriptions), payment_intent
+        // is usually present. For manual/send_invoice, charge might be present instead.
+        $paymentId = $invoiceData['payment_intent'] ?? $invoiceData['charge'] ?? null;
+        
+        if ($paymentId && $invoiceData['amount_paid'] > 0) {
+            // Determine if this is a payment_intent or charge
+            $isPaymentIntent = isset($invoiceData['payment_intent']);
             
-            $this->recordPaymentTransaction->execute(
-                RecordPaymentTransactionDTO::fromStripeCharge(
-                    [
-                        'id' => $chargeId,
-                        'amount' => $invoiceData['amount_paid'],
-                        'currency' => $invoiceData['currency'],
-                        'status' => 'succeeded',
-                        'created' => $invoiceData['status_transitions']['paid_at'] ?? time(),
-                        'refunded' => false,
-                    ],
-                    $subscription->billing_account_id,
-                    $invoice->id,
-                    $subscription->id
-                )
-            );
+            if ($isPaymentIntent) {
+                // Fetch payment intent details from Stripe to get the actual charge
+                try {
+                    $paymentIntent = \Stripe\PaymentIntent::retrieve($paymentId);
+                    
+                    // Get the charge from payment intent
+                    if (isset($paymentIntent->charges->data[0])) {
+                        $charge = $paymentIntent->charges->data[0];
+                        
+                        $this->recordPaymentTransaction->execute(
+                            RecordPaymentTransactionDTO::fromStripeCharge(
+                                [
+                                    'id' => $charge->id,
+                                    'amount' => $charge->amount,
+                                    'currency' => $charge->currency,
+                                    'status' => $charge->status,
+                                    'created' => $charge->created,
+                                    'refunded' => $charge->refunded,
+                                    'payment_method' => $charge->payment_method ?? null,
+                                    'failure_code' => $charge->failure_code ?? null,
+                                    'failure_message' => $charge->failure_message ?? null,
+                                ],
+                                $subscription->billing_account_id,
+                                $invoice->id,
+                                $subscription->id
+                            )
+                        );
+                    }
+                } catch (\Exception $e) {
+                    Log::channel('billing')->warning('invoice.payment_succeeded.payment_intent_fetch_failed', [
+                        'payment_intent_id' => $paymentId,
+                        'invoice_id' => $invoiceData['id'],
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            } else {
+                // Direct charge reference
+                $this->recordPaymentTransaction->execute(
+                    RecordPaymentTransactionDTO::fromStripeCharge(
+                        [
+                            'id' => $paymentId,
+                            'amount' => $invoiceData['amount_paid'],
+                            'currency' => $invoiceData['currency'],
+                            'status' => 'succeeded',
+                            'created' => $invoiceData['status_transitions']['paid_at'] ?? time(),
+                            'refunded' => false,
+                        ],
+                        $subscription->billing_account_id,
+                        $invoice->id,
+                        $subscription->id
+                    )
+                );
+            }
+        } elseif ($invoiceData['amount_paid'] === 0) {
+            Log::channel('billing')->info('invoice.payment_succeeded.zero_amount', [
+                'invoice_id' => $invoiceData['id'],
+                'subscription_id' => $subscription->id,
+                'reason' => 'Trial or fully discounted invoice - no payment transaction needed',
+            ]);
+        } else {
+            Log::channel('billing')->warning('invoice.payment_succeeded.no_payment_reference', [
+                'invoice_id' => $invoiceData['id'],
+                'subscription_id' => $subscription->id,
+                'amount_paid' => $invoiceData['amount_paid'],
+            ]);
         }
 
         // If subscription was in troubled state, reactivate it
