@@ -37,6 +37,18 @@ class SubscriptionRepository
     }
 
     /**
+     * Get the latest incomplete subscription for a billing account.
+     * Used to detect pending/abandoned checkout sessions.
+     */
+    public function getLatestIncompleteForAccount(int $billingAccountId): ?Subscription
+    {
+        return Subscription::where('billing_account_id', $billingAccountId)
+            ->where('status', 'incomplete')
+            ->latest()
+            ->first();
+    }
+
+    /**
      * Find active subscription for a billing account or fail.
      */
     public function findActiveForAccountOrFail(int $billingAccountId): Subscription

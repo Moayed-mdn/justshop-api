@@ -4,10 +4,12 @@ namespace App\Actions\Billing;
 
 use App\Contracts\Billing\BillingProviderInterface;
 use App\DTOs\Billing\CreateCheckoutSessionDTO;
+use App\Enums\Subscription\SubscriptionStatusEnum;
 use App\Models\BillingCustomer;
 use App\Models\PlanPrice;
 use App\Models\Subscription;
 use App\Repositories\Billing\BillingAccountRepository;
+use App\Services\Subscription\SubscriptionStateMachine;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
@@ -17,6 +19,7 @@ class CreateCheckoutSessionAction
         private BillingProviderInterface $billingProvider,
         private BillingAccountRepository $billingAccountRepository,
         private EnsureBillingCustomerAction $ensureBillingCustomerAction,
+        private SubscriptionStateMachine $stateMachine,
     ) {}
 
     /**
@@ -38,45 +41,77 @@ class CreateCheckoutSessionAction
         // Get plan price
         $planPrice = PlanPrice::with('plan')->findOrFail($dto->planPriceId);
 
-        // Cancel existing active subscriptions (both in Stripe AND locally)
-        // This prevents double billing and duplicate provider_subscription_id issues
+        // Cancel existing abandoned "incomplete" subscriptions immediately
+        // These were never paid and never granted access
         $existingSubscriptions = Subscription::where('billing_account_id', $billingAccount->id)
             ->whereIn('status', ['active', 'trialing', 'past_due', 'incomplete'])
             ->get();
 
+        $liveSubscription = null;
+        $abandonedIncomplete = [];
+
         foreach ($existingSubscriptions as $existingSub) {
+            if ($existingSub->status->value === 'incomplete') {
+                // Safe to cancel immediately - never granted access
+                $abandonedIncomplete[] = $existingSub;
+            } else {
+                // Live subscription - defer cancellation until new one is confirmed
+                $liveSubscription = $existingSub;
+            }
+        }
+
+        // Cancel abandoned incomplete subscriptions immediately
+        foreach ($abandonedIncomplete as $incompleteSub) {
             // Cancel in Stripe first (if linked)
-            if ($existingSub->provider_subscription_id) {
+            if ($incompleteSub->provider_subscription_id) {
                 try {
                     $this->billingProvider->cancelSubscription(
-                        $existingSub,
+                        $incompleteSub,
                         immediately: true
                     );
                     
                     Log::channel('billing')->info('checkout.existing_subscription_canceled_in_stripe', [
-                        'subscription_id' => $existingSub->id,
-                        'provider_subscription_id' => $existingSub->provider_subscription_id,
+                        'subscription_id' => $incompleteSub->id,
+                        'provider_subscription_id' => $incompleteSub->provider_subscription_id,
                     ]);
                 } catch (\Exception $e) {
                     Log::channel('billing')->error('checkout.stripe_cancellation_failed', [
-                        'subscription_id' => $existingSub->id,
-                        'provider_subscription_id' => $existingSub->provider_subscription_id,
+                        'subscription_id' => $incompleteSub->id,
+                        'provider_subscription_id' => $incompleteSub->provider_subscription_id,
                         'error' => $e->getMessage(),
                     ]);
                     // Continue anyway - local cancellation will proceed
                 }
             }
 
-            // Cancel locally
-            $existingSub->update([
-                'status' => 'canceled',
-                'canceled_at' => Carbon::now(),
+            // Transition to EXPIRED (not CANCELED) via state machine
+            // INCOMPLETE → EXPIRED is allowed and semantically correct for abandoned checkouts
+            // that never granted access (vs CANCELED which implies an active subscription was terminated)
+            $this->stateMachine->transition(
+                subscription: $incompleteSub,
+                toStatus: SubscriptionStatusEnum::EXPIRED,
+                source: 'system',
+                reason: 'superseded_by_new_checkout',
+            );
+
+            // Mark as ended
+            $incompleteSub->update([
+                'ended_at' => Carbon::now(),
+            ]);
+        }
+
+        // If there's a live subscription, mark it for deferred cancellation
+        if ($liveSubscription) {
+            Log::channel('billing')->info('checkout_session.deferred_cancellation', [
+                'old_subscription_id' => $liveSubscription->id,
+                'old_subscription_status' => $liveSubscription->status->value,
             ]);
         }
 
         // Create new local subscription BEFORE redirecting to Stripe
         $subscription = Subscription::create([
             'billing_account_id' => $billingAccount->id,
+            'replaces_subscription_id' => $liveSubscription?->id,
             'plan_id' => $planPrice->plan_id,
             'plan_price_id' => $planPrice->id,
             'billing_cycle' => $planPrice->billing_cycle,
@@ -98,6 +133,7 @@ class CreateCheckoutSessionAction
                 'store_id' => $dto->storeId ?? null,
                 'billing_account_id' => $billingAccount->id,
                 'local_subscription_id' => $subscription->id, // ← Critical: enables precise webhook matching
+                'replaces_subscription_id' => $liveSubscription?->id, // ← Enables webhook-driven cancellation
             ]
         );
 
@@ -106,7 +142,8 @@ class CreateCheckoutSessionAction
             'plan_price_id' => $dto->planPriceId,
             'subscription_id' => $subscription->id,
             'session_id' => $session['session_id'],
-            'canceled_existing' => $existingSubscriptions->count(),
+            'canceled_incomplete' => count($abandonedIncomplete),
+            'deferred_live_subscription_id' => $liveSubscription?->id,
         ]);
 
         return $session;

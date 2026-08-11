@@ -16,6 +16,7 @@ class Subscription extends Model
 
     protected $fillable = [
         'billing_account_id',
+        'replaces_subscription_id',
         'plan_id',
         'plan_price_id',
         'status',
@@ -40,6 +41,7 @@ class Subscription extends Model
 
     protected $casts = [
         'billing_account_id'       => 'integer',
+        'replaces_subscription_id' => 'integer',
         'plan_id'                  => 'integer',
         'plan_price_id'            => 'integer',
         'status'                   => SubscriptionStatusEnum::class,
@@ -76,6 +78,11 @@ class Subscription extends Model
     public function pendingPlan(): BelongsTo
     {
         return $this->belongsTo(Plan::class, 'pending_plan_id');
+    }
+
+    public function previousSubscription(): BelongsTo
+    {
+        return $this->belongsTo(Subscription::class, 'replaces_subscription_id');
     }
 
     public function items(): HasMany
