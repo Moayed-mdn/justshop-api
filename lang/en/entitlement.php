@@ -26,6 +26,7 @@ return [
     // Subscription required
     'subscription_required' => 'An active subscription is required to access this feature.',
     'subscription_expired' => 'Your subscription has expired. Please renew to continue using this feature.',
+    'subscription_status_restricted' => 'Store access is restricted. Current status: :status',
     
     // Access messages
     'write_access_restricted' => 'Write access is restricted. Subscription status: :status',

@@ -31,14 +31,14 @@ class FeatureGateService
         // No snapshot = no subscription = no access
         if (!$snapshot) {
             throw new SubscriptionRequiredException(
-                'An active subscription is required to access this store.'
+                __('entitlement.subscription_required')
             );
         }
 
         // Check if entitlement status grants write access
         if (!$snapshot->entitlement_status->grantsWriteAccess()) {
             throw new SubscriptionRequiredException(
-                "Store access is restricted. Current status: {$snapshot->entitlement_status->value}"
+                __('entitlement.subscription_status_restricted', ['status' => $snapshot->entitlement_status->value])
             );
         }
     }

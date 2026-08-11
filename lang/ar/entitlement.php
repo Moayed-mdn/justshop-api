@@ -25,6 +25,7 @@ return [
     // اشتراك مطلوب
     'subscription_required' => 'يلزم وجود اشتراك نشط للوصول إلى هذه الميزة.',
     'subscription_expired' => 'انتهت صلاحية اشتراكك. يرجى التجديد لمواصلة استخدام هذه الميزة.',
+    'subscription_status_restricted' => 'الوصول إلى المتجر محظور. الحالة الحالية: :status',
     
     // رسائل الوصول
     'write_access_restricted' => 'الوصول للكتابة محظور. حالة الاشتراك: :status',
