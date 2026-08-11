@@ -24,72 +24,111 @@ Route::name('merchant.')
 
         // ── Themes ──────────────────────────────────────────────
         Route::prefix('themes')->name('themes.')->scopeBindings()->group(function () {
+            // Read operations - no subscription check
             Route::get('/', [ThemeController::class, 'index'])->name('index');
-            Route::post('/', [ThemeController::class, 'store'])->name('store');
             Route::get('/{theme}', [ThemeController::class, 'show'])->name('show');
-            Route::put('/{theme}', [ThemeController::class, 'update'])->name('update');
-            Route::delete('/{theme}', [ThemeController::class, 'destroy'])->name('destroy');
-            Route::post('/{theme}/publish', [ThemeController::class, 'publish'])->name('publish');
-            Route::post('/{theme}/duplicate', [ThemeController::class, 'duplicate'])->name('duplicate');
-            Route::put('/{theme}/settings', [ThemeController::class, 'updateSettings'])->name('update-settings');
+            
+            // Write operations - require active subscription
+            Route::post('/', [ThemeController::class, 'store'])
+                ->middleware('subscription.active')->name('store');
+            Route::put('/{theme}', [ThemeController::class, 'update'])
+                ->middleware('subscription.active')->name('update');
+            Route::delete('/{theme}', [ThemeController::class, 'destroy'])
+                ->middleware('subscription.active')->name('destroy');
+            Route::post('/{theme}/publish', [ThemeController::class, 'publish'])
+                ->middleware('subscription.active')->name('publish');
+            Route::post('/{theme}/duplicate', [ThemeController::class, 'duplicate'])
+                ->middleware('subscription.active')->name('duplicate');
+            Route::put('/{theme}/settings', [ThemeController::class, 'updateSettings'])
+                ->middleware('subscription.active')->name('update-settings');
 
             // ── Theme Sections ──────────────────────────────────
             Route::prefix('{theme}/sections')->name('sections.')->group(function () {
+                // Read operations
                 Route::get('/', [ThemeSectionController::class, 'index'])->name('index');
-                Route::post('/', [ThemeSectionController::class, 'store'])->name('store');
-                Route::post('/reorder', [ThemeSectionController::class, 'reorder'])->name('reorder');
                 Route::get('/{section}', [ThemeSectionController::class, 'show'])->name('show');
-                Route::put('/{section}', [ThemeSectionController::class, 'update'])->name('update');
-                Route::delete('/{section}', [ThemeSectionController::class, 'destroy'])->name('destroy');
+                
+                // Write operations - require active subscription
+                Route::middleware('subscription.active')->group(function () {
+                    Route::post('/', [ThemeSectionController::class, 'store'])->name('store');
+                    Route::post('/reorder', [ThemeSectionController::class, 'reorder'])->name('reorder');
+                    Route::put('/{section}', [ThemeSectionController::class, 'update'])->name('update');
+                    Route::delete('/{section}', [ThemeSectionController::class, 'destroy'])->name('destroy');
+                });
 
                 // ── Section Blocks ──────────────────────────────
                 Route::prefix('{section}/blocks')->name('blocks.')->group(function () {
+                    // Read operations
                     Route::get('/', [ThemeBlockController::class, 'index'])->name('index');
-                    Route::post('/', [ThemeBlockController::class, 'store'])->name('store');
-                    Route::post('/reorder', [ThemeBlockController::class, 'reorder'])->name('reorder');
                     Route::get('/{block}', [ThemeBlockController::class, 'show'])->name('show');
-                    Route::put('/{block}', [ThemeBlockController::class, 'update'])->name('update');
-                    Route::delete('/{block}', [ThemeBlockController::class, 'destroy'])->name('destroy');
+                    
+                    // Write operations - require active subscription
+                    Route::middleware('subscription.active')->group(function () {
+                        Route::post('/', [ThemeBlockController::class, 'store'])->name('store');
+                        Route::post('/reorder', [ThemeBlockController::class, 'reorder'])->name('reorder');
+                        Route::put('/{block}', [ThemeBlockController::class, 'update'])->name('update');
+                        Route::delete('/{block}', [ThemeBlockController::class, 'destroy'])->name('destroy');
+                    });
                 });
 
                 // ── Section Block Instances (polymorphic runtime instances) ──
                 Route::prefix('{section}/block-instances')->name('block-instances.')->group(function () {
+                    // Read operations
                     Route::get('/', [ThemeBlockInstanceController::class, 'index'])->name('index');
-                    Route::post('/', [ThemeBlockInstanceController::class, 'store'])->name('store');
-                    Route::post('/reorder', [ThemeBlockInstanceController::class, 'reorder'])->name('reorder');
                     Route::get('/{blockInstance}', [ThemeBlockInstanceController::class, 'show'])->name('show');
-                    Route::put('/{blockInstance}', [ThemeBlockInstanceController::class, 'update'])->name('update');
-                    Route::delete('/{blockInstance}', [ThemeBlockInstanceController::class, 'destroy'])->name('destroy');
+                    
+                    // Write operations - require active subscription
+                    Route::middleware('subscription.active')->group(function () {
+                        Route::post('/', [ThemeBlockInstanceController::class, 'store'])->name('store');
+                        Route::post('/reorder', [ThemeBlockInstanceController::class, 'reorder'])->name('reorder');
+                        Route::put('/{blockInstance}', [ThemeBlockInstanceController::class, 'update'])->name('update');
+                        Route::delete('/{blockInstance}', [ThemeBlockInstanceController::class, 'destroy'])->name('destroy');
+                    });
                 });
             });
 
             // ── System Templates (theme-scoped system page templates) ──
             Route::prefix('{theme}/system-templates')->name('system-templates.')->group(function () {
+                // Read operations
                 Route::get('/', [SystemTemplateController::class, 'index'])->name('index');
-                Route::post('/', [SystemTemplateController::class, 'store'])->name('store');
                 Route::get('/{template}', [SystemTemplateController::class, 'show'])->name('show');
-                Route::put('/{template}', [SystemTemplateController::class, 'update'])->name('update');
-                Route::delete('/{template}', [SystemTemplateController::class, 'destroy'])->name('destroy');
+                
+                // Write operations - require active subscription
+                Route::middleware('subscription.active')->group(function () {
+                    Route::post('/', [SystemTemplateController::class, 'store'])->name('store');
+                    Route::put('/{template}', [SystemTemplateController::class, 'update'])->name('update');
+                    Route::delete('/{template}', [SystemTemplateController::class, 'destroy'])->name('destroy');
+                });
             });
 
             // ── Section Groups (header/footer section groups) ──────────
             Route::prefix('{theme}/section-groups')->name('section-groups.')->group(function () {
+                // Read operations
                 Route::get('/', [ThemeSectionGroupController::class, 'index'])->name('index');
-                Route::post('/', [ThemeSectionGroupController::class, 'store'])->name('store');
                 Route::get('/{sectionGroup}', [ThemeSectionGroupController::class, 'show'])->name('show');
-                Route::put('/{sectionGroup}', [ThemeSectionGroupController::class, 'update'])->name('update');
-                Route::delete('/{sectionGroup}', [ThemeSectionGroupController::class, 'destroy'])->name('destroy');
+                
+                // Write operations - require active subscription
+                Route::middleware('subscription.active')->group(function () {
+                    Route::post('/', [ThemeSectionGroupController::class, 'store'])->name('store');
+                    Route::put('/{sectionGroup}', [ThemeSectionGroupController::class, 'update'])->name('update');
+                    Route::delete('/{sectionGroup}', [ThemeSectionGroupController::class, 'destroy'])->name('destroy');
+                });
             });
         });
 
         // ── Page Templates ──────────────────────────────────────
         Route::prefix('templates')->name('templates.')->group(function () {
+            // Read operations
             Route::get('/', [PageTemplateController::class, 'index'])->name('index');
-            Route::post('/', [PageTemplateController::class, 'store'])->name('store');
             Route::get('/{template}', [PageTemplateController::class, 'show'])->name('show');
-            Route::put('/{template}', [PageTemplateController::class, 'update'])->name('update');
-            Route::delete('/{template}', [PageTemplateController::class, 'destroy'])->name('destroy');
-            Route::post('/{template}/duplicate', [PageTemplateController::class, 'duplicate'])->name('duplicate');
+            
+            // Write operations - require active subscription
+            Route::middleware('subscription.active')->group(function () {
+                Route::post('/', [PageTemplateController::class, 'store'])->name('store');
+                Route::put('/{template}', [PageTemplateController::class, 'update'])->name('update');
+                Route::delete('/{template}', [PageTemplateController::class, 'destroy'])->name('destroy');
+                Route::post('/{template}/duplicate', [PageTemplateController::class, 'duplicate'])->name('duplicate');
+            });
         });
 
         // ── Section Schemas (platform-defined section types) ────
@@ -97,14 +136,19 @@ Route::name('merchant.')
 
         // ── Navigation Menus ────────────────────────────────────
         Route::prefix('navigation')->name('navigation.')->group(function () {
+            // Read operations
             Route::get('/', [NavigationMenuController::class, 'index'])->name('index');
-            Route::post('/', [NavigationMenuController::class, 'store'])->name('store');
             Route::get('/{menu}', [NavigationMenuController::class, 'show'])->name('show');
-            Route::put('/{menu}', [NavigationMenuController::class, 'update'])->name('update');
-            Route::delete('/{menu}', [NavigationMenuController::class, 'destroy'])->name('destroy');
+            
+            // Write operations - require active subscription
+            Route::middleware('subscription.active')->group(function () {
+                Route::post('/', [NavigationMenuController::class, 'store'])->name('store');
+                Route::put('/{menu}', [NavigationMenuController::class, 'update'])->name('update');
+                Route::delete('/{menu}', [NavigationMenuController::class, 'destroy'])->name('destroy');
+            });
 
             // ── Menu Items ──────────────────────────────────────
-            Route::prefix('{menu}/items')->name('items.')->group(function () {
+            Route::prefix('{menu}/items')->name('items.')->middleware('subscription.active')->group(function () {
                 Route::post('/', [NavigationMenuItemController::class, 'store'])->name('store');
                 Route::post('/reorder', [NavigationMenuItemController::class, 'reorder'])->name('reorder');
                 Route::put('/{item}', [NavigationMenuItemController::class, 'update'])->name('update');
@@ -120,14 +164,21 @@ Route::name('merchant.')
             });
 
             // ── URL Validation ───────────────────────────────────
-            Route::post('/validate-url', [NavigationResourceController::class, 'validateUrl'])->name('validate-url');
+            Route::post('/validate-url', [NavigationResourceController::class, 'validateUrl'])
+                ->middleware('subscription.active')
+                ->name('validate-url');
         });
 
         // ── Store Assets ────────────────────────────────────────
         Route::prefix('assets')->name('assets.')->group(function () {
+            // Read operations
             Route::get('/', [StoreAssetController::class, 'index'])->name('index');
-            Route::post('/', [StoreAssetController::class, 'store'])->name('store');
-            Route::put('/{asset}', [StoreAssetController::class, 'update'])->name('update');
-            Route::delete('/{asset}', [StoreAssetController::class, 'destroy'])->name('destroy');
+            
+            // Write operations - require active subscription
+            Route::middleware('subscription.active')->group(function () {
+                Route::post('/', [StoreAssetController::class, 'store'])->name('store');
+                Route::put('/{asset}', [StoreAssetController::class, 'update'])->name('update');
+                Route::delete('/{asset}', [StoreAssetController::class, 'destroy'])->name('destroy');
+            });
         });
     });

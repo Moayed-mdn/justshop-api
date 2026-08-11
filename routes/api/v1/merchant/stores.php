@@ -30,10 +30,13 @@ Route::name('merchant.stores.')
         Route::middleware(['auth:sanctum', 'identity.route:merchant_admin,merchant,enforce', 'store.context'])
             ->prefix('{store}')
             ->group(function () {
+                // Read operations
                 Route::get('/', [StoreController::class, 'show'])
                     ->name('show');
 
+                // Write operations - require active subscription
                 Route::put('/', [StoreController::class, 'update'])
+                    ->middleware('subscription.active')
                     ->name('update');
             });
     });

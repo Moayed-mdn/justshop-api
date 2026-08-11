@@ -28,28 +28,43 @@ Route::name('merchant.shipping.')
     
     // Store Address Settings
     Route::prefix('shipping/address-settings')->group(function () {
+        // Read operations
         Route::get('/', [ShippingController::class, 'getAddressSettings'])->name('address-settings.show');
-        Route::put('/', [ShippingController::class, 'updateAddressSettings'])->name('address-settings.update');
+        
+        // Write operations - require active subscription
+        Route::put('/', [ShippingController::class, 'updateAddressSettings'])
+            ->middleware('subscription.active')
+            ->name('address-settings.update');
     });
     
     // Shipping Zones
     Route::prefix('shipping/zones')->group(function () {
+        // Read operations
         Route::get('/', [ShippingController::class, 'listZones'])->name('zones.index');
-        Route::post('/', [ShippingController::class, 'createZone'])->name('zones.store');
-        Route::put('/{zone}', [ShippingController::class, 'updateZone'])->name('zones.update');
-        Route::delete('/{zone}', [ShippingController::class, 'deleteZone'])->name('zones.destroy');
         
-        // Zone-Method Assignment
-        Route::post('/{zone}/methods', [ShippingController::class, 'assignMethodToZone'])->name('zones.methods.store');
-        Route::delete('/{zone}/methods/{method}', [ShippingController::class, 'removeMethodFromZone'])->name('zones.methods.destroy');
-        Route::put('/{zone}/methods/{method}', [ShippingController::class, 'updateZoneMethodPrice'])->name('zones.methods.update');
+        // Write operations - require active subscription
+        Route::middleware('subscription.active')->group(function () {
+            Route::post('/', [ShippingController::class, 'createZone'])->name('zones.store');
+            Route::put('/{zone}', [ShippingController::class, 'updateZone'])->name('zones.update');
+            Route::delete('/{zone}', [ShippingController::class, 'deleteZone'])->name('zones.destroy');
+            
+            // Zone-Method Assignment
+            Route::post('/{zone}/methods', [ShippingController::class, 'assignMethodToZone'])->name('zones.methods.store');
+            Route::delete('/{zone}/methods/{method}', [ShippingController::class, 'removeMethodFromZone'])->name('zones.methods.destroy');
+            Route::put('/{zone}/methods/{method}', [ShippingController::class, 'updateZoneMethodPrice'])->name('zones.methods.update');
+        });
     });
     
     // Shipping Methods
     Route::prefix('shipping/methods')->group(function () {
+        // Read operations
         Route::get('/', [ShippingController::class, 'listMethods'])->name('methods.index');
-        Route::post('/', [ShippingController::class, 'createMethod'])->name('methods.store');
-        Route::put('/{method}', [ShippingController::class, 'updateMethod'])->name('methods.update');
-        Route::delete('/{method}', [ShippingController::class, 'deleteMethod'])->name('methods.destroy');
+        
+        // Write operations - require active subscription
+        Route::middleware('subscription.active')->group(function () {
+            Route::post('/', [ShippingController::class, 'createMethod'])->name('methods.store');
+            Route::put('/{method}', [ShippingController::class, 'updateMethod'])->name('methods.update');
+            Route::delete('/{method}', [ShippingController::class, 'deleteMethod'])->name('methods.destroy');
+        });
     });
 });
