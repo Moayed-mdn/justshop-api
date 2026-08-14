@@ -28,51 +28,14 @@ class RuntimeStoreResolver
 
         $normalizedHost = strtolower(trim($host));
         
-        $checkpoint = microtime(true);
-        // #region debug-point A:resolver-input
-        $_dbgReport = static function (string $hypothesisId, string $message, array $data = []): void {
-            $envPath = '/home/leader/projects/laravel/tenant/.dbg/storefront-tenant-domain.env';
-            $debugUrl = 'http://127.0.0.1:7777/event';
-            $sessionId = 'storefront-tenant-domain';
-            try {
-                if (is_file($envPath)) {
-                    foreach (file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
-                        if (str_starts_with($line, 'DEBUG_SERVER_URL=')) {
-                            $debugUrl = substr($line, strlen('DEBUG_SERVER_URL='));
-                        } elseif (str_starts_with($line, 'DEBUG_SESSION_ID=')) {
-                            $sessionId = substr($line, strlen('DEBUG_SESSION_ID='));
-                        }
-                    }
-                }
-                $payload = json_encode([
-                    'sessionId' => $sessionId,
-                    'runId' => 'pre-fix',
-                    'hypothesisId' => $hypothesisId,
-                    'location' => 'RuntimeStoreResolver::resolveByHost',
-                    'msg' => '[DEBUG] ' . $message,
-                    'data' => $data,
-                    'ts' => (int) round(microtime(true) * 1000),
-                ], JSON_THROW_ON_ERROR);
-                @file_get_contents($debugUrl, false, stream_context_create([
-                    'http' => [
-                        'method' => 'POST',
-                        'header' => "Content-Type: application/json\r\n",
-                        'content' => $payload,
-                        'timeout' => 1,
-                    ],
-                ]));
-            } catch (\Throwable) {
-            }
-        };
-        $_dbgReport('A', 'resolver received storefront host', [
-            'host' => $host,
-            'normalized_host' => $normalizedHost,
-            'path' => (string) request()->query('path', '/'),
-        ]);
+        // Debug endpoint disabled for performance
+        // Original code caused 2-second delay due to 1-second timeout × 2 calls
+        // #region debug-point A:resolver-input (DISABLED)
+        // ... debug code removed for performance ...
         // #endregion
-        
-        \Log::info('[PERF-TRACE] RuntimeStoreResolver: After debug report (SUSPICIOUS)', [
-            'step_ms' => round((microtime(true) - $checkpoint) * 1000, 2),
+
+        \Log::info('[PERF-TRACE] RuntimeStoreResolver: After debug report (DISABLED)', [
+            'step_ms' => round((microtime(true) - $resolverStart) * 1000, 2),
             'total_ms' => round((microtime(true) - $resolverStart) * 1000, 2),
         ]);
 
@@ -85,21 +48,12 @@ class RuntimeStoreResolver
             'total_ms' => round((microtime(true) - $resolverStart) * 1000, 2),
             'found' => $store instanceof Store,
         ]);
-        // #region debug-point A:resolver-result
-        $checkpoint = microtime(true);
-        $_dbgReport('A', 'resolver queried store by domain', [
-            'normalized_host' => $normalizedHost,
-            'store_found' => $store instanceof Store,
-            'store_id' => $store?->id,
-            'store_slug' => $store?->slug,
-            'store_domain' => $store?->domain,
-            'store_is_active' => $store?->is_active,
-            'store_status' => $store?->status?->value ?? $store?->status,
-        ]);
+        // #region debug-point A:resolver-result (DISABLED)
+        // Second debug call also removed for performance
         // #endregion
         
-        \Log::info('[PERF-TRACE] RuntimeStoreResolver: After 2nd debug report', [
-            'step_ms' => round((microtime(true) - $checkpoint) * 1000, 2),
+        \Log::info('[PERF-TRACE] RuntimeStoreResolver: After 2nd debug report (DISABLED)', [
+            'step_ms' => 0,
             'total_ms' => round((microtime(true) - $resolverStart) * 1000, 2),
         ]);
 
