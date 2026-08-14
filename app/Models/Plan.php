@@ -17,6 +17,9 @@ class Plan extends Model
         'name',
         'description',
         'tier',
+        'tier_rank',
+        'superseded_by_plan_id',
+        'provider_product_id',
         'is_public',
         'is_active',
         'trial_days',
@@ -25,14 +28,16 @@ class Plan extends Model
     ];
 
     protected $casts = [
-        'name'        => 'array',
-        'description' => 'array',
-        'tier'        => PlanTierEnum::class,
-        'is_public'   => 'boolean',
-        'is_active'   => 'boolean',
-        'trial_days'  => 'integer',
-        'sort_order'  => 'integer',
-        'metadata'    => 'array',
+        'name'                   => 'array',
+        'description'            => 'array',
+        'tier'                   => PlanTierEnum::class,
+        'tier_rank'              => 'integer',
+        'superseded_by_plan_id'  => 'integer',
+        'is_public'              => 'boolean',
+        'is_active'              => 'boolean',
+        'trial_days'             => 'integer',
+        'sort_order'             => 'integer',
+        'metadata'               => 'array',
     ];
 
     public function prices(): HasMany
@@ -48,6 +53,38 @@ class Plan extends Model
     public function subscriptions(): HasMany
     {
         return $this->hasMany(Subscription::class);
+    }
+
+    /**
+     * Plan that supersedes this one (newer version).
+     */
+    public function supersededBy(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Plan::class, 'superseded_by_plan_id');
+    }
+
+    /**
+     * Plans that this one supersedes (older versions).
+     */
+    public function supersedes(): HasMany
+    {
+        return $this->hasMany(Plan::class, 'superseded_by_plan_id');
+    }
+
+    /**
+     * Check if this plan has been superseded.
+     */
+    public function isSuperseded(): bool
+    {
+        return $this->superseded_by_plan_id !== null;
+    }
+
+    /**
+     * Check if this is a current (non-superseded) plan.
+     */
+    public function isCurrent(): bool
+    {
+        return !$this->isSuperseded();
     }
 
     /**
@@ -106,9 +143,10 @@ class Plan extends Model
 
     /**
      * Get numeric tier value for comparison.
+     * Now based on tier_rank instead of the enum's tier() method.
      */
     public function tier_value(): int
     {
-        return $this->tier->tier();
+        return $this->tier_rank;
     }
 }
