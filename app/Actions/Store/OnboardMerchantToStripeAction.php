@@ -24,7 +24,7 @@ class OnboardMerchantToStripeAction
 
     /**
      * Execute merchant onboarding to Stripe Connect.
-     * 
+     *
      * @param OnboardMerchantToStripeDTO $dto
      * @return string The onboarding URL for the merchant to complete setup
      * @throws BaseApiException
@@ -37,7 +37,7 @@ class OnboardMerchantToStripeAction
         if (empty($store->stripe_account_id)) {
             try {
                 $account = $this->createStripeConnectAccount($store);
-                
+
                 $store->update([
                     'stripe_account_id' => $account->id,
                     'stripe_account_type' => 'express',
@@ -88,23 +88,67 @@ class OnboardMerchantToStripeAction
 
     /**
      * Create a new Stripe Connect Express account.
+     *
+     * Stripe PHP emits a very specific E_USER_WARNING for Accounts v1:
+     * "We recommend building your integration using Accounts v2..."
+     *
+     * Stripe still creates the account successfully when Accounts v1 support
+     * is enabled, so suppress only this exact warning while preserving the
+     * previous Laravel error handler for every other error.
      */
     private function createStripeConnectAccount(Store $store): object
     {
-        return $this->stripe->accounts->create([
-            'type' => 'express',
-            'email' => $store->owner->email,
-            'capabilities' => [
-                'card_payments' => ['requested' => true],
-                'transfers' => ['requested' => true],
-            ],
-            'business_type' => 'individual',
-            'metadata' => [
-                'store_id' => (string) $store->id,
-                'store_slug' => $store->slug,
-                'store_name' => $store->name,
-            ],
-        ]);
+        $previousHandler = set_error_handler(
+            function (
+                int $severity,
+                string $message,
+                string $file,
+                int $line
+            ) use (&$previousHandler): bool {
+
+                $isStripeAccountsV2Warning =
+                    $severity === E_USER_WARNING
+                    && str_contains($file, 'stripe-php')
+                    && str_contains($message, 'Accounts v2');
+
+                if ($isStripeAccountsV2Warning) {
+                    return true;
+                }
+
+                // Preserve Laravel's original error handling for everything else.
+                if ($previousHandler !== null) {
+                    return (bool) call_user_func(
+                        $previousHandler,
+                        $severity,
+                        $message,
+                        $file,
+                        $line
+                    );
+                }
+
+                // Fall back to PHP's normal handler if no previous handler exists.
+                return false;
+            }
+        );
+
+        try {
+            return $this->stripe->accounts->create([
+                'type' => 'express',
+                'email' => $store->owner->email,
+                'capabilities' => [
+                    'card_payments' => ['requested' => true],
+                    'transfers' => ['requested' => true],
+                ],
+                'business_type' => 'individual',
+                'metadata' => [
+                    'store_id' => (string) $store->id,
+                    'store_slug' => $store->slug,
+                    'store_name' => $store->name,
+                ],
+            ]);
+        } finally {
+            restore_error_handler();
+        }
     }
 
     /**

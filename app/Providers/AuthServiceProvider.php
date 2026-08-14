@@ -32,6 +32,7 @@ use App\Policies\LeadPolicy;
 use App\Policies\OrderPolicy;
 use App\Policies\PageTemplatePolicy;
 use App\Policies\PaymentMethodPolicy;
+use App\Policies\PlatformOrderPolicy;
 use App\Policies\ProductPolicy;
 use App\Policies\StorePolicy;
 use App\Policies\NavigationPolicy;
@@ -83,6 +84,7 @@ class AuthServiceProvider extends ServiceProvider
         BillingPortalPolicy::class => BillingPortalPolicy::class,
         CheckoutPolicy::class => CheckoutPolicy::class,
         OrderPolicy::class => OrderPolicy::class,
+        PlatformOrderPolicy::class => PlatformOrderPolicy::class,
         ProfilePolicy::class => ProfilePolicy::class,
     ];
 

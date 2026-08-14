@@ -60,6 +60,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/downgrade', [SubscriptionController::class, 'downgrade'])
             ->name('merchant.billing.subscription.downgrade');
         
+        Route::post('/move-to-current-version', [SubscriptionController::class, 'moveToCurrentVersion'])
+            ->name('merchant.billing.subscription.move_to_current_version');
+        
         Route::post('/cancel', [SubscriptionController::class, 'cancel'])
             ->name('merchant.billing.subscription.cancel');
         

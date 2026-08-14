@@ -20,11 +20,17 @@ class PermissionEnum
     public const PRODUCT_DELETE  = 'product.delete';
     public const PRODUCT_RESTORE = 'product.restore';
 
-    // --- Order ---
+    // --- Order (Merchant) ---
     public const ORDER_VIEW          = 'order.view';
     public const ORDER_UPDATE_STATUS = 'order.update_status';
     public const ORDER_CANCEL        = 'order.cancel';
     public const ORDER_REFUND        = 'order.refund';
+
+    // --- Order (Platform) ---
+    public const PLATFORM_ORDER_VIEW          = 'platform.order.view';
+    public const PLATFORM_ORDER_UPDATE_STATUS = 'platform.order.update_status';
+    public const PLATFORM_ORDER_CANCEL        = 'platform.order.cancel';
+    public const PLATFORM_ORDER_REFUND        = 'platform.order.refund';
 
     // --- Dashboard ---
     public const DASHBOARD_VIEW = 'dashboard.view';

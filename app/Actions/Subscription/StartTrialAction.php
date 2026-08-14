@@ -64,7 +64,7 @@ class StartTrialAction
             }
 
             // Step 3: Get the plan (default to starter)
-            $plan = $this->planRepository->findByCodeOrFail($dto->planCode);
+            $plan = $this->planRepository->findCurrentByCodeOrFail($dto->planCode);
 
             // Step 4: Ensure billing customer exists (local record only for now)
             $this->ensureBillingCustomerAction->execute($billingAccount);

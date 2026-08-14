@@ -31,7 +31,7 @@ class DowngradePlanAction
                 $dto->billingAccountId
             );
 
-            $newPlan = $this->planRepo->findByCodeOrFail($dto->planCode);
+            $newPlan = $this->planRepo->findCurrentByCodeOrFail($dto->planCode);
             $oldPlan = $subscription->plan;
 
             // Prevent "downgrade" to same or higher tier

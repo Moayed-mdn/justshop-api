@@ -29,15 +29,52 @@ class HandleSubscriptionUpdated
         $stripeSubscription = $event['data']['object'];
         $stripeSubscriptionId = $stripeSubscription['id'];
 
+        // LOG: Full Stripe webhook data
+        Log::channel('billing')->info('webhook.subscription.updated.raw_data', [
+            'event_id' => $event['id'] ?? null,
+            'event_created' => $event['created'] ?? null,
+            'stripe_subscription_id' => $stripeSubscriptionId,
+            'stripe_status' => $stripeSubscription['status'] ?? null,
+            'cancel_at_period_end' => $stripeSubscription['cancel_at_period_end'] ?? false,
+            'canceled_at' => $stripeSubscription['canceled_at'] ?? null,
+            'current_period_start' => $stripeSubscription['current_period_start'] ?? null,
+            'current_period_end' => $stripeSubscription['current_period_end'] ?? null,
+            'items_count' => count($stripeSubscription['items']['data'] ?? []),
+            'items' => array_map(function ($item) {
+                return [
+                    'id' => $item['id'] ?? null,
+                    'price_id' => $item['price']['id'] ?? null,
+                    'product_id' => $item['price']['product'] ?? null,
+                    'quantity' => $item['quantity'] ?? null,
+                    'current_period_start' => $item['current_period_start'] ?? null,
+                    'current_period_end' => $item['current_period_end'] ?? null,
+                ];
+            }, $stripeSubscription['items']['data'] ?? []),
+            'metadata' => $stripeSubscription['metadata'] ?? [],
+        ]);
+
         // Find local subscription
         $subscription = Subscription::where('provider_subscription_id', $stripeSubscriptionId)->first();
 
         if (!$subscription) {
             Log::channel('billing')->warning('webhook.subscription.updated.not_found', [
                 'stripe_subscription_id' => $stripeSubscriptionId,
+                'event_id' => $event['id'] ?? null,
             ]);
             return;
         }
+
+        // LOG: Current local subscription state before update
+        Log::channel('billing')->info('webhook.subscription.updated.before', [
+            'subscription_id' => $subscription->id,
+            'local_status' => $subscription->status->value,
+            'local_plan_id' => $subscription->plan_id,
+            'local_plan_price_id' => $subscription->plan_price_id,
+            'local_provider_status' => $subscription->provider_status,
+            'local_cancel_at_period_end' => $subscription->cancel_at_period_end,
+            'local_current_period_starts_at' => $subscription->current_period_starts_at?->toDateTimeString(),
+            'local_current_period_ends_at' => $subscription->current_period_ends_at?->toDateTimeString(),
+        ]);
 
         // Map Stripe status to local status
         $newStatus = $this->mapStripeStatus($stripeSubscription['status']);
@@ -113,6 +150,19 @@ class HandleSubscriptionUpdated
         // Update subscription data
         $subscription->update($updateData);
 
+        // LOG: What was actually updated
+        Log::channel('billing')->info('webhook.subscription.updated.changes', [
+            'subscription_id' => $subscription->id,
+            'updated_fields' => array_keys($updateData),
+            'plan_changed' => $planChanged,
+            'update_data' => array_map(function ($value) {
+                if ($value instanceof Carbon) {
+                    return $value->toDateTimeString();
+                }
+                return $value;
+            }, $updateData),
+        ]);
+
         // Recompute entitlements for every store on this account if the plan changed
         // This ensures stores_max, products_max, and all feature flags match the
         // plan the merchant is actually being charged for.
@@ -153,6 +203,9 @@ class HandleSubscriptionUpdated
             'stripe_subscription_id' => $stripeSubscriptionId,
             'old_status' => $oldStatus->value,
             'new_status' => $newStatus->value,
+            'status_changed' => $newStatus !== $oldStatus,
+            'plan_changed' => $planChanged,
+            'entitlements_recomputed' => $planChanged,
         ]);
     }
 

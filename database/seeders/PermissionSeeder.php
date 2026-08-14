@@ -28,6 +28,10 @@ class PermissionSeeder extends Seeder
             PermissionEnum::ORDER_UPDATE_STATUS,
             PermissionEnum::ORDER_CANCEL,
             PermissionEnum::ORDER_REFUND,
+            PermissionEnum::PLATFORM_ORDER_VIEW,
+            PermissionEnum::PLATFORM_ORDER_UPDATE_STATUS,
+            PermissionEnum::PLATFORM_ORDER_CANCEL,
+            PermissionEnum::PLATFORM_ORDER_REFUND,
             PermissionEnum::STORE_UPDATE,
             PermissionEnum::STORE_DELETE,
             PermissionEnum::STORE_VIEW,
@@ -121,7 +125,8 @@ class PermissionSeeder extends Seeder
         $staff = Role::firstOrCreate(['name' => RoleEnum::STAFF->value]);
         $customer = Role::firstOrCreate(['name' => RoleEnum::CUSTOMER->value]);
 
-        // Assign permissions to super_admin (ALL permissions)
+        // Assign permissions to super_admin (ALL permissions EXCEPT platform-specific permissions)
+        // Platform permissions must be explicitly granted, not inherited from role
         $superAdmin->syncPermissions([
             PermissionEnum::USER_VIEW,
             PermissionEnum::USER_CREATE,
@@ -137,6 +142,7 @@ class PermissionSeeder extends Seeder
             PermissionEnum::ORDER_UPDATE_STATUS,
             PermissionEnum::ORDER_CANCEL,
             PermissionEnum::ORDER_REFUND,
+            // PLATFORM_ORDER_* permissions are NOT assigned to role - must be explicit
             PermissionEnum::STORE_UPDATE,
             PermissionEnum::STORE_DELETE,
             PermissionEnum::STORE_VIEW,

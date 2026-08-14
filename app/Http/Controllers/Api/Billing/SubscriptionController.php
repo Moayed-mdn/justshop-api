@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Billing;
 
 use App\Actions\Subscription\CancelSubscriptionAction;
 use App\Actions\Subscription\DowngradePlanAction;
+use App\Actions\Subscription\MoveToCurrentPlanVersionAction;
 use App\Actions\Subscription\ResumeSubscriptionAction;
 use App\Actions\Subscription\UpgradePlanAction;
 use App\DTOs\Subscription\CancelSubscriptionDTO;
@@ -30,6 +31,7 @@ class SubscriptionController extends Controller
         private DowngradePlanAction $downgradePlan,
         private CancelSubscriptionAction $cancelSubscription,
         private ResumeSubscriptionAction $resumeSubscription,
+        private MoveToCurrentPlanVersionAction $moveToCurrentVersion,
     ) {}
 
     /**
@@ -75,9 +77,19 @@ class SubscriptionController extends Controller
         // Check for pending checkout alongside active subscription
         $incompleteSubscription = $this->subscriptionRepo->getLatestIncompleteForAccount($billingAccount->id);
 
+        // Load all required relationships including features
+        $subscription->load(['plan.prices', 'plan.features', 'planPrice', 'pendingPlan']);
+
+        // Determine if the current plan is still a "current offering" 
+        // (active, public, and not superseded by another plan)
+        $planIsCurrentOffering = $subscription->plan->is_active 
+            && $subscription->plan->is_public 
+            && is_null($subscription->plan->superseded_by_plan_id);
+
         return $this->success([
-            'subscription' => $subscription->load(['plan.prices', 'planPrice', 'pendingPlan']),
+            'subscription' => $subscription,
             'has_active_subscription' => true,
+            'plan_is_current_offering' => $planIsCurrentOffering,
             'pending_checkout' => $incompleteSubscription ? [
                 'subscription_id' => $incompleteSubscription->id,
                 'plan_id' => $incompleteSubscription->plan_id,
@@ -372,6 +384,65 @@ class SubscriptionController extends Controller
             return $this->error(
                 message: 'Failed to resume subscription',
                 errorCode: ErrorCode::BIL_013->value,
+                statusCode: 500
+            );
+        }
+    }
+
+    /**
+     * Move subscription to current plan version.
+     * 
+     * This endpoint allows merchants on superseded plans to move to the current
+     * version without tier checking. It follows the superseded_by_plan_id pointer.
+     * 
+     * POST /api/v1/users/billing/subscription/move-to-current-version
+     */
+    public function moveToCurrentVersion(Request $request): JsonResponse
+    {
+        /** @var \App\Models\User $user */
+        $user = $request->user();
+
+        $billingAccount = $this->billingAccountRepo->findByUserAccess($user);
+
+        if (!$billingAccount) {
+            return $this->error(
+                message: 'Billing account not found',
+                errorCode: ErrorCode::BIL_001->value,
+                statusCode: 404
+            );
+        }
+
+        $this->authorize('moveToCurrentVersion', [SubscriptionPolicy::class, $billingAccount]);
+
+        try {
+            $subscription = $this->moveToCurrentVersion->execute(
+                billingAccountId: $billingAccount->id,
+                actorUserId: $user->id,
+            );
+
+            return $this->success(
+                data: [
+                    'subscription' => $subscription->load('plan'),
+                    'usage' => $this->resolveUsage($billingAccount->fresh()),
+                ],
+                message: 'Successfully moved to current plan version'
+            );
+        } catch (\DomainException $e) {
+            return $this->error(
+                message: $e->getMessage(),
+                errorCode: ErrorCode::BIL_009->value,
+                statusCode: 422
+            );
+        } catch (\Exception $e) {
+            Log::error('Move to current version failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'billing_account_id' => $billingAccount->id,
+            ]);
+            
+            return $this->error(
+                message: 'Failed to move to current version: ' . $e->getMessage(),
+                errorCode: ErrorCode::BIL_010->value,
                 statusCode: 500
             );
         }

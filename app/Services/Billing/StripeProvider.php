@@ -71,7 +71,8 @@ class StripeProvider implements BillingProviderInterface
         string $planPriceId,
         string $successUrl,
         string $cancelUrl,
-        array $metadata = []
+        array $metadata = [],
+        ?int $trialDays = null
     ): array {
         // Ensure success_url includes the session_id parameter
         // Stripe will replace {CHECKOUT_SESSION_ID} with the actual session ID
@@ -79,7 +80,7 @@ class StripeProvider implements BillingProviderInterface
             $successUrl .= (str_contains($successUrl, '?') ? '&' : '?') . 'session_id={CHECKOUT_SESSION_ID}';
         }
 
-        $session = $this->stripe->checkout->sessions->create([
+        $sessionParams = [
             'customer' => $customer->provider_customer_id,
             'mode' => 'subscription',
             'payment_method_types' => ['card'],
@@ -100,12 +101,20 @@ class StripeProvider implements BillingProviderInterface
                     'billing_account_id' => $customer->billing_account_id,
                 ], $metadata),
             ],
-        ]);
+        ];
+
+        // Add trial period if specified and > 0
+        if ($trialDays !== null && $trialDays > 0) {
+            $sessionParams['subscription_data']['trial_period_days'] = $trialDays;
+        }
+
+        $session = $this->stripe->checkout->sessions->create($sessionParams);
 
         Log::channel('billing')->info('stripe.checkout_session.created', [
             'billing_account_id' => $customer->billing_account_id,
             'session_id' => $session->id,
             'plan_price_id' => $planPriceId,
+            'trial_days' => $trialDays,
         ]);
 
         return [
@@ -251,5 +260,80 @@ class StripeProvider implements BillingProviderInterface
             'type' => $event['type'],
             'data' => $event['data']['object'] ?? [],
         ];
+    }
+
+    /**
+     * Create a Stripe Product (if needed) and a Price for a plan.
+     */
+    public function createPrice(
+        \App\Models\Plan $plan,
+        \App\Models\PlanPrice $planPrice
+    ): array {
+        // Get or create Stripe Product
+        if ($plan->provider_product_id) {
+            $productId = $plan->provider_product_id;
+        } else {
+            $product = $this->stripe->products->create([
+                'name' => $plan->name['en'] ?? $plan->code,
+                'description' => $plan->description['en'] ?? null,
+                'metadata' => [
+                    'plan_id' => $plan->id,
+                    'plan_code' => $plan->code,
+                    'environment' => config('app.env'),
+                ],
+            ]);
+            $productId = $product->id;
+
+            // Update plan with product ID
+            $plan->update(['provider_product_id' => $productId]);
+
+            Log::channel('billing')->info('stripe.product.created', [
+                'plan_id' => $plan->id,
+                'stripe_product_id' => $productId,
+            ]);
+        }
+
+        // Create Stripe Price
+        $price = $this->stripe->prices->create([
+            'product' => $productId,
+            'unit_amount' => $planPrice->amount_cents,
+            'currency' => strtolower($planPrice->currency),
+            'recurring' => [
+                'interval' => $planPrice->billing_cycle === 'annual' ? 'year' : 'month',
+            ],
+            'metadata' => [
+                'plan_id' => $plan->id,
+                'plan_price_id' => $planPrice->id,
+                'plan_code' => $plan->code,
+                'environment' => config('app.env'),
+            ],
+        ]);
+
+        Log::channel('billing')->info('stripe.price.created', [
+            'plan_id' => $plan->id,
+            'plan_price_id' => $planPrice->id,
+            'stripe_price_id' => $price->id,
+            'amount_cents' => $planPrice->amount_cents,
+            'billing_cycle' => $planPrice->billing_cycle,
+        ]);
+
+        return [
+            'provider_product_id' => $productId,
+            'provider_price_id' => $price->id,
+        ];
+    }
+
+    /**
+     * Archive a Stripe Price so it can no longer be used for new subscriptions.
+     */
+    public function archivePrice(string $providerPriceId): void
+    {
+        $this->stripe->prices->update($providerPriceId, [
+            'active' => false,
+        ]);
+
+        Log::channel('billing')->info('stripe.price.archived', [
+            'stripe_price_id' => $providerPriceId,
+        ]);
     }
 }

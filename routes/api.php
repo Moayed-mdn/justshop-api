@@ -68,6 +68,8 @@ Route::prefix('/v1/platform')
     ->group(function (): void {
         require 'api/v1/platform/platform.php';
         require 'api/v1/platform/leads.php';
+        require 'api/v1/platform/billing/plans.php';
+        require 'api/v1/platform/billing/subscriptions.php';
         require 'api/v1/platform/cms/blog.php';
         require 'api/v1/platform/cms/marketing-pages.php';
         require 'api/v1/platform/cms/documentation.php';

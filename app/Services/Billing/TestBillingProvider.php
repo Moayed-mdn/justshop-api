@@ -35,11 +35,14 @@ class TestBillingProvider implements BillingProviderInterface
         string $planPriceId,
         string $successUrl,
         string $cancelUrl,
-        array $metadata = []
+        array $metadata = [],
+        ?int $trialDays = null
     ): array {
         Log::channel('billing')->info('test.provider.checkout_created', [
             'billing_account_id' => $customer->billing_account_id,
             'plan_price_id' => $planPriceId,
+            'trial_days' => $trialDays,
+            'metadata' => $metadata,
         ]);
 
         $sessionId = 'test_session_' . uniqid();
@@ -130,5 +133,31 @@ class TestBillingProvider implements BillingProviderInterface
             'type' => $data['type'] ?? 'test.event',
             'data' => $data['data'] ?? [],
         ];
+    }
+
+    public function createPrice(
+        \App\Models\Plan $plan,
+        \App\Models\PlanPrice $planPrice
+    ): array {
+        Log::channel('billing')->info('test.provider.price_created', [
+            'plan_id' => $plan->id,
+            'plan_price_id' => $planPrice->id,
+            'amount_cents' => $planPrice->amount_cents,
+        ]);
+
+        $productId = $plan->provider_product_id ?? 'test_product_' . $plan->id;
+        $priceId = 'test_price_' . $planPrice->id . '_' . uniqid();
+
+        return [
+            'provider_product_id' => $productId,
+            'provider_price_id' => $priceId,
+        ];
+    }
+
+    public function archivePrice(string $providerPriceId): void
+    {
+        Log::channel('billing')->info('test.provider.price_archived', [
+            'provider_price_id' => $providerPriceId,
+        ]);
     }
 }

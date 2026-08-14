@@ -41,7 +41,7 @@ class UpgradePlanAction
             $dto->billingAccountId
         );
 
-        $newPlan = $this->planRepo->findByCodeOrFail($dto->planCode);
+        $newPlan = $this->planRepo->findCurrentByCodeOrFail($dto->planCode);
         $newPrice = $newPlan->prices()
             ->where('billing_cycle', $dto->billingCycle->value)
             ->where('currency', $subscription->billingAccount->default_currency)

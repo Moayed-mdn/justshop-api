@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\Storefront;
 
+use App\Actions\Store\ApplyStripeAccountStatusAction;
 use App\Http\Controllers\Controller;
 use App\Models\Store;
 use App\Services\EnhancedCheckoutService;
@@ -21,6 +22,7 @@ class StripeEcommerceWebhookController extends Controller
 {
     public function __construct(
         private EnhancedCheckoutService $checkoutService,
+        private ApplyStripeAccountStatusAction $applyStripeAccountStatus,
     ) {}
 
     /**
@@ -99,28 +101,12 @@ class StripeEcommerceWebhookController extends Controller
             return;
         }
 
-        $updates = [
-            'stripe_details_submitted' => $account->details_submitted ?? false,
-            'stripe_charges_enabled' => $account->charges_enabled ?? false,
-            'stripe_payouts_enabled' => $account->payouts_enabled ?? false,
-        ];
-
-        // Mark onboarded timestamp when fully enabled for the first time
-        if (
-            !$store->stripe_onboarded_at
-            && $updates['stripe_details_submitted']
-            && $updates['stripe_charges_enabled']
-            && $updates['stripe_payouts_enabled']
-        ) {
-            $updates['stripe_onboarded_at'] = now();
-        }
-
-        $store->update($updates);
+        $store = $this->applyStripeAccountStatus->execute($store, $account);
 
         Log::info('Stripe ecommerce webhook: account.updated processed', [
             'store_id' => $store->id,
             'stripe_account_id' => $stripeAccountId,
-            'can_receive_payments' => $store->fresh()->canReceivePayments(),
+            'can_receive_payments' => $store->canReceivePayments(),
         ]);
     }
 

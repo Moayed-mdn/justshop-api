@@ -109,6 +109,10 @@ class CreateCheckoutSessionAction
         }
 
         // Create new local subscription BEFORE redirecting to Stripe
+        // Calculate trial end date from plan's trial_days
+        $trialDays = $planPrice->plan->trial_days ?? 0;
+        $trialEndsAt = $trialDays > 0 ? Carbon::now()->addDays($trialDays) : null;
+
         $subscription = Subscription::create([
             'billing_account_id' => $billingAccount->id,
             'replaces_subscription_id' => $liveSubscription?->id,
@@ -117,11 +121,12 @@ class CreateCheckoutSessionAction
             'billing_cycle' => $planPrice->billing_cycle,
             'status' => 'incomplete',
             'provider' => 'stripe',
-            'trial_ends_at' => Carbon::now()->addDays(14),
+            'trial_ends_at' => $trialEndsAt,
         ]);
 
         // Create checkout session with local_subscription_id in metadata
         // This allows webhooks to find the exact subscription without ambiguity
+        // Pass trial_days to billing provider so Stripe honors the trial period
         $session = $this->billingProvider->createCheckoutSession(
             $billingCustomer,
             $planPrice->provider_price_id,
@@ -134,7 +139,8 @@ class CreateCheckoutSessionAction
                 'billing_account_id' => $billingAccount->id,
                 'local_subscription_id' => $subscription->id, // ← Critical: enables precise webhook matching
                 'replaces_subscription_id' => $liveSubscription?->id, // ← Enables webhook-driven cancellation
-            ]
+            ],
+            $trialDays > 0 ? $trialDays : null // Only pass trial if > 0
         );
 
         Log::channel('billing')->info('checkout_session.created', [
@@ -142,6 +148,7 @@ class CreateCheckoutSessionAction
             'plan_price_id' => $dto->planPriceId,
             'subscription_id' => $subscription->id,
             'session_id' => $session['session_id'],
+            'trial_days' => $trialDays,
             'canceled_incomplete' => count($abandonedIncomplete),
             'deferred_live_subscription_id' => $liveSubscription?->id,
         ]);

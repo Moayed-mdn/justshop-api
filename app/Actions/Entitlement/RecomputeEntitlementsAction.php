@@ -81,7 +81,19 @@ class RecomputeEntitlementsAction
     private function materializeFeatures($plan): array
     {
         if (!$plan) {
-            return []; // Bug fix: was crashing on null
+            // CRITICAL: A missing plan should never happen after the guards in DeletePlanAction
+            // are in place. If we reach this, it's a critical error, not a silent degradation.
+            \Illuminate\Support\Facades\Log::channel('billing')->error(
+                'entitlements.missing_plan',
+                [
+                    'message' => 'Attempted to materialize features for null plan',
+                    'trace' => debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 5),
+                ]
+            );
+            
+            throw new \DomainException(
+                'Cannot compute entitlements: plan is missing. This indicates a data integrity issue.'
+            );
         }
 
         if (!$plan->relationLoaded('features')) {

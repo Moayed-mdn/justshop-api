@@ -59,6 +59,24 @@ class SubscriptionPolicy
         $this->denyWithContext('subscription', 'upgrade', PermissionEnum::SUBSCRIPTION_UPGRADE);
     }
 
+    /**
+     * Check if user can move to current plan version (no store context needed).
+     * This is similar to upgrade but doesn't require a specific store context
+     * since it's a version upgrade within the same tier.
+     */
+    public function moveToCurrentVersion(User $user, BillingAccount $billingAccount): bool
+    {
+        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
+            return true;
+        }
+
+        if ($this->isOwnerOrLinkedMember($user, $billingAccount, PermissionEnum::SUBSCRIPTION_UPGRADE)) {
+            return $this->decision($user, 'moveToCurrentVersion', true, $billingAccount);
+        }
+
+        $this->denyWithContext('subscription', 'upgrade', PermissionEnum::SUBSCRIPTION_UPGRADE);
+    }
+
     public function downgrade(User $user, BillingAccount $billingAccount, Store $store): bool
     {
         if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {

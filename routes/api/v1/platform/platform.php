@@ -51,3 +51,12 @@ Route::prefix('/features')->name('platform.features.')->group(function (): void 
     Route::get('/', [\App\Http\Controllers\Api\Platform\PlatformFeatureController::class, 'index'])->name('index');
     Route::patch('/{feature}', [\App\Http\Controllers\Api\Platform\PlatformFeatureController::class, 'update'])->name('update');
 });
+
+// Platform order management (INDEPENDENT from merchant orders)
+Route::prefix('/orders')->name('platform.orders.')->group(function (): void {
+    Route::get('/', [\App\Http\Controllers\Api\Platform\PlatformOrderController::class, 'index'])->name('index');
+    Route::get('/{order}', [\App\Http\Controllers\Api\Platform\PlatformOrderController::class, 'show'])->name('show');
+    Route::patch('/{order}/status', [\App\Http\Controllers\Api\Platform\PlatformOrderController::class, 'updateStatus'])->name('update-status');
+    Route::patch('/{order}/cancel', [\App\Http\Controllers\Api\Platform\PlatformOrderController::class, 'cancel'])->name('cancel');
+    Route::post('/{order}/refund', [\App\Http\Controllers\Api\Platform\PlatformOrderController::class, 'refund'])->name('refund');
+});

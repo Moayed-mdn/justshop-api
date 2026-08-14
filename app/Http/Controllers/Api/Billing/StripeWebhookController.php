@@ -29,6 +29,14 @@ class StripeWebhookController extends Controller
         $signature = $request->header('Stripe-Signature');
         $secret = config('services.stripe.webhook_secret');
 
+        // LOG: Incoming webhook request
+        Log::channel('billing')->info('webhook.incoming', [
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'content_length' => strlen($payload),
+            'has_signature' => !empty($signature),
+        ]);
+
         // Verify webhook signature
         if (!$signature) {
             Log::channel('billing')->warning('webhook.missing_signature', [
@@ -51,6 +59,15 @@ class StripeWebhookController extends Controller
 
         // Parse event
         $event = $this->billingProvider->parseWebhookEvent($payload);
+
+        // LOG: Parsed webhook event details
+        Log::channel('billing')->info('webhook.parsed', [
+            'event_id' => $event['id'],
+            'event_type' => $event['type'],
+            'livemode' => $event['livemode'] ?? false,
+            'created' => $event['created'] ?? null,
+            'api_version' => $event['api_version'] ?? null,
+        ]);
 
         // Check for duplicate (idempotency)
         $existing = StripeWebhookEvent::where('provider', 'stripe')
@@ -84,6 +101,7 @@ class StripeWebhookController extends Controller
             'webhook_event_id' => $webhookEvent->id,
             'event_id' => $event['id'],
             'event_type' => $event['type'],
+            'dispatched_to_queue' => true,
         ]);
 
         return response('Webhook received', 200);

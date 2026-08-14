@@ -13,6 +13,7 @@ use App\Models\Plan;
 use App\Models\Store;
 use App\Models\Subscription;
 use App\Models\User;
+use App\Repositories\Subscription\PlanRepository;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -39,6 +40,7 @@ class BillingMigrateLegacyAccountsCommand extends Command
     public function __construct(
         private CreateBillingAccountAction $createBillingAccount,
         private RecomputeEntitlementsAction $recomputeEntitlements,
+        private PlanRepository $planRepository,
     ) {
         parent::__construct();
     }
@@ -68,8 +70,8 @@ class BillingMigrateLegacyAccountsCommand extends Command
         $this->line("  Grandfathered Until: " . now()->addDays($graceDays)->format('Y-m-d H:i:s'));
         $this->newLine();
 
-        // Get default plan
-        $plan = Plan::where('code', $planCode)->first();
+        // Get default plan - use current (non-superseded) version
+        $plan = $this->planRepository->findCurrentByCode($planCode);
         if (!$plan) {
             $this->error("Plan '{$planCode}' not found. Please create it first or specify a different plan.");
             return self::FAILURE;

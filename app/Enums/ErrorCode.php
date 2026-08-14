@@ -86,6 +86,19 @@ enum ErrorCode: string
     case BIL_011 = 'BIL_011'; // Subscription cancellation failed
     case BIL_012 = 'BIL_012'; // Cannot resume subscription in current status
     case BIL_013 = 'BIL_013'; // Resume subscription failed
+    case BIL_014 = 'BIL_014'; // Plan code already exists
+    case BIL_015 = 'BIL_015'; // Plan is in use, cannot delete
+    case BIL_016 = 'BIL_016'; // Plan has no active price for requested criteria
+    case BIL_017 = 'BIL_017'; // Migration target plan not found or inactive
+    case BIL_018 = 'BIL_018'; // Cannot migrate to same plan
+    case BIL_019 = 'BIL_019'; // No billing accounts provided for migration
+    case BIL_020 = 'BIL_020'; // Invalid tier value
+    case BIL_021 = 'BIL_021'; // Invalid tier_rank value
+    case BIL_022 = 'BIL_022'; // Plan must have at least one price
+    case BIL_023 = 'BIL_023'; // Invalid feature key
+    case BIL_024 = 'BIL_024'; // Invalid feature value type
+    case BIL_025 = 'BIL_025'; // Last active plan warning
+    case BIL_026 = 'BIL_026'; // Price already exists for this criteria
 
     // --- Theme (THEME) ---
     case THEME_001 = 'THEME_001'; // Cannot delete default template

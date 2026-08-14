@@ -32,6 +32,8 @@ interface BillingProviderInterface
      * @param string $planPriceId The provider price ID (e.g., price_xxx)
      * @param string $successUrl Redirect URL after successful checkout
      * @param string $cancelUrl Redirect URL if checkout is abandoned
+     * @param array $metadata Additional metadata to attach
+     * @param int|null $trialDays Number of trial days (null = no trial)
      * @return array ['session_id' => string, 'url' => string, 'expires_at' => int]
      */
     public function createCheckoutSession(
@@ -39,7 +41,8 @@ interface BillingProviderInterface
         string $planPriceId,
         string $successUrl,
         string $cancelUrl,
-        array $metadata = []
+        array $metadata = [],
+        ?int $trialDays = null
     ): array;
 
     /**
@@ -100,4 +103,20 @@ interface BillingProviderInterface
      * @return array ['type' => string, 'data' => array, 'id' => string]
      */
     public function parseWebhookEvent(string $payload): array;
+
+    /**
+     * Create a Product (if needed) and a Price in the billing provider for a plan.
+     * 
+     * @return array ['provider_product_id' => string, 'provider_price_id' => string]
+     */
+    public function createPrice(
+        \App\Models\Plan $plan,
+        \App\Models\PlanPrice $planPrice
+    ): array;
+
+    /**
+     * Archive/deactivate a price in the billing provider so it can no longer be used
+     * for new subscriptions, without affecting subscriptions already on it.
+     */
+    public function archivePrice(string $providerPriceId): void;
 }
