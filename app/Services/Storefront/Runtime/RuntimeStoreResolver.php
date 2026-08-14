@@ -20,7 +20,15 @@ class RuntimeStoreResolver
 
     public function resolveByHost(string $host): Store
     {
+        $resolverStart = microtime(true);
+        \Log::info('[PERF-TRACE] RuntimeStoreResolver: Entry', [
+            'host' => $host,
+            'ms' => 0,
+        ]);
+
         $normalizedHost = strtolower(trim($host));
+        
+        $checkpoint = microtime(true);
         // #region debug-point A:resolver-input
         $_dbgReport = static function (string $hypothesisId, string $message, array $data = []): void {
             $envPath = '/home/leader/projects/laravel/tenant/.dbg/storefront-tenant-domain.env';
@@ -62,11 +70,23 @@ class RuntimeStoreResolver
             'path' => (string) request()->query('path', '/'),
         ]);
         // #endregion
+        
+        \Log::info('[PERF-TRACE] RuntimeStoreResolver: After debug report (SUSPICIOUS)', [
+            'step_ms' => round((microtime(true) - $checkpoint) * 1000, 2),
+            'total_ms' => round((microtime(true) - $resolverStart) * 1000, 2),
+        ]);
 
+        $checkpoint = microtime(true);
         $store = Store::query()
             ->whereRaw('LOWER(domain) = ?', [$normalizedHost])
             ->first();
+        \Log::info('[PERF-TRACE] RuntimeStoreResolver: After DB query', [
+            'step_ms' => round((microtime(true) - $checkpoint) * 1000, 2),
+            'total_ms' => round((microtime(true) - $resolverStart) * 1000, 2),
+            'found' => $store instanceof Store,
+        ]);
         // #region debug-point A:resolver-result
+        $checkpoint = microtime(true);
         $_dbgReport('A', 'resolver queried store by domain', [
             'normalized_host' => $normalizedHost,
             'store_found' => $store instanceof Store,
@@ -77,6 +97,11 @@ class RuntimeStoreResolver
             'store_status' => $store?->status?->value ?? $store?->status,
         ]);
         // #endregion
+        
+        \Log::info('[PERF-TRACE] RuntimeStoreResolver: After 2nd debug report', [
+            'step_ms' => round((microtime(true) - $checkpoint) * 1000, 2),
+            'total_ms' => round((microtime(true) - $resolverStart) * 1000, 2),
+        ]);
 
         if (!$store instanceof Store) {
             $this->runtimeLogger->info('runtime.tenant.rejected', [
