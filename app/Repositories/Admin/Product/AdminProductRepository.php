@@ -246,10 +246,21 @@ class AdminProductRepository
      * Maps API `position` → DB `sort_order`.
      * First item receives is_primary = true.
      *
+     * ⚠️ CRITICAL: Before marking the first item as primary, we must
+     * unset any existing is_primary flag to prevent duplicate primaries.
+     *
      * @param  array  $mediaItems  [['url' => '...', 'alt' => '...', 'position' => 0], ...]
      */
     public function createProductMedia(Product $product, array $mediaItems): void
     {
+        $hasPrimaryInBatch = !empty($mediaItems);
+
+        if ($hasPrimaryInBatch) {
+            // Clear any existing primary flag before setting a new one.
+            // This prevents multiple is_primary=true rows from accumulating.
+            $product->images()->where('is_primary', true)->update(['is_primary' => false]);
+        }
+
         foreach ($mediaItems as $index => $mediaData) {
             $product->images()->create([
                 'image_url'  => $this->normalizeImagePath($mediaData['url']),
@@ -269,10 +280,21 @@ class AdminProductRepository
      * Maps API `position` → DB `sort_order`.
      * First item receives is_primary = true.
      *
+     * ⚠️ CRITICAL: Before marking the first item as primary, we must
+     * unset any existing is_primary flag to prevent duplicate primaries.
+     *
      * @param  array  $mediaItems  [['url' => '...', 'alt' => '...', 'position' => 0], ...]
      */
     public function createVariantMedia(ProductVariant $variant, array $mediaItems): void
     {
+        $hasPrimaryInBatch = !empty($mediaItems);
+
+        if ($hasPrimaryInBatch) {
+            // Clear any existing primary flag before setting a new one.
+            // This prevents multiple is_primary=true rows from accumulating.
+            $variant->images()->where('is_primary', true)->update(['is_primary' => false]);
+        }
+
         foreach ($mediaItems as $index => $mediaData) {
             $variant->images()->create([
                 'image_url'  => $this->normalizeImagePath($mediaData['url']),

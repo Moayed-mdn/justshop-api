@@ -37,9 +37,17 @@ class ProductRepository extends BaseRepository
                 )"));
             })
             ->leftJoin('images', function ($join) {
-                $join->on('display_v.id', '=', 'images.imageable_id')
-                    ->where('images.imageable_type', '=', 'App\\Models\\ProductVariant')
-                    ->where('images.is_primary', '=', true);
+                // ⚠️ FIX: Use subquery instead of direct join to prevent duplicate rows
+                // when multiple is_primary=true images exist for the same variant.
+                // ORDER BY id DESC ensures we get the most recently uploaded primary image.
+                $join->on('images.id', '=', \Illuminate\Support\Facades\DB::raw("(
+                    SELECT id FROM images 
+                    WHERE imageable_id = display_v.id 
+                    AND imageable_type = 'App\\\\Models\\\\ProductVariant' 
+                    AND is_primary = 1 
+                    ORDER BY id DESC 
+                    LIMIT 1
+                )"));
             })
             ->select(
                 'products.id as product_id',
