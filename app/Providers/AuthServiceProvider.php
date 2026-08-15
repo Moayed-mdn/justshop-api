@@ -32,6 +32,9 @@ use App\Policies\LeadPolicy;
 use App\Policies\OrderPolicy;
 use App\Policies\PageTemplatePolicy;
 use App\Policies\PaymentMethodPolicy;
+use App\Policies\Platform\AuditLogPolicy;
+use App\Policies\Platform\FeatureFlagPolicy;
+use App\Policies\Platform\PlatformAnalyticsPolicy;
 use App\Policies\PlatformOrderPolicy;
 use App\Policies\ProductPolicy;
 use App\Policies\StorePolicy;
@@ -86,6 +89,10 @@ class AuthServiceProvider extends ServiceProvider
         OrderPolicy::class => OrderPolicy::class,
         PlatformOrderPolicy::class => PlatformOrderPolicy::class,
         ProfilePolicy::class => ProfilePolicy::class,
+        // Platform Admin Policies
+        FeatureFlagPolicy::class => FeatureFlagPolicy::class,
+        PlatformAnalyticsPolicy::class => PlatformAnalyticsPolicy::class,
+        AuditLogPolicy::class => AuditLogPolicy::class,
     ];
 
     public function boot()
