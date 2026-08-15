@@ -33,11 +33,9 @@ Route::prefix('/users')->name('platform.users.')->group(function (): void {
 // Platform store management (NOT merchant store management)
 Route::prefix('/stores')->name('platform.stores.')->group(function (): void {
     Route::get('/', [\App\Http\Controllers\Api\Platform\PlatformStoreController::class, 'index'])->name('index');
-    Route::middleware(['store.context'])->group(function () {
-        Route::get('/{store}', [\App\Http\Controllers\Api\Platform\PlatformStoreController::class, 'show'])->name('show');
-        Route::patch('/{store}/suspend', [\App\Http\Controllers\Api\Platform\PlatformStoreController::class, 'suspend'])->name('suspend');
-        Route::patch('/{store}/activate', [\App\Http\Controllers\Api\Platform\PlatformStoreController::class, 'activate'])->name('activate');
-    });
+    Route::get('/{store}', [\App\Http\Controllers\Api\Platform\PlatformStoreController::class, 'show'])->name('show');
+    Route::patch('/{store}/suspend', [\App\Http\Controllers\Api\Platform\PlatformStoreController::class, 'suspend'])->name('suspend');
+    Route::patch('/{store}/activate', [\App\Http\Controllers\Api\Platform\PlatformStoreController::class, 'activate'])->name('activate');
 });
 
 // Platform audit logs
