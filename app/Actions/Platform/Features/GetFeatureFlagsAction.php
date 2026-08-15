@@ -11,7 +11,7 @@ class GetFeatureFlagsAction
     /**
      * Get all feature flags with their metadata and runtime values.
      *
-     * @return array<string, array<string, mixed>>
+     * @return array<int, array<string, mixed>>
      */
     public function execute(): array
     {
@@ -19,7 +19,7 @@ class GetFeatureFlagsAction
         $enrichedFlags = [];
 
         foreach ($allFlags as $name => $config) {
-            $enrichedFlags[$name] = [
+            $enrichedFlags[] = [
                 'name' => $name,
                 'value' => FeatureFlag::value($name),
                 'has_override' => FeatureFlag::hasOverride($name),
