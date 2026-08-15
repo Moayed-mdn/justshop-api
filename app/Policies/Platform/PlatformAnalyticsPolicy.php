@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Policies\Platform;
 
+use App\Enums\PermissionEnum;
 use App\Enums\RoleEnum;
 use App\Models\User;
 use App\Policies\Concerns\InteractsWithPolicyTelemetry;
@@ -12,7 +13,7 @@ use App\Policies\Concerns\InteractsWithPolicyTelemetry;
  * PlatformAnalyticsPolicy - Authorization for platform analytics access
  * 
  * Platform analytics are platform-level resources.
- * Only super_admin users can view platform analytics.
+ * Only super_admin users with explicit permissions can view platform analytics.
  */
 class PlatformAnalyticsPolicy
 {
@@ -23,6 +24,9 @@ class PlatformAnalyticsPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $this->decision($user, 'viewAny', $user->hasRole(RoleEnum::SUPER_ADMIN->value));
+        $hasRole = $user->hasRole(RoleEnum::SUPER_ADMIN->value);
+        $hasPermission = $user->can(PermissionEnum::PLATFORM_ANALYTICS_VIEW);
+
+        return $this->decision($user, 'viewAny', $hasRole && $hasPermission);
     }
 }

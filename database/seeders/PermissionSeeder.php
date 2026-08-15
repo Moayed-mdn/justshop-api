@@ -117,6 +117,12 @@ class PermissionSeeder extends Seeder
             // Feature Flag permissions (Platform Admin Only)
             PermissionEnum::FEATURE_FLAG_VIEW,
             PermissionEnum::FEATURE_FLAG_UPDATE,
+
+            // Platform Analytics permissions (Platform Admin Only)
+            PermissionEnum::PLATFORM_ANALYTICS_VIEW,
+
+            // Audit Log permissions (Platform Admin Only)
+            PermissionEnum::AUDIT_LOG_VIEW,
         ];
 
         foreach ($permissions as $permission) {
@@ -232,6 +238,12 @@ class PermissionSeeder extends Seeder
             // Feature Flag permissions (Platform Admin Only)
             PermissionEnum::FEATURE_FLAG_VIEW,
             PermissionEnum::FEATURE_FLAG_UPDATE,
+
+            // Platform Analytics permissions (Platform Admin Only)
+            PermissionEnum::PLATFORM_ANALYTICS_VIEW,
+
+            // Audit Log permissions (Platform Admin Only)
+            PermissionEnum::AUDIT_LOG_VIEW,
         ]);
 
         // Assign permissions to store_admin

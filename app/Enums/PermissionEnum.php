@@ -149,4 +149,10 @@ class PermissionEnum
     // --- Feature Flags (Platform Admin Only) ---
     public const FEATURE_FLAG_VIEW   = 'feature_flag.view';
     public const FEATURE_FLAG_UPDATE = 'feature_flag.update';
+
+    // --- Platform Analytics (Platform Admin Only) ---
+    public const PLATFORM_ANALYTICS_VIEW = 'platform.analytics.view';
+
+    // --- Audit Logs (Platform Admin Only) ---
+    public const AUDIT_LOG_VIEW = 'audit_log.view';
 }
