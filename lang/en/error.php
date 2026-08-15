@@ -33,6 +33,11 @@ return [
     // User Messages
     'user_not_found' => 'User not found.',
 
+    // Audit Messages
+    'audit_log_not_found' => 'Audit log not found.',
+    'end_date_must_be_after_start_date' => 'End date must be after or equal to start date.',
+    'per_page_max_100' => 'Per page value must not exceed 100.',
+
     // Product Messages
     'product_not_found' => 'Product not found.',
     'product_restore_failed' => 'Product restore failed.',

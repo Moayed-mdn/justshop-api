@@ -32,6 +32,11 @@ return [
     // User Messages
     'user_not_found' => 'المستخدم غير موجود.',
 
+    // Audit Messages
+    'audit_log_not_found' => 'سجل التدقيق غير موجود.',
+    'end_date_must_be_after_start_date' => 'يجب أن يكون تاريخ الانتهاء بعد أو مساويًا لتاريخ البدء.',
+    'per_page_max_100' => 'يجب ألا تتجاوز قيمة عدد العناصر في الصفحة 100.',
+
     // Product Messages
     'product_not_found' => 'المنتج غير موجود.',
     'product_restore_failed' => 'فشلت استعادة المنتج.',
