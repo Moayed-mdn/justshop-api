@@ -27,6 +27,7 @@ return [
     'billing_account_not_found' => 'حساب الفوترة غير موجود.',
     'invoice_not_found' => 'الفاتورة غير موجودة.',
     'invoice_pdf_not_available' => 'ملف PDF للفاتورة غير متوفر.',
+    'feature_flag_value_required' => 'قيمة علامة الميزة مطلوبة.',
 
     // User Messages
     'user_not_found' => 'المستخدم غير موجود.',

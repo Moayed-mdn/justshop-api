@@ -28,6 +28,7 @@ return [
     'billing_account_not_found' => 'Billing account not found.',
     'invoice_not_found' => 'Invoice not found.',
     'invoice_pdf_not_available' => 'Invoice PDF is not available.',
+    'feature_flag_value_required' => 'Feature flag value is required.',
 
     // User Messages
     'user_not_found' => 'User not found.',
