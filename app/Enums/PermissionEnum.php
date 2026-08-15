@@ -145,4 +145,8 @@ class PermissionEnum
     public const PROFILE_UPDATE_PASSWORD = 'profile.update_password';
     public const PROFILE_UPDATE_AVATAR = 'profile.update_avatar';
     public const PROFILE_DELETE = 'profile.delete';
+
+    // --- Feature Flags (Platform Admin Only) ---
+    public const FEATURE_FLAG_VIEW   = 'feature_flag.view';
+    public const FEATURE_FLAG_UPDATE = 'feature_flag.update';
 }

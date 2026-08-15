@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Policies\Platform;
 
+use App\Enums\PermissionEnum;
 use App\Enums\RoleEnum;
 use App\Models\User;
 use App\Policies\Concerns\InteractsWithPolicyTelemetry;
@@ -12,7 +13,7 @@ use App\Policies\Concerns\InteractsWithPolicyTelemetry;
  * FeatureFlagPolicy - Authorization for platform feature flag management
  * 
  * Feature flags are platform-level resources.
- * Only super_admin users can manage feature flags.
+ * Only super_admin users with explicit permissions can manage feature flags.
  */
 class FeatureFlagPolicy
 {
@@ -23,7 +24,10 @@ class FeatureFlagPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $this->decision($user, 'viewAny', $user->hasRole(RoleEnum::SUPER_ADMIN->value));
+        $hasRole = $user->hasRole(RoleEnum::SUPER_ADMIN->value);
+        $hasPermission = $user->can(PermissionEnum::FEATURE_FLAG_VIEW);
+
+        return $this->decision($user, 'viewAny', $hasRole && $hasPermission);
     }
 
     /**
@@ -31,6 +35,9 @@ class FeatureFlagPolicy
      */
     public function update(User $user): bool
     {
-        return $this->decision($user, 'update', $user->hasRole(RoleEnum::SUPER_ADMIN->value));
+        $hasRole = $user->hasRole(RoleEnum::SUPER_ADMIN->value);
+        $hasPermission = $user->can(PermissionEnum::FEATURE_FLAG_UPDATE);
+
+        return $this->decision($user, 'update', $hasRole && $hasPermission);
     }
 }

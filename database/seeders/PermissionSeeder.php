@@ -113,6 +113,10 @@ class PermissionSeeder extends Seeder
             PermissionEnum::PROFILE_UPDATE_PASSWORD,
             PermissionEnum::PROFILE_UPDATE_AVATAR,
             PermissionEnum::PROFILE_DELETE,
+
+            // Feature Flag permissions (Platform Admin Only)
+            PermissionEnum::FEATURE_FLAG_VIEW,
+            PermissionEnum::FEATURE_FLAG_UPDATE,
         ];
 
         foreach ($permissions as $permission) {
@@ -224,6 +228,10 @@ class PermissionSeeder extends Seeder
             PermissionEnum::PROFILE_UPDATE_PASSWORD,
             PermissionEnum::PROFILE_UPDATE_AVATAR,
             PermissionEnum::PROFILE_DELETE,
+
+            // Feature Flag permissions (Platform Admin Only)
+            PermissionEnum::FEATURE_FLAG_VIEW,
+            PermissionEnum::FEATURE_FLAG_UPDATE,
         ]);
 
         // Assign permissions to store_admin
