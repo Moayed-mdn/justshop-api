@@ -21,9 +21,26 @@ class InvoiceRepository
     /**
      * Get paginated invoices for a billing account.
      */
-    public function getPaginatedForAccount(int $billingAccountId, int $perPage = 15): LengthAwarePaginator
+    public function getPaginatedForAccount(
+        int $billingAccountId, 
+        int $perPage = 15,
+        ?string $status = null,
+        ?int $year = null
+    ): LengthAwarePaginator
     {
-        return Invoice::where('billing_account_id', $billingAccountId)
+        $query = Invoice::where('billing_account_id', $billingAccountId);
+
+        // Filter by status if provided
+        if ($status !== null) {
+            $query->where('status', $status);
+        }
+
+        // Filter by year if provided
+        if ($year !== null) {
+            $query->whereYear('issued_at', $year);
+        }
+
+        return $query
             ->with(['subscription', 'lineItems'])
             ->orderBy('issued_at', 'desc')
             ->orderBy('created_at', 'desc')

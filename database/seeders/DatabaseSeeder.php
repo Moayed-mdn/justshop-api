@@ -59,5 +59,20 @@ class DatabaseSeeder extends Seeder
         // Seeders may create stores before billing_accounts exist, causing drift.
         // Reconcile to sync counters with actual data.
         $this->call(ReconcileEntitlementsSeeder::class);
+
+        // ── Sync Stripe catalog after seeding ────────────────────────────
+        // Sync plans and prices to Stripe after all seeders complete
+        if (env('BILLING_PROVIDER') === 'stripe') {
+            $this->command?->info('🔄 Syncing Stripe catalog...');
+            
+            try {
+                \Illuminate\Support\Facades\Artisan::call('billing:sync-stripe-catalog');
+                $output = \Illuminate\Support\Facades\Artisan::output();
+                $this->command?->info($output);
+            } catch (\Exception $e) {
+                $this->command?->warn('⚠️  Failed to sync Stripe catalog: ' . $e->getMessage());
+                $this->command?->warn('   You can manually run: php artisan billing:sync-stripe-catalog');
+            }
+        }
     }
 }

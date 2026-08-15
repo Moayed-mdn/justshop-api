@@ -13,6 +13,7 @@ class HandleCheckoutSessionCompleted
     public function __construct(
         private ActivateSubscriptionAction $activateSubscriptionAction,
         private BillingProviderInterface $billingProvider,
+        private \App\Repositories\Billing\BillingAccountRepository $billingAccountRepository,
     ) {}
 
     /**
@@ -102,6 +103,21 @@ class HandleCheckoutSessionCompleted
                 reason: 'checkout_completed',
             )
         );
+
+        // Mark trial as used if this subscription has a trial
+        // This prevents trial gaming (using multiple trials by upgrading/downgrading)
+        if ($activatedSubscription->trial_ends_at) {
+            $billingAccount = $activatedSubscription->billingAccount;
+            if (!$billingAccount->trial_used) {
+                $this->billingAccountRepository->markTrialAsUsed($billingAccount);
+                
+                Log::channel('billing')->info('webhook.checkout.trial_marked_used', [
+                    'subscription_id' => $activatedSubscription->id,
+                    'billing_account_id' => $billingAccount->id,
+                    'trial_ends_at' => $activatedSubscription->trial_ends_at,
+                ]);
+            }
+        }
 
         Log::channel('billing')->info('webhook.checkout.activated', [
             'session_id' => $session['id'],

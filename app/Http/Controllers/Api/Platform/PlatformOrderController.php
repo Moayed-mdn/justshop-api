@@ -4,11 +4,23 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\Platform;
 
+use App\Actions\Platform\Orders\CancelPlatformOrderAction;
+use App\Actions\Platform\Orders\GetPlatformOrderAction;
+use App\Actions\Platform\Orders\GetPlatformOrdersAction;
+use App\Actions\Platform\Orders\RefundPlatformOrderAction;
+use App\Actions\Platform\Orders\UpdatePlatformOrderStatusAction;
+use App\DTOs\Platform\Orders\CancelPlatformOrderDTO;
+use App\DTOs\Platform\Orders\GetPlatformOrderDTO;
+use App\DTOs\Platform\Orders\GetPlatformOrdersDTO;
+use App\DTOs\Platform\Orders\RefundPlatformOrderDTO;
+use App\DTOs\Platform\Orders\UpdatePlatformOrderStatusDTO;
 use App\Http\Controllers\Controller;
-use App\Models\Order;
+use App\Http\Requests\Platform\Orders\GetPlatformOrdersRequest;
+use App\Http\Requests\Platform\Orders\RefundPlatformOrderRequest;
+use App\Http\Requests\Platform\Orders\UpdatePlatformOrderStatusRequest;
+use App\Http\Resources\Platform\PlatformOrderResource;
 use App\Policies\PlatformOrderPolicy;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 /**
  * Platform Order Controller
@@ -21,52 +33,29 @@ use Illuminate\Http\Request;
  */
 class PlatformOrderController extends Controller
 {
+    public function __construct(
+        private readonly GetPlatformOrdersAction $getPlatformOrdersAction,
+        private readonly GetPlatformOrderAction $getPlatformOrderAction,
+        private readonly UpdatePlatformOrderStatusAction $updatePlatformOrderStatusAction,
+        private readonly CancelPlatformOrderAction $cancelPlatformOrderAction,
+        private readonly RefundPlatformOrderAction $refundPlatformOrderAction,
+    ) {}
+
     /**
      * List platform orders across all stores.
      * 
      * This intentionally operates at platform scope.
      * Platform actors with platform.order.view can see orders from any store.
      */
-    public function index(Request $request): JsonResponse
+    public function index(GetPlatformOrdersRequest $request): JsonResponse
     {
-        $this->authorize('viewAny', [PlatformOrderPolicy::class]);
+        $this->authorize('viewAny', PlatformOrderPolicy::class);
 
-        $query = Order::query()->with(['store', 'user']);
+        $orders = $this->getPlatformOrdersAction->execute(
+            GetPlatformOrdersDTO::fromRequest($request)
+        );
 
-        // Apply filters
-        if ($request->has('store_id')) {
-            $query->where('store_id', $request->input('store_id'));
-        }
-
-        if ($request->has('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        if ($request->has('search')) {
-            $search = $request->input('search');
-            $query->where(function ($q) use ($search) {
-                $q->where('id', 'LIKE', "%{$search}%")
-                  ->orWhere('order_number', 'LIKE', "%{$search}%")
-                  ->orWhereHas('user', function ($userQuery) use ($search) {
-                      $userQuery->where('name', 'LIKE', "%{$search}%")
-                                ->orWhere('email', 'LIKE', "%{$search}%");
-                  });
-            });
-        }
-
-        if ($request->has('date_from')) {
-            $query->whereDate('created_at', '>=', $request->input('date_from'));
-        }
-
-        if ($request->has('date_to')) {
-            $query->whereDate('created_at', '<=', $request->input('date_to'));
-        }
-
-        // Pagination
-        $perPage = $request->input('per_page', 15);
-        $orders = $query->orderBy('created_at', 'desc')->paginate($perPage);
-
-        return $this->paginated($orders, $orders);
+        return $this->paginated($orders, PlatformOrderResource::collection($orders));
     }
 
     /**
@@ -77,13 +66,13 @@ class PlatformOrderController extends Controller
      */
     public function show(int $order): JsonResponse
     {
-        // Find order globally (not scoped to a store)
-        $orderModel = Order::with(['store', 'user', 'items'])->findOrFail($order);
+        $orderModel = $this->getPlatformOrderAction->execute(
+            new GetPlatformOrderDTO(orderId: $order)
+        );
 
-        // Platform authorization (not merchant authorization)
         $this->authorize('view', [PlatformOrderPolicy::class, $orderModel]);
 
-        return $this->success($orderModel);
+        return $this->success(new PlatformOrderResource($orderModel));
     }
 
     /**
@@ -91,20 +80,22 @@ class PlatformOrderController extends Controller
      * 
      * Platform mutation - requires explicit platform.order.update_status permission.
      */
-    public function updateStatus(Request $request, int $order): JsonResponse
+    public function updateStatus(UpdatePlatformOrderStatusRequest $request, int $order): JsonResponse
     {
-        $orderModel = Order::findOrFail($order);
+        $orderModel = $this->getPlatformOrderAction->execute(
+            new GetPlatformOrderDTO(orderId: $order)
+        );
 
         $this->authorize('updateStatus', [PlatformOrderPolicy::class, $orderModel]);
 
-        $request->validate([
-            'status' => 'required|string',
-        ]);
+        $updatedOrder = $this->updatePlatformOrderStatusAction->execute(
+            UpdatePlatformOrderStatusDTO::fromRequest($request, $order)
+        );
 
-        $orderModel->status = $request->input('status');
-        $orderModel->save();
-
-        return $this->success($orderModel, 'Platform order status updated successfully');
+        return $this->success(
+            new PlatformOrderResource($updatedOrder),
+            __('platform.order_status_updated')
+        );
     }
 
     /**
@@ -114,14 +105,20 @@ class PlatformOrderController extends Controller
      */
     public function cancel(int $order): JsonResponse
     {
-        $orderModel = Order::findOrFail($order);
+        $orderModel = $this->getPlatformOrderAction->execute(
+            new GetPlatformOrderDTO(orderId: $order)
+        );
 
         $this->authorize('cancel', [PlatformOrderPolicy::class, $orderModel]);
 
-        $orderModel->status = 'cancelled';
-        $orderModel->save();
+        $canceledOrder = $this->cancelPlatformOrderAction->execute(
+            new CancelPlatformOrderDTO(orderId: $order)
+        );
 
-        return $this->success($orderModel, 'Platform order cancelled successfully');
+        return $this->success(
+            new PlatformOrderResource($canceledOrder),
+            __('platform.order_canceled')
+        );
     }
 
     /**
@@ -129,21 +126,21 @@ class PlatformOrderController extends Controller
      * 
      * Platform mutation - requires explicit platform.order.refund permission.
      */
-    public function refund(Request $request, int $order): JsonResponse
+    public function refund(RefundPlatformOrderRequest $request, int $order): JsonResponse
     {
-        $orderModel = Order::findOrFail($order);
+        $orderModel = $this->getPlatformOrderAction->execute(
+            new GetPlatformOrderDTO(orderId: $order)
+        );
 
         $this->authorize('refund', [PlatformOrderPolicy::class, $orderModel]);
 
-        $request->validate([
-            'amount' => 'nullable|numeric|min:0',
-            'reason' => 'nullable|string|max:500',
-        ]);
+        $refundedOrder = $this->refundPlatformOrderAction->execute(
+            RefundPlatformOrderDTO::fromRequest($request, $order)
+        );
 
-        // TODO: Implement actual refund logic with payment gateway
-        $orderModel->status = 'refunded';
-        $orderModel->save();
-
-        return $this->success($orderModel, 'Platform order refunded successfully');
+        return $this->success(
+            new PlatformOrderResource($refundedOrder),
+            __('platform.order_refunded')
+        );
     }
 }

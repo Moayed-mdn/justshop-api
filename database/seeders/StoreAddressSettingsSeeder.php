@@ -56,6 +56,10 @@ class StoreAddressSettingsSeeder extends Seeder
                                 'pattern' => '^[A-Z]{1,2}\d{1,2}[A-Z]? \d[A-Z]{2}$',
                                 'example' => 'SW1A 1AA',
                             ],
+                            'MX' => [
+                                'pattern' => '^\d{5}$',
+                                'example' => '12345',
+                            ],
                         ],
                     ],
                     'require_phone' => false,

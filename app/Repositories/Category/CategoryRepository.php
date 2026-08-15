@@ -144,7 +144,7 @@ class CategoryRepository extends BaseRepository
     ): ?Category {
         return $this->scopedQuery()
             ->where('slug', $slug)
-            ->with(['translations', 'children.translations', 'brand'])
+            ->with(['translations', 'children.translations'])
             ->withCount(['products' => fn(Builder $q) => $q
                 ->where('is_active', true)
                 ->where('store_id', $storeId),

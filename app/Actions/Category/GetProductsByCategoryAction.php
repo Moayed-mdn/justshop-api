@@ -18,16 +18,16 @@ class GetProductsByCategoryAction
     {
         $locale = app()->getLocale();
 
-        $category = $this->productService->findCategoryBySlugOrFail($dto->slug);
-        $category->loadMissing(['translations', 'descendants.translations']);
+        $category = $this->productService->findCategoryBySlugOrFail($dto->slug, $dto->storeId);
+        $category->loadMissing(['translations', 'children.translations', 'children.children.translations']);
 
         $descendantCategories = $this->productService->flattenCategoryDescendants($category, $locale);
 
-        $query = $this->productService->buildBaseProductQuery()
+        $query = $this->productService->buildBaseProductQuery($dto->storeId)
             ->addSelect('images.alt_text as alt_text');
 
         if ($dto->categorySlug) {
-            $subCategory = $this->productService->findCategoryBySlug($dto->categorySlug);
+            $subCategory = $this->productService->findCategoryBySlug($dto->categorySlug, $dto->storeId);
 
             if ($subCategory) {
                 $subIds = $subCategory->allDescendantIds();

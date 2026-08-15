@@ -34,18 +34,18 @@ class CategorySeeder extends Seeder
                     'Shoes' => ['en' => 'Shoes', 'ar' => 'الأحذية'],
                 ]
             ],
-            'Home & Kitchen' => [
-                'en' => 'Home & Kitchen',
-                'ar' => 'المنزل والمطبخ',
+            'Home Living' => [
+                'en' => 'Home Living',
+                'ar' => 'المنزل والمعيشة',
                 'children' => [
                     'Appliances' => ['en' => 'Appliances', 'ar' => 'الأجهزة المنزلية'],
                     'Furniture' => ['en' => 'Furniture', 'ar' => 'الأثاث'],
                     'Decor' => ['en' => 'Decor', 'ar' => 'الديكور'],
                 ]
             ],
-            'Health & Beauty' => [
-                'en' => 'Health & Beauty',
-                'ar' => 'الصحة والجمال',
+            'Beauty Health' => [
+                'en' => 'Beauty Health',
+                'ar' => 'الجمال والصحة',
                 'children' => [
                     'Skincare' => ['en' => 'Skincare', 'ar' => 'العناية بالبشرة'],
                     'Hair Care' => ['en' => 'Hair Care', 'ar' => 'العناية بالشعر'],
@@ -59,6 +59,15 @@ class CategorySeeder extends Seeder
                     'Fitness Equipment' => ['en' => 'Fitness Equipment', 'ar' => 'معدات اللياقة البدنية'],
                     'Outdoor Gear' => ['en' => 'Outdoor Gear', 'ar' => 'معدات الهواء الطلق'],
                     'Sportswear' => ['en' => 'Sportswear', 'ar' => 'الملابس الرياضية'],
+                ]
+            ],
+            'Toys Games' => [
+                'en' => 'Toys Games',
+                'ar' => 'الألعاب والتسلية',
+                'children' => [
+                    'Action Figures' => ['en' => 'Action Figures', 'ar' => 'أشكال الحركة'],
+                    'Board Games' => ['en' => 'Board Games', 'ar' => 'ألعاب اللوح'],
+                    'Educational Toys' => ['en' => 'Educational Toys', 'ar' => 'ألعاب تعليمية'],
                 ]
             ],
         ];

@@ -24,6 +24,11 @@ return [
     'unauthorized_store' => 'You are not authorized to access this store.',
     'invalid_store_lifecycle_transition' => 'This store status transition is not allowed.',
 
+    // Billing Messages
+    'billing_account_not_found' => 'Billing account not found.',
+    'invoice_not_found' => 'Invoice not found.',
+    'invoice_pdf_not_available' => 'Invoice PDF is not available.',
+
     // User Messages
     'user_not_found' => 'User not found.',
 

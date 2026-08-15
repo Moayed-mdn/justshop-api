@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Billing;
 
 use App\Enums\ErrorCode;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Billing\GetInvoicesRequest;
 use App\Policies\Billing\InvoicePolicy;
 use App\Repositories\Billing\BillingAccountRepository;
 use App\Repositories\Billing\InvoiceRepository;
@@ -21,8 +22,14 @@ class InvoiceController extends Controller
      * Get paginated invoice history.
      * 
      * GET /api/v1/merchant/billing/invoices
+     * 
+     * Query Parameters:
+     * - status: Filter by invoice status (draft, open, paid, void, uncollectible)
+     * - year: Filter by year of issued_at date
+     * - per_page: Number of items per page (default: 15)
+     * - page: Page number (handled by Laravel pagination)
      */
-    public function index(Request $request): JsonResponse
+    public function index(GetInvoicesRequest $request): JsonResponse
     {
         /** @var \App\Models\User $user */
         $user = $request->user();
@@ -31,7 +38,7 @@ class InvoiceController extends Controller
 
         if (!$billingAccount) {
             return $this->error(
-                message: 'Billing account not found',
+                message: __('error.billing_account_not_found'),
                 errorCode: ErrorCode::BIL_001->value,
                 statusCode: 404
             );
@@ -39,8 +46,18 @@ class InvoiceController extends Controller
 
         $this->authorize('viewAny', [InvoicePolicy::class, $billingAccount]);
 
-        $perPage = $request->integer('per_page', 15);
-        $invoices = $this->invoiceRepo->getPaginatedForAccount($billingAccount->id, $perPage);
+        // Extract validated query parameters
+        $perPage = $request->validated('per_page', 15);
+        $status = $request->validated('status');
+        $year = $request->validated('year');
+
+        // Get filtered invoices
+        $invoices = $this->invoiceRepo->getPaginatedForAccount(
+            $billingAccount->id, 
+            $perPage,
+            $status,
+            $year
+        );
 
         return $this->paginated($invoices, \App\Http\Resources\Billing\InvoiceResource::collection($invoices));
     }
@@ -59,7 +76,7 @@ class InvoiceController extends Controller
 
         if (!$billingAccount) {
             return $this->error(
-                message: 'Billing account not found',
+                message: __('error.billing_account_not_found'),
                 errorCode: ErrorCode::BIL_001->value,
                 statusCode: 404
             );
@@ -71,7 +88,7 @@ class InvoiceController extends Controller
 
         if (!$invoiceModel) {
             return $this->error(
-                message: 'Invoice not found',
+                message: __('error.invoice_not_found'),
                 errorCode: ErrorCode::BIL_002->value,
                 statusCode: 404
             );
@@ -96,7 +113,7 @@ class InvoiceController extends Controller
 
         if (!$billingAccount) {
             return $this->error(
-                message: 'Billing account not found',
+                message: __('error.billing_account_not_found'),
                 errorCode: ErrorCode::BIL_001->value,
                 statusCode: 404
             );
@@ -108,7 +125,7 @@ class InvoiceController extends Controller
 
         if (!$invoiceModel) {
             return $this->error(
-                message: 'Invoice not found',
+                message: __('error.invoice_not_found'),
                 errorCode: ErrorCode::BIL_002->value,
                 statusCode: 404
             );
@@ -118,7 +135,7 @@ class InvoiceController extends Controller
 
         if (!$invoiceModel->invoice_pdf_url) {
             return $this->error(
-                message: 'Invoice PDF not available',
+                message: __('error.invoice_pdf_not_available'),
                 errorCode: ErrorCode::BIL_002->value,
                 statusCode: 404
             );

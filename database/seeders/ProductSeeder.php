@@ -42,6 +42,12 @@ class ProductSeeder extends Seeder
         // Furniture
         'Modern Sofa 3-Seater'   => 'IKEA',
         'Bookshelf 5-Tier'       => 'IKEA',
+        // Toys
+        'Superhero Action Figure' => 'Hasbro',
+        'Dinosaur Figure Set'     => 'Mattel',
+        'Strategy Board Game'     => 'Hasbro',
+        'STEM Building Blocks'    => 'LEGO',
+        'Learning Tablet for Kids' => 'LeapFrog',
     ];
 
     /**
@@ -58,6 +64,11 @@ class ProductSeeder extends Seeder
         'Flory Summer Dress'     => ['Fashion', 'Dress', 'New Arrival'],
         'Running Sneakers'       => ['Shoes', 'Sport', 'Bestseller'],
         'Modern Sofa 3-Seater'   => ['Furniture', 'Home', 'Sale'],
+        'Superhero Action Figure' => ['Toys', 'Action', 'Kids'],
+        'Dinosaur Figure Set'    => ['Toys', 'Educational', 'Kids'],
+        'Strategy Board Game'    => ['Board Games', 'Family', 'Bestseller'],
+        'STEM Building Blocks'   => ['Toys', 'Educational', 'STEM'],
+        'Learning Tablet for Kids' => ['Electronics', 'Educational', 'Kids'],
     ];
 
     /**
@@ -79,6 +90,13 @@ class ProductSeeder extends Seeder
         'Sport' => 'رياضة',
         'Furniture' => 'أثاث',
         'Home' => 'منزل',
+        'Toys' => 'ألعاب',
+        'Action' => 'حركة',
+        'Kids' => 'أطفال',
+        'Board Games' => 'ألعاب لوحية',
+        'Family' => 'عائلة',
+        'Educational' => 'تعليمية',
+        'STEM' => 'علوم وتكنولوجيا',
     ];
 
     /**
@@ -206,6 +224,60 @@ class ProductSeeder extends Seeder
                 ],
                 'base_price' => 79.99,
                 'description' => 'High-quality wireless earbuds with noise cancellation',
+            ],
+        ],
+        'Action Figures' => [
+            'Superhero Action Figure' => [
+                'options' => [
+                    'Character' => ['Spider-Man', 'Batman', 'Iron Man', 'Superman'],
+                    'Size' => ['6 inch', '12 inch'],
+                ],
+                'base_price' => 24.99,
+                'description' => 'Detailed superhero action figure with movable joints',
+            ],
+            'Dinosaur Figure Set' => [
+                'options' => [
+                    'Set Size' => ['3-Pack', '6-Pack', '12-Pack'],
+                    'Type' => ['Herbivores', 'Carnivores', 'Mixed'],
+                ],
+                'base_price' => 19.99,
+                'description' => 'Realistic dinosaur figures for educational play',
+            ],
+        ],
+        'Board Games' => [
+            'Strategy Board Game' => [
+                'options' => [
+                    'Edition' => ['Standard', 'Deluxe', 'Travel'],
+                    'Players' => ['2-4', '2-6', '4-8'],
+                ],
+                'base_price' => 34.99,
+                'description' => 'Engaging strategy board game for family fun',
+            ],
+            'Classic Card Game Set' => [
+                'options' => [
+                    'Type' => ['Poker', 'Bridge', 'Multi-Game'],
+                    'Quality' => ['Standard', 'Premium'],
+                ],
+                'base_price' => 14.99,
+                'description' => 'Classic card game set with durable cards',
+            ],
+        ],
+        'Educational Toys' => [
+            'STEM Building Blocks' => [
+                'options' => [
+                    'Pieces' => ['100', '200', '500'],
+                    'Theme' => ['City', 'Space', 'Vehicles'],
+                ],
+                'base_price' => 39.99,
+                'description' => 'Educational building blocks for creative STEM learning',
+            ],
+            'Learning Tablet for Kids' => [
+                'options' => [
+                    'Age Group' => ['3-5 years', '6-8 years', '9-12 years'],
+                    'Color' => ['Blue', 'Pink', 'Green'],
+                ],
+                'base_price' => 89.99,
+                'description' => 'Interactive learning tablet with educational games',
             ],
         ],
     ];
@@ -537,6 +609,12 @@ class ProductSeeder extends Seeder
             'Wireless Earbuds' => 'سماعات لاسلكية',
             'Smartwatches' => 'ساعات ذكية',
             'Laptop Bags' => 'حقائب لابتوب',
+            'Superhero Action Figure' => 'شخصية خارقة متحركة',
+            'Dinosaur Figure Set' => 'مجموعة أشكال الديناصورات',
+            'Strategy Board Game' => 'لعبة لوحة استراتيجية',
+            'Classic Card Game Set' => 'مجموعة لعبة ورق كلاسيكية',
+            'STEM Building Blocks' => 'مكعبات بناء تعليمية',
+            'Learning Tablet for Kids' => 'جهاز لوحي تعليمي للأطفال',
             'External Monitors' => 'شاشات خارجية',
             'Mechanical Keyboards' => 'لوحات مفاتيح ميكانيكية',
             'Wireless Mice' => 'فئران لاسلكية',
@@ -599,6 +677,12 @@ class ProductSeeder extends Seeder
             'Dell XPS 15' => 'ديل XPS 15 مع شاشة إنفينيتي إيدج ومعالج إنتل i9',
             'Modern Sofa 3-Seater' => 'كنبة عصرية بثلاثة مقاعد مع وسائد مريحة',
             'Wireless Earbuds' => 'سماعات لاسلكية عالية الجودة مع إلغاء الضوضاء',
+            'Superhero Action Figure' => 'شخصية خارقة متحركة مفصلة بمفاصل قابلة للحركة',
+            'Dinosaur Figure Set' => 'مجموعة أشكال ديناصورات واقعية للعب التعليمي',
+            'Strategy Board Game' => 'لعبة لوحة استراتيجية ممتعة للعائلة',
+            'Classic Card Game Set' => 'مجموعة ألعاب ورق كلاسيكية ببطاقات متينة',
+            'STEM Building Blocks' => 'مكعبات بناء تعليمية للتعلم الإبداعي',
+            'Learning Tablet for Kids' => 'جهاز لوحي تعليمي تفاعلي مع ألعاب تعليمية',
         ];
 
         return $descriptions[$productName] ?? 'وصف ' . $this->getArabicProductName($productName) . ' — جودة ممتازة، شحن سريع.';

@@ -27,6 +27,11 @@ class BrandSeeder extends Seeder
             ['name' => 'Nike',    'description' => 'Just do it.'],
             ['name' => 'IKEA',    'description' => 'Creating a better everyday life.'],
             ['name' => 'Fitbit',  'description' => 'Find your fit.'],
+            ['name' => 'Google',  'description' => 'Do the right thing.'],
+            ['name' => 'Hasbro',  'description' => 'Make the world a better place for children and their families.'],
+            ['name' => 'Mattel',  'description' => 'Creating innovative products and experiences.'],
+            ['name' => 'LEGO',    'description' => 'Inspire and develop the builders of tomorrow.'],
+            ['name' => 'LeapFrog', 'description' => 'Empowering children to reach their potential.'],
         ];
 
         foreach ($brands as $brand) {

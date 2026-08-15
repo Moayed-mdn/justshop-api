@@ -22,9 +22,11 @@
         "stripe/stripe-php": "^20.2"
     },
     "require-dev": {
+        "barryvdh/laravel-debugbar": "^4.4",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.24",
         "laravel/sail": "^1.41",
+        "laravel/telescope": "^5.22",
         "mll-lab/laravel-graphql-playground": "^1.1",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",

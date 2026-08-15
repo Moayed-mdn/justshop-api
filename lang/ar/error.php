@@ -23,6 +23,11 @@ return [
     'store_not_found' => 'المتجر غير موجود.',
     'unauthorized_store' => 'ليس لديك صلاحية للوصول إلى هذا المتجر.',
 
+    // Billing Messages
+    'billing_account_not_found' => 'حساب الفوترة غير موجود.',
+    'invoice_not_found' => 'الفاتورة غير موجودة.',
+    'invoice_pdf_not_available' => 'ملف PDF للفاتورة غير متوفر.',
+
     // User Messages
     'user_not_found' => 'المستخدم غير موجود.',
 

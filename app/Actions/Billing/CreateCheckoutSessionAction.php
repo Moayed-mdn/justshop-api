@@ -109,8 +109,12 @@ class CreateCheckoutSessionAction
         }
 
         // Create new local subscription BEFORE redirecting to Stripe
-        // Calculate trial end date from plan's trial_days
-        $trialDays = $planPrice->plan->trial_days ?? 0;
+        // Calculate trial eligibility (prevent trial gaming)
+        // Trial is only granted if:
+        // 1. The billing account has never used a trial (trial_used = false)
+        // 2. There's no existing live subscription (this is the first subscription)
+        $isEligibleForTrial = !$billingAccount->trial_used && $liveSubscription === null;
+        $trialDays = $isEligibleForTrial ? ($planPrice->plan->trial_days ?? 0) : 0;
         $trialEndsAt = $trialDays > 0 ? Carbon::now()->addDays($trialDays) : null;
 
         $subscription = Subscription::create([
@@ -149,6 +153,9 @@ class CreateCheckoutSessionAction
             'subscription_id' => $subscription->id,
             'session_id' => $session['session_id'],
             'trial_days' => $trialDays,
+            'trial_eligible' => $isEligibleForTrial,
+            'trial_already_used' => $billingAccount->trial_used,
+            'has_live_subscription' => $liveSubscription !== null,
             'canceled_incomplete' => count($abandonedIncomplete),
             'deferred_live_subscription_id' => $liveSubscription?->id,
         ]);

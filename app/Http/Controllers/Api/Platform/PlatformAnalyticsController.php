@@ -4,71 +4,32 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\Platform;
 
+use App\Actions\Platform\Analytics\GetPlatformAnalyticsAction;
+use App\DTOs\Platform\Analytics\GetPlatformAnalyticsDTO;
 use App\Http\Controllers\Controller;
-use App\Models\Store;
-use App\Models\User;
+use App\Http\Resources\Platform\PlatformAnalyticsResource;
+use App\Policies\Platform\PlatformAnalyticsPolicy;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 
+/**
+ * Platform Analytics Controller
+ * 
+ * Thin controller following architecture rules.
+ */
 class PlatformAnalyticsController extends Controller
 {
+    public function __construct(
+        private readonly GetPlatformAnalyticsAction $getPlatformAnalyticsAction,
+    ) {}
+
     public function index(): JsonResponse
     {
-        // Generate real data for the last 30 days
-        $userGrowth = [];
-        $storeGrowth = [];
-        
-        for ($i = 30; $i >= 0; $i--) {
-            $date = now()->subDays($i);
-            $dateStr = $date->format('Y-m-d');
-            
-            // Count users created on this date
-            $userCount = User::whereDate('created_at', $dateStr)->count();
-            $userGrowth[] = [
-                'date' => $dateStr,
-                'count' => $userCount,
-            ];
-            
-            // Count stores created on this date
-            $storeCount = Store::whereDate('created_at', $dateStr)->count();
-            $storeGrowth[] = [
-                'date' => $dateStr,
-                'count' => $storeCount,
-            ];
-        }
+        $this->authorize('viewAny', PlatformAnalyticsPolicy::class);
 
-        // Get top stores by product count (revenue tracking not implemented yet)
-        $revenueByStore = Store::query()
-            ->withCount('products')
-            ->orderByDesc('products_count')
-            ->limit(5)
-            ->get()
-            ->map(fn($store) => [
-                'storeName' => $store->name,
-                'revenue' => 0, // TODO: Calculate from orders when revenue tracking is implemented
-            ])
-            ->toArray();
+        $analytics = $this->getPlatformAnalyticsAction->execute(
+            new GetPlatformAnalyticsDTO()
+        );
 
-        // Get store status distribution
-        $storeStatus = DB::table('stores')
-            ->select('status', DB::raw('count(*) as count'))
-            ->groupBy('status')
-            ->get()
-            ->map(fn($row) => [
-                'status' => ucfirst($row->status),
-                'count' => $row->count,
-            ])
-            ->toArray();
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'userGrowth' => $userGrowth,
-                'storeGrowth' => $storeGrowth,
-                'revenueByStore' => $revenueByStore,
-                'storeStatus' => $storeStatus,
-            ],
-        ]);
+        return $this->success(new PlatformAnalyticsResource($analytics));
     }
 }
-
