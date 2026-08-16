@@ -235,7 +235,7 @@ class ProductRepository extends BaseRepository
         if ($currentProduct->tags->isNotEmpty()) {
             $tagIds = $currentProduct->tags->pluck('id');
             $relatedQuery->whereHas('tags', function ($query) use ($tagIds) {
-                $query->whereIn('product_tags.id', $tagIds);
+                $query->whereIn('tags.id', $tagIds);
             });
         }
 
