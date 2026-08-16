@@ -80,7 +80,7 @@ class NavigationResourceController extends Controller
             ->where('store_id', $store->id)
             ->where('is_active', true)
             ->with('translations')
-            ->select('id', 'parent_id', 'is_active', 'position');
+            ->select('id', 'parent_id', 'is_active', 'sort_order');
 
         // Optional search filter
         if ($request->has('search')) {
@@ -90,18 +90,22 @@ class NavigationResourceController extends Controller
             });
         }
 
-        $categories = $query->orderBy('position')->get();
+        $categories = $query->orderBy('sort_order')->get();
 
         // Transform for frontend
         $data = $categories->map(function ($category) {
+            $translationEn = $category->translation('en');
+            $translationAr = $category->translation('ar');
+            $slugEn = $translationEn?->slug ?? $category->slug ?? '';
+
             return [
                 'id' => $category->id,
                 'name' => [
-                    'en' => $category->getTranslation('en')?->name ?? '',
-                    'ar' => $category->getTranslation('ar')?->name ?? '',
+                    'en' => $translationEn?->name ?? '',
+                    'ar' => $translationAr?->name ?? '',
                 ],
-                'slug' => $category->getSlug('en'),
-                'url' => '/shop/category/' . $category->getSlug('en'),
+                'slug' => $slugEn,
+                'url' => '/shop/category/' . $slugEn,
                 'parentId' => $category->parent_id,
             ];
         });
@@ -120,7 +124,7 @@ class NavigationResourceController extends Controller
             ->where('store_id', $store->id)
             ->active()
             ->with('translations')
-            ->select('id', 'category_id', 'brand_id', 'status');
+            ->select('id', 'category_id', 'brand_id', 'is_active');
 
         // Optional search filter
         if ($request->has('search')) {
@@ -137,14 +141,18 @@ class NavigationResourceController extends Controller
 
         // Transform for frontend
         $data = $products->map(function ($product) {
+            $translationEn = $product->translation('en');
+            $translationAr = $product->translation('ar');
+            $slugEn = $translationEn?->slug ?? '';
+
             return [
                 'id' => $product->id,
                 'name' => [
-                    'en' => $product->getTranslation('en')?->name ?? '',
-                    'ar' => $product->getTranslation('ar')?->name ?? '',
+                    'en' => $translationEn?->name ?? '',
+                    'ar' => $translationAr?->name ?? '',
                 ],
-                'slug' => $product->getSlug('en'),
-                'url' => '/shop/product/' . $product->getSlug('en'),
+                'slug' => $slugEn,
+                'url' => '/shop/product/' . $slugEn,
                 'categoryId' => $product->category_id,
             ];
         });
@@ -181,20 +189,20 @@ class NavigationResourceController extends Controller
             'category' => [
                 'id' => $resource->id,
                 'name' => [
-                    'en' => $resource->getTranslation('en')?->name ?? '',
-                    'ar' => $resource->getTranslation('ar')?->name ?? '',
+                    'en' => $resource->translation('en')?->name ?? '',
+                    'ar' => $resource->translation('ar')?->name ?? '',
                 ],
-                'slug' => $resource->getSlug('en'),
-                'url' => '/shop/category/' . $resource->getSlug('en'),
+                'slug' => $resource->translation('en')?->slug ?? $resource->slug ?? '',
+                'url' => '/shop/category/' . ($resource->translation('en')?->slug ?? $resource->slug ?? ''),
             ],
             'product' => [
                 'id' => $resource->id,
                 'name' => [
-                    'en' => $resource->getTranslation('en')?->name ?? '',
-                    'ar' => $resource->getTranslation('ar')?->name ?? '',
+                    'en' => $resource->translation('en')?->name ?? '',
+                    'ar' => $resource->translation('ar')?->name ?? '',
                 ],
-                'slug' => $resource->getSlug('en'),
-                'url' => '/shop/product/' . $resource->getSlug('en'),
+                'slug' => $resource->translation('en')?->slug ?? '',
+                'url' => '/shop/product/' . ($resource->translation('en')?->slug ?? ''),
             ],
             default => []
         };
