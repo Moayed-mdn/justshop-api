@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\Merchant;
 
+use App\Actions\Store\GenerateStripeDashboardLinkAction;
 use App\Actions\Store\OnboardMerchantToStripeAction;
 use App\Actions\Store\ReconcileStripeConnectStatusAction;
+use App\DTOs\Store\GenerateStripeDashboardLinkDTO;
 use App\DTOs\Store\OnboardMerchantToStripeDTO;
 use App\Http\Controllers\Controller;
 use App\Models\Store;
@@ -68,5 +70,27 @@ class StripeConnectController extends Controller
             'onboarded_at' => $store->stripe_onboarded_at?->toIso8601String(),
             'can_receive_payments' => $store->canReceivePayments(),
         ]);
+    }
+
+    /**
+     * Generate a fresh Stripe Express Dashboard login link for the merchant.
+     *
+     * Works as soon as a Stripe account exists — even mid-onboarding, since
+     * the Express Dashboard itself walks the merchant through any
+     * outstanding requirements. Single-use, expires quickly: the frontend
+     * must call this fresh right before opening the link, never cache it.
+     *
+     * @param Store $store Route-model-bound store
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getDashboardLink(Store $store, GenerateStripeDashboardLinkAction $action)
+    {
+        $this->authorize('view', $store);
+
+        $url = $action->execute(
+            new GenerateStripeDashboardLinkDTO(storeId: $store->id)
+        );
+
+        return $this->success(['url' => $url]);
     }
 }

@@ -21,4 +21,7 @@ Route::middleware([
         Route::post('/onboard', [StripeConnectController::class, 'getOnboardingUrl'])
             ->middleware('subscription.active')
             ->name('onboard');
+
+        Route::post('/dashboard-link', [StripeConnectController::class, 'getDashboardLink'])
+            ->name('dashboard-link');
     });
