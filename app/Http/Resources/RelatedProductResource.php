@@ -33,6 +33,7 @@ class RelatedProductResource extends JsonResource
             'primary_image' => $primaryImage,
             'price'         => $displayVariant ? (float) $displayVariant->price : null,
             'category_id'   => $this->category_id,
+            'variant_id'    => $displayVariant?->id,
         ];
     }
 }
