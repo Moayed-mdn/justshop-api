@@ -41,11 +41,24 @@ class ThemeController extends Controller
         $this->authorize('view', [ThemePolicy::class, $store]);
 
         $perPage = (int) $request->input('per_page', 15);
+        $status = $request->input('status');
         
-        $themes = Theme::where('store_id', $store->id)
-            ->orderBy('created_at', 'desc')
-            ->paginate($perPage);
+        $query = Theme::where('store_id', $store->id);
 
+        // Filter by status (published = both is_published AND is_active)
+        if ($status === 'published') {
+            $query->where('is_published', true)
+                  ->where('is_active', true);
+        } elseif ($status === 'draft') {
+            $query->where(function ($q) {
+                $q->where('is_published', false)
+                  ->orWhere('is_active', false);
+            });
+        }
+        
+        $themes = $query->orderBy('created_at', 'desc')
+            ->paginate($perPage);
+        
         return $this->paginated(
             $themes,
             ThemeResource::collection($themes->items())->resolve()
@@ -206,11 +219,28 @@ class ThemeController extends Controller
             'settings.buttons.primary' => ['sometimes', 'array'],
             'settings.buttons.secondary' => ['sometimes', 'array'],
             'settings.buttons.outline' => ['sometimes', 'array'],
+            'settings.color_schemes' => ['sometimes', 'array'],
+            'settings.color_schemes.*' => ['sometimes', 'array'],
+            'settings.color_schemes.*.name' => ['sometimes', 'string'],
+            'settings.color_schemes.*.background' => ['sometimes', 'string'],
+            'settings.color_schemes.*.text' => ['sometimes', 'string'],
+            'settings.color_schemes.*.button_background' => ['sometimes', 'string'],
+            'settings.color_schemes.*.button_text' => ['sometimes', 'string'],
+            'settings.color_schemes.*.secondary_background' => ['sometimes', 'string'],
+            'settings.color_schemes.*.border' => ['sometimes', 'string'],
         ]);
 
         // Merge existing settings with new settings
-        // Use array_replace_recursive to avoid converting scalars to arrays
+        // Special handling: color_schemes should be replaced, not merged
         $currentSettings = $theme->settings ?? [];
+        
+        // If color_schemes is in the request, replace it entirely (don't merge)
+        if (isset($validated['settings']['color_schemes'])) {
+            $currentSettings['color_schemes'] = $validated['settings']['color_schemes'];
+            unset($validated['settings']['color_schemes']);
+        }
+        
+        // Merge the rest of the settings
         $newSettings = $this->mergeSettings($currentSettings, $validated['settings']);
 
         // Update the theme
