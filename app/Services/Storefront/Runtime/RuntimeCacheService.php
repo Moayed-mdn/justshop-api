@@ -92,15 +92,32 @@ class RuntimeCacheService
         ];
     }
 
+    /**
+     * Artifacts whose underlying data actually varies by request path.
+     *
+     * ⚠️ PERF FIX: 'navigation' and 'theme' were previously keyed by $path
+     * even though resolveNavigationDataFromDatabase()/resolveThemeDataFromDatabase()
+     * never use $path — they only depend on tenant + locale. Keying by path
+     * meant every distinct URL was a fresh cache miss for these two artifacts,
+     * so the same navigation/theme data was recomputed from the database on
+     * almost every request instead of being served from cache. 'route' and
+     * 'page' genuinely differ per path and stay scoped to it.
+     *
+     * @var string[]
+     */
+    private const PATH_SCOPED_ARTIFACTS = ['route', 'page', 'seo'];
+
     public function key(Store $store, string $locale, string $artifact, string $path): string
     {
+        $pathSegment = in_array($artifact, self::PATH_SCOPED_ARTIFACTS, true) ? $path : 'all';
+
         return sprintf(
             'storefront_runtime:%s:tenant:%s:locale:%s:artifact:%s:path:%s',
             (string) config('storefront_runtime.contract_version'),
             $store->slug,
             $locale,
             $artifact,
-            $path,
+            $pathSegment,
         );
     }
 

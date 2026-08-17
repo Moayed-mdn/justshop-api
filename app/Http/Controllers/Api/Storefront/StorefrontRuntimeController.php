@@ -22,50 +22,18 @@ class StorefrontRuntimeController extends Controller
 
     public function resolve(RuntimeResolveRequest $request)
     {
-        $start = microtime(true);
-        $middlewareStart = request()->attributes->get('storefront_runtime_started_at', $start);
-        
-        \Log::info('[PERF] Controller resolve(): Start', [
-            'ms_since_middleware' => round(($start - $middlewareStart) * 1000, 2),
-            'memory_mb' => round(memory_get_usage() / 1024 / 1024, 2),
-        ]);
-
         request()->attributes->set('storefront_runtime_artifact', 'route');
-
-        \Log::info('[PERF] Controller resolve(): Before resolveRoute()', [
-            'ms_since_start' => round((microtime(true) - $start) * 1000, 2),
-        ]);
 
         $payload = $this->runtimeService->resolveRoute(
             path: (string) $request->validated('path'),
             locale: (string) ($request->validated('locale') ?: app()->getLocale()),
         );
 
-        \Log::info('[PERF] Controller resolve(): After resolveRoute()', [
-            'ms_since_start' => round((microtime(true) - $start) * 1000, 2),
-        ]);
-
-        $response = response()->json($payload);
-
-        \Log::info('[PERF] Controller resolve(): Total', [
-            'ms_since_start' => round((microtime(true) - $start) * 1000, 2),
-            'ms_total_since_middleware' => round((microtime(true) - $middlewareStart) * 1000, 2),
-            'memory_mb' => round(memory_get_usage() / 1024 / 1024, 2),
-        ]);
-
-        return $response;
+        return response()->json($payload);
     }
 
     public function page(RuntimePageRequest $request, string $id)
     {
-        $start = microtime(true);
-        $middlewareStart = request()->attributes->get('storefront_runtime_started_at', $start);
-        
-        \Log::info('[PERF] Controller page(): Start', [
-            'ms_since_middleware' => round(($start - $middlewareStart) * 1000, 2),
-            'page_id' => $id,
-        ]);
-
         request()->attributes->set('storefront_runtime_artifact', 'page');
 
         $payload = $this->runtimeService->pagePayload(
@@ -73,67 +41,25 @@ class StorefrontRuntimeController extends Controller
             preview: (bool) $request->boolean('preview'),
         );
 
-        \Log::info('[PERF] Controller page(): Total', [
-            'ms_since_start' => round((microtime(true) - $start) * 1000, 2),
-            'ms_total_since_middleware' => round((microtime(true) - $middlewareStart) * 1000, 2),
-        ]);
-
         return response()->json($payload);
     }
 
     public function navigation()
     {
-        $start = microtime(true);
-        $middlewareStart = request()->attributes->get('storefront_runtime_started_at', $start);
-        
-        \Log::info('[PERF] Controller navigation(): Start', [
-            'ms_since_middleware' => round(($start - $middlewareStart) * 1000, 2),
-        ]);
-
         request()->attributes->set('storefront_runtime_artifact', 'navigation');
 
         $payload = $this->runtimeService->navigationPayload();
-
-        \Log::info('[PERF] Controller navigation(): Total', [
-            'ms_since_start' => round((microtime(true) - $start) * 1000, 2),
-            'ms_total_since_middleware' => round((microtime(true) - $middlewareStart) * 1000, 2),
-        ]);
 
         return response()->json($payload);
     }
 
     public function theme()
     {
-        $start = microtime(true);
-        $middlewareStart = request()->attributes->get('storefront_runtime_started_at', $start);
-        
-        \Log::info('[PERF] Controller theme(): Start', [
-            'ms_since_middleware' => round(($start - $middlewareStart) * 1000, 2),
-            'memory_mb' => round(memory_get_usage() / 1024 / 1024, 2),
-        ]);
-
         request()->attributes->set('storefront_runtime_artifact', 'theme');
-
-        \Log::info('[PERF] Controller theme(): Before themePayload()', [
-            'ms_since_start' => round((microtime(true) - $start) * 1000, 2),
-        ]);
 
         $payload = $this->runtimeService->themePayload();
 
-        \Log::info('[PERF] Controller theme(): After themePayload()', [
-            'ms_since_start' => round((microtime(true) - $start) * 1000, 2),
-            'payload_size_kb' => round(strlen(json_encode($payload)) / 1024, 2),
-        ]);
-
-        $response = response()->json($payload);
-
-        \Log::info('[PERF] Controller theme(): After response()->json() - Total', [
-            'ms_since_start' => round((microtime(true) - $start) * 1000, 2),
-            'ms_total_since_middleware' => round((microtime(true) - $middlewareStart) * 1000, 2),
-            'memory_mb' => round(memory_get_usage() / 1024 / 1024, 2),
-        ]);
-
-        return $response;
+        return response()->json($payload);
     }
 
     public function validatePreview(RuntimePreviewValidationRequest $request)
@@ -150,14 +76,6 @@ class StorefrontRuntimeController extends Controller
 
     public function systemTemplate(string $type)
     {
-        $start = microtime(true);
-        $middlewareStart = request()->attributes->get('storefront_runtime_started_at', $start);
-        
-        \Log::info('[PERF] Controller systemTemplate(): Start', [
-            'ms_since_middleware' => round(($start - $middlewareStart) * 1000, 2),
-            'template_type' => $type,
-        ]);
-
         request()->attributes->set('storefront_runtime_artifact', 'template');
 
         $enumType = TemplateTypeEnum::tryFrom($type);
@@ -165,17 +83,8 @@ class StorefrontRuntimeController extends Controller
             abort(404, "Unknown system template type: {$type}");
         }
 
-        \Log::info('[PERF] Controller systemTemplate(): After enum validation', [
-            'ms_since_start' => round((microtime(true) - $start) * 1000, 2),
-        ]);
-
         $store = app('currentStore');
         $theme = Theme::where('store_id', $store->id)->where('is_active', true)->first();
-
-        \Log::info('[PERF] Controller systemTemplate(): After fetching theme', [
-            'ms_since_start' => round((microtime(true) - $start) * 1000, 2),
-            'theme_id' => $theme?->id,
-        ]);
 
         if (!$theme) {
             return response()->json(['data' => null]);
@@ -186,12 +95,6 @@ class StorefrontRuntimeController extends Controller
             ->with('sections.blocks')
             ->orderBy('is_default', 'desc')
             ->first();
-
-        \Log::info('[PERF] Controller systemTemplate(): After fetching template', [
-            'ms_since_start' => round((microtime(true) - $start) * 1000, 2),
-            'template_id' => $template?->id,
-            'sections_count' => $template?->sections->count() ?? 0,
-        ]);
 
         if (!$template) {
             return response()->json(['data' => null]);
@@ -227,12 +130,7 @@ class StorefrontRuntimeController extends Controller
             ];
         }
 
-        \Log::info('[PERF] Controller systemTemplate(): After building sections', [
-            'ms_since_start' => round((microtime(true) - $start) * 1000, 2),
-            'sections_count' => count($sections),
-        ]);
-
-        $response = response()->json([
+        return response()->json([
             'data' => [
                 'id' => $template->id,
                 'type' => $template->type?->value,
@@ -242,14 +140,6 @@ class StorefrontRuntimeController extends Controller
                 'section_order' => $sectionOrder,
             ],
         ]);
-
-        \Log::info('[PERF] Controller systemTemplate(): Total', [
-            'ms_since_start' => round((microtime(true) - $start) * 1000, 2),
-            'ms_total_since_middleware' => round((microtime(true) - $middlewareStart) * 1000, 2),
-            'memory_mb' => round(memory_get_usage() / 1024 / 1024, 2),
-        ]);
-
-        return $response;
     }
 
     public function sectionGroups()
