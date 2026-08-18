@@ -10,6 +10,8 @@ use App\Repositories\BaseRepository;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class ProductRepository extends BaseRepository
 {
@@ -66,28 +68,40 @@ class ProductRepository extends BaseRepository
         $filterQuery = clone $query;
         $productIdsSub = $filterQuery->select('products.id');
 
-        $variantStats = \Illuminate\Support\Facades\DB::table('product_variants')
-            ->whereIn('product_id', $productIdsSub)
-            ->selectRaw("
-                MIN(price) AS min_price,
-                MAX(price) AS max_price,
-                MIN(manufacture_date) AS earliest_manufacture,
-                MAX(expiry_date) AS latest_expiry
-            ")->first();
+        // ⚠️ PERF FIX: this ran 2 uncached aggregate queries (price/date range +
+        // rating range) on every single product-list/category-page request,
+        // even for the exact same filter combination requested seconds earlier
+        // (e.g. the default "no filters" view of a category, by far the most
+        // common request). The underlying queries are unchanged here — only
+        // wrapped in a short-lived cache keyed off the exact SQL + bindings of
+        // the filtered query, so identical filter combinations are served from
+        // cache instead of re-scanning variants/reviews every time.
+        $cacheKey = 'product_filter_ranges:' . md5($filterQuery->toSql() . serialize($filterQuery->getBindings()));
 
-        $ratingStats = \Illuminate\Support\Facades\DB::table('reviews')
-            ->whereIn('product_id', function ($sub) use ($productIdsSub) {
-                $sub->select('id')->from('products')
-                    ->whereIn('products.id', $productIdsSub);
-            })
-            ->where('is_approved', true)
-            ->selectRaw("MIN(rating) AS min_rating, MAX(rating) AS max_rating")
-            ->first();
+        return Cache::remember($cacheKey, now()->addMinutes(5), function () use ($productIdsSub) {
+            $variantStats = DB::table('product_variants')
+                ->whereIn('product_id', $productIdsSub)
+                ->selectRaw("
+                    MIN(price) AS min_price,
+                    MAX(price) AS max_price,
+                    MIN(manufacture_date) AS earliest_manufacture,
+                    MAX(expiry_date) AS latest_expiry
+                ")->first();
 
-        $variantStats->min_rating = $ratingStats?->min_rating;
-        $variantStats->max_rating = $ratingStats?->max_rating;
+            $ratingStats = DB::table('reviews')
+                ->whereIn('product_id', function ($sub) use ($productIdsSub) {
+                    $sub->select('id')->from('products')
+                        ->whereIn('products.id', $productIdsSub);
+                })
+                ->where('is_approved', true)
+                ->selectRaw("MIN(rating) AS min_rating, MAX(rating) AS max_rating")
+                ->first();
 
-        return $variantStats;
+            $variantStats->min_rating = $ratingStats?->min_rating;
+            $variantStats->max_rating = $ratingStats?->max_rating;
+
+            return $variantStats;
+        });
     }
 
     public function applyPriceFilter(Builder $query, ?float $minPrice, ?float $maxPrice): Builder

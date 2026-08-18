@@ -43,9 +43,15 @@ class NavigationMenuRepository
     {
         return NavigationMenu::where('store_id', $storeId)
             ->where('handle', $handle)
+            // ⚠️ PERF FIX: transformNavigationItem() calls getResolvedUrl(),
+            // which lazy-loads the polymorphic `resource` (page/category/
+            // product) relation to build the link. Without eager loading
+            // that was one extra query PER menu item (and per child item)
+            // on every cache-miss navigation fetch. Eager-loading `resource`
+            // batches it into one query per distinct resource type instead.
             ->with(['rootItems' => function ($query) {
-                $query->active()->with(['children' => function ($childQuery) {
-                    $childQuery->active();
+                $query->active()->with(['resource', 'children' => function ($childQuery) {
+                    $childQuery->active()->with('resource');
                 }]);
             }])
             ->first();

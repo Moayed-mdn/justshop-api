@@ -6,9 +6,24 @@ namespace App\Services\Storefront\Runtime;
 
 use App\Models\Store;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class RuntimeStoreResolver
 {
+    /**
+     * ⚠️ PERF FIX: this resolver runs on the middleware for EVERY storefront
+     * runtime request (route resolve, page, navigation, theme, template,
+     * section-groups — i.e. 4-6+ requests per single page view). It was
+     * previously doing an uncached `whereRaw('LOWER(domain) = ?')` lookup —
+     * a full table scan on every call, since `stores.domain` has no index
+     * and the LOWER() wrapper would prevent a plain index from being used
+     * even if one existed — plus 4 synchronous Log::info() calls per call.
+     * Domain -> store mappings change essentially never, so this is an
+     * ideal candidate for caching. Invalidated in StoreObserver::updated()
+     * whenever a store's domain actually changes.
+     */
+    private const CACHE_TTL_SECONDS = 3600;
+
     public function __construct(
         private readonly RuntimeLogger $runtimeLogger,
     ) {}
@@ -20,42 +35,15 @@ class RuntimeStoreResolver
 
     public function resolveByHost(string $host): Store
     {
-        $resolverStart = microtime(true);
-        \Log::info('[PERF-TRACE] RuntimeStoreResolver: Entry', [
-            'host' => $host,
-            'ms' => 0,
-        ]);
-
         $normalizedHost = strtolower(trim($host));
-        
-        // Debug endpoint disabled for performance
-        // Original code caused 2-second delay due to 1-second timeout × 2 calls
-        // #region debug-point A:resolver-input (DISABLED)
-        // ... debug code removed for performance ...
-        // #endregion
 
-        \Log::info('[PERF-TRACE] RuntimeStoreResolver: After debug report (DISABLED)', [
-            'step_ms' => round((microtime(true) - $resolverStart) * 1000, 2),
-            'total_ms' => round((microtime(true) - $resolverStart) * 1000, 2),
-        ]);
-
-        $checkpoint = microtime(true);
-        $store = Store::query()
-            ->whereRaw('LOWER(domain) = ?', [$normalizedHost])
-            ->first();
-        \Log::info('[PERF-TRACE] RuntimeStoreResolver: After DB query', [
-            'step_ms' => round((microtime(true) - $checkpoint) * 1000, 2),
-            'total_ms' => round((microtime(true) - $resolverStart) * 1000, 2),
-            'found' => $store instanceof Store,
-        ]);
-        // #region debug-point A:resolver-result (DISABLED)
-        // Second debug call also removed for performance
-        // #endregion
-        
-        \Log::info('[PERF-TRACE] RuntimeStoreResolver: After 2nd debug report (DISABLED)', [
-            'step_ms' => 0,
-            'total_ms' => round((microtime(true) - $resolverStart) * 1000, 2),
-        ]);
+        $store = Cache::remember(
+            $this->cacheKey($normalizedHost),
+            now()->addSeconds(self::CACHE_TTL_SECONDS),
+            static fn () => Store::query()
+                ->whereRaw('LOWER(domain) = ?', [$normalizedHost])
+                ->first(),
+        );
 
         if (!$store instanceof Store) {
             $this->runtimeLogger->info('runtime.tenant.rejected', [
@@ -96,5 +84,10 @@ class RuntimeStoreResolver
         ]);
 
         return $store;
+    }
+
+    private function cacheKey(string $normalizedHost): string
+    {
+        return 'storefront_runtime:tenant_domain:' . $normalizedHost;
     }
 }

@@ -28,43 +28,12 @@ class ResolveStorefrontRuntimeContext
     {
         $start = microtime(true);
         $request->attributes->set('storefront_runtime_started_at', $start);
-        
-        \Log::info('[PERF-TRACE] Middleware: Entry point', [
-            'ms' => 0,
-            'memory_mb' => round(memory_get_usage() / 1024 / 1024, 2),
-        ]);
 
-        $checkpoint = microtime(true);
         $this->guardVersion($request);
-        \Log::info('[PERF-TRACE] Middleware: After guardVersion', [
-            'step_ms' => round((microtime(true) - $checkpoint) * 1000, 2),
-            'total_ms' => round((microtime(true) - $start) * 1000, 2),
-        ]);
 
-        $checkpoint = microtime(true);
         $locale = $this->resolveLocale($request);
-        \Log::info('[PERF-TRACE] Middleware: After resolveLocale', [
-            'step_ms' => round((microtime(true) - $checkpoint) * 1000, 2),
-            'total_ms' => round((microtime(true) - $start) * 1000, 2),
-            'locale' => $locale,
-        ]);
-
-        $checkpoint = microtime(true);
         $path = $this->responseFactory->resolveRequestPath($request);
-        \Log::info('[PERF-TRACE] Middleware: After resolveRequestPath', [
-            'step_ms' => round((microtime(true) - $checkpoint) * 1000, 2),
-            'total_ms' => round((microtime(true) - $start) * 1000, 2),
-            'path' => $path,
-        ]);
-
-        $checkpoint = microtime(true);
         $store = $this->storeResolver->resolveFromRequest($request);
-        \Log::info('[PERF-TRACE] Middleware: After resolveFromRequest (CRITICAL)', [
-            'step_ms' => round((microtime(true) - $checkpoint) * 1000, 2),
-            'total_ms' => round((microtime(true) - $start) * 1000, 2),
-            'store_id' => $store->id,
-            'store_slug' => $store->slug,
-        ]);
 
         if (!$this->rolloutGate->isEnabled($store)) {
             throw new RuntimeContractException(
@@ -78,45 +47,14 @@ class ResolveStorefrontRuntimeContext
             );
         }
 
-        $checkpoint = microtime(true);
-        \Log::info('[PERF-TRACE] Middleware: After rolloutGate check', [
-            'step_ms' => round((microtime(true) - $checkpoint) * 1000, 2),
-            'total_ms' => round((microtime(true) - $start) * 1000, 2),
-        ]);
-
-        $checkpoint = microtime(true);
         $this->bindStoreContext($store);
-        \Log::info('[PERF-TRACE] Middleware: After bindStoreContext', [
-            'step_ms' => round((microtime(true) - $checkpoint) * 1000, 2),
-            'total_ms' => round((microtime(true) - $start) * 1000, 2),
-        ]);
-
-        $checkpoint = microtime(true);
         $this->traceContext->enrichStore(storeId: $store->id);
-        \Log::info('[PERF-TRACE] Middleware: After traceContext enrichStore', [
-            'step_ms' => round((microtime(true) - $checkpoint) * 1000, 2),
-            'total_ms' => round((microtime(true) - $start) * 1000, 2),
-        ]);
 
         $request->attributes->set('storefront_runtime_locale', $locale);
         $request->attributes->set('storefront_runtime_path', $path);
         App::setLocale($locale);
 
-        $checkpoint = microtime(true);
-        \Log::info('[PERF-TRACE] Middleware: Before calling next()', [
-            'step_ms' => 0,
-            'total_ms' => round((microtime(true) - $start) * 1000, 2),
-        ]);
-
-        $response = $next($request);
-
-        \Log::info('[PERF-TRACE] Middleware: After next() - Complete', [
-            'step_ms' => round((microtime(true) - $checkpoint) * 1000, 2),
-            'total_ms' => round((microtime(true) - $start) * 1000, 2),
-            'memory_mb' => round(memory_get_usage() / 1024 / 1024, 2),
-        ]);
-
-        return $response;
+        return $next($request);
     }
 
     private function bindStoreContext(Store $store): void

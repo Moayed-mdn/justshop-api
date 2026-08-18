@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Store;
 use App\Models\BillingAccount;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -24,6 +25,27 @@ use Illuminate\Support\Facades\Log;
  */
 class StoreObserver
 {
+    /**
+     * Handle the Store "updated" event.
+     *
+     * RuntimeStoreResolver caches the domain -> store lookup (it's queried
+     * on every single storefront runtime request). Bust that cache whenever
+     * a store's domain actually changes so a re-pointed domain doesn't keep
+     * resolving to stale data until the TTL expires.
+     */
+    public function updated(Store $store): void
+    {
+        if ($store->wasChanged('domain')) {
+            $previousDomain = $store->getOriginal('domain');
+            if (is_string($previousDomain) && $previousDomain !== '') {
+                Cache::forget('storefront_runtime:tenant_domain:' . strtolower(trim($previousDomain)));
+            }
+            if (is_string($store->domain) && $store->domain !== '') {
+                Cache::forget('storefront_runtime:tenant_domain:' . strtolower(trim($store->domain)));
+            }
+        }
+    }
+
     /**
      * Handle the Store "created" event.
      */
