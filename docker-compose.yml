@@ -1,118 +1,91 @@
 services:
-  # ── Nginx ──────────────────────────────────────────
-  nginx:
-    image: nginx:alpine
-    container_name: ecommerce-nginx
-    restart: unless-stopped
-    ports:
-      - "8000:80"
-    volumes:
-      - .:/var/www
-      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - app
-    networks:
-      - ecommerce-network
-
-  # ── Laravel App (PHP-FPM) ──────────────────────────
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ecommerce-app
+    image: justshop-backend-api
+    container_name: justshop-api-app
     restart: unless-stopped
     working_dir: /var/www
-    command: /var/www/docker/start-vps.sh 
-    volumes:
-      - .:/var/www
-      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    env_file:
+      - .env
+    networks:
+      - justshop-network
     depends_on:
       db:
         condition: service_healthy
       redis:
-        condition: service_healthy
-    networks:
-      - ecommerce-network
+        condition: service_started
 
-  # ── Queue Worker ───────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: justshop-api-nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - justshop-network
+
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    container_name: justshop-api-db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - justshop-network
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    container_name: justshop-api-redis
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+    networks:
+      - justshop-network
+
   queue:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ecommerce-queue
+    image: justshop-backend-api
+    container_name: justshop-api-queue
     restart: unless-stopped
     working_dir: /var/www
-    command: php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
-    volumes:
-      - .:/var/www
+    env_file:
+      - .env
+    command: php artisan queue:work redis --queue=store-bootstrap,default --sleep=3 --tries=3 --max-time=3600
     depends_on:
       db:
         condition: service_healthy
       redis:
-        condition: service_healthy
+        condition: service_started
     networks:
-      - ecommerce-network
+      - justshop-network
 
-  # ── MariaDB ───────────────────────────────────────
-  db:
-    image: mariadb:10.4
-    container_name: ecommerce-db
-    restart: unless-stopped
-    ports:
-      - "3307:3306"
-    environment:
-      MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - db-data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - ecommerce-network
-
-  # ── Redis ─────────────────────────────────────────
-  redis:
-    image: redis:7-alpine
-    container_name: ecommerce-redis
-    restart: unless-stopped
-    ports:
-      - "6380:6379"
-    volumes:
-      - redis-data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - ecommerce-network
-
-  # ── phpMyAdmin (Optional - for learning) ──────────
-  phpmyadmin:
-    image: phpmyadmin:latest
-    container_name: ecommerce-phpmyadmin
-    restart: unless-stopped
-    ports:
-      - "8080:80"
-    environment:
-      PMA_HOST: db
-      PMA_PORT: 3306
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - ecommerce-network
+networks:
+  justshop-network:
+    driver: bridge
 
 volumes:
   db-data:
   redis-data:
-
-networks:
-  ecommerce-network:
-    driver: bridge

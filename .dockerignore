@@ -1,10 +1,13 @@
 .git
-node_modules
+.gitignore
 .env
-.env.backup
-.env.docker
-storage/logs/*.log
+.env.*
+node_modules
+vendor
+storage/*
 tests
 .idea
 .vscode
 docker-compose.yml
+*.md
+bootstrap/cache/*.php
