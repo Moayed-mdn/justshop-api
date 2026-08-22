@@ -251,6 +251,9 @@ Route::prefix('/v1/merchant')
 // ── 3. STOREFRONT CONTEXT ────────────────────────────────────────────────
 // Public ecommerce APIs (Customers and guests browsing stores).
 Route::prefix('/v1/storefront/runtime')
+    ->withoutMiddleware([
+        \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+    ])
     ->middleware([
        //  'web',
     ])

@@ -55,54 +55,6 @@ class AuthController extends \App\Http\Controllers\Controller
 
     public function bootstrap(Request $request): JsonResponse
     {
-        // #region debug-point B:bootstrap-controller-authenticated
-        (static function () use ($request): void {
-            $debugUrl = 'http://127.0.0.1:7777/event';
-            $debugSessionId = 'auth-session-reload';
-            $envPath = base_path('.dbg/auth-session-reload.env');
-            if (is_file($envPath)) {
-                $envLines = @file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
-                foreach ($envLines as $envLine) {
-                    if (str_starts_with($envLine, 'DEBUG_SERVER_URL=')) {
-                        $debugUrl = substr($envLine, strlen('DEBUG_SERVER_URL='));
-                    }
-                    if (str_starts_with($envLine, 'DEBUG_SESSION_ID=')) {
-                        $debugSessionId = substr($envLine, strlen('DEBUG_SESSION_ID='));
-                    }
-                }
-            }
-
-            $session = $request->hasSession() ? $request->session() : null;
-
-            $payload = [
-                'sessionId' => $debugSessionId,
-                'runId' => 'pre-fix',
-                'hypothesisId' => 'B',
-                'location' => 'app/Http/Controllers/Api/Merchant/AuthController.php',
-                'msg' => '[DEBUG] Merchant bootstrap controller resolved authenticated user',
-                'data' => [
-                    'route_name' => $request->route()?->getName(),
-                    'session_id' => $session?->getId(),
-                    'request_user_id' => $request->user()?->id,
-                    'default_guard' => Auth::getDefaultDriver(),
-                    'web_guard_check' => Auth::guard('web')->check(),
-                    'merchant_guard_check' => Auth::guard('merchant')->check(),
-                    'session_auth_domain' => $session?->get('auth_domain'),
-                ],
-                'ts' => (int) round(microtime(true) * 1000),
-            ];
-
-            @file_get_contents($debugUrl, false, stream_context_create([
-                'http' => [
-                    'method' => 'POST',
-                    'header' => "Content-Type: application/json\r\n",
-                    'content' => json_encode($payload, JSON_THROW_ON_ERROR),
-                    'timeout' => 1,
-                ],
-            ]));
-        })();
-        // #endregion
-
         $data = $this->getBootstrapAction->execute(
             GetBootstrapDTO::fromRequest($request)
         );
@@ -169,53 +121,6 @@ class AuthController extends \App\Http\Controllers\Controller
         Auth::login($user);
         $request->session()->regenerate();
         $this->sessionOwnershipManager->tag($request, $user, 'merchant');
-
-        // #region debug-point C:login-session-created
-        (static function () use ($request, $user): void {
-            $debugUrl = 'http://127.0.0.1:7777/event';
-            $debugSessionId = 'auth-session-reload';
-            $envPath = base_path('.dbg/auth-session-reload.env');
-            if (is_file($envPath)) {
-                $envLines = @file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
-                foreach ($envLines as $envLine) {
-                    if (str_starts_with($envLine, 'DEBUG_SERVER_URL=')) {
-                        $debugUrl = substr($envLine, strlen('DEBUG_SERVER_URL='));
-                    }
-                    if (str_starts_with($envLine, 'DEBUG_SESSION_ID=')) {
-                        $debugSessionId = substr($envLine, strlen('DEBUG_SESSION_ID='));
-                    }
-                }
-            }
-
-            $payload = [
-                'sessionId' => $debugSessionId,
-                'runId' => 'pre-fix',
-                'hypothesisId' => 'C',
-                'location' => 'app/Http/Controllers/Api/Merchant/AuthController.php',
-                'msg' => '[DEBUG] Merchant login created session',
-                'data' => [
-                    'user_id' => $user->id,
-                    'route_name' => $request->route()?->getName(),
-                    'session_id' => $request->session()->getId(),
-                    'session_auth_domain' => $request->session()->get('auth_domain'),
-                    'default_guard' => Auth::getDefaultDriver(),
-                    'web_guard_check' => Auth::guard('web')->check(),
-                    'merchant_guard_check' => Auth::guard('merchant')->check(),
-                    'cookie_names' => array_keys($request->cookies->all()),
-                ],
-                'ts' => (int) round(microtime(true) * 1000),
-            ];
-
-            @file_get_contents($debugUrl, false, stream_context_create([
-                'http' => [
-                    'method' => 'POST',
-                    'header' => "Content-Type: application/json\r\n",
-                    'content' => json_encode($payload, JSON_THROW_ON_ERROR),
-                    'timeout' => 1,
-                ],
-            ]));
-        })();
-        // #endregion
 
         return $this->successWithMeta(
             [

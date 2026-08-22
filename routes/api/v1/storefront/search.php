@@ -4,6 +4,9 @@ use App\Http\Controllers\Api\Storefront\SearchController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['store.context'])
+    ->withoutMiddleware([
+        \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+    ])
     ->prefix('stores/{store}/search')
     ->name('storefront.search.')
     ->controller(SearchController::class)
