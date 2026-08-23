@@ -1,0 +1,18 @@
+name: first workflow
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  atomic-docker-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: checkout code base
+        uses: actions/checkout@v4
+      - name: docker build
+        run: docker build .
