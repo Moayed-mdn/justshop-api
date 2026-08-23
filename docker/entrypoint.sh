@@ -7,6 +7,9 @@ mkdir -p \
     storage/framework/views \
     storage/framework/testing \
     storage/logs \
-    bootstrap/cache 
+    storage/app/public \
+    bootstrap/cache
+
+chown -R www-data:www-data storage bootstrap/cache
 
 exec docker-php-entrypoint "$@"
