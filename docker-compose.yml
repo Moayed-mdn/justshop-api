@@ -36,8 +36,6 @@ services:
 
   db:
     image: mysql:8.0
-    ports:
-      - "3306:3306"
     container_name: justshop-api-db
     restart: unless-stopped
     environment:
@@ -57,8 +55,6 @@ services:
 
   redis:
     image: redis:alpine
-    ports:
-      - "6379:6379"
     container_name: justshop-api-redis
     restart: unless-stopped
     volumes:
