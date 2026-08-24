@@ -50,6 +50,7 @@ class AbandonedCheckoutFlowTest extends TestCase
             'name' => json_encode(['en' => 'Pro Plan']),
             'description' => json_encode(['en' => 'Professional plan']),
             'tier' => 'growth',
+            'tier_rank' => 2,
             'is_public' => true,
             'is_active' => true,
             'trial_days' => 14,
@@ -281,12 +282,82 @@ class AbandonedCheckoutFlowTest extends TestCase
             cancelUrl: 'https://example.com/cancel',
         ));
 
-        // Assert: Old incomplete subscriptions are canceled
+        // Assert: Old incomplete subscriptions are marked EXPIRED (not CANCELED).
+        //
+        // CORRECTED 2026-08-24: this assertion previously expected 'canceled', which
+        // contradicted both the current app code and the sibling regression test
+        // AbandonedCheckoutCanceledVsExpiredTest::test_abandoned_checkout_uses_expired_status_not_canceled.
+        // CreateCheckoutSessionAction explicitly transitions superseded incomplete
+        // subscriptions to EXPIRED via the state machine, with an inline comment
+        // explaining that CANCELED is reserved for terminating a subscription that had
+        // granted access, which an unpaid "incomplete" subscription never did. See
+        // app/Actions/Billing/CreateCheckoutSessionAction.php (search "superseded_by_new_checkout").
         $oldIncomplete1->refresh();
         $oldIncomplete2->refresh();
 
-        $this->assertSame('canceled', $oldIncomplete1->status->value);
-        $this->assertSame('canceled', $oldIncomplete2->status->value);
+        $this->assertSame('expired', $oldIncomplete1->status->value);
+        $this->assertSame('expired', $oldIncomplete2->status->value);
+        $this->assertNotNull($oldIncomplete1->ended_at);
+        $this->assertNotNull($oldIncomplete2->ended_at);
+    }
+
+    /** @test */
+    public function checkout_session_expired_webhook_does_not_downgrade_a_subscription_that_already_activated(): void
+    {
+        // Edge case: Stripe can send checkout.session.expired for a session that the
+        // customer actually completed moments earlier (delivery race / manual retry).
+        // HandleCheckoutSessionExpired guards this with an explicit status check
+        // ("Only expire if still in incomplete status") — a subscription that has
+        // already moved to trialing/active must NOT be knocked back to expired by a
+        // late-arriving expiry webhook for its original checkout session.
+        $subscription = Subscription::create([
+            'billing_account_id' => $this->billingAccount->id,
+            'plan_id' => $this->plan->id,
+            'plan_price_id' => $this->planPrice->id,
+            'billing_cycle' => 'monthly',
+            'status' => 'incomplete',
+            'provider' => 'stripe',
+        ]);
+
+        // Session completes first (customer paid), activating the subscription.
+        $completedHandler = $this->app->make(HandleCheckoutSessionCompleted::class);
+        $completedHandler->handle([
+            'type' => 'checkout.session.completed',
+            'data' => [
+                'object' => [
+                    'id' => 'cs_test_race',
+                    'mode' => 'subscription',
+                    'subscription' => 'sub_test_race',
+                    'metadata' => [
+                        'billing_account_id' => (string) $this->billingAccount->id,
+                        'local_subscription_id' => (string) $subscription->id,
+                    ],
+                ],
+            ],
+        ]);
+
+        $subscription->refresh();
+        $this->assertSame('active', $subscription->status->value);
+
+        // The (now stale) expired webhook for the same session arrives afterwards.
+        $expiredHandler = $this->app->make(HandleCheckoutSessionExpired::class);
+        $expiredHandler->handle([
+            'type' => 'checkout.session.expired',
+            'data' => [
+                'object' => [
+                    'id' => 'cs_test_race',
+                    'mode' => 'subscription',
+                    'metadata' => [
+                        'local_subscription_id' => (string) $subscription->id,
+                    ],
+                ],
+            ],
+        ]);
+
+        // Assert: subscription is untouched by the late expiry webhook.
+        $subscription->refresh();
+        $this->assertSame('active', $subscription->status->value);
+        $this->assertNull($subscription->ended_at);
     }
 
     /** @test */

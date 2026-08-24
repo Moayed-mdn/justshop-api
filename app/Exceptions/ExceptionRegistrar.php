@@ -4,6 +4,7 @@ namespace App\Exceptions;
 use App\Enums\ErrorCode;
 use App\Exceptions\Auth\AccountDisabledException;
 use App\Exceptions\Auth\InvalidCredentialsException;
+use App\Exceptions\Auth\UnauthorizedPlatformAccessException;
 use App\Exceptions\Authorization\PermissionDeniedException;
 use App\Exceptions\BaseApiException;
 use App\Exceptions\Domain\DomainException;
@@ -40,6 +41,15 @@ class ExceptionRegistrar
                     'code' => ErrorCode::IDENTITY_DOMAIN_MISMATCH->value,
                     'message' => $e->getMessage(),
                     'redirect' => '/dashboard',
+                    'errors' => new \stdClass(),
+                ], 403));
+            }
+
+            if ($e instanceof UnauthorizedPlatformAccessException) {
+                return $this->attachTraceHeaders(response()->json([
+                    'success' => false,
+                    'code' => ErrorCode::ACCESS_DENIED->value,
+                    'message' => $e->getMessage(),
                     'errors' => new \stdClass(),
                 ], 403));
             }
