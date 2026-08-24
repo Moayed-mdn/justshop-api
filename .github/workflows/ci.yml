@@ -100,7 +100,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/justshop-api:latest
+          tags: ghcr.io/moayed-mdn/justshop-api:latest
   deploy:
     needs:
       - build-and-push
