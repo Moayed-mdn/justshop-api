@@ -1,4 +1,5 @@
 name: first workflow
+
 on:
   push:
     branches:
@@ -10,14 +11,16 @@ on:
 jobs:
   atomic-docker-build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v5
-      - name: docker build
+
+      - name: Docker build
         run: docker build .
 
   run-tests:
     runs-on: ubuntu-latest
-    
+
     env:
       DB_CONNECTION: mysql
       DB_HOST: 127.0.0.1
@@ -26,7 +29,7 @@ jobs:
       DB_USERNAME: root
       DB_PASSWORD: ""
       REDIS_HOST: 127.0.0.1
-
+      REDIS_PORT: 6379
 
     services:
       mysql:
@@ -37,13 +40,20 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping" --health-interval=5s --health-timeout=5s --health-retries=10
+          --health-cmd="mysqladmin ping"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
       redis:
         image: redis:alpine
         ports:
           - 6379:6379
         options: >-
-          --health-cmd="redis-cli ping" --health-interval=5s --health-timeout=5s --health-retries=10
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
       - uses: actions/checkout@v5
@@ -52,21 +62,55 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: pdo_mysql, mbstring, bcmath, pcntl, exif, zip
-  
+          extensions: pdo_mysql, mbstring, bcmath, pcntl, exif, zip, redis
+
       - name: Copy environment file
         run: cp .env.example .env
-
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist
 
-     
       - name: Generate app key
-        run:  php artisan key:generate
+        run: php artisan key:generate
 
       - name: Run migrations
         run: php artisan migrate --force
 
       - name: Run tests
         run: php artisan test
+
+  deploy:
+    needs:
+      - atomic-docker-build
+      - run-tests
+
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          audience: ${{ secrets.TS_AUDIENCE }}
+          tags: tag:ci
+
+      - name: Check VPS connectivity
+        run: |
+          tailscale ping ${{ secrets.VPS_HOST }}
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd ~/projects/docker/justshop-api
+            git pull origin main
+            docker compose up -d --build
