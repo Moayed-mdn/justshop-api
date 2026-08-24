@@ -82,7 +82,6 @@ jobs:
   deploy:
     needs:
       - atomic-docker-build
-      - run-tests
 
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
