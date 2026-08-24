@@ -1,9 +1,6 @@
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: justshop-backend-api
+    image: ghcr.io/moayad-al-midani/justshop-api:latest
     container_name: justshop-api-app
     restart: unless-stopped
     working_dir: /var/www
@@ -63,10 +60,7 @@ services:
       - justshop-network
 
   queue:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: justshop-backend-api
+    image: ghcr.io/moayad-al-midani/justshop-api:latest
     container_name: justshop-api-queue
     restart: unless-stopped
     working_dir: /var/www
