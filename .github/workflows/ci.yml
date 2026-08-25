@@ -126,3 +126,4 @@ jobs:
             git pull origin main
             docker compose pull
             docker compose up -d
+            docker compose exec -T app php artisan migrate --force
