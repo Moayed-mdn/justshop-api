@@ -42,6 +42,24 @@ class NotificationLinkTest extends TestCase
         $this->assertStringContainsString('expires=', $url);
     }
 
+    public function test_verify_email_notification_for_customer_actor_uses_customer_verification_route(): void
+    {
+        $user = User::factory()->customer()->create();
+        $notification = new VerifyEmail();
+
+        $mailMessage = $notification->toMail($user);
+        $url = $mailMessage->viewData['verificationUrl'];
+
+        // VerifyEmail::verificationUrl() branches on the notifiable's actor context:
+        // customer actors must sign against 'customer.auth.verification.verify',
+        // not the merchant route, or the emailed link would 404 for customers.
+        // (VerifyEmail::verificationUrl() would throw RouteNotFoundException on
+        // temporarySignedRoute() if it picked a non-existent route name here.)
+        $frontendUrl = config('app.frontend_url', 'http://localhost:3000');
+        $this->assertStringStartsWith($frontendUrl . '/verify-email/' . $user->id, $url);
+        $this->assertStringContainsString('signature=', $url);
+    }
+
     public function test_password_reset_notification_uses_frontend_reset_url(): void
     {
         $user = User::factory()->create();

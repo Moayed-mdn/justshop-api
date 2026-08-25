@@ -122,6 +122,45 @@ class BlogModuleTest extends TestCase
             ->assertJsonPath('data.content', 'Detailed content');
     }
 
+    public function test_public_blog_show_returns_404_for_nonexistent_slug(): void
+    {
+        $response = $this->getJson('/api/v1/public/cms/blog/does-not-exist?locale=en');
+
+        $response->assertStatus(404)
+            ->assertJson(['success' => false]);
+    }
+
+    public function test_public_blog_index_excludes_posts_scheduled_in_the_future(): void
+    {
+        BlogPost::create([
+            'is_published' => true,
+            'published_at' => now()->addDays(3),
+            'title' => ['en' => 'Future Post'],
+            'slug' => ['en' => 'future-post'],
+            'content' => ['en' => 'Content'],
+        ]);
+
+        $response = $this->getJson('/api/v1/public/cms/blog?locale=en');
+
+        $response->assertStatus(200)
+            ->assertJsonCount(0, 'data.data');
+    }
+
+    public function test_public_blog_show_returns_404_for_a_post_scheduled_in_the_future(): void
+    {
+        BlogPost::create([
+            'is_published' => true,
+            'published_at' => now()->addDays(3),
+            'title' => ['en' => 'Future Post'],
+            'slug' => ['en' => 'future-post'],
+            'content' => ['en' => 'Content'],
+        ]);
+
+        $response = $this->getJson('/api/v1/public/cms/blog/future-post?locale=en');
+
+        $response->assertStatus(404);
+    }
+
     public function test_admin_can_create_blog_post(): void
     {
         $payload = [
@@ -231,5 +270,21 @@ class BlogModuleTest extends TestCase
         $this->actingAs($user)
             ->postJson(route('platform.cms.blog.store'), $payload)
             ->assertForbidden();
+    }
+
+    /**
+     * Every route under this group is wrapped in 'auth:sanctum' before
+     * the controller is ever resolved, so an unauthenticated guest is
+     * rejected by the middleware regardless of which admin blog action
+     * is targeted. Checked across the read (index) and write (store)
+     * routes since they sit behind the same guard.
+     */
+    public function test_unauthenticated_user_cannot_access_blog_admin_endpoints(): void
+    {
+        $this->getJson(route('platform.cms.blog.index'))
+            ->assertStatus(401);
+
+        $this->postJson(route('platform.cms.blog.store'), [])
+            ->assertStatus(401);
     }
 }
