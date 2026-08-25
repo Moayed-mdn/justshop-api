@@ -55,7 +55,7 @@ final readonly class ReactivateSubscriptionAction
 
             // Recompute entitlements for all stores owned by this account
             // Status: active → entitlement_status: entitled (full access restored)
-            $stores = $subscription->billingAccount->user->stores;
+            $stores = \App\Models\Store::where('owner_id', $subscription->billingAccount->owner_user_id)->get();
             foreach ($stores as $store) {
                 $this->recomputeEntitlements->execute(
                     new RecomputeEntitlementsDTO(

@@ -13,7 +13,6 @@ use App\Exceptions\Domain\InvalidIdentityDomainAccessException;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use App\Services\Auth\GuardShadowAnalyzer;
-use App\Services\Auth\GuardSplitSimulationService;
 use App\Services\Auth\IdentityContextResolver;
 use App\Services\Auth\IdentityTelemetry;
 use App\Services\Auth\SessionBoundaryMetadataResolver;
@@ -34,7 +33,6 @@ class ApplyIdentityRouteContext
         private readonly SessionOwnershipResolver $sessionOwnershipResolver,
         private readonly GuardShadowAnalyzer $guardShadowAnalyzer,
         private readonly TransitionalGuardResolver $guardResolver,
-        private readonly GuardSplitSimulationService $guardSplitSimulation,
         private readonly IdentityTelemetry $telemetry,
         private readonly SessionGuardTelemetry $sessionGuardTelemetry,
     ) {}
@@ -70,7 +68,6 @@ class ApplyIdentityRouteContext
         $sessionOwnership = $this->sessionOwnershipResolver->resolve($request, $identityContext, $routeDomainContext);
         $guardShadow = $this->guardShadowAnalyzer->analyze($sessionOwnership);
         $guardResolution = $this->guardResolver->resolve($sessionOwnership);
-        $this->guardSplitSimulation->simulate($sessionOwnership);
 
         $this->traceContext->enrichSessionOwnership($sessionOwnership);
         $this->traceContext->enrichGuardShadow($guardShadow);

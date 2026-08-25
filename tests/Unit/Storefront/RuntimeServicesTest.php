@@ -18,6 +18,15 @@ class RuntimeServicesTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // SQLite (used for tests) lacks the GREATEST() function that
+        // StoreObserver relies on when adjusting BillingAccount store counts.
+        Store::unsetEventDispatcher();
+    }
+
     public function test_runtime_store_resolver_rejects_missing_and_inactive_hosts(): void
     {
         $resolver = app(RuntimeStoreResolver::class);

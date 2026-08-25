@@ -167,6 +167,117 @@ class AdminLeadManagementTest extends TestCase
         $this->assertSoftDeleted($lead);
     }
 
+    // ── Show a single lead ────────────────────────────────────────────────
+
+    public function test_super_admin_can_view_a_single_lead(): void
+    {
+        $admin = $this->makeSuperAdmin();
+        /** @var Lead $lead */
+        $lead = Lead::factory()->create([
+            'name' => 'Jane',
+            'email' => 'jane@example.com',
+        ]);
+
+        $this->actingAs($admin)
+            ->getJson(route('platform.leads.show', ['lead' => $lead->id]))
+            ->assertStatus(200)
+            ->assertJsonPath('data.id', $lead->id)
+            ->assertJsonPath('data.email', 'jane@example.com')
+            ->assertJsonStructure([
+                'data' => ['id', 'type', 'status', 'name', 'email', 'message', 'created_at'],
+            ]);
+    }
+
+    public function test_unauthenticated_user_cannot_view_a_single_lead(): void
+    {
+        /** @var Lead $lead */
+        $lead = Lead::factory()->create();
+
+        $this->getJson(route('platform.leads.show', ['lead' => $lead->id]))
+            ->assertStatus(401);
+    }
+
+    public function test_non_super_admin_cannot_view_a_single_lead(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->create();
+        /** @var Lead $lead */
+        $lead = Lead::factory()->create();
+
+        $this->actingAs($user)
+            ->getJson(route('platform.leads.show', ['lead' => $lead->id]))
+            ->assertStatus(403);
+    }
+
+    // ── 404s for actions on a nonexistent lead ─────────────────────────────
+
+    public function test_viewing_a_nonexistent_lead_returns_404(): void
+    {
+        $admin = $this->makeSuperAdmin();
+
+        $this->actingAs($admin)
+            ->getJson(route('platform.leads.show', ['lead' => 999999]))
+            ->assertStatus(404)
+            ->assertJson(['success' => false]);
+    }
+
+    public function test_updating_status_of_a_nonexistent_lead_returns_404(): void
+    {
+        $admin = $this->makeSuperAdmin();
+
+        $this->actingAs($admin)
+            ->patchJson(route('platform.leads.status', ['lead' => 999999]), [
+                'status' => LeadStatusEnum::CONTACTED->value,
+            ])
+            ->assertStatus(404)
+            ->assertJson(['success' => false]);
+    }
+
+    public function test_deleting_a_nonexistent_lead_returns_404(): void
+    {
+        $admin = $this->makeSuperAdmin();
+
+        $this->actingAs($admin)
+            ->deleteJson(route('platform.leads.destroy', ['lead' => 999999]))
+            ->assertStatus(404)
+            ->assertJson(['success' => false]);
+    }
+
+    // ── List filter validation ──────────────────────────────────────────────
+
+    public function test_list_leads_rejects_invalid_type_filter(): void
+    {
+        $admin = $this->makeSuperAdmin();
+
+        $this->actingAs($admin)
+            ->getJson(route('platform.leads.index', ['type' => 'not_a_real_type']))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['type']);
+    }
+
+    public function test_list_leads_rejects_created_to_before_created_from(): void
+    {
+        $admin = $this->makeSuperAdmin();
+
+        $this->actingAs($admin)
+            ->getJson(route('platform.leads.index', [
+                'created_from' => now()->toDateString(),
+                'created_to' => now()->subDays(5)->toDateString(),
+            ]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['created_to']);
+    }
+
+    public function test_list_leads_rejects_per_page_over_maximum(): void
+    {
+        $admin = $this->makeSuperAdmin();
+
+        $this->actingAs($admin)
+            ->getJson(route('platform.leads.index', ['per_page' => 101]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['per_page']);
+    }
+
     private function makeSuperAdmin(): User
     {
         $admin = User::factory()->create();
