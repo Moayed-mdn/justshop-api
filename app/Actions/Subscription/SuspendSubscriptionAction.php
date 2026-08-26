@@ -50,7 +50,7 @@ final readonly class SuspendSubscriptionAction
 
             // Recompute entitlements for all stores owned by this account
             // Status: paused → entitlement_status: restricted (full block)
-            $stores = \App\Models\Store::where('owner_id', $subscription->billingAccount->owner_user_id)->get();
+            $stores = $subscription->billingAccount->user->stores;
             foreach ($stores as $store) {
                 $this->recomputeEntitlements->execute(
                     new RecomputeEntitlementsDTO(
