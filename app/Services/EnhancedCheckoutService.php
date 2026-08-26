@@ -7,6 +7,8 @@ namespace App\Services;
 use App\Enums\Address\AddressTypeEnum;
 use App\Enums\Order\OrderStatusEnum;
 use App\Enums\Order\PaymentStatusEnum;
+use App\Events\Order\OrderPlaced;
+use App\Events\Product\ProductVariantLowStock;
 use App\Exceptions\BaseApiException;
 use App\Models\Address;
 use App\Models\Cart;
@@ -386,8 +388,20 @@ class EnhancedCheckoutService
             foreach ($order->items as $item) {
                 $variant = $item->productVariant;
                 if ($variant) {
+                    $previousQuantity = $variant->quantity;
                     $newQuantity = max(0, $variant->quantity - $item->quantity);
                     $variant->update(['quantity' => $newQuantity]);
+
+                    // Only fire on the transition into low-stock, not on
+                    // every subsequent order once already below threshold.
+                    if (
+                        $variant->track_inventory
+                        && $variant->low_stock_threshold !== null
+                        && $previousQuantity > $variant->low_stock_threshold
+                        && $newQuantity <= $variant->low_stock_threshold
+                    ) {
+                        ProductVariantLowStock::dispatch($variant->id, $newQuantity, $variant->low_stock_threshold);
+                    }
                 }
             }
 
@@ -406,6 +420,8 @@ class EnhancedCheckoutService
                 'order_id' => $order->id,
                 'payment_intent_id' => $paymentIntentId,
             ]);
+
+            OrderPlaced::dispatch($order->id);
 
             return $order->fresh(['items', 'shippingAddress', 'billingAddress']);
         });

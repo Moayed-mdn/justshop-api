@@ -1762,16 +1762,11 @@ class StorefrontRuntimeService
             return $props;
         }
 
-        // For feature_list sections, content is stored as { items: [...] } per the
-        // admin validation contract (see validateFeaturesContent). Support both that
-        // shape and a raw flat list for backward compatibility with any older records.
+        // For feature_list sections, the content is already resolved by LocalizedContentResolver
+        // and should be an array of items. Pass it as 'items' to match component expectations.
         if ($type === 'feature_list' || $type === 'features') {
             if (is_array($content) && array_is_list($content)) {
-                // Legacy shape: content itself is already a flat array of items
                 $props['items'] = $content;
-            } elseif (is_array($content) && isset($content['items']) && is_array($content['items'])) {
-                // Canonical shape: content.items holds the array
-                $props['items'] = $content['items'];
             } else {
                 $props['items'] = [];
             }

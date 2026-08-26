@@ -157,11 +157,11 @@ class HandleInvoicePaymentSucceeded
             SubscriptionStatusEnum::GRACE_PERIOD->value,
         ];
 
-        if (in_array($subscription->status->value, $troubledStates, true)) {
+        if (in_array($subscription->status, $troubledStates, true)) {
             $this->reactivateSubscription->execute(
                 ReactivateSubscriptionDTO::fromWebhook(
                     subscriptionId: $subscription->id,
-                    reason: 'Payment succeeded after ' . $subscription->status->value,
+                    reason: 'Payment succeeded after ' . $subscription->status,
                 )
             );
 
