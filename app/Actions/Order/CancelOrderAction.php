@@ -6,10 +6,12 @@ namespace App\Actions\Order;
 
 use App\DTOs\Order\CancelOrderDTO;
 use App\Enums\Order\PaymentStatusEnum;
+use App\Events\Order\OrderCancelled;
 use App\Exceptions\Order\OrderCancellationException;
 use App\Exceptions\Payment\PaymentFailedException;
 use App\Models\Order;
 use App\Repositories\Order\OrderRepository;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Stripe\Refund;
@@ -68,6 +70,8 @@ class CancelOrderAction
                 // Not paid yet — just cancel
                 $order = $this->orderRepository->cancel($order);
             }
+
+            OrderCancelled::dispatch($order->id, (int) Auth::id());
 
             return $order;
         });
