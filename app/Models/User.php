@@ -277,4 +277,9 @@ class User extends Authenticatable implements MustVerifyEmail
             ->where('store_id', $storeId)
             ->first();
     }
+
+    public function deviceTokens(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
 }
