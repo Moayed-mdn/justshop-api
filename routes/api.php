@@ -73,6 +73,7 @@ Route::prefix('/v1/platform')
         require 'api/v1/platform/cms/blog.php';
         require 'api/v1/platform/cms/marketing-pages.php';
         require 'api/v1/platform/cms/documentation.php';
+        require 'api/v1/platform/notifications.php';
     });
 
 // ── 2. MERCHANT CONTEXT ──────────────────────────────────────────────────
@@ -246,14 +247,12 @@ Route::prefix('/v1/merchant')
         require 'api/v1/merchant/billing.php'; // Phase 3: Subscription & Billing
         require 'api/v1/merchant/shipping.php'; // Shipping Management
         require 'api/v1/merchant/stripe-connect.php'; // Stripe Connect Onboarding
+        require 'api/v1/merchant/notifications.php'; // Push notifications & device tokens
     });
 
 // ── 3. STOREFRONT CONTEXT ────────────────────────────────────────────────
 // Public ecommerce APIs (Customers and guests browsing stores).
 Route::prefix('/v1/storefront/runtime')
-    ->withoutMiddleware([
-        \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-    ])
     ->middleware([
        //  'web',
     ])
@@ -317,6 +316,7 @@ Route::prefix('/v1/customer')
     ])
     ->group(function (): void {
         require 'api/v1/customer/account.php';
+        require 'api/v1/customer/notifications.php'; // Push notifications & device tokens
     });
 
 // ── 5. SUPPORT CONTEXT ───────────────────────────────────────────────────

@@ -4,9 +4,6 @@ use App\Http\Controllers\Api\Storefront\ProductController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['store.context'])
-    ->withoutMiddleware([
-        \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-    ])
     ->prefix('stores/{store}/products')
     ->name('storefront.products.')
     ->controller(ProductController::class)
