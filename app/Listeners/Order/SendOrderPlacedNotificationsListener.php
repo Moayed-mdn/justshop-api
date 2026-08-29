@@ -6,6 +6,7 @@ namespace App\Listeners\Order;
 
 use App\Enums\Notification\NotificationCategoryEnum;
 use App\Events\Order\OrderPlaced;
+use App\Listeners\Concerns\EnsuresSingleNotificationDispatch;
 use App\Models\Order;
 use App\Notifications\Order\NewOrderReceivedNotification;
 use App\Notifications\Order\OrderPlacedNotification;
@@ -17,6 +18,8 @@ use Illuminate\Support\Facades\Notification;
 
 class SendOrderPlacedNotificationsListener implements ShouldQueue
 {
+    use EnsuresSingleNotificationDispatch;
+
     public function __construct(
         private readonly StoreNotificationRecipientResolver $storeRecipients,
         private readonly PlatformRecipientRepository $platformRecipients,
@@ -25,6 +28,13 @@ class SendOrderPlacedNotificationsListener implements ShouldQueue
 
     public function handle(OrderPlaced $event): void
     {
+        // An order is only ever "placed" once — see EnsuresSingleNotificationDispatch
+        // for why this guard exists (queue retries, worker restarts, etc.
+        // can otherwise re-run this listener for the same event).
+        if (!$this->claimOnce("order-placed:{$event->orderId}")) {
+            return;
+        }
+
         $order = Order::with(['store', 'user'])->find($event->orderId);
 
         if (!$order) {

@@ -549,12 +549,17 @@ class StorefrontRuntimeDevSeeder extends Seeder
                     'ar' => 'نظرة من وراء الكواليس على مركز التوزيع لدينا وعملية مراقبة الجودة.',
                 ],
                 'content' => [
-                    'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                    // Previously linked to a joke video (a Rickroll) instead of
+                    // real footage. There's no real warehouse video to embed
+                    // yet, so the section is disabled below rather than
+                    // pointing at another placeholder that isn't actually
+                    // "our fulfillment center".
+                    'video_url' => null,
                     'poster_url' => null,
                     'description' => ['en' => 'Watch our team in action as they inspect, package, and ship your orders with care. Every product goes through our 3-stage quality check before it leaves our warehouse.', 'ar' => 'شاهد فريقنا أثناء فحص المنتجات وتعبئتها وشحن طلباتك بعناية. كل منتج يخضع لفحص جودة ثلاثي المراحل قبل مغادرة مستودعنا.'],
                 ],
                 'settings' => ['autoplay' => false, 'controls' => true],
-                'is_active' => true,
+                'is_active' => false,
             ],
         );
 

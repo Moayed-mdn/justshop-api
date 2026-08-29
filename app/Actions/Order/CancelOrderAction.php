@@ -42,6 +42,24 @@ class CancelOrderAction
         }
 
         return DB::transaction(function () use ($order) {
+            // Re-fetch under a row lock and re-check cancellability: without
+            // this, two near-simultaneous cancel requests (e.g. a
+            // double-submitted click, or a client retry) can both pass the
+            // canBeCancelled() check above before either commits, both
+            // proceed to cancel, and both dispatch OrderCancelled —
+            // producing duplicate notifications for one real cancellation.
+            // Mirrors the same lockForUpdate()+re-check pattern already
+            // used in EnhancedCheckoutService::completeCheckout().
+            $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->firstOrFail();
+
+            if (!$lockedOrder->canBeCancelled()) {
+                // Another concurrent request already cancelled it — treat
+                // this as a no-op success rather than dispatching again.
+                return $lockedOrder;
+            }
+
+            $order = $lockedOrder;
+
             // Restore stock
             $this->orderRepository->restoreProductVariants($order);
 

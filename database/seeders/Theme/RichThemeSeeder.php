@@ -4,77 +4,120 @@ declare(strict_types=1);
 
 namespace Database\Seeders\Theme;
 
-use App\Enums\Theme\BlockTypeEnum;
-use App\Enums\Theme\SectionTypeEnum;
 use App\Models\Store;
 use App\Models\Theme\Theme;
-use App\Models\Theme\ThemeBlock;
-use App\Models\Theme\ThemeSection;
 use App\Models\Navigation\NavigationMenu;
 use App\Models\Navigation\NavigationMenuItem;
+use Database\Seeders\Concerns\GeneratesBrandAssets;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * Rich Theme Seeder - Creates Multiple Realistic Themes with Variations
- * 
- * This seeder creates:
- * - 3 different theme variations per store
- * - Rich navigation menus with nested items
- * - Multiple section types
- * - Varied color schemes
- * - Realistic content
+ * Rich Theme Seeder - Creates the store's theme "skins".
+ *
+ * This seeder is responsible for:
+ * - 3 professionally designed theme variations per store, each with a full,
+ *   harmonious color-token set (not just primary/secondary/accent), matching
+ *   typography, and button styling derived from — not independent of — the
+ *   palette.
+ * - Rich navigation menus with nested items.
+ *
+ * It is deliberately NOT responsible for section/block content anymore.
+ * Earlier revisions also created a second, handle-less copy of the header/
+ * hero/content/footer sections here — but SystemTemplateSeeder's
+ * associateSectionsWithTemplates() always prefers the handle-based sections
+ * that DefaultSectionSeeder creates, so those extra copies were never
+ * attached to any page and never rendered. They were pure dead weight (and
+ * showed up as confusing duplicate "Header" / "Footer" entries in the
+ * merchant theme editor), so they were removed rather than patched.
+ * DefaultSectionSeeder is now the single, theme-aware source of chrome
+ * content, reading the color tokens seeded here back out per theme.
  */
 class RichThemeSeeder extends Seeder
 {
-    private array $themeVariations = [
-        [
-            'name' => 'Modern Light',
-            'description' => 'Clean and modern theme with bright colors',
-            'colors' => [
-                'primary' => '#3B82F6',
-                'secondary' => '#10B981',
-                'accent' => '#F59E0B',
-                'background' => '#FFFFFF',
-                'text' => '#1F2937',
+    use GeneratesBrandAssets;
+
+    /** @var array<int, array{name: string, style: string, description: string, colors: array, typography: array}> */
+    private array $themeVariations;
+
+    public function __construct()
+    {
+        $this->themeVariations = [
+            [
+                'name' => 'Aurora',
+                // "Active"/published theme — this palette is also the store's
+                // canonical brand palette (see GeneratesBrandAssets::brandPalette()),
+                // so the logo/favicon/banners always match the live storefront.
+                'style' => 'modern',
+                'description' => 'Bright, confident, and built to convert — a clean modern palette for everyday retail.',
+                'colors' => $this->brandPalette(),
+                'typography' => [
+                    'headingFont' => 'Sora',
+                    'bodyFont' => 'Inter',
+                    'headingWeight' => 'bold',
+                    'bodyWeight' => 'normal',
+                    'baseFontSize' => 'base',
+                    'lineHeight' => 'normal',
+                    'letterSpacing' => 'normal',
+                ],
             ],
-            'fonts' => [
-                'heading' => 'Poppins',
-                'body' => 'Inter',
+            [
+                'name' => 'Midnight Bloom',
+                'style' => 'dark',
+                'description' => 'A moody, upscale dark theme with a warm gold accent for premium and fashion-forward brands.',
+                'colors' => [
+                    'primary' => '#A78BFA',
+                    'secondary' => '#F472B6',
+                    'accent' => '#FBBF24',
+                    'background' => '#0B0B12',
+                    'surface' => '#16161F',
+                    'text' => '#F5F3FF',
+                    'textMuted' => '#A1A1AA',
+                    'border' => '#2E2E3A',
+                    'success' => '#34D399',
+                    'warning' => '#FBBF24',
+                    'error' => '#F87171',
+                ],
+                'typography' => [
+                    'headingFont' => 'Playfair Display',
+                    'bodyFont' => 'Lato',
+                    'headingWeight' => 'bold',
+                    'bodyWeight' => 'normal',
+                    'baseFontSize' => 'base',
+                    'lineHeight' => 'relaxed',
+                    'letterSpacing' => 'wide',
+                ],
             ],
-        ],
-        [
-            'name' => 'Dark Elegance',
-            'description' => 'Sophisticated dark theme with elegant styling',
-            'colors' => [
-                'primary' => '#8B5CF6',
-                'secondary' => '#EC4899',
-                'accent' => '#F59E0B',
-                'background' => '#111827',
-                'text' => '#F3F4F6',
+            [
+                'name' => 'Studio Mono',
+                'style' => 'minimal',
+                'description' => 'Ultra-minimal, content-first design with a single confident accent color.',
+                'colors' => [
+                    'primary' => '#111827',
+                    'secondary' => '#6B7280',
+                    'accent' => '#C2410C',
+                    'background' => '#FAFAF9',
+                    'surface' => '#F5F5F4',
+                    'text' => '#1C1917',
+                    'textMuted' => '#78716C',
+                    'border' => '#E7E5E4',
+                    'success' => '#15803D',
+                    'warning' => '#B45309',
+                    'error' => '#B91C1C',
+                ],
+                'typography' => [
+                    'headingFont' => 'Montserrat',
+                    'bodyFont' => 'Work Sans',
+                    'headingWeight' => 'semibold',
+                    'bodyWeight' => 'normal',
+                    'baseFontSize' => 'base',
+                    'lineHeight' => 'normal',
+                    'letterSpacing' => 'tight',
+                ],
             ],
-            'fonts' => [
-                'heading' => 'Playfair Display',
-                'body' => 'Lato',
-            ],
-        ],
-        [
-            'name' => 'Minimalist Pro',
-            'description' => 'Ultra-minimal design focused on content',
-            'colors' => [
-                'primary' => '#000000',
-                'secondary' => '#6B7280',
-                'accent' => '#EF4444',
-                'background' => '#F9FAFB',
-                'text' => '#111827',
-            ],
-            'fonts' => [
-                'heading' => 'Montserrat',
-                'body' => 'Open Sans',
-            ],
-        ],
-    ];
+        ];
+    }
 
     public function run(): void
     {
@@ -93,7 +136,8 @@ class RichThemeSeeder extends Seeder
     private function seedThemesForStore(Store $store): void
     {
         foreach ($this->themeVariations as $index => $variation) {
-            $isActive = $index === 0; // First theme is active
+            $isActive = $index === 0; // First theme ("Aurora") is active/published
+            $colors = $variation['colors'];
 
             $theme = Theme::create([
                 'store_id' => $store->id,
@@ -104,55 +148,18 @@ class RichThemeSeeder extends Seeder
                 'is_active' => $isActive,
                 'is_published' => $isActive,
                 'settings' => [
-                    'colors' => $variation['colors'],
-                    'fonts' => $variation['fonts'],
-                    // Shopify-style color schemes
-                    'color_schemes' => [
-                        'default' => [
-                            'name' => 'Default',
-                            'background' => '#FFFFFF',
-                            'text' => '#1F2937',
-                            'button_background' => $variation['colors']['primary'],
-                            'button_text' => '#FFFFFF',
-                            'secondary_background' => '#F3F4F6',
-                            'border' => '#E5E7EB',
-                        ],
-                        'brand' => [
-                            'name' => 'Brand',
-                            'background' => $variation['colors']['primary'],
-                            'text' => '#FFFFFF',
-                            'button_background' => '#FFFFFF',
-                            'button_text' => $variation['colors']['primary'],
-                            'secondary_background' => $this->darkenColor($variation['colors']['primary'], 10),
-                            'border' => 'rgba(255, 255, 255, 0.2)',
-                        ],
-                        'dark' => [
-                            'name' => 'Dark',
-                            'background' => '#1F2937',
-                            'text' => '#FFFFFF',
-                            'button_background' => $variation['colors']['accent'],
-                            'button_text' => '#000000',
-                            'secondary_background' => '#374151',
-                            'border' => '#4B5563',
-                        ],
-                        'light' => [
-                            'name' => 'Light',
-                            'background' => '#F9FAFB',
-                            'text' => '#1F2937',
-                            'button_background' => $variation['colors']['primary'],
-                            'button_text' => '#FFFFFF',
-                            'secondary_background' => '#FFFFFF',
-                            'border' => '#E5E7EB',
-                        ],
+                    'colors' => $colors,
+                    'fonts' => [
+                        'heading' => $variation['typography']['headingFont'],
+                        'body' => $variation['typography']['bodyFont'],
                     ],
+                    'typography' => $variation['typography'],
+                    'buttons' => $this->buttonSettingsFor($colors),
+                    // Shopify-style color schemes, all derived from the same
+                    // palette so nothing drifts out of harmony.
+                    'color_schemes' => $this->colorSchemesFor($colors),
                 ],
             ]);
-
-            // Create sections and blocks
-            $this->createHeaderSection($theme, $variation);
-            $this->createHeroSection($theme, $variation);
-            $this->createContentSection($theme, $variation);
-            $this->createFooterSection($theme, $variation);
 
             if ($isActive) {
                 $store->update(['active_theme_id' => $theme->id]);
@@ -165,372 +172,95 @@ class RichThemeSeeder extends Seeder
         $this->createRichNavigationMenus($store);
     }
 
-    private function createHeaderSection(Theme $theme, array $variation): ThemeSection
+    /**
+     * Button styling derived from the palette rather than hardcoded: the
+     * primary CTA always uses the theme's accent color (so it pops against
+     * the brand color), and text color is picked for contrast instead of
+     * assumed — a light accent like a gold (#FBBF24) needs dark text, a
+     * deep one like a terracotta (#C2410C) needs white text.
+     */
+    private function buttonSettingsFor(array $colors): array
     {
-        $headerSection = ThemeSection::create([
-            'theme_id' => $theme->id,
-            'name' => 'Header',
-            'type' => SectionTypeEnum::HEADER,
-            'position' => 1,
-            'is_enabled' => true,
-            'is_removable' => false,
-            'settings' => [
-                'sticky' => true,
-                'transparent' => false,
-                'height' => 'auto',
-                'backgroundColor' => $variation['colors']['background'],
-                'textColor' => $variation['colors']['text'],
+        return [
+            'primary' => [
+                'backgroundColor' => $colors['accent'],
+                'textColor' => $this->readableTextColor($colors['accent']),
+                'borderColor' => $colors['accent'],
+                'borderWidth' => 0,
+                'borderRadius' => 'full',
+                'paddingX' => 'lg',
+                'paddingY' => 'md',
+                'fontSize' => 'base',
+                'fontWeight' => 'semibold',
+                'hoverEffect' => 'opacity',
             ],
-        ]);
-
-        // Logo Block
-        ThemeBlock::create([
-            'section_id' => $headerSection->id,
-            'type' => BlockTypeEnum::LOGO,
-            'name' => 'Store Logo',
-            'position' => 1,
-            'is_enabled' => true,
-            'is_removable' => false,
-            'settings' => [
-                'width' => 150,
-                'height' => 50,
-                'linkToHome' => true,
+            'secondary' => [
+                'backgroundColor' => 'transparent',
+                'textColor' => $colors['primary'],
+                'borderColor' => $colors['primary'],
+                'borderWidth' => 2,
+                'borderRadius' => 'full',
+                'paddingX' => 'lg',
+                'paddingY' => 'md',
+                'fontSize' => 'base',
+                'fontWeight' => 'semibold',
+                'hoverEffect' => 'opacity',
             ],
-        ]);
-
-        // Navigation Block
-        ThemeBlock::create([
-            'section_id' => $headerSection->id,
-            'type' => BlockTypeEnum::NAVIGATION,
-            'name' => 'Main Navigation',
-            'position' => 2,
-            'is_enabled' => true,
-            'is_removable' => false,
-            'settings' => [
-                'menu_handle' => 'main-menu',
-                'alignment' => 'center',
-                'showIcons' => false,
-                'textColor' => $variation['colors']['text'],
+            'outline' => [
+                'backgroundColor' => 'transparent',
+                'textColor' => $colors['text'],
+                'borderColor' => $colors['border'],
+                'borderWidth' => 1,
+                'borderRadius' => 'full',
+                'paddingX' => 'lg',
+                'paddingY' => 'md',
+                'fontSize' => 'base',
+                'fontWeight' => 'medium',
+                'hoverEffect' => 'darken',
             ],
-        ]);
-
-        // Search Block
-        ThemeBlock::create([
-            'section_id' => $headerSection->id,
-            'type' => BlockTypeEnum::SEARCH,
-            'name' => 'Search Bar',
-            'position' => 3,
-            'is_enabled' => true,
-            'is_removable' => true,
-            'settings' => [
-                'placeholder' => [
-                    'en' => 'Search products...',
-                    'ar' => 'البحث عن المنتجات...',
-                ],
-                'showSuggestions' => true,
-                'minCharacters' => 2,
-            ],
-        ]);
-
-        // Cart Block
-        ThemeBlock::create([
-            'section_id' => $headerSection->id,
-            'type' => BlockTypeEnum::CART,
-            'name' => 'Shopping Cart',
-            'position' => 4,
-            'is_enabled' => true,
-            'is_removable' => false,
-            'settings' => [
-                'showItemCount' => true,
-                'iconStyle' => 'outline',
-                'color' => $variation['colors']['primary'],
-            ],
-        ]);
-
-        return $headerSection;
+        ];
     }
 
-    private function createHeroSection(Theme $theme, array $variation): ThemeSection
+    private function colorSchemesFor(array $colors): array
     {
-        $heroSection = ThemeSection::create([
-            'theme_id' => $theme->id,
-            'name' => 'Hero Banner',
-            'type' => SectionTypeEnum::HERO,
-            'position' => 2,
-            'is_enabled' => true,
-            'is_removable' => true,
-            'settings' => [
-                'height' => '500px',
-                'overlayOpacity' => 0.3,
-                'backgroundColor' => $variation['colors']['primary'],
+        return [
+            'default' => [
+                'name' => 'Default',
+                'background' => $colors['background'],
+                'text' => $colors['text'],
+                'button_background' => $colors['primary'],
+                'button_text' => $this->readableTextColor($colors['primary']),
+                'secondary_background' => $colors['surface'],
+                'border' => $colors['border'],
             ],
-        ]);
-
-        // Hero Image Block
-        ThemeBlock::create([
-            'section_id' => $heroSection->id,
-            'type' => BlockTypeEnum::IMAGE,
-            'name' => 'Hero Image',
-            'position' => 1,
-            'is_enabled' => true,
-            'is_removable' => false,
-            'settings' => [
-                'imageUrl' => 'https://images.unsplash.com/photo-1441986300917-64674bd600d8',
-                'altText' => [
-                    'en' => 'Shop the latest collection',
-                    'ar' => 'تسوق أحدث المجموعات',
-                ],
-                'objectFit' => 'cover',
+            'brand' => [
+                'name' => 'Brand',
+                'background' => $colors['primary'],
+                'text' => $this->readableTextColor($colors['primary']),
+                'button_background' => $colors['accent'],
+                'button_text' => $this->readableTextColor($colors['accent']),
+                'secondary_background' => $this->darkenColor($colors['primary'], 12),
+                'border' => 'rgba(255, 255, 255, 0.2)',
             ],
-        ]);
-
-        // Hero Text Block
-        ThemeBlock::create([
-            'section_id' => $heroSection->id,
-            'type' => BlockTypeEnum::TEXT,
-            'name' => 'Hero Heading',
-            'position' => 2,
-            'is_enabled' => true,
-            'is_removable' => false,
-            'settings' => [
-                'content' => [
-                    'en' => 'Discover Your Style',
-                    'ar' => 'اكتشف أسلوبك',
-                ],
-                'fontSize' => 48,
-                'fontWeight' => 'bold',
-                'textAlign' => 'center',
-                'color' => '#FFFFFF',
+            'dark' => [
+                'name' => 'Dark',
+                'background' => '#111827',
+                'text' => '#FFFFFF',
+                'button_background' => $colors['accent'],
+                'button_text' => $this->readableTextColor($colors['accent']),
+                'secondary_background' => '#374151',
+                'border' => '#4B5563',
             ],
-        ]);
-
-        // Hero Subtext Block
-        ThemeBlock::create([
-            'section_id' => $heroSection->id,
-            'type' => BlockTypeEnum::TEXT,
-            'name' => 'Hero Subtext',
-            'position' => 3,
-            'is_enabled' => true,
-            'is_removable' => true,
-            'settings' => [
-                'content' => [
-                    'en' => 'Shop the latest trends with exclusive offers and fast shipping',
-                    'ar' => 'تسوق أحدث الصيحات مع عروض حصرية وشحن سريع',
-                ],
-                'fontSize' => 18,
-                'fontWeight' => 'normal',
-                'textAlign' => 'center',
-                'color' => '#F3F4F6',
+            'light' => [
+                'name' => 'Light',
+                'background' => $colors['surface'],
+                'text' => $colors['text'],
+                'button_background' => $colors['primary'],
+                'button_text' => $this->readableTextColor($colors['primary']),
+                'secondary_background' => $colors['background'],
+                'border' => $colors['border'],
             ],
-        ]);
-
-        // Hero CTA Button
-        ThemeBlock::create([
-            'section_id' => $heroSection->id,
-            'type' => BlockTypeEnum::BUTTON,
-            'name' => 'Shop Now Button',
-            'position' => 4,
-            'is_enabled' => true,
-            'is_removable' => true,
-            'settings' => [
-                'label' => [
-                    'en' => 'Shop Now',
-                    'ar' => 'تسوق الآن',
-                ],
-                'url' => '/shop',
-                'style' => 'primary',
-                'size' => 'large',
-                'backgroundColor' => $variation['colors']['accent'],
-            ],
-        ]);
-
-        return $heroSection;
-    }
-
-    private function createContentSection(Theme $theme, array $variation): ThemeSection
-    {
-        $contentSection = ThemeSection::create([
-            'theme_id' => $theme->id,
-            'name' => 'Features Section',
-            'type' => SectionTypeEnum::FEATURED,
-            'position' => 3,
-            'is_enabled' => true,
-            'is_removable' => true,
-            'settings' => [
-                'padding' => '60px 0',
-                'backgroundColor' => $variation['colors']['background'],
-            ],
-        ]);
-
-        // Feature 1
-        ThemeBlock::create([
-            'section_id' => $contentSection->id,
-            'type' => BlockTypeEnum::TEXT,
-            'name' => 'Free Shipping',
-            'position' => 1,
-            'is_enabled' => true,
-            'is_removable' => true,
-            'settings' => [
-                'content' => [
-                    'en' => '✓ Free Shipping on Orders Over $50',
-                    'ar' => '✓ شحن مجاني للطلبات فوق 50 دولار',
-                ],
-                'fontSize' => 18,
-                'textAlign' => 'center',
-                'color' => $variation['colors']['text'],
-            ],
-        ]);
-
-        // Feature 2
-        ThemeBlock::create([
-            'section_id' => $contentSection->id,
-            'type' => BlockTypeEnum::TEXT,
-            'name' => '24/7 Support',
-            'position' => 2,
-            'is_enabled' => true,
-            'is_removable' => true,
-            'settings' => [
-                'content' => [
-                    'en' => '✓ 24/7 Customer Support',
-                    'ar' => '✓ دعم العملاء على مدار الساعة',
-                ],
-                'fontSize' => 18,
-                'textAlign' => 'center',
-                'color' => $variation['colors']['text'],
-            ],
-        ]);
-
-        // Feature 3
-        ThemeBlock::create([
-            'section_id' => $contentSection->id,
-            'type' => BlockTypeEnum::TEXT,
-            'name' => 'Easy Returns',
-            'position' => 3,
-            'is_enabled' => true,
-            'is_removable' => true,
-            'settings' => [
-                'content' => [
-                    'en' => '✓ 30-Day Easy Returns',
-                    'ar' => '✓ إرجاع سهل لمدة 30 يوم',
-                ],
-                'fontSize' => 18,
-                'textAlign' => 'center',
-                'color' => $variation['colors']['text'],
-            ],
-        ]);
-
-        return $contentSection;
-    }
-
-    private function createFooterSection(Theme $theme, array $variation): ThemeSection
-    {
-        $isDark = $variation['name'] === 'Dark Elegance';
-        
-        $footerSection = ThemeSection::create([
-            'theme_id' => $theme->id,
-            'name' => 'Footer',
-            'type' => SectionTypeEnum::FOOTER,
-            'position' => 4,
-            'is_enabled' => true,
-            'is_removable' => false,
-            'settings' => [
-                'background' => $isDark ? '#000000' : '#1F2937',
-                'textColor' => '#FFFFFF',
-                'padding' => '40px 0',
-            ],
-        ]);
-
-        // Footer About Text
-        ThemeBlock::create([
-            'section_id' => $footerSection->id,
-            'type' => BlockTypeEnum::TEXT,
-            'name' => 'About Us',
-            'position' => 1,
-            'is_enabled' => true,
-            'is_removable' => true,
-            'settings' => [
-                'content' => [
-                    'en' => 'Your trusted online shopping destination',
-                    'ar' => 'وجهتك الموثوقة للتسوق عبر الإنترنت',
-                ],
-                'fontSize' => 14,
-                'color' => '#9CA3AF',
-            ],
-        ]);
-
-        // Footer Navigation
-        ThemeBlock::create([
-            'section_id' => $footerSection->id,
-            'type' => BlockTypeEnum::NAVIGATION,
-            'name' => 'Footer Links',
-            'position' => 2,
-            'is_enabled' => true,
-            'is_removable' => true,
-            'settings' => [
-                'menu_handle' => 'footer-menu',
-                'columns' => 3,
-                'textColor' => '#FFFFFF',
-            ],
-        ]);
-
-        // Social Links
-        ThemeBlock::create([
-            'section_id' => $footerSection->id,
-            'type' => BlockTypeEnum::SOCIAL_LINKS,
-            'name' => 'Social Media',
-            'position' => 3,
-            'is_enabled' => true,
-            'is_removable' => true,
-            'settings' => [
-                'platforms' => [
-                    'facebook' => 'https://facebook.com/justshop',
-                    'twitter' => 'https://twitter.com/justshop',
-                    'instagram' => 'https://instagram.com/justshop',
-                    'linkedin' => 'https://linkedin.com/company/justshop',
-                ],
-                'iconSize' => 24,
-                'iconColor' => '#FFFFFF',
-            ],
-        ]);
-
-        // Newsletter Signup
-        ThemeBlock::create([
-            'section_id' => $footerSection->id,
-            'type' => BlockTypeEnum::TEXT,
-            'name' => 'Newsletter',
-            'position' => 4,
-            'is_enabled' => true,
-            'is_removable' => true,
-            'settings' => [
-                'content' => [
-                    'en' => 'Subscribe to our newsletter for exclusive offers',
-                    'ar' => 'اشترك في نشرتنا الإخبارية للحصول على عروض حصرية',
-                ],
-                'fontSize' => 16,
-                'color' => '#FFFFFF',
-            ],
-        ]);
-
-        // Copyright
-        ThemeBlock::create([
-            'section_id' => $footerSection->id,
-            'type' => BlockTypeEnum::TEXT,
-            'name' => 'Copyright',
-            'position' => 5,
-            'is_enabled' => true,
-            'is_removable' => false,
-            'settings' => [
-                'content' => [
-                    'en' => '© ' . date('Y') . ' JustShop. All rights reserved.',
-                    'ar' => '© ' . date('Y') . ' JustShop. جميع الحقوق محفوظة.',
-                ],
-                'fontSize' => 14,
-                'textAlign' => 'center',
-                'color' => '#6B7280',
-            ],
-        ]);
-
-        return $footerSection;
+        ];
     }
 
     private function createRichNavigationMenus(Store $store): void
@@ -666,7 +396,7 @@ class RichThemeSeeder extends Seeder
         ]);
 
         // Create footer menu items with groups (Department, Services) and flat links
-        
+
         // Group 1: Department
         $departmentGroup = NavigationMenuItem::create([
             'menu_id' => $footerMenu->id,
@@ -766,27 +496,5 @@ class RichThemeSeeder extends Seeder
         }
 
         $this->command->info("  ✓ Created rich navigation menus");
-    }
-
-    /**
-     * Darken a hex color by a percentage
-     */
-    private function darkenColor(string $hex, int $percent): string
-    {
-        // Remove # if present
-        $hex = ltrim($hex, '#');
-        
-        // Convert to RGB
-        $r = hexdec(substr($hex, 0, 2));
-        $g = hexdec(substr($hex, 2, 2));
-        $b = hexdec(substr($hex, 4, 2));
-        
-        // Darken
-        $r = max(0, min(255, $r - ($r * $percent / 100)));
-        $g = max(0, min(255, $g - ($g * $percent / 100)));
-        $b = max(0, min(255, $b - ($b * $percent / 100)));
-        
-        // Convert back to hex
-        return sprintf('#%02X%02X%02X', (int)$r, (int)$g, (int)$b);
     }
 }

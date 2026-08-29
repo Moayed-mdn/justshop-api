@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Listeners\Store;
 
 use App\Events\Store\StripeConnectStatusChanged;
+use App\Listeners\Concerns\EnsuresSingleNotificationDispatch;
 use App\Models\Store;
 use App\Notifications\Store\StripeConnectStatusChangedNotification;
 use App\Services\Notification\StoreNotificationRecipientResolver;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Notification;
 
 class SendStripeConnectStatusNotificationListener implements ShouldQueue
 {
+    use EnsuresSingleNotificationDispatch;
+
     public function __construct(
         private readonly StoreNotificationRecipientResolver $storeRecipients,
     ) {
@@ -26,6 +29,17 @@ class SendStripeConnectStatusNotificationListener implements ShouldQueue
         // onboarded" or "no longer able to charge/payout" isn't
         // actionable for the merchant.
         if (!$event->newlyOnboarded() && !$event->newlyRestricted()) {
+            return;
+        }
+
+        // Short TTL (unlike the default 24h elsewhere): a store's Stripe
+        // status can legitimately flip the same direction again much
+        // later (re-enabled, then restricted again months later) and each
+        // occurrence deserves its own notification — this guard should
+        // only catch a near-term duplicate dispatch of the *same*
+        // transition, not suppress a genuinely new one.
+        $key = 'stripe-connect:'.$event->storeId.':'.($event->newlyOnboarded() ? 'onboarded' : 'restricted');
+        if (!$this->claimOnce($key, ttlHours: 1)) {
             return;
         }
 

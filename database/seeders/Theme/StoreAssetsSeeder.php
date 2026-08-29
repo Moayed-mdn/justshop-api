@@ -7,37 +7,35 @@ namespace Database\Seeders\Theme;
 use App\Enums\Theme\AssetTypeEnum;
 use App\Models\Store;
 use App\Models\Asset\StoreAsset;
+use Database\Seeders\Concerns\GeneratesBrandAssets;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Store Assets Seeder - Creates Sample Assets for Stores
- * 
- * This seeder creates:
- * - Logo images (using Unsplash placeholder)
- * - Favicon images
- * - Banner images for hero sections
- * - Product showcase images
+ * Store Assets Seeder - Creates On-Brand Assets for Stores
+ *
+ * This used to pick a "logo" at random from a handful of unrelated Unsplash
+ * lifestyle photos, and one of the "Product Showcase" URLs was built from a
+ * fabricated numeric id with no photo behind it (a guaranteed broken image).
+ *
+ * It now generates every asset as an SVG derived from the store's brand
+ * palette (see GeneratesBrandAssets):
+ * - Logo: an icon + wordmark lockup, not a photo of a stranger or a room.
+ * - Favicon: the same mark, icon-only.
+ * - Banners: abstract on-brand backdrops in 3 compositions, all built from
+ *   the same palette as the logo and the active theme's buttons.
+ * - Product showcase placeholders: deterministic picsum.photos URLs (the
+ *   same convention DemoStorePresentationSeeder already uses for product
+ *   images), so nothing can 404.
+ *
+ * This runs BEFORE RichThemeSeeder (see DatabaseSeeder's ordering comment
+ * "Must run before themes"), so it can't read a Theme's colors — it owns
+ * the canonical brand palette instead, and RichThemeSeeder's "Aurora"
+ * variation reuses the exact same values to stay in sync.
  */
 class StoreAssetsSeeder extends Seeder
 {
-    private array $sampleAssets = [
-        'logos' => [
-            'https://images.unsplash.com/photo-1599305445671-ac291c95aaa9',
-            'https://images.unsplash.com/photo-1611162616475-46b635cb6868',
-            'https://images.unsplash.com/photo-1614624532983-4ce03382d63d',
-        ],
-        'banners' => [
-            'https://images.unsplash.com/photo-1441986300917-64674bd600d8',
-            'https://images.unsplash.com/photo-1483985988355-763728e1935b',
-            'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da',
-            'https://images.unsplash.com/photo-1542744094-3a31f272c490',
-            'https://images.unsplash.com/photo-1556742111-a301076d9d18',
-        ],
-        'favicons' => [
-            'https://images.unsplash.com/photo-1626785774573-4b799315345d',
-        ],
-    ];
+    use GeneratesBrandAssets;
 
     public function run(): void
     {
@@ -45,7 +43,7 @@ class StoreAssetsSeeder extends Seeder
             $stores = Store::all();
 
             foreach ($stores as $store) {
-                $this->command->info("Creating assets for store: {$store->name}");
+                $this->command->info("Creating brand assets for store: {$store->name}");
                 $this->seedAssetsForStore($store);
             }
         });
@@ -55,72 +53,88 @@ class StoreAssetsSeeder extends Seeder
 
     private function seedAssetsForStore(Store $store): void
     {
-        $logoUrl = $this->sampleAssets['logos'][array_rand($this->sampleAssets['logos'])];
-        
-        // Create Logo
+        $palette = $this->brandPalette();
+
+        // ── Logo ─────────────────────────────────────────────────────
+        $logoSvg = $this->logoSvg($store->name, $palette['primary'], $palette['secondary'], $palette['text']);
+        $logoPath = $this->writeBrandAsset("assets/logos/logo-{$store->id}.svg", $logoSvg);
+
         $logo = StoreAsset::create([
             'store_id' => $store->id,
             'type' => AssetTypeEnum::LOGO,
             'name' => 'Store Logo',
-            'file_path' => 'assets/logos/logo-' . $store->id . '.jpg',
-            'file_url' => $logoUrl,
-            'alt_text' => $store->name . ' Logo',
-            'mime_type' => 'image/jpeg',
-            'file_size' => 102400, // 100KB fake size
-            'width' => 400,
-            'height' => 150,
+            'file_path' => $logoPath,
+            'file_url' => $logoPath,
+            'alt_text' => $store->name . ' logo',
+            'mime_type' => 'image/svg+xml',
+            'file_size' => strlen($logoSvg),
+            'width' => 320,
+            'height' => 84,
         ]);
 
-        // Update store with logo URL
-        $store->update([
-            'logo_url' => $logo->file_url,
-        ]);
+        $store->update(['logo_url' => $logo->file_url]);
 
-        $faviconUrl = $this->sampleAssets['favicons'][0];
-        
-        // Create Favicon
+        // ── Favicon ──────────────────────────────────────────────────
+        $iconSvg = $this->iconSvg($store->name, $palette['primary'], $palette['secondary']);
+        $iconPath = $this->writeBrandAsset("assets/favicons/favicon-{$store->id}.svg", $iconSvg);
+
         $favicon = StoreAsset::create([
             'store_id' => $store->id,
             'type' => AssetTypeEnum::FAVICON,
             'name' => 'Store Favicon',
-            'file_path' => 'assets/favicons/favicon-' . $store->id . '.ico',
-            'file_url' => $faviconUrl,
-            'alt_text' => $store->name . ' Favicon',
-            'mime_type' => 'image/x-icon',
-            'file_size' => 5120, // 5KB fake size
-            'width' => 32,
-            'height' => 32,
+            'file_path' => $iconPath,
+            'file_url' => $iconPath,
+            'alt_text' => $store->name . ' favicon',
+            'mime_type' => 'image/svg+xml',
+            'file_size' => strlen($iconSvg),
+            'width' => 64,
+            'height' => 64,
         ]);
 
-        // Update store with favicon URL
-        $store->update([
-            'favicon_url' => $favicon->file_url,
-        ]);
+        $store->update(['favicon_url' => $favicon->file_url]);
 
-        // Create Banner Images
-        foreach ($this->sampleAssets['banners'] as $index => $bannerUrl) {
+        // ── Hero / Banner Backdrops ──────────────────────────────────
+        // Same palette, varied compositions — every banner still reads as
+        // one coherent brand instead of unrelated stock photography.
+        $bannerStyles = ['modern', 'modern', 'dark', 'minimal', 'modern'];
+
+        foreach ($bannerStyles as $index => $style) {
+            $bannerSvg = $this->heroBannerSvg(
+                $palette['primary'],
+                $palette['secondary'],
+                $palette['accent'],
+                $style === 'dark' ? '#111827' : $palette['background'],
+                $style,
+            );
+            $bannerPath = $this->writeBrandAsset(
+                'assets/banners/banner-' . $store->id . '-' . ($index + 1) . '.svg',
+                $bannerSvg,
+            );
+
             StoreAsset::create([
                 'store_id' => $store->id,
                 'type' => AssetTypeEnum::BANNER,
                 'name' => 'Hero Banner ' . ($index + 1),
-                'file_path' => 'assets/banners/banner-' . $store->id . '-' . ($index + 1) . '.jpg',
-                'file_url' => $bannerUrl,
-                'alt_text' => 'Hero banner image showcasing products',
-                'mime_type' => 'image/jpeg',
-                'file_size' => 512000 + ($index * 10000), // Varying sizes
-                'width' => 1920,
-                'height' => 1080,
+                'file_path' => $bannerPath,
+                'file_url' => $bannerPath,
+                'alt_text' => 'On-brand hero banner for ' . $store->name,
+                'mime_type' => 'image/svg+xml',
+                'file_size' => strlen($bannerSvg),
+                'width' => 1600,
+                'height' => 900,
             ]);
         }
 
-        // Create Additional Product Showcase Images
+        // ── Product Showcase Placeholders ───────────────────────────
+        // Deterministic, always-resolvable photography (same convention as
+        // DemoStorePresentationSeeder) instead of a fabricated Unsplash id.
         for ($i = 1; $i <= 3; $i++) {
             StoreAsset::create([
                 'store_id' => $store->id,
                 'type' => AssetTypeEnum::OTHER,
                 'name' => 'Product Showcase ' . $i,
                 'file_path' => 'assets/products/showcase-' . $store->id . '-' . $i . '.jpg',
-                'file_url' => 'https://images.unsplash.com/photo-' . (1500000000000 + $i * 100000),
+                'file_url' => "https://picsum.photos/seed/justshop-showcase-{$store->id}-{$i}/800/600",
                 'alt_text' => 'Product showcase image ' . $i,
                 'mime_type' => 'image/jpeg',
                 'file_size' => 256000,
@@ -129,7 +143,6 @@ class StoreAssetsSeeder extends Seeder
             ]);
         }
 
-        $this->command->info("  ✓ Created " . (2 + count($this->sampleAssets['banners']) + 3) . " assets");
+        $this->command->info('  ✓ Created ' . (2 + count($bannerStyles) + 3) . ' assets');
     }
 }
-

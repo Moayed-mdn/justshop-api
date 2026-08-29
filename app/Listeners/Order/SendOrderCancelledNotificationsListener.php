@@ -6,6 +6,7 @@ namespace App\Listeners\Order;
 
 use App\Enums\Notification\NotificationCategoryEnum;
 use App\Events\Order\OrderCancelled;
+use App\Listeners\Concerns\EnsuresSingleNotificationDispatch;
 use App\Models\Order;
 use App\Notifications\Order\OrderCancelledByCustomerNotification;
 use App\Notifications\Order\OrderCancelledNotification;
@@ -15,6 +16,8 @@ use Illuminate\Support\Facades\Notification;
 
 class SendOrderCancelledNotificationsListener implements ShouldQueue
 {
+    use EnsuresSingleNotificationDispatch;
+
     public function __construct(
         private readonly StoreNotificationRecipientResolver $storeRecipients,
     ) {
@@ -22,6 +25,14 @@ class SendOrderCancelledNotificationsListener implements ShouldQueue
 
     public function handle(OrderCancelled $event): void
     {
+        // An order is only ever cancelled once (terminal state) — see
+        // EnsuresSingleNotificationDispatch. This is a second, independent
+        // layer of protection alongside the row-lock fix in
+        // Order\CancelOrderAction / Admin\Order\CancelOrderAction.
+        if (!$this->claimOnce("order-cancelled:{$event->orderId}")) {
+            return;
+        }
+
         $order = Order::with(['store', 'user'])->find($event->orderId);
 
         if (!$order) {

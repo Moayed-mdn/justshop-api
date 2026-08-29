@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Listeners\Subscription;
 
 use App\Events\Subscription\TrialStarted;
+use App\Listeners\Concerns\EnsuresSingleNotificationDispatch;
 use App\Notifications\Subscription\SubscriptionTrialStartedNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
@@ -22,8 +23,14 @@ use Illuminate\Contracts\Queue\ShouldQueue;
  */
 class SendTrialStartedNotificationListener implements ShouldQueue
 {
+    use EnsuresSingleNotificationDispatch;
+
     public function handle(TrialStarted $event): void
     {
+        if (!$this->claimOnce("trial-started:{$event->subscription->id}")) {
+            return;
+        }
+
         $owner = $event->subscription->billingAccount?->owner;
 
         if (!$owner) {
