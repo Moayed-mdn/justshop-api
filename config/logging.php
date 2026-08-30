@@ -94,6 +94,15 @@ return [
             'tap' => [App\Logging\SanitizeSensitiveLogData::class],
         ],
 
+        'notifications' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/notifications.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 14,
+            'replace_placeholders' => true,
+            'tap' => [App\Logging\SanitizeSensitiveLogData::class],
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),

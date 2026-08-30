@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Platform Admin Login</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 48px;
+            width: 100%;
+            max-width: 420px;
+        }
+        .logo { text-align: center; margin-bottom: 32px; }
+        .logo h1 { font-size: 28px; color: #1a202c; margin-bottom: 8px; }
+        .logo p { color: #718096; font-size: 14px; }
+        .form-group { margin-bottom: 24px; }
+        label { display: block; color: #2d3748; font-weight: 500; margin-bottom: 8px; font-size: 14px; }
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.2s;
+        }
+        input:focus { outline: none; border-color: #667eea; }
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            display: none;
+        }
+        .error-message.show { display: block; }
+        .success-message {
+            background: #c6f6d5;
+            color: #2f855a;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-size: 14px;
+            display: none;
+        }
+        .success-message.show { display: block; }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover:not(:disabled) { transform: translateY(-2px); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .footer { text-align: center; margin-top: 24px; color: #718096; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>🚀 Platform Admin</h1>
+            <p>Sign in to your account</p>
+        </div>
+        
+        <div id="error" class="error-message"></div>
+        <div id="success" class="success-message"></div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" required value="super@test.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required value="password">
+            </div>
+            
+            <button type="submit" id="submitBtn">Sign In</button>
+        </form>
+        
+        <div class="footer">Platform Dashboard v1.0</div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        const form = document.getElementById('loginForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const errorDiv = document.getElementById('error');
+        const successDiv = document.getElementById('success');
+        
+        function showError(msg) {
+            errorDiv.textContent = msg;
+            errorDiv.classList.add('show');
+            successDiv.classList.remove('show');
+        }
+        
+        function showSuccess(msg) {
+            successDiv.textContent = msg;
+            successDiv.classList.add('show');
+            errorDiv.classList.remove('show');
+        }
+        
+        function setLoading(loading) {
+            submitBtn.disabled = loading;
+            submitBtn.innerHTML = loading ? '<span class="loading"></span>Signing in...' : 'Sign In';
+        }
+        
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) {
+                const cookieValue = parts.pop().split(';').shift();
+                console.log(`Cookie ${name}:`, cookieValue);
+                return decodeURIComponent(cookieValue);
+            }
+            console.warn(`Cookie ${name} not found. All cookies:`, document.cookie);
+            return null;
+        }
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            setLoading(true);
+            errorDiv.classList.remove('show');
+            
+            try {
+                // Get CSRF cookie
+                console.log('Fetching CSRF cookie from:', `${API_BASE}/sanctum/csrf-cookie`);
+                
+                const csrfResponse = await fetch(`${API_BASE}/sanctum/csrf-cookie`, { 
+                    method: 'GET',
+                    credentials: 'include',
+                    mode: 'cors'
+                });
+                
+                console.log('CSRF response status:', csrfResponse.status);
+                console.log('CSRF response headers:', [...csrfResponse.headers.entries()]);
+                
+                if (!csrfResponse.ok) {
+                    throw new Error(`Failed to get CSRF cookie: ${csrfResponse.status} ${csrfResponse.statusText}`);
+                }
+                
+                // Wait a bit for cookie to be set
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
+                console.log('All cookies after CSRF fetch:', document.cookie);
+                
+                const xsrfToken = getCookie('XSRF-TOKEN');
+                if (!xsrfToken) {
+                    throw new Error('CSRF token not found in cookies. Check browser console for cookie details.');
+                }
+                
+                console.log('XSRF Token retrieved:', xsrfToken.substring(0, 50) + '...');
+                
+                // Login
+                console.log('Sending login request...');
+                const response = await fetch(`${API_BASE}/api/v1/platform/auth/login`, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-XSRF-TOKEN': xsrfToken
+                    },
+                    body: JSON.stringify({
+                        email: document.getElementById('email').value,
+                        password: document.getElementById('password').value
+                    })
+                });
+                
+                console.log('Login response status:', response.status);
+                console.log('Login response headers:');
+                for (const [key, value] of response.headers.entries()) {
+                    console.log(`  ${key}: ${value}`);
+                }
+                
+                // Check if Set-Cookie headers are present (browser may hide them)
+                const setCookie = response.headers.get('set-cookie');
+                console.log('Set-Cookie header:', setCookie || 'Not visible to JavaScript (browser security)');
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'Login failed');
+                }
+                
+                console.log('Login successful! Response:', data);
+                console.log('Cookies after login:', document.cookie);
+                
+                showSuccess('✅ Login successful! Check console for cookies. Redirecting in 3 seconds...');
+                sessionStorage.setItem('platform_user', JSON.stringify(data.data));
+                
+                // Wait longer to ensure cookies are set
+                setTimeout(() => {
+                    console.log('Redirecting to dashboard...');
+                    console.log('Final cookies before redirect:', document.cookie);
+                    window.location.href = '/platform-dashboard.html';
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                showError(error.message);
+                setLoading(false);
+            }
+        });
+    </script>
+</body>
+</html>

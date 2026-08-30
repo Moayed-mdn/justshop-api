@@ -5,10 +5,36 @@ return [
 
     'allowed_methods' => ['*'],
 
-    // Allow all origins in development
-    'allowed_origins' => ['*'],
+    'allowed_origins' => [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:3002',
+        'http://localhost:4000',
+        'http://localhost:5500',
+        'http://localhost:8000',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:3001',
+        'http://127.0.0.1:3002',
+        'http://127.0.0.1:4000',
+        'http://127.0.0.1:5500',
+        'http://127.0.0.1:8000',
+        'http://laratenant.local',
+        'https://laratenant.local',
+        'http://laratenant.local:3001',
+        'https://laratenant.local:3001',
+        'http://www.laratenant.local',
+        'https://www.laratenant.local',
+        'http://app.laratenant.local',
+        'https://app.laratenant.local',
+        'http://my-store.laratenant.local',
+        'https://my-store.laratenant.local',
+        'http://demo.justshop.test:3000',
+        'https://demo.justshop.test:3000',
+    ],
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '#^https?://[a-z0-9-]+\.justshop\.test(:\d+)?$#',
+    ],
 
     'allowed_headers' => ['*'],
 

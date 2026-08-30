@@ -41,6 +41,27 @@ return [
         'redirect'      => env('GOOGLE_REDIRECT_URI'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Firebase Cloud Messaging (Push Notifications)
+    |--------------------------------------------------------------------------
+    |
+    | Credentials for the Firebase service account used to send push
+    | notifications via the FCM HTTP v1 API. Provide EITHER a path to the
+    | service account JSON file (FIREBASE_CREDENTIALS_PATH) OR the JSON
+    | contents base64-encoded directly in the environment
+    | (FIREBASE_CREDENTIALS_JSON), which is friendlier for platforms that
+    | don't allow shipping extra files (e.g. most PaaS deployments).
+    | Never commit the credentials file itself to source control.
+    |
+    */
+    'firebase' => [
+        'project_id' => env('FIREBASE_PROJECT_ID'),
+        'credentials_path' => env('FIREBASE_CREDENTIALS_PATH'),
+        'credentials_json' => env('FIREBASE_CREDENTIALS_JSON'),
+        'http_timeout' => (int) env('FIREBASE_HTTP_TIMEOUT', 10),
+    ],
+
     'stripe' => [
         'key'            => env('STRIPE_KEY'),
         'secret'         => env('STRIPE_SECRET'),

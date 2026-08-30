@@ -12,11 +12,14 @@ use App\Models\Theme\ThemeBlock;
 use App\Models\Theme\ThemeSection;
 use App\Models\Theme\ThemeSectionGroup;
 use App\Models\Theme\ThemeTemplate;
+use Database\Seeders\Concerns\GeneratesBrandAssets;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 class DefaultSectionSeeder extends Seeder
 {
+    use GeneratesBrandAssets;
+
     public function run(): void
     {
         $themes = Theme::all();
@@ -35,7 +38,7 @@ class DefaultSectionSeeder extends Seeder
 
     private function seedDefaultSections(Theme $theme): void
     {
-        $sectionDefinitions = $this->getSectionDefinitions();
+        $sectionDefinitions = $this->getSectionDefinitions($theme);
         $createdSections = [];
 
         foreach ($sectionDefinitions as $def) {
@@ -178,8 +181,46 @@ class DefaultSectionSeeder extends Seeder
         }
     }
 
-    private function getSectionDefinitions(): array
+    /**
+     * Build the default section/block definitions for a theme.
+     *
+     * This is theme-aware: header/announcement bar/hero/copyright pull
+     * their colors and imagery straight from the theme's own settings, so
+     * every theme (Aurora / Midnight Bloom / Studio Mono) gets chrome that
+     * actually matches it, instead of one hardcoded gray for every theme
+     * and an empty hero image (which rendered as nothing at all).
+     */
+    private function getSectionDefinitions(Theme $theme): array
     {
+        $colors = $theme->settings['colors'] ?? $this->brandPalette();
+        $store = $theme->store;
+        $storeName = $store?->name ?? 'Our Store';
+        $logoUrl = $store?->logo_url ?? '';
+
+        $heroStyle = match (true) {
+            str_contains((string) $theme->slug, 'midnight') => 'dark',
+            str_contains((string) $theme->slug, 'studio') => 'minimal',
+            default => 'modern',
+        };
+
+        // A per-theme, on-brand hero backdrop — the previous default left
+        // this image src empty, so the hero section rendered with no
+        // background at all.
+        $heroImage = $this->writeBrandAsset(
+            "assets/hero/theme-{$theme->id}.svg",
+            $this->heroBannerSvg(
+                $colors['primary'] ?? '#4F46E5',
+                $colors['secondary'] ?? '#0EA5E9',
+                $colors['accent'] ?? '#F97316',
+                $colors['background'] ?? '#FFFFFF',
+                $heroStyle,
+            ),
+        );
+
+        $announcementBg = $colors['primary'] ?? '#1F2937';
+        $announcementText = $this->readableTextColor($announcementBg);
+        $year = date('Y');
+
         return [
             // ── Header ──
             [
@@ -205,8 +246,8 @@ class DefaultSectionSeeder extends Seeder
                         'name' => 'Site Logo',
                         'removable' => false,
                         'settings' => [
-                            'logo_url' => '',
-                            'logo_alt_text' => 'Store logo',
+                            'logo_url' => $logoUrl,
+                            'logo_alt_text' => $storeName . ' logo',
                             'logo_link' => '/',
                             'logo_max_width' => 180,
                         ],
@@ -267,8 +308,8 @@ class DefaultSectionSeeder extends Seeder
                     'shop_now_link' => '/en/shop',
                     'show_language_switcher' => true,
                     'dismissible' => true,
-                    'bg_color' => '#1F2937',
-                    'text_color' => '#FFFFFF',
+                    'bg_color' => $announcementBg,
+                    'text_color' => $announcementText,
                 ],
                 'blocks' => [],
             ],
@@ -330,8 +371,8 @@ class DefaultSectionSeeder extends Seeder
                 'removable' => true,
                 'settings' => [
                     'text' => [
-                        'en' => '© 2026 All rights reserved.',
-                        'ar' => '© 2026 جميع الحقوق محفوظة.',
+                        'en' => "© {$year} {$storeName}. All rights reserved.",
+                        'ar' => "© {$year} {$storeName}. جميع الحقوق محفوظة.",
                     ],
                     'show_payment_icons' => true,
                 ],
@@ -341,7 +382,7 @@ class DefaultSectionSeeder extends Seeder
                         'handle' => 'copyright_text',
                         'name' => 'Copyright Text',
                         'removable' => false,
-                        'settings' => ['text' => '© 2026 Your Store. All rights reserved.'],
+                        'settings' => ['text' => "© {$year} {$storeName}. All rights reserved."],
                     ],
                     [
                         'type' => BlockTypeEnum::PAYMENT_ICONS->value,
@@ -388,8 +429,8 @@ class DefaultSectionSeeder extends Seeder
                         'name' => 'Hero Background Image',
                         'removable' => false,
                         'settings' => [
-                            'src' => '',
-                            'alt' => 'Hero background',
+                            'src' => $heroImage,
+                            'alt' => $storeName . ' hero banner',
                             'lazy' => false,
                         ],
                     ],
@@ -398,14 +439,14 @@ class DefaultSectionSeeder extends Seeder
                         'handle' => 'hero_heading',
                         'name' => 'Hero Heading',
                         'removable' => false,
-                        'settings' => ['html' => '<h1 class="text-5xl font-bold text-white">Welcome to Our Store</h1>'],
+                        'settings' => ['html' => '<h1 class="text-5xl font-bold text-white">Discover ' . e($storeName) . '</h1>'],
                     ],
                     [
                         'type' => BlockTypeEnum::TEXT->value,
                         'handle' => 'hero_subheading',
                         'name' => 'Hero Subheading',
                         'removable' => true,
-                        'settings' => ['text' => 'Discover amazing products at great prices.', 'alignment' => 'center'],
+                        'settings' => ['text' => 'Curated products, honest prices, and fast shipping.', 'alignment' => 'center'],
                     ],
                     [
                         'type' => BlockTypeEnum::BUTTON->value,

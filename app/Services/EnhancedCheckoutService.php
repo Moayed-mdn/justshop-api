@@ -7,6 +7,8 @@ namespace App\Services;
 use App\Enums\Address\AddressTypeEnum;
 use App\Enums\Order\OrderStatusEnum;
 use App\Enums\Order\PaymentStatusEnum;
+use App\Events\Order\OrderPlaced;
+use App\Events\Product\ProductVariantLowStock;
 use App\Exceptions\BaseApiException;
 use App\Models\Address;
 use App\Models\Cart;
@@ -18,6 +20,7 @@ use App\Models\User;
 use App\Services\Storefront\Runtime\RuntimeStoreResolver;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Stripe\Exception\ApiErrorException;
 use Stripe\PaymentIntent;
 use Stripe\StripeClient;
 
@@ -156,8 +159,18 @@ class EnhancedCheckoutService
     }
 
     /**
-     * Create Stripe PaymentIntent for custom checkout.
-     * 
+     * Create (or reuse) the Stripe PaymentIntent for custom checkout.
+     *
+     * IMPORTANT: This is called every time the customer reaches the payment
+     * step, including when they go Back and come Forward again. It must be
+     * idempotent per user/store checkout attempt, otherwise every retry
+     * spawns a brand new "pending" Order that lingers in the customer's
+     * Order history forever. Instead of always creating a new Order, we
+     * look for an existing, still-unpaid draft order for this user/store
+     * and update it in place (refreshed totals, refreshed line items,
+     * refreshed/updated PaymentIntent). A new Order is only ever created
+     * the first time a given user reaches this step for a given store.
+     *
      * @param User $user
      * @param Store $store
      * @param array $shippingAddress
@@ -178,6 +191,16 @@ class EnhancedCheckoutService
             if (!$cart || $cart->items->isEmpty()) {
                 throw new BaseApiException(
                     message: __('cart.empty'),
+                    statusCode: 422,
+                    errorCode: \App\Enums\ErrorCode::SYS_001->value
+                );
+            }
+
+            // Fail fast before touching the database if the store can't
+            // take payments at all — no point creating/reusing a draft order.
+            if (!$store->canReceivePayments()) {
+                throw new BaseApiException(
+                    message: 'This store has not completed payment setup. Please contact the merchant.',
                     statusCode: 422,
                     errorCode: \App\Enums\ErrorCode::SYS_001->value
                 );
@@ -223,87 +246,51 @@ class EnhancedCheckoutService
             $tax = 0; // TODO: Implement tax calculation
             $total = $subtotal + $shippingCost + $tax;
 
-            // Create or update order
-            $order = Order::create([
-                'store_id' => $store->id,
-                'user_id' => $user->id,
+            // Reuse the customer's still-unpaid draft order for this store
+            // (if one exists) instead of creating a duplicate every time
+            // they (re)reach the payment step.
+            $order = $this->findReusableDraftOrder($user, $store)
+                ?? $this->createDraftOrder($store, $user);
+
+            $order->update([
                 'subtotal' => $subtotal,
                 'tax_amount' => $tax,
                 'shipping_amount' => $shippingCost,
                 'discount_amount' => 0,
                 'total' => $total,
                 'currency' => $store->currency ?? 'usd',
-                'status' => OrderStatusEnum::PENDING,
-                'payment_status' => PaymentStatusEnum::PENDING,
                 'shipping_method_id' => $shippingMethod->id,
                 'shipping_method' => $shippingMethod->name,
             ]);
 
-            // Create order items
-            foreach ($cart->items as $item) {
-                $locale = app()->getLocale();
-                $translation = $item->productVariant->product->translations
-                    ->where('locale', $locale)->first()
-                    ?? $item->productVariant->product->translations->first();
+            // Refresh the line-item snapshot so it always matches what the
+            // customer is actually about to pay for (cart may have changed
+            // between attempts).
+            $this->syncDraftOrderItems($order, $cart);
 
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'product_id' => $item->productVariant->product_id,
-                    'product_variant_id' => $item->product_variant_id,
-                    'product_name' => $translation?->name ?? 'Product',
-                    'sku' => $item->productVariant->sku,
-                    'unit_price' => $item->productVariant->price,
-                    'unit_discount_percentage' => 0,
-                    'quantity' => $item->quantity,
-                    'subtotal' => $item->productVariant->price * $item->quantity,
-                    'total' => $item->productVariant->price * $item->quantity,
-                    'attributes' => $item->productVariant->optionValues->map(function ($ov) {
-                        return ['name' => $ov->option->name, 'value' => $ov->value];
-                    })->toArray(),
-                ]);
-            }
+            $platformFeePercent = config('services.stripe.platform_fee_percent', 3.0);
+            $applicationFeeAmount = (int) round($total * $platformFeePercent / 100 * 100);
 
-            // Create Stripe PaymentIntent
-            $paymentIntentParams = [
-                'amount' => (int)($total * 100), // Convert to cents
-                'currency' => strtolower($store->currency ?? 'usd'),
-                'metadata' => [
-                    'order_id' => $order->id,
-                    'store_id' => $store->id,
-                    'user_id' => $user->id,
-                ],
-                'description' => "Order #{$order->order_number} from {$store->name}",
-            ];
+            Log::info('Preparing PaymentIntent for enhanced checkout', [
+                'order_id' => $order->id,
+                'reused_existing_order' => !$order->wasRecentlyCreated,
+                'total' => $total,
+                'platform_fee_percent' => $platformFeePercent,
+                'application_fee_amount' => $applicationFeeAmount,
+                'destination' => $store->stripe_account_id,
+            ]);
 
-            // Add Stripe Connect split payment if store can receive payments
-            if ($store->canReceivePayments()) {
-                $platformFeePercent = config('services.stripe.platform_fee_percent', 3.0);
-                $applicationFeeAmount = (int) round($total * $platformFeePercent / 100 * 100);
+            // Create a new PaymentIntent, or update the existing one in
+            // place if this order already has one that hasn't been
+            // confirmed/consumed yet — avoids leaving orphaned PaymentIntents
+            // behind in Stripe every time the customer goes back and forth.
+            $paymentIntent = $this->createOrUpdatePaymentIntent(
+                $order,
+                $store,
+                $total,
+                $applicationFeeAmount
+            );
 
-                $paymentIntentParams['application_fee_amount'] = $applicationFeeAmount;
-                $paymentIntentParams['transfer_data'] = [
-                    'destination' => $store->stripe_account_id,
-                ];
-
-                Log::info('Creating PaymentIntent with split payment', [
-                    'order_id' => $order->id,
-                    'total' => $total,
-                    'platform_fee_percent' => $platformFeePercent,
-                    'application_fee_amount' => $applicationFeeAmount,
-                    'destination' => $store->stripe_account_id,
-                ]);
-            } else {
-                // DECISION: Block checkout when store cannot receive payments
-                throw new BaseApiException(
-                    message: 'This store has not completed payment setup. Please contact the merchant.',
-                    statusCode: 422,
-                    errorCode: \App\Enums\ErrorCode::SYS_001->value
-                );
-            }
-
-            $paymentIntent = $this->stripe->paymentIntents->create($paymentIntentParams);
-
-            // Store PaymentIntent ID
             $order->update([
                 'payment_intent_id' => $paymentIntent->id,
             ]);
@@ -319,7 +306,7 @@ class EnhancedCheckoutService
                 now()->addHours(2)
             );
 
-            Log::info('PaymentIntent created for enhanced checkout', [
+            Log::info('PaymentIntent ready for enhanced checkout', [
                 'order_id' => $order->id,
                 'payment_intent_id' => $paymentIntent->id,
                 'amount' => $total,
@@ -334,6 +321,144 @@ class EnhancedCheckoutService
                 'currency' => $store->currency ?? 'USD',
             ];
         });
+    }
+
+    /**
+     * Find an existing draft order for this user/store that hasn't been
+     * paid yet, so a repeated "continue to payment" click (e.g. after the
+     * customer pressed Back) updates it instead of creating a duplicate.
+     *
+     * Locked FOR UPDATE within the surrounding transaction to avoid a race
+     * if the same customer double-submits from two tabs.
+     */
+    private function findReusableDraftOrder(User $user, Store $store): ?Order
+    {
+        return Order::where('store_id', $store->id)
+            ->where('user_id', $user->id)
+            ->where('status', OrderStatusEnum::PENDING)
+            ->where('payment_status', PaymentStatusEnum::PENDING)
+            ->lockForUpdate()
+            ->latest('id')
+            ->first();
+    }
+
+    /**
+     * Create a brand-new draft order. Totals/items are filled in by the
+     * caller right after — this just reserves the row (and order number).
+     */
+    private function createDraftOrder(Store $store, User $user): Order
+    {
+        return Order::create([
+            'store_id' => $store->id,
+            'user_id' => $user->id,
+            'subtotal' => 0,
+            'tax_amount' => 0,
+            'shipping_amount' => 0,
+            'discount_amount' => 0,
+            'total' => 0,
+            'currency' => $store->currency ?? 'usd',
+            'status' => OrderStatusEnum::PENDING,
+            'payment_status' => PaymentStatusEnum::PENDING,
+        ]);
+    }
+
+    /**
+     * Replace a draft order's line items with a fresh snapshot of the
+     * current cart. Uses forceDelete (not soft-delete) because these rows
+     * were never part of a completed order — no need to keep a trail of
+     * every intermediate snapshot each time the customer revisits payment.
+     */
+    private function syncDraftOrderItems(Order $order, Cart $cart): void
+    {
+        $order->items()->forceDelete();
+
+        foreach ($cart->items as $item) {
+            $locale = app()->getLocale();
+            $translation = $item->productVariant->product->translations
+                ->where('locale', $locale)->first()
+                ?? $item->productVariant->product->translations->first();
+
+            OrderItem::create([
+                'order_id' => $order->id,
+                'product_id' => $item->productVariant->product_id,
+                'product_variant_id' => $item->product_variant_id,
+                'product_name' => $translation?->name ?? 'Product',
+                'sku' => $item->productVariant->sku,
+                'unit_price' => $item->productVariant->price,
+                'unit_discount_percentage' => 0,
+                'quantity' => $item->quantity,
+                'subtotal' => $item->productVariant->price * $item->quantity,
+                'total' => $item->productVariant->price * $item->quantity,
+                'attributes' => $item->productVariant->optionValues->map(function ($ov) {
+                    return ['name' => $ov->option->name, 'value' => $ov->value];
+                })->toArray(),
+            ]);
+        }
+    }
+
+    /**
+     * Create a fresh PaymentIntent for this order, or update the existing
+     * one in place when it's still in a pre-confirmation state. This keeps
+     * one PaymentIntent per checkout attempt instead of piling up a new
+     * Stripe object every time totals change on retry.
+     */
+    private function createOrUpdatePaymentIntent(
+        Order $order,
+        Store $store,
+        float $total,
+        int $applicationFeeAmount
+    ): PaymentIntent {
+        $amountInCents = (int) round($total * 100);
+        $metadata = [
+            'order_id' => (string) $order->id,
+            'store_id' => (string) $store->id,
+            'user_id' => (string) $order->user_id,
+        ];
+        $description = "Order #{$order->order_number} from {$store->name}";
+
+        if ($order->payment_intent_id) {
+            try {
+                $existing = $this->stripe->paymentIntents->retrieve($order->payment_intent_id);
+
+                // Payment is already submitted/authorized/settled on
+                // Stripe's side — leave it alone and hand back what's
+                // already there rather than risk a second charge attempt.
+                if (in_array($existing->status, ['processing', 'succeeded', 'requires_capture'], true)) {
+                    return $existing;
+                }
+
+                // Still awaiting the customer's card details/confirmation —
+                // safe to update amount/fees in place, same client_secret.
+                if (in_array($existing->status, ['requires_payment_method', 'requires_confirmation', 'requires_action'], true)) {
+                    return $this->stripe->paymentIntents->update($existing->id, [
+                        'amount' => $amountInCents,
+                        'application_fee_amount' => $applicationFeeAmount,
+                        'metadata' => $metadata,
+                        'description' => $description,
+                    ]);
+                }
+
+                // Any other terminal state (e.g. canceled) — fall through
+                // and create a fresh PaymentIntent below.
+            } catch (ApiErrorException $e) {
+                Log::warning('Could not retrieve existing PaymentIntent, creating a new one', [
+                    'order_id' => $order->id,
+                    'payment_intent_id' => $order->payment_intent_id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        return $this->stripe->paymentIntents->create([
+            'amount' => $amountInCents,
+            'currency' => strtolower($store->currency ?? 'usd'),
+            'metadata' => $metadata,
+            'description' => $description,
+            'application_fee_amount' => $applicationFeeAmount,
+            'transfer_data' => [
+                'destination' => $store->stripe_account_id,
+            ],
+        ]);
     }
 
     /**
@@ -386,8 +511,20 @@ class EnhancedCheckoutService
             foreach ($order->items as $item) {
                 $variant = $item->productVariant;
                 if ($variant) {
+                    $previousQuantity = $variant->quantity;
                     $newQuantity = max(0, $variant->quantity - $item->quantity);
                     $variant->update(['quantity' => $newQuantity]);
+
+                    // Only fire on the transition into low-stock, not on
+                    // every subsequent order once already below threshold.
+                    if (
+                        $variant->track_inventory
+                        && $variant->low_stock_threshold !== null
+                        && $previousQuantity > $variant->low_stock_threshold
+                        && $newQuantity <= $variant->low_stock_threshold
+                    ) {
+                        ProductVariantLowStock::dispatch($variant->id, $newQuantity, $variant->low_stock_threshold);
+                    }
                 }
             }
 
@@ -406,6 +543,8 @@ class EnhancedCheckoutService
                 'order_id' => $order->id,
                 'payment_intent_id' => $paymentIntentId,
             ]);
+
+            OrderPlaced::dispatch($order->id);
 
             return $order->fresh(['items', 'shippingAddress', 'billingAddress']);
         });

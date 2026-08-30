@@ -5,11 +5,30 @@ namespace App\Providers;
 use App\Events\Lead\LeadSubmitted;
 use App\Domain\Shared\Events\MerchantRegistered;
 use App\Domain\Shared\Events\StoreCreated;
+use App\Events\Order\OrderCancelled;
+use App\Events\Order\OrderPlaced;
+use App\Events\Order\OrderStatusChanged;
+use App\Events\Product\ProductVariantLowStock;
+use App\Events\Store\StripeConnectStatusChanged;
+use App\Events\Subscription\SubscriptionActivated;
+use App\Events\Subscription\SubscriptionStatusChanged;
+use App\Events\Subscription\TrialStarted;
 use App\Exceptions\Auth\TooManyRequestsException;
 use App\Listeners\Auth\SendWelcomeEmailListener;
 use App\Listeners\Lead\SendLeadSubmittedNotificationListener;
+use App\Listeners\Order\SendOrderCancelledNotificationsListener;
+use App\Listeners\Order\SendOrderPlacedNotificationsListener;
+use App\Listeners\Order\SendOrderStatusChangedNotificationListener;
+use App\Listeners\Platform\SendMerchantRegisteredNotificationListener;
+use App\Listeners\Platform\SendStoreCreatedNotificationListener;
+use App\Listeners\Product\SendLowStockNotificationListener;
 use App\Listeners\Store\AutoAddStoreToHostsFile;
 use App\Listeners\Store\BootstrapStoreListener;
+use App\Listeners\Store\SendStripeConnectStatusNotificationListener;
+use App\Listeners\Subscription\SendSubscriptionActivatedNotificationListener;
+use App\Listeners\Subscription\SendSubscriptionStatusChangedNotificationListener;
+use App\Listeners\Subscription\SendTrialStartedNotificationListener;
+use App\Notifications\Channels\FcmChannel;
 use App\Services\Auth\Membership\MembershipResolver;
 use App\Services\Auth\Membership\PivotMembershipResolver;
 use App\Support\Audit\AuditLoggerInterface;
@@ -19,6 +38,7 @@ use App\Support\Security\LogSecurityEventLogger;
 use App\Support\Security\SecurityEventLoggerInterface;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Log;
@@ -31,9 +51,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Conditionally register Telescope only in local environment and when package is installed
-        if ($this->app->environment('local') && class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)) {
-            $this->app->register(\App\Providers\TelescopeServiceProvider::class);
+        // Register Telescope only in local environment when package is installed
+        if (
+            $this->app->environment('local') &&
+            class_exists(\Laravel\Telescope\TelescopeServiceProvider::class)
+        ) {
+            $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
+            $this->app->register(TelescopeServiceProvider::class);
         }
 
         $this->app->scoped(RequestTraceContextManager::class, RequestTraceContextManager::class);
@@ -213,6 +237,11 @@ class AppServiceProvider extends ServiceProvider
         );
 
         Event::listen(
+            MerchantRegistered::class,
+            SendMerchantRegisteredNotificationListener::class,
+        );
+
+        Event::listen(
             StoreCreated::class,
             BootstrapStoreListener::class,
         );
@@ -221,6 +250,61 @@ class AppServiceProvider extends ServiceProvider
             StoreCreated::class,
             AutoAddStoreToHostsFile::class,
         );
+
+        Event::listen(
+            StoreCreated::class,
+            SendStoreCreatedNotificationListener::class,
+        );
+
+        // Push notification system: order, product, and store lifecycle events.
+        Event::listen(
+            OrderPlaced::class,
+            SendOrderPlacedNotificationsListener::class,
+        );
+
+        Event::listen(
+            OrderStatusChanged::class,
+            SendOrderStatusChangedNotificationListener::class,
+        );
+
+        Event::listen(
+            OrderCancelled::class,
+            SendOrderCancelledNotificationsListener::class,
+        );
+
+        Event::listen(
+            ProductVariantLowStock::class,
+            SendLowStockNotificationListener::class,
+        );
+
+        Event::listen(
+            StripeConnectStatusChanged::class,
+            SendStripeConnectStatusNotificationListener::class,
+        );
+
+        // Push notification system: platform subscription/billing lifecycle.
+        // These events were already being dispatched by real billing code
+        // but had no registered listener until now — see the note on
+        // SendTrialStartedNotificationListener.
+        Event::listen(
+            TrialStarted::class,
+            SendTrialStartedNotificationListener::class,
+        );
+
+        Event::listen(
+            SubscriptionActivated::class,
+            SendSubscriptionActivatedNotificationListener::class,
+        );
+
+        Event::listen(
+            SubscriptionStatusChanged::class,
+            SendSubscriptionStatusChangedNotificationListener::class,
+        );
+
+        // Push notification system: custom FCM delivery channel.
+        Notification::extend('fcm', function ($app) {
+            return $app->make(FcmChannel::class);
+        });
 
         // Register custom rate limiter for email verification resends
         RateLimiter::for('verification-resend', function ($request) {

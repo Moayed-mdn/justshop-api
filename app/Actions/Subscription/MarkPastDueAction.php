@@ -55,7 +55,7 @@ final readonly class MarkPastDueAction
 
             // Recompute entitlements for all stores owned by this account
             // Status: past_due → entitlement_status: read_only
-            $stores = \App\Models\Store::where('owner_id', $subscription->billingAccount->owner_user_id)->get();
+            $stores = $subscription->billingAccount->user->stores;
             foreach ($stores as $store) {
                 $this->recomputeEntitlements->execute(
                     new RecomputeEntitlementsDTO(
