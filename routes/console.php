@@ -5,6 +5,7 @@ use App\Console\Commands\Billing\BillingReconcileCommand;
 use App\Console\Commands\Billing\ExpireStaleIncompleteSubscriptionsCommand;
 use App\Console\Commands\Billing\ExpireTrialsCommand;
 use App\Console\Commands\Billing\ExpireGracePeriodsCommand;
+use App\Console\Commands\Order\ExpireAbandonedOrdersCommand;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -49,4 +50,13 @@ Schedule::command(BillingReconcileCommand::class)
     ->timezone('UTC')
     ->name('billing-reconcile')
     ->withoutOverlapping(7200) // Prevent overlapping for 2 hours
+    ->runInBackground();
+
+// Storefront Checkout — Cancel abandoned draft orders (checkout started but
+// payment never completed) so they don't linger forever as "Pending" in the
+// customer's order history, and free up their Stripe PaymentIntents.
+Schedule::command(ExpireAbandonedOrdersCommand::class, ['--minutes=60'])
+    ->everyFifteenMinutes()
+    ->name('orders-expire-abandoned')
+    ->withoutOverlapping(900) // Prevent overlapping for 15 minutes
     ->runInBackground();
