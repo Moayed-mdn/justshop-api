@@ -104,6 +104,26 @@ jobs:
       contents: read
   
     steps:
+      - name: Debug Tailscale connectivity
+        run: |
+              echo "=== Tailscale status ==="
+              tailscale status
+          
+              echo
+              echo "=== Tailscale IP ==="
+              tailscale ip -4
+          
+              echo
+              echo "=== Tailscale ping ==="
+              tailscale ping --verbose "${{ secrets.VPS_HOST }}"
+          
+              echo
+              echo "=== Tailscale status for VPS ==="
+              tailscale status | grep "${{ secrets.VPS_HOST }}" || true
+          
+              echo
+              echo "=== TCP 22 ==="
+              nc -vz -w 10 "${{ secrets.VPS_HOST }}" 22
       - name: Connect to Tailscale
         uses: tailscale/github-action@v4
         with:
