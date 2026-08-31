@@ -95,9 +95,10 @@ jobs:
           tags: ghcr.io/moayed-mdn/justshop-api:latest
 
   deploy:
-    needs:
-      - build-and-push
+    #needs:
+      #- build-and-push
 
+    
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     runs-on: ubuntu-latest
@@ -107,6 +108,13 @@ jobs:
       contents: read
 
     steps:
+      - name: Debug host value
+        run: |
+            echo "VPS_HOST=$VPS_HOST"
+            echo "Host length is ${#VPS_HOST}"
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        
       - name: Connect to Tailscale
         uses: tailscale/github-action@v4
         with:
