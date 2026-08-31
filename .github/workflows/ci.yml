@@ -94,15 +94,15 @@ jobs:
   deploy:
     needs:
       - build-and-push
-
+  
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
+  
     runs-on: ubuntu-latest
-
+  
     permissions:
       id-token: write
       contents: read
-
+  
     steps:
       - name: Connect to Tailscale
         uses: tailscale/github-action@v4
@@ -110,20 +110,31 @@ jobs:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
           audience: ${{ secrets.TS_AUDIENCE }}
           tags: tag:ci
-
-      - name: Check VPS connectivity
+          ping: ${{ secrets.VPS_HOST }}
+  
+      - name: Check SSH connectivity
         run: |
-          tailscale ping ${{ secrets.VPS_HOST }}
-
+          echo "Testing TCP 22..."
+          nc -vz -w 10 "${{ secrets.VPS_HOST }}" 22
+  
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          port: 22
+          timeout: 30s
+          command_timeout: 10m
           script: |
+            set -e
+  
             cd ~/projects/docker/justshop-api
+  
             git pull origin main
+  
             docker compose pull
+  
             docker compose up -d
+  
             docker compose exec -T app php artisan migrate --force
