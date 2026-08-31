@@ -108,13 +108,12 @@ jobs:
       contents: read
 
     steps:
-      - name: Debug host value
+      - name: Debug network mode
+
         run: |
-            echo "VPS_HOST=$VPS_HOST"
-            echo "Host length is ${#VPS_HOST}"
-        env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-        
+          ip addr show tailscale0 || echo "NO tailscale0 interface!"
+          ip route | grep 100\\.
+            
       - name: Connect to Tailscale
         uses: tailscale/github-action@v4
         with:
