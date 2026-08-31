@@ -69,11 +69,13 @@ jobs:
 
       - name: Run tests
         run: php artisan test
+
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+
     steps:
       - uses: actions/checkout@v5
 
@@ -91,70 +93,40 @@ jobs:
           context: .
           push: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
           tags: ghcr.io/moayed-mdn/justshop-api:latest
+
   deploy:
     needs:
       - build-and-push
-  
+
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-  
+
     runs-on: ubuntu-latest
-  
+
     permissions:
       id-token: write
       contents: read
-  
+
     steps:
-      - name: Debug Tailscale connectivity
-        run: |
-              echo "=== Tailscale status ==="
-              tailscale status
-          
-              echo
-              echo "=== Tailscale IP ==="
-              tailscale ip -4
-          
-              echo
-              echo "=== Tailscale ping ==="
-              tailscale ping --verbose "${{ secrets.VPS_HOST }}"
-          
-              echo
-              echo "=== Tailscale status for VPS ==="
-              tailscale status | grep "${{ secrets.VPS_HOST }}" || true
-          
-              echo
-              echo "=== TCP 22 ==="
-              nc -vz -w 10 "${{ secrets.VPS_HOST }}" 22
       - name: Connect to Tailscale
         uses: tailscale/github-action@v4
         with:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
           audience: ${{ secrets.TS_AUDIENCE }}
           tags: tag:ci
-          ping: ${{ secrets.VPS_HOST }}
-  
-      - name: Check SSH connectivity
+
+      - name: Check VPS connectivity
         run: |
-          echo "Testing TCP 22..."
-          nc -vz -w 10 "${{ secrets.VPS_HOST }}" 22
-  
+          tailscale ping ${{ secrets.VPS_HOST }}
+
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          port: 22
-          timeout: 30s
-          command_timeout: 10m
           script: |
-            set -e
-  
             cd ~/projects/docker/justshop-api
-  
             git pull origin main
-  
             docker compose pull
-  
             docker compose up -d
-  
             docker compose exec -T app php artisan migrate --force
