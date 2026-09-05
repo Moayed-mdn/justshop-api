@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 return [
-    'contract_version' => '2026-06-26',
+    'contract_version' => '2026-05-28',
 
     'supported_locales' => ['en', 'ar'],
 
