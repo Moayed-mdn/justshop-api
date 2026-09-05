@@ -25,9 +25,6 @@ class StripeConnectEcommerceWebhookTest extends TestCase
     {
         parent::setUp();
 
-        // Disable Store observer to avoid SQLite GREATEST function issue in tests
-        Store::unsetEventDispatcher();
-
         $this->webhookSecret = 'whsec_test_ecommerce_secret';
         Config::set('services.stripe.ecommerce_webhook_secret', $this->webhookSecret);
 

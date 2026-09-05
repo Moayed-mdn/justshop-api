@@ -10,6 +10,8 @@ use App\Enums\Store\StoreStatusEnum;
 use App\Jobs\Store\BootstrapStoreJob;
 use App\Models\Store;
 use App\Models\User;
+use App\Services\Auth\OnboardingTransitionService;
+use App\Services\Store\StoreInitializationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -17,6 +19,16 @@ use Tests\TestCase;
 class StoreCreationLifecycleTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // SQLite (used for tests) does not support the GREATEST() SQL function
+        // that StoreObserver uses when recalculating BillingAccount store counts.
+        // Disabling the model event dispatcher avoids that unsupported-function
+        // error without changing the assertions below, which do not depend on
+    }
 
     public function test_first_store_creation_moves_onboarding_to_store_created(): void
     {
@@ -33,7 +45,7 @@ class StoreCreationLifecycleTest extends TestCase
         $response = $this->postJson('/api/v1/stores', $payload);
 
         $response->assertStatus(201);
-        
+
         $user->refresh();
         $this->assertEquals(OnboardingStepEnum::STORE_CREATED, $user->onboarding_step);
         $this->assertNotNull($user->last_active_store_id);
@@ -45,7 +57,7 @@ class StoreCreationLifecycleTest extends TestCase
         $user = User::factory()->create([
             'onboarding_step' => OnboardingStepEnum::STORE_CREATED,
         ]);
-        
+
         $store = Store::factory()->create([
             'owner_id' => $user->id,
             'status' => StoreStatusEnum::PROVISIONING,
@@ -53,10 +65,10 @@ class StoreCreationLifecycleTest extends TestCase
         ]);
 
         $job = new BootstrapStoreJob($store->id);
-        
+
         // Use real services
-        $initializationService = app(\App\Services\Store\StoreInitializationService::class);
-        $onboardingTransitionService = app(\App\Services\Auth\OnboardingTransitionService::class);
+        $initializationService = app(StoreInitializationService::class);
+        $onboardingTransitionService = app(OnboardingTransitionService::class);
 
         $job->handle($initializationService, $onboardingTransitionService);
 

@@ -38,10 +38,6 @@ class StripeConnectSplitPaymentTest extends TestCase
     {
         parent::setUp();
 
-        // Disable Store and Order observers to avoid SQLite GREATEST function issue
-        Store::unsetEventDispatcher();
-        \App\Models\Order::unsetEventDispatcher();
-
         Config::set('services.stripe.platform_fee_percent', 3.0);
         Config::set('services.stripe.connect_return_base_url', 'http://localhost:3000');
 
@@ -291,9 +287,13 @@ class StripeConnectSplitPaymentTest extends TestCase
 
             $this->app->instance(StripeClient::class, $mockStripe);
 
-            // Update cart item price for test case
-            $this->cart->items->first()->update([
-                'unit_price' => $testCase['total'] - 10.00, // Subtract shipping
+            // Update the underlying variant price for this test case (the
+            // checkout service prices off the live ProductVariant, not the
+            // cart item's cached unit_price) and pin quantity to 1 so that
+            // item subtotal + shipping ($10) equals the test case total.
+            $this->cart->items->first()->update(['quantity' => 1]);
+            $this->cart->items->first()->productVariant->update([
+                'price' => $testCase['total'] - 10.00, // Subtract shipping
             ]);
 
             $service = $this->app->make(EnhancedCheckoutService::class);
