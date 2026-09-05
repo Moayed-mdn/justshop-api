@@ -17,10 +17,6 @@ class BillingPortalPolicy
 
     public function createSession(User $user, BillingAccount $billingAccount): bool
     {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
-        }
-
         if ($this->isOwnerOrLinkedMember($user, $billingAccount, PermissionEnum::BILLING_PORTAL)) {
             return $this->decision($user, 'createSession', true, $billingAccount);
         }
@@ -38,12 +34,22 @@ class BillingPortalPolicy
             return true;
         }
 
-        return StoreEntitlementSnapshot::where('billing_account_id', $billingAccount->id)
+        $isLinkedStoreMember = StoreEntitlementSnapshot::where('billing_account_id', $billingAccount->id)
             ->whereHas('store', function ($q) use ($user) {
                 $q->whereHas('users', function ($q) use ($user) {
                     $q->where('user_id', $user->id);
                 });
             })
             ->exists();
+
+        if ($isLinkedStoreMember) {
+            return true;
+        }
+
+        // Super admins are never implicitly linked to a billing account.
+        // Access requires a governed, audited impersonation session AND the
+        // super admin's own explicit permission grant checked above -- there
+        // is no blanket bypass.
+        return $this->isGovernedImpersonationActive($user);
     }
 }

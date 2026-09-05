@@ -18,10 +18,6 @@ class InvoicePolicy
 
     public function viewAny(User $user, BillingAccount $billingAccount): bool
     {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
-        }
-
         if ($this->isOwnerOrLinkedMember($user, $billingAccount, PermissionEnum::INVOICE_VIEW)) {
             return $this->decision($user, 'viewAny', true, $billingAccount);
         }
@@ -31,10 +27,6 @@ class InvoicePolicy
 
     public function view(User $user, Invoice $invoice): bool
     {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
-        }
-
         $billingAccount = $invoice->billingAccount;
 
         if ($this->isOwnerOrLinkedMember($user, $billingAccount, PermissionEnum::INVOICE_VIEW)) {
@@ -46,10 +38,6 @@ class InvoicePolicy
 
     public function download(User $user, Invoice $invoice): bool
     {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
-        }
-
         $billingAccount = $invoice->billingAccount;
 
         if ($this->isOwnerOrLinkedMember($user, $billingAccount, PermissionEnum::INVOICE_DOWNLOAD)) {
@@ -69,12 +57,22 @@ class InvoicePolicy
             return true;
         }
 
-        return StoreEntitlementSnapshot::where('billing_account_id', $billingAccount->id)
+        $isLinkedStoreMember = StoreEntitlementSnapshot::where('billing_account_id', $billingAccount->id)
             ->whereHas('store', function ($q) use ($user) {
                 $q->whereHas('users', function ($q) use ($user) {
                     $q->where('user_id', $user->id);
                 });
             })
             ->exists();
+
+        if ($isLinkedStoreMember) {
+            return true;
+        }
+
+        // Super admins are never implicitly linked to a billing account.
+        // Access requires a governed, audited impersonation session AND the
+        // super admin's own explicit permission grant checked above -- there
+        // is no blanket bypass.
+        return $this->isGovernedImpersonationActive($user);
     }
 }

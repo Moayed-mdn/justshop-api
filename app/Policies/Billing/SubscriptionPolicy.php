@@ -18,10 +18,6 @@ class SubscriptionPolicy
 
     public function view(User $user, BillingAccount $billingAccount): bool
     {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
-        }
-
         if ($this->isOwnerOrLinkedMember($user, $billingAccount, PermissionEnum::SUBSCRIPTION_VIEW)) {
             return $this->decision($user, 'view', true, $billingAccount);
         }
@@ -31,10 +27,6 @@ class SubscriptionPolicy
 
     public function viewUsage(User $user, BillingAccount $billingAccount): bool
     {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
-        }
-
         if ($this->isOwnerOrLinkedMember($user, $billingAccount, PermissionEnum::SUBSCRIPTION_VIEW)) {
             return $this->decision($user, 'viewUsage', true, $billingAccount);
         }
@@ -44,10 +36,6 @@ class SubscriptionPolicy
 
     public function upgrade(User $user, BillingAccount $billingAccount, Store $store): bool
     {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
-        }
-
         if ($this->isMember($user, $store) && $user->can(PermissionEnum::SUBSCRIPTION_UPGRADE)) {
             return $this->decision($user, 'upgrade', true, $billingAccount, ['store_id' => $store->id]);
         }
@@ -66,10 +54,6 @@ class SubscriptionPolicy
      */
     public function moveToCurrentVersion(User $user, BillingAccount $billingAccount): bool
     {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
-        }
-
         if ($this->isOwnerOrLinkedMember($user, $billingAccount, PermissionEnum::SUBSCRIPTION_UPGRADE)) {
             return $this->decision($user, 'moveToCurrentVersion', true, $billingAccount);
         }
@@ -79,10 +63,6 @@ class SubscriptionPolicy
 
     public function downgrade(User $user, BillingAccount $billingAccount, Store $store): bool
     {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
-        }
-
         if ($this->isMember($user, $store) && $user->can(PermissionEnum::SUBSCRIPTION_DOWNGRADE)) {
             return $this->decision($user, 'downgrade', true, $billingAccount, ['store_id' => $store->id]);
         }
@@ -96,10 +76,6 @@ class SubscriptionPolicy
 
     public function cancel(User $user, BillingAccount $billingAccount): bool
     {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
-        }
-
         if ($this->isOwnerOrLinkedMember($user, $billingAccount, PermissionEnum::SUBSCRIPTION_CANCEL)) {
             return $this->decision($user, 'cancel', true, $billingAccount);
         }
@@ -109,10 +85,6 @@ class SubscriptionPolicy
 
     public function resume(User $user, BillingAccount $billingAccount): bool
     {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
-        }
-
         if ($this->isOwnerOrLinkedMember($user, $billingAccount, PermissionEnum::SUBSCRIPTION_RESUME)) {
             return $this->decision($user, 'resume', true, $billingAccount);
         }
@@ -130,12 +102,22 @@ class SubscriptionPolicy
             return true;
         }
 
-        return StoreEntitlementSnapshot::where('billing_account_id', $billingAccount->id)
+        $isLinkedStoreMember = StoreEntitlementSnapshot::where('billing_account_id', $billingAccount->id)
             ->whereHas('store', function ($q) use ($user) {
                 $q->whereHas('users', function ($q) use ($user) {
                     $q->where('user_id', $user->id);
                 });
             })
             ->exists();
+
+        if ($isLinkedStoreMember) {
+            return true;
+        }
+
+        // Super admins are never implicitly linked to a billing account.
+        // Access requires a governed, audited impersonation session AND the
+        // super admin's own explicit permission grant checked above -- there
+        // is no blanket bypass.
+        return $this->isGovernedImpersonationActive($user);
     }
 }
