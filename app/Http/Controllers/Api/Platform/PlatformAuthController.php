@@ -36,23 +36,21 @@ class PlatformAuthController extends Controller
 
     public function login(LoginUserRequest $request): JsonResponse
     {
-        // #region debug-point C:platform-login-entry
-        rescue(fn () => Http::timeout(1)->post('http://127.0.0.1:7777/event', ['sessionId' => 'signin-session-error', 'runId' => 'post-fix', 'hypothesisId' => 'C', 'location' => 'app/Http/Controllers/Api/Platform/PlatformAuthController.php:login:entry', 'msg' => '[DEBUG] platform login controller entered', 'data' => ['has_session' => $request->hasSession(), 'origin' => $request->header('origin'), 'referer' => $request->header('referer'), 'host' => $request->getHost(), 'cookie_names' => array_keys($request->cookies->all()), 'has_xsrf_cookie' => $request->cookies->has('XSRF-TOKEN'), 'has_session_cookie' => $request->cookies->has(config('session.cookie')), 'session_driver' => config('session.driver')], 'ts' => (int) round(microtime(true) * 1000)]), report: false);
-        // #endregion
         $user = $this->loginUserAction->execute(
             LoginUserDTO::fromRequest($request)
         );
 
         Auth::login($user);
-        // #region debug-point C:platform-login-before-session
-        rescue(fn () => Http::timeout(1)->post('http://127.0.0.1:7777/event', ['sessionId' => 'signin-session-error', 'runId' => 'post-fix', 'hypothesisId' => 'C', 'location' => 'app/Http/Controllers/Api/Platform/PlatformAuthController.php:login:before-session', 'msg' => '[DEBUG] platform login before session regenerate', 'data' => ['has_session' => $request->hasSession(), 'auth_check' => Auth::check(), 'auth_id' => Auth::id(), 'session_cookie_name' => config('session.cookie')], 'ts' => (int) round(microtime(true) * 1000)]), report: false);
-        // #endregion
         $request->session()->regenerate();
-        
-        // CRITICAL: Tag session with 'platform' domain, not 'merchant'
-        $this->sessionOwnershipManager->tag($request, $user, 'platform');
 
+        // Tag the session with the user's actual resolved identity domain,
+        // not a literal tied to which endpoint was used -- a non-platform
+        // account authenticating here (credentials alone don't restrict
+        // this endpoint to platform actors) must not be tagged as if it
+        // were one.
         $identityContext = $this->identityContextResolver->resolve($user);
+        $this->sessionOwnershipManager->tag($request, $user, $identityContext->authDomain->value);
+
         $sessionMetadata = $this->frontendSessionMetadataResolver->resolve($request, $identityContext);
 
         return $this->success([

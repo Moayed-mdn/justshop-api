@@ -75,11 +75,12 @@ class StorefrontAccountController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
-        $this->sessionOwnershipManager->tag($request, $user, 'customer');
+        $identityContext = $this->identityContextResolver->resolve($user);
+        $this->sessionOwnershipManager->tag($request, $user, $identityContext->authDomain->value);
 
         return $this->successWithMeta(
             new StorefrontAccountUserResource($user),
-            ['session' => $this->frontendSessionMetadataResolver->resolve($request, $this->identityContextResolver->resolve($user))],
+            ['session' => $this->frontendSessionMetadataResolver->resolve($request, $identityContext)],
             __('auth.customer_register_success'),
             201,
         );
@@ -93,11 +94,12 @@ class StorefrontAccountController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
-        $this->sessionOwnershipManager->tag($request, $user, 'customer');
+        $identityContext = $this->identityContextResolver->resolve($user);
+        $this->sessionOwnershipManager->tag($request, $user, $identityContext->authDomain->value);
 
         return $this->successWithMeta(
             ['user' => new StorefrontAccountUserResource($user)],
-            ['session' => $this->frontendSessionMetadataResolver->resolve($request, $this->identityContextResolver->resolve($user))],
+            ['session' => $this->frontendSessionMetadataResolver->resolve($request, $identityContext)],
             __('auth.customer_login_successful'),
         );
     }
