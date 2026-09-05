@@ -58,7 +58,11 @@ class ProductObserver
     {
         $updated = StoreEntitlementSnapshot::where('store_id', $storeId)
             ->update([
-                'products_count' => DB::raw("GREATEST(products_count + ({$delta}), 0)")
+                // Portable clamp-at-zero: GREATEST() is MySQL/Postgres-only and
+                // is not available on SQLite (used in the test suite), so a CASE
+                // expression is used instead since it works identically on all
+                // three drivers.
+                'products_count' => DB::raw("CASE WHEN (products_count + ({$delta})) > 0 THEN (products_count + ({$delta})) ELSE 0 END")
             ]);
 
         if ($updated === 0) {

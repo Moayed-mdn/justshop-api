@@ -88,7 +88,11 @@ class StoreObserver
     {
         $updated = BillingAccount::where('owner_user_id', $ownerId)
             ->update([
-                'stores_count' => DB::raw("GREATEST(stores_count + ({$delta}), 0)")
+                // Portable clamp-at-zero: GREATEST() is MySQL/Postgres-only and
+                // is not available on SQLite (used in the test suite), so a CASE
+                // expression is used instead since it works identically on all
+                // three drivers.
+                'stores_count' => DB::raw("CASE WHEN (stores_count + ({$delta})) > 0 THEN (stores_count + ({$delta})) ELSE 0 END")
             ]);
         
         if ($updated === 0) {
