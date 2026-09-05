@@ -38,20 +38,22 @@ class PaymentMethodService
 
     public function deletePaymentMethod(PaymentMethod $paymentMethod): void
     {
-        if ($paymentMethod->is_default) {
-            $newDefault = $this->paymentMethodRepository->getDefault($paymentMethod->user_id);
-            if (!$newDefault) {
-                $nextInLine = $this->paymentMethodRepository->getUserPaymentMethods($paymentMethod->user_id)
-                    ->where('id', '!=', $paymentMethod->id)
-                    ->first();
+        $wasDefault = $paymentMethod->is_default;
+        $userId = $paymentMethod->user_id;
+
+        $this->paymentMethodRepository->delete($paymentMethod);
+
+        if ($wasDefault) {
+            $stillHasDefault = $this->paymentMethodRepository->getDefault($userId);
+
+            if (!$stillHasDefault) {
+                $nextInLine = $this->paymentMethodRepository->getUserPaymentMethods($userId)->first();
 
                 if ($nextInLine) {
-                    $this->paymentMethodRepository->setAsDefault($paymentMethod->user_id, $nextInLine->id);
+                    $this->paymentMethodRepository->setAsDefault($userId, $nextInLine->id);
                 }
             }
         }
-
-        $this->paymentMethodRepository->delete($paymentMethod);
     }
 
     public function setAsDefault(PaymentMethod $paymentMethod): void
