@@ -23,6 +23,7 @@ class UserCreationTest extends TestCase
         $merchant = User::factory()->merchant()->create();
         $store = Store::factory()->for($merchant, 'owner')->create();
         $merchant->stores()->attach($store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
+        $this->grantActiveEntitlement($store, $merchant);
 
         // 2. Assign Permission to the Store Admin role (which is used in store_user pivot)
         Permission::findOrCreate(PermissionEnum::USER_CREATE, 'web');
@@ -65,6 +66,7 @@ class UserCreationTest extends TestCase
         $merchant = User::factory()->merchant()->create();
         $store = Store::factory()->for($merchant, 'owner')->create();
         $merchant->stores()->attach($store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
+        $this->grantActiveEntitlement($store, $merchant);
 
         Sanctum::actingAs($merchant, ['*'], 'merchant');
 
@@ -77,5 +79,23 @@ class UserCreationTest extends TestCase
         ]);
 
         $response->assertStatus(403);
+    }
+
+    private function grantActiveEntitlement(Store $store, User $owner): void
+    {
+        $billingAccount = \App\Models\BillingAccount::create([
+            'owner_user_id' => $owner->id,
+            'billing_email' => $owner->email,
+            'status' => \App\Enums\Billing\BillingAccountStatusEnum::ACTIVE->value,
+        ]);
+
+        \App\Models\StoreEntitlementSnapshot::create([
+            'store_id' => $store->id,
+            'billing_account_id' => $billingAccount->id,
+            'entitlement_status' => \App\Enums\Entitlement\EntitlementStatusEnum::ENTITLED,
+            'features' => [],
+            'products_count' => 0,
+            'refreshed_at' => now(),
+        ]);
     }
 }

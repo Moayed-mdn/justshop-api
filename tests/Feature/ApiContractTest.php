@@ -219,7 +219,8 @@ class ApiContractTest extends TestCase
             ],
         ]);
 
-        $response = $this->actingAs($user)->getJson('/api/v1/merchant/sessions');
+        $response = $this->withHeaders(['Referer' => 'http://localhost'])
+            ->actingAs($user)->getJson('/api/v1/merchant/sessions');
 
         $response->assertOk()
             ->assertJsonCount(2, 'data')
@@ -264,7 +265,8 @@ class ApiContractTest extends TestCase
             ],
         ]);
 
-        $response = $this->deleteJson('/api/v1/merchant/sessions/session_to_revoke');
+        $response = $this->withHeaders(['Referer' => 'http://localhost'])
+            ->deleteJson('/api/v1/merchant/sessions/session_to_revoke');
 
         $response->assertOk()
             ->assertJson([
@@ -293,7 +295,8 @@ class ApiContractTest extends TestCase
             'last_activity' => now()->timestamp,
         ]);
 
-        $response = $this->deleteJson('/api/v1/merchant/sessions/foreign_session');
+        $response = $this->withHeaders(['Referer' => 'http://localhost'])
+            ->deleteJson('/api/v1/merchant/sessions/foreign_session');
 
         $response->assertOk()
             ->assertJson([
@@ -342,7 +345,8 @@ class ApiContractTest extends TestCase
             ],
         ]);
 
-        $response = $this->deleteJson('/api/v1/merchant/sessions', [
+        $response = $this->withHeaders(['Referer' => 'http://localhost'])
+            ->deleteJson('/api/v1/merchant/sessions', [
             'password' => 'password', // Assuming password confirmation is required
         ]);
 

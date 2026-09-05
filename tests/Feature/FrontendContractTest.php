@@ -209,7 +209,7 @@ class FrontendContractTest extends TestCase
             'onboarding_step' => OnboardingStepEnum::CREATE_STORE,
         ]);
 
-        $loginResponse = $this->postJson('/api/v1/users/auth/login', [
+        $loginResponse = $this->withHeaders(['Referer' => 'http://localhost'])->postJson('/api/v1/users/auth/login', [
             'email' => $user->email,
             'password' => 'password123',
         ]);
@@ -226,7 +226,7 @@ class FrontendContractTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.available', true);
 
-        $this->postJson('/api/v1/users/auth/logout')
+        $this->withHeaders(['Referer' => 'http://localhost'])->postJson('/api/v1/users/auth/logout')
             ->assertOk()
             ->assertJsonPath('meta.session.actor_type', 'merchant');
 
@@ -282,7 +282,7 @@ class FrontendContractTest extends TestCase
             'payload' => '',
         ]);
 
-        $response = $this->actingAs($user)->getJson('/api/v1/users/sessions');
+        $response = $this->withHeaders(['Referer' => 'http://localhost'])->actingAs($user)->getJson('/api/v1/users/sessions');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
