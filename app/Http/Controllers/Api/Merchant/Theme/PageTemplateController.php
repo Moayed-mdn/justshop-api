@@ -106,7 +106,7 @@ class PageTemplateController extends Controller
 
         $this->deleteTemplateAction->execute($template);
 
-        return $this->success(null, 204);
+        return $this->success(data: null, statusCode: 204);
     }
 
     /**
