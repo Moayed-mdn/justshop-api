@@ -49,6 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'api.deprecated' => \App\Http\Middleware\HandleDeprecatedRoute::class,
             'subscription.active' => \App\Http\Middleware\EnsureActiveSubscription::class,
             'feature.gate' => \App\Http\Middleware\EnforceFeatureGate::class,
+            'store.slug_only' => \App\Http\Middleware\RequireSlugStoreParameter::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

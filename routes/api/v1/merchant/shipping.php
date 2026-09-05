@@ -27,7 +27,13 @@ Route::name('merchant.shipping.')
     ->group(function () {
     
     // Store Address Settings
-    Route::prefix('shipping/address-settings')->group(function () {
+    // Design requirement: this endpoint accepts a store *slug* only, not a
+    // numeric id -- unlike most {store} routes elsewhere, which accept
+    // either. See RequireSlugStoreParameter for why this is scoped to just
+    // these two routes rather than the shared model binding.
+    Route::prefix('shipping/address-settings')
+        ->middleware('store.slug_only')
+        ->group(function () {
         // Read operations
         Route::get('/', [ShippingController::class, 'getAddressSettings'])->name('address-settings.show');
         
