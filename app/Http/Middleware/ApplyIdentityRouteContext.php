@@ -13,7 +13,6 @@ use App\Exceptions\Domain\InvalidIdentityDomainAccessException;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use App\Services\Auth\GuardShadowAnalyzer;
-use App\Services\Auth\GuardSplitSimulationService;
 use App\Services\Auth\IdentityContextResolver;
 use App\Services\Auth\IdentityTelemetry;
 use App\Services\Auth\SessionBoundaryMetadataResolver;
@@ -34,7 +33,6 @@ class ApplyIdentityRouteContext
         private readonly SessionOwnershipResolver $sessionOwnershipResolver,
         private readonly GuardShadowAnalyzer $guardShadowAnalyzer,
         private readonly TransitionalGuardResolver $guardResolver,
-        private readonly GuardSplitSimulationService $guardSplitSimulation,
         private readonly IdentityTelemetry $telemetry,
         private readonly SessionGuardTelemetry $sessionGuardTelemetry,
     ) {}
@@ -53,58 +51,6 @@ class ApplyIdentityRouteContext
             allowedActorTypes: $this->allowedActorTypes(AuthDomainEnum::from($ownerAuthDomain), RouteDomainEnum::from($routeDomain)),
         );
 
-        if ($request->routeIs('merchant.users.legacy.auth.me', 'merchant.user', 'merchant.me', 'merchant.users.legacy.bootstrap')) {
-            // #region debug-point A:backend-route-entry
-            (static function () use ($request, $routeDomain, $ownerAuthDomain, $enforcementMode): void {
-                $debugUrl = 'http://127.0.0.1:7777/event';
-                $debugSessionId = 'auth-session-reload';
-                $envPath = base_path('.dbg/auth-session-reload.env');
-                if (is_file($envPath)) {
-                    $envLines = @file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
-                    foreach ($envLines as $envLine) {
-                        if (str_starts_with($envLine, 'DEBUG_SERVER_URL=')) {
-                            $debugUrl = substr($envLine, strlen('DEBUG_SERVER_URL='));
-                        }
-                        if (str_starts_with($envLine, 'DEBUG_SESSION_ID=')) {
-                            $debugSessionId = substr($envLine, strlen('DEBUG_SESSION_ID='));
-                        }
-                    }
-                }
-
-                $payload = [
-                    'sessionId' => $debugSessionId,
-                    'runId' => 'pre-fix',
-                    'hypothesisId' => 'A',
-                    'location' => 'app/Http/Middleware/ApplyIdentityRouteContext.php',
-                    'msg' => '[DEBUG] Backend identity middleware entered',
-                    'data' => [
-                        'route_name' => $request->route()?->getName(),
-                        'request_path' => $request->path(),
-                        'method' => $request->method(),
-                        'cookie_names' => array_keys($request->cookies->all()),
-                        'has_session' => $request->hasSession(),
-                        'session_id' => $request->hasSession() ? $request->session()->getId() : null,
-                        'session_auth_domain' => $request->hasSession() ? $request->session()->get('auth_domain') : null,
-                        'route_domain' => $routeDomain,
-                        'owner_auth_domain' => $ownerAuthDomain,
-                        'enforcement_mode' => $enforcementMode,
-                        'default_guard' => Auth::getDefaultDriver(),
-                    ],
-                    'ts' => (int) round(microtime(true) * 1000),
-                ];
-
-                @file_get_contents($debugUrl, false, stream_context_create([
-                    'http' => [
-                        'method' => 'POST',
-                        'header' => "Content-Type: application/json\r\n",
-                        'content' => json_encode($payload, JSON_THROW_ON_ERROR),
-                        'timeout' => 1,
-                    ],
-                ]));
-            })();
-            // #endregion
-        }
-
         $this->traceContext->enrichRouteDomain($routeDomainContext);
 
         /** @var User|null $user */
@@ -122,7 +68,6 @@ class ApplyIdentityRouteContext
         $sessionOwnership = $this->sessionOwnershipResolver->resolve($request, $identityContext, $routeDomainContext);
         $guardShadow = $this->guardShadowAnalyzer->analyze($sessionOwnership);
         $guardResolution = $this->guardResolver->resolve($sessionOwnership);
-        $this->guardSplitSimulation->simulate($sessionOwnership);
 
         $this->traceContext->enrichSessionOwnership($sessionOwnership);
         $this->traceContext->enrichGuardShadow($guardShadow);
@@ -269,4 +214,13 @@ class ApplyIdentityRouteContext
             throw new InvalidIdentityDomainAccessException('Explicit guard authority required for this domain.');
         }
     }
+
+    /**
+     * Reset the auth default-guard back to its true configured baseline once
+     * this request has been handled, so nothing that runs next in this same
+     * process/worker (a later request under Octane, or the next call within
+     * a test) inherits this request's Auth::shouldUse() selection. Mirrors
+     * the tenant-context clearing already done for queue jobs in
+     * AppServiceProvider::boot().
+     */
 }
