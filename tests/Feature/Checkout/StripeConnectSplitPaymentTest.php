@@ -123,11 +123,15 @@ class StripeConnectSplitPaymentTest extends TestCase
                 $capturedParams = $params;
                 return true;
             })
-            ->andReturn((object) [
+            ->andReturn(PaymentIntent::constructFrom([
                 'id' => 'pi_test_split_payment',
                 'client_secret' => 'pi_test_split_payment_secret',
                 'status' => 'requires_payment_method',
-            ]);
+                'object' => 'payment_intent',
+                'amount' => 21000,
+                'currency' => 'usd',
+                'livemode' => false,
+            ]));
 
         $this->app->instance(StripeClient::class, $mockStripe);
 
@@ -270,20 +274,56 @@ class StripeConnectSplitPaymentTest extends TestCase
             ['total' => 99.99, 'expected_fee' => 300],   // 3% of $99.99 = $2.9997 rounded to $3.00
         ];
 
-        foreach ($testCases as $testCase) {
+        foreach ($testCases as $index => $testCase) {
             $capturedParams = null;
+            
+            // Mock both retrieve and update for reused draft orders, plus create for new ones
+            $mockPaymentIntentsService
+                ->shouldReceive('retrieve')
+                ->zeroOrMoreTimes()
+                ->andReturn(PaymentIntent::constructFrom([
+                    'id' => 'pi_test_existing_' . $index,
+                    'client_secret' => 'pi_test_existing_secret_' . $index,
+                    'status' => 'requires_payment_method',
+                    'object' => 'payment_intent',
+                    'amount' => 1000,
+                    'currency' => 'usd',
+                    'livemode' => false,
+                ]));
+            
+            $mockPaymentIntentsService
+                ->shouldReceive('update')
+                ->zeroOrMoreTimes()
+                ->withArgs(function ($id, $params) use (&$capturedParams) {
+                    $capturedParams = $params;
+                    return true;
+                })
+                ->andReturn(PaymentIntent::constructFrom([
+                    'id' => 'pi_test_updated_' . uniqid(),
+                    'client_secret' => 'pi_test_updated_secret_' . uniqid(),
+                    'status' => 'requires_payment_method',
+                    'object' => 'payment_intent',
+                    'amount' => $capturedParams['amount'] ?? 1000,
+                    'currency' => 'usd',
+                    'livemode' => false,
+                ]));
+            
             $mockPaymentIntentsService
                 ->shouldReceive('create')
-                ->once()
+                ->zeroOrMoreTimes()
                 ->withArgs(function ($params) use (&$capturedParams) {
                     $capturedParams = $params;
                     return true;
                 })
-                ->andReturn((object) [
+                ->andReturn(PaymentIntent::constructFrom([
                     'id' => 'pi_test_' . uniqid(),
                     'client_secret' => 'pi_test_secret_' . uniqid(),
                     'status' => 'requires_payment_method',
-                ]);
+                    'object' => 'payment_intent',
+                    'amount' => (int)($testCase['total'] * 100),
+                    'currency' => 'usd',
+                    'livemode' => false,
+                ]));
 
             $this->app->instance(StripeClient::class, $mockStripe);
 

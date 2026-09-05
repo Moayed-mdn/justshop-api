@@ -54,7 +54,7 @@ final readonly class EnterGracePeriodAction
 
             // Recompute entitlements for all stores owned by this account
             // Status: grace_period → entitlement_status: read_only
-            $stores = $subscription->billingAccount->user->stores;
+            $stores = \App\Models\Store::where('owner_id', $subscription->billingAccount->owner_user_id)->get();
             foreach ($stores as $store) {
                 $this->recomputeEntitlements->execute(
                     new RecomputeEntitlementsDTO(

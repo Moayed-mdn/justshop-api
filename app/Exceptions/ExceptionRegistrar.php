@@ -4,6 +4,7 @@ namespace App\Exceptions;
 use App\Enums\ErrorCode;
 use App\Exceptions\Auth\AccountDisabledException;
 use App\Exceptions\Auth\InvalidCredentialsException;
+use App\Exceptions\Auth\UnauthorizedPlatformAccessException;
 use App\Exceptions\Authorization\PermissionDeniedException;
 use App\Exceptions\BaseApiException;
 use App\Exceptions\Domain\DomainException;
@@ -33,6 +34,15 @@ class ExceptionRegistrar
     {
         $exceptions->render(function (Throwable $e) {
             $this->recordSecurityEvent($e);
+
+            if ($e instanceof UnauthorizedPlatformAccessException) {
+                return $this->attachTraceHeaders(response()->json([
+                    'success' => false,
+                    'code' => ErrorCode::ACCESS_DENIED->value,
+                    'message' => $e->getMessage(),
+                    'errors' => new \stdClass(),
+                ], 403));
+            }
 
             if ($e instanceof UnauthorizedStoreAccessException) {
                 return $this->attachTraceHeaders(response()->json([

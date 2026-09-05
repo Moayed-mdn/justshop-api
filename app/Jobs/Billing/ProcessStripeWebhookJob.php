@@ -30,6 +30,8 @@ class ProcessStripeWebhookJob implements ShouldQueue
 
     public function handle(): void
     {
+        $startTime = microtime(true);
+
         // Lock the webhook event row to prevent duplicate processing
         $webhookEvent = DB::transaction(function () {
             return StripeWebhookEvent::where('id', $this->webhookEventId)
@@ -133,7 +135,7 @@ class ProcessStripeWebhookJob implements ShouldQueue
                 'event_id' => $webhookEvent->event_id,
                 'handler_class' => get_class($handler),
                 'attempts' => $webhookEvent->attempts,
-                'processing_time_ms' => round((microtime(true) - LARAVEL_START) * 1000, 2),
+                'processing_time_ms' => round((microtime(true) - $startTime) * 1000, 2),
             ]);
 
         } catch (\Exception $e) {

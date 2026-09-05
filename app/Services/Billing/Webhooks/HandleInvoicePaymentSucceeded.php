@@ -153,21 +153,21 @@ class HandleInvoicePaymentSucceeded
 
         // If subscription was in troubled state, reactivate it
         $troubledStates = [
-            SubscriptionStatusEnum::PAST_DUE->value,
-            SubscriptionStatusEnum::GRACE_PERIOD->value,
+            SubscriptionStatusEnum::PAST_DUE,
+            SubscriptionStatusEnum::GRACE_PERIOD,
         ];
 
         if (in_array($subscription->status, $troubledStates, true)) {
             $this->reactivateSubscription->execute(
                 ReactivateSubscriptionDTO::fromWebhook(
                     subscriptionId: $subscription->id,
-                    reason: 'Payment succeeded after ' . $subscription->status,
+                    reason: 'Payment succeeded after ' . $subscription->status->value,
                 )
             );
 
             Log::channel('billing')->info('invoice.payment_succeeded.subscription_reactivated', [
                 'subscription_id' => $subscription->id,
-                'previous_status' => $subscription->status,
+                'previous_status' => $subscription->status->value,
                 'invoice_id' => $invoiceData['id'],
             ]);
         }
