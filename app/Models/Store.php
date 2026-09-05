@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\Store\StoreStatusEnum;
 use App\Enums\Store\ProvisioningStatusEnum;
+use App\Exceptions\Store\StoreNotFoundException;
 use App\Models\Asset\StoreAsset;
 use App\Models\Navigation\NavigationMenu;
 use App\Models\Theme\Theme;
@@ -230,7 +231,7 @@ class Store extends Model
             return $resolved;
         }
 
-        return null;
+        throw new StoreNotFoundException();
     }
 
     public function resolveRouteBindingOrFail($value, $field = null): Model
@@ -241,7 +242,7 @@ class Store extends Model
             return $resolved;
         }
 
-        throw (new ModelNotFoundException())->setModel(self::class, [$value]);
+        throw new StoreNotFoundException();
     }
 
     protected function logoUrl(): Attribute
