@@ -78,6 +78,10 @@ class StoreAssetController extends Controller
     {
         $this->authorize('update', [ThemePolicy::class, $store]);
 
+        if ($asset->store_id !== $store->id) {
+            throw new \App\Exceptions\Store\UnauthorizedStoreAccessException();
+        }
+
         $asset = $this->assetRepository->update($asset, $request->validated());
 
         return $this->success(
@@ -92,6 +96,10 @@ class StoreAssetController extends Controller
     public function destroy(Store $store, StoreAsset $asset): JsonResponse
     {
         $this->authorize('delete', [ThemePolicy::class, $store]);
+
+        if ($asset->store_id !== $store->id) {
+            throw new \App\Exceptions\Store\UnauthorizedStoreAccessException();
+        }
 
         $this->deleteAssetAction->execute($asset);
 
