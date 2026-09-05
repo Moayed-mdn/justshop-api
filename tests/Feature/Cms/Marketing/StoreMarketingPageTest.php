@@ -47,7 +47,32 @@ class StoreMarketingPageTest extends TestCase
         // pivot so LegacyPermissionAuthority resolves them correctly.
         $user->stores()->attach($store->id, ['role' => 'staff']);
 
+        $this->grantActiveSubscription($store);
+
         return [$user, $store];
+    }
+
+    /**
+     * Grant the store an active entitlement so subscription.active-gated
+     * write endpoints don't reject requests with 402 before authorization
+     * is even reached.
+     */
+    private function grantActiveSubscription(Store $store): void
+    {
+        $billingAccount = \App\Models\BillingAccount::create([
+            'owner_user_id' => $store->owner_id,
+            'billing_email' => 'billing+' . $store->owner_id . '@example.test',
+            'status' => \App\Enums\Billing\BillingAccountStatusEnum::ACTIVE->value,
+        ]);
+
+        \App\Models\StoreEntitlementSnapshot::create([
+            'store_id' => $store->id,
+            'billing_account_id' => $billingAccount->id,
+            'entitlement_status' => \App\Enums\Entitlement\EntitlementStatusEnum::ENTITLED,
+            'features' => [],
+            'products_count' => 0,
+            'refreshed_at' => now(),
+        ]);
     }
 
     /**
@@ -125,10 +150,28 @@ class StoreMarketingPageTest extends TestCase
             ->assertStatus(401);
     }
 
-    public function test_user_without_permission_cannot_list_pages(): void
+    public function test_staff_can_list_pages_by_default(): void
     {
+        // Design decision: staff should be able to read all marketing pages
+        // within their store by default. PermissionSeeder intentionally
+        // grants MARKETING_STORE_VIEW to the seeded 'staff' role, and
+        // merchantWithStore() attaches the user with that exact role.
         [$user, $store] = $this->merchantWithStore();
-        // Authenticated via merchant guard but no permissions granted
+
+        $this->asMerchant($user)
+            ->getJson($this->baseUrl($store))
+            ->assertStatus(200);
+    }
+
+    public function test_member_with_no_view_permission_cannot_list_pages(): void
+    {
+        // The authorization boundary itself is still enforced: a member
+        // whose role genuinely carries no marketing view permission (not
+        // the seeded 'staff' role, which does carry it by design) is
+        // correctly denied.
+        [$user, $store] = $this->merchantWithStore();
+        $this->givePermissions($user, []);
+
         $this->asMerchant($user)
             ->getJson($this->baseUrl($store))
             ->assertStatus(403);

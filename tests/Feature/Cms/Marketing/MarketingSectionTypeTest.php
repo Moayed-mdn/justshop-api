@@ -163,9 +163,22 @@ class MarketingSectionTypeTest extends TestCase
             ->assertStatus(401);
     }
 
-    public function test_user_without_permission_cannot_access_section_types(): void
+    public function test_staff_can_access_section_types_by_default(): void
+    {
+        // Same design decision as StoreMarketingPageTest: staff has
+        // MARKETING_STORE_VIEW by default (PermissionSeeder), so listing
+        // available section types (a read operation) succeeds.
+        [$user, $store] = $this->merchantWithStore();
+
+        $this->asMerchant($user)
+            ->getJson($this->endpointUrl($store))
+            ->assertStatus(200);
+    }
+
+    public function test_member_with_no_view_permission_cannot_access_section_types(): void
     {
         [$user, $store] = $this->merchantWithStore();
+        $this->givePermissions($user, []);
 
         $this->asMerchant($user)
             ->getJson($this->endpointUrl($store))
