@@ -10,6 +10,7 @@ use App\Models\Store;
 use App\Services\EnhancedCheckoutService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Stripe\Account;
 use Stripe\Event;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\Webhook;
@@ -101,7 +102,7 @@ class StripeEcommerceWebhookController extends Controller
             return;
         }
 
-        $store = $this->applyStripeAccountStatus->execute($store, $account);
+        $store = $this->applyStripeAccountStatus->execute($store, Account::constructFrom($account->toArray()));
 
         Log::info('Stripe ecommerce webhook: account.updated processed', [
             'store_id' => $store->id,
