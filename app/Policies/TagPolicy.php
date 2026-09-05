@@ -56,10 +56,6 @@ class TagPolicy
 
     private function canView(User $user, Store $store): bool
     {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
-        }
-
         $isAdmin = $this->isAdmin($user, $store);
         $hasPermission = $user->can(PermissionEnum::TAG_VIEW);
 
@@ -79,10 +75,6 @@ class TagPolicy
 
     private function canManage(User $user, Store $store, string $permission, string $resource, string $action): bool
     {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
-        }
-
         $isAdmin = $this->isAdmin($user, $store);
         $hasPermission = $user->can($permission);
 

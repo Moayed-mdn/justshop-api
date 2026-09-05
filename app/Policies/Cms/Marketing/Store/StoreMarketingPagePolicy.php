@@ -46,10 +46,6 @@ class StoreMarketingPagePolicy
 
     private function canView(User $user, Store $store, string $permission): bool
     {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
-        }
-
         $isAdmin = $this->isAdmin($user, $store);
         $hasPermission = $user->can($permission);
 
@@ -71,10 +67,6 @@ class StoreMarketingPagePolicy
 
     private function canManage(User $user, Store $store, string $permission, string $resource, string $action): bool
     {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
-        }
-
         $isAdmin = $this->isAdmin($user, $store);
         $hasPermission = $user->can($permission);
 

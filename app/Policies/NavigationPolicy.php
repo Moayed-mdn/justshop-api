@@ -36,10 +36,6 @@ class NavigationPolicy
 
     private function canView(User $user, Store $store): bool
     {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
-        }
-
         $isAdmin = $this->isAdmin($user, $store);
         $hasPermission = $user->can(PermissionEnum::NAVIGATION_VIEW);
 
@@ -59,10 +55,6 @@ class NavigationPolicy
 
     private function canManage(User $user, Store $store, string $permission, string $resource, string $action): bool
     {
-        if ($user->hasRole(RoleEnum::SUPER_ADMIN->value)) {
-            return true;
-        }
-
         $isAdmin = $this->isAdmin($user, $store);
         $hasPermission = $user->can($permission);
 
