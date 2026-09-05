@@ -118,6 +118,64 @@ class PublicLeadSubmissionTest extends TestCase
         $this->assertDatabaseCount('leads', 1);
     }
 
+    // ── Other lead types (demo / enterprise) ────────────────────────────────
+    // DemoLeadRequest and EnterpriseLeadRequest share the exact same
+    // validation rules as ContactLeadRequest (LeadSubmissionRequest), but
+    // LeadController passes a different LeadTypeEnum to each — that's the
+    // one thing that differs per endpoint, so it's what these tests confirm.
+
+    public function test_demo_submission_stores_lead_with_demo_type(): void
+    {
+        $this->postJson(route('public.leads.demo'), $this->validPayload())
+            ->assertStatus(201)
+            ->assertJson(['success' => true]);
+
+        $this->assertDatabaseHas('leads', [
+            'type' => 'demo',
+            'status' => 'new',
+            'email' => 'jane@example.com',
+        ]);
+    }
+
+    public function test_enterprise_submission_stores_lead_with_enterprise_type(): void
+    {
+        $this->postJson(route('public.leads.enterprise'), $this->validPayload())
+            ->assertStatus(201)
+            ->assertJson(['success' => true]);
+
+        $this->assertDatabaseHas('leads', [
+            'type' => 'enterprise',
+            'status' => 'new',
+            'email' => 'jane@example.com',
+        ]);
+    }
+
+    // ── Field-level validation edge cases ────────────────────────────────────
+
+    public function test_invalid_email_format_is_rejected(): void
+    {
+        $payload = $this->validPayload();
+        $payload['email'] = 'not-an-email';
+
+        $this->postJson(route('public.leads.contact'), $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['email']);
+
+        $this->assertDatabaseCount('leads', 0);
+    }
+
+    public function test_locale_outside_configured_locales_is_rejected(): void
+    {
+        $payload = $this->validPayload();
+        $payload['locale'] = 'fr';
+
+        $this->postJson(route('public.leads.contact'), $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['locale']);
+
+        $this->assertDatabaseCount('leads', 0);
+    }
+
     private function validPayload(
         string $email = 'jane@example.com',
         string $message = 'Need a demo for our team.',

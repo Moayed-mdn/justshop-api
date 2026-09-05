@@ -8,31 +8,47 @@ use App\Actions\Subscription\StartTrialAction;
 use App\DTOs\Billing\CreatePlanDTO;
 use App\DTOs\Billing\UpdatePlanDTO;
 use App\DTOs\Subscription\StartTrialDTO;
+use App\Contracts\Billing\BillingProviderInterface;
+use App\Enums\RoleEnum;
 use App\Models\BillingAccount;
 use App\Models\Plan;
-use App\Models\PlatformUser;
 use App\Models\Store;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Repositories\Subscription\PlanRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class PlanManagementTest extends TestCase
 {
     use RefreshDatabase;
 
-    private PlatformUser $platformAdmin;
+    private User $platformAdmin;
 
     protected function setUp(): void
     {
         parent::setUp();
 
         // Create platform admin for authenticated requests
-        $this->platformAdmin = PlatformUser::factory()->create([
+        Role::findOrCreate(RoleEnum::SUPER_ADMIN->value, 'web');
+        $this->platformAdmin = User::factory()->create([
             'email' => 'admin@platform.test',
-            'role' => 'platform_admin',
         ]);
+        $this->platformAdmin->assignRole(RoleEnum::SUPER_ADMIN->value);
+
+        // These tests exercise the plan-management Actions directly (not
+        // through Stripe), so the real Stripe-backed provider is swapped
+        // for a fake that returns provider IDs without hitting the network.
+        $this->mock(BillingProviderInterface::class, function ($mock) {
+            $mock->shouldReceive('createPrice')
+                ->andReturnUsing(fn () => [
+                    'provider_product_id' => 'prod_' . Str::random(14),
+                    'provider_price_id' => 'price_' . Str::random(14),
+                ]);
+            $mock->shouldReceive('archivePrice')->andReturnNull();
+        });
     }
 
     /** @test */

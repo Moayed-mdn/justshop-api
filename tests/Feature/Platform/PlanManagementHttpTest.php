@@ -37,13 +37,20 @@ class PlanManagementHttpTest extends TestCase
     {
         parent::setUp();
 
-        Store::unsetEventDispatcher();
-
         $this->artisan('db:seed', ['--class' => 'PermissionSeeder']);
         $this->app->make(PermissionRegistrar::class)->forgetCachedPermissions();
 
         $this->platformAdmin = User::factory()->create();
         $this->platformAdmin->assignRole(RoleEnum::SUPER_ADMIN->value);
+
+        $this->mock(\App\Contracts\Billing\BillingProviderInterface::class, function ($mock) {
+            $mock->shouldReceive('createPrice')
+                ->andReturnUsing(fn () => [
+                    'provider_product_id' => 'prod_' . \Illuminate\Support\Str::random(14),
+                    'provider_price_id' => 'price_' . \Illuminate\Support\Str::random(14),
+                ]);
+            $mock->shouldReceive('archivePrice')->andReturnNull();
+        });
     }
 
     private function validPlanPayload(array $overrides = []): array
