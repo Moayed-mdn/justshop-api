@@ -6,6 +6,7 @@ use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Image;
 use App\Models\Product;
+use App\Models\ProductTranslation;
 use Closure;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -22,14 +23,9 @@ class ProductFactory extends Factory
      */
     public function definition()
     {
-        $name = fake()->unique()->words(3, true);
-
         return [
-            'name' => $name,
-            'slug' => Str::slug($name),
-            'description' => fake()->sentence(12),
-            'category_id' => Category::inRandomOrder()->first()->id,
-            'brand_id' => Brand::inRandomOrder()->first()->id,
+            'category_id' => Category::factory(),
+            'brand_id' => Brand::factory(),
             'is_active' => true,
         ];
     }
@@ -39,6 +35,16 @@ class ProductFactory extends Factory
     {
         return $this->afterCreating(function (Product $product)
         {
+            $name = fake()->unique()->words(3, true);
+
+            ProductTranslation::create([
+                'product_id' => $product->id,
+                'locale' => 'en',
+                'name' => $name,
+                'slug' => Str::slug($name) . '-' . $product->id,
+                'description' => fake()->sentence(12),
+            ]);
+
             Image::factory()->create([
                 'imageable_type' => 'App\Models\Product',
                 'imageable_id' => $product->id,

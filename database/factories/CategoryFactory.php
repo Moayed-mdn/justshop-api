@@ -12,12 +12,11 @@ class CategoryFactory extends Factory
 {
     public function definition()
     {
-        $name = fake()->unique()->words(2, true);
+        $slug = fake()->unique()->slug(2);
 
         return [
-            'name' => $name,
-            'slug' => Str::slug($name),
-            'parent_id' => null,  
+            'slug' => $slug,
+            'parent_id' => null,
         ];
     }
 }
