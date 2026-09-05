@@ -3,11 +3,17 @@
 namespace Tests\Security;
 
 use App\Enums\Entitlement\EntitlementStatusEnum;
+use App\Enums\ErrorCode;
+use App\Enums\PermissionEnum;
+use App\Enums\Store\StoreRoleEnum;
 use App\Models\Store;
 use App\Models\StoreEntitlementSnapshot;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /**
@@ -20,10 +26,30 @@ class SubscriptionMiddlewareTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->grantStoreAdminPermissions();
+    }
+
+    private function grantStoreAdminPermissions(): void
+    {
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $permissions = [
+            PermissionEnum::PRODUCT_VIEW,
+            PermissionEnum::PRODUCT_CREATE,
+        ];
+
+        foreach ($permissions as $permission) {
+            Permission::findOrCreate($permission, 'web');
+        }
+
+        Role::findOrCreate(StoreRoleEnum::STORE_ADMIN->value, 'web')->syncPermissions($permissions);
+    }
+
     public function test_middleware_blocks_write_with_none_status(): void
     {
-        // Disable observers to avoid SQLite compatibility issues
-        Store::unsetEventDispatcher();
         
         $user = User::factory()->create(['email_verified_at' => now()]);
         
@@ -39,7 +65,7 @@ class SubscriptionMiddlewareTest extends TestCase
         
         $store = Store::factory()->create(['owner_id' => $user->id]);
         
-        $user->stores()->attach($store->id, ['role' => 'owner']);
+        $user->stores()->attach($store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
         $user->update(['last_active_store_id' => $store->id]);
         
         // Create snapshot with NONE status (no write access)
@@ -66,13 +92,12 @@ class SubscriptionMiddlewareTest extends TestCase
         $response->assertStatus(402)
             ->assertJson([
                 'status' => false,
-                'error_code' => 'SUBSCRIPTION_REQUIRED',
+                'error_code' => ErrorCode::SUB_002->value,
             ]);
     }
 
     public function test_middleware_allows_read_with_none_status(): void
     {
-        Store::unsetEventDispatcher();
         
         $user = User::factory()->create(['email_verified_at' => now()]);
         
@@ -88,7 +113,7 @@ class SubscriptionMiddlewareTest extends TestCase
         
         $store = Store::factory()->create(['owner_id' => $user->id]);
         
-        $user->stores()->attach($store->id, ['role' => 'owner']);
+        $user->stores()->attach($store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
         $user->update(['last_active_store_id' => $store->id]);
         
         // Create snapshot with NONE status
@@ -111,18 +136,23 @@ class SubscriptionMiddlewareTest extends TestCase
 
     public function test_middleware_allows_write_with_trial_status(): void
     {
-        Store::unsetEventDispatcher();
         
         $user = User::factory()->create(['email_verified_at' => now()]);
         $store = Store::factory()->create(['owner_id' => $user->id]);
         
-        $user->stores()->attach($store->id, ['role' => 'owner']);
+        $user->stores()->attach($store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
         $user->update(['last_active_store_id' => $store->id]);
         
+        $billingAccount = \App\Models\BillingAccount::create([
+            'owner_user_id' => $user->id,
+            'billing_email' => $user->email,
+            'status' => 'active',
+        ]);
+
         // Create snapshot with TRIAL status (write access granted)
         StoreEntitlementSnapshot::create([
             'store_id' => $store->id,
-            'billing_account_id' => 1,
+            'billing_account_id' => $billingAccount->id,
             'entitlement_status' => EntitlementStatusEnum::TRIAL,
             'features' => ['products.max' => 1000],
             'products_count' => 0,
@@ -146,18 +176,23 @@ class SubscriptionMiddlewareTest extends TestCase
 
     public function test_middleware_allows_write_with_entitled_status(): void
     {
-        Store::unsetEventDispatcher();
         
         $user = User::factory()->create(['email_verified_at' => now()]);
         $store = Store::factory()->create(['owner_id' => $user->id]);
         
-        $user->stores()->attach($store->id, ['role' => 'owner']);
+        $user->stores()->attach($store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
         $user->update(['last_active_store_id' => $store->id]);
         
+        $billingAccount = \App\Models\BillingAccount::create([
+            'owner_user_id' => $user->id,
+            'billing_email' => $user->email,
+            'status' => 'active',
+        ]);
+
         // Create snapshot with ENTITLED status (write access granted)
         StoreEntitlementSnapshot::create([
             'store_id' => $store->id,
-            'billing_account_id' => 1,
+            'billing_account_id' => $billingAccount->id,
             'entitlement_status' => EntitlementStatusEnum::ENTITLED,
             'features' => ['products.max' => 1000],
             'products_count' => 0,
@@ -181,18 +216,23 @@ class SubscriptionMiddlewareTest extends TestCase
 
     public function test_middleware_blocks_write_with_read_only_status(): void
     {
-        Store::unsetEventDispatcher();
         
         $user = User::factory()->create(['email_verified_at' => now()]);
         $store = Store::factory()->create(['owner_id' => $user->id]);
         
-        $user->stores()->attach($store->id, ['role' => 'owner']);
+        $user->stores()->attach($store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
         $user->update(['last_active_store_id' => $store->id]);
         
+        $billingAccount = \App\Models\BillingAccount::create([
+            'owner_user_id' => $user->id,
+            'billing_email' => $user->email,
+            'status' => 'active',
+        ]);
+
         // Create snapshot with READ_ONLY status (no write access)
         StoreEntitlementSnapshot::create([
             'store_id' => $store->id,
-            'billing_account_id' => 1,
+            'billing_account_id' => $billingAccount->id,
             'entitlement_status' => EntitlementStatusEnum::READ_ONLY,
             'features' => ['products.max' => 1000],
             'products_count' => 0,
@@ -213,7 +253,7 @@ class SubscriptionMiddlewareTest extends TestCase
         $response->assertStatus(402)
             ->assertJson([
                 'status' => false,
-                'error_code' => 'SUBSCRIPTION_REQUIRED',
+                'error_code' => ErrorCode::SUB_002->value,
             ]);
     }
 }

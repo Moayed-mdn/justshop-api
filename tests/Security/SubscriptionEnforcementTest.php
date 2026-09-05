@@ -3,6 +3,9 @@
 namespace Tests\Security;
 
 use App\Enums\Entitlement\EntitlementStatusEnum;
+use App\Enums\ErrorCode;
+use App\Enums\PermissionEnum;
+use App\Enums\Store\StoreRoleEnum;
 use App\Enums\Subscription\SubscriptionStatusEnum;
 use App\Models\BillingAccount;
 use App\Models\Plan;
@@ -12,6 +15,9 @@ use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 /**
@@ -43,6 +49,7 @@ class SubscriptionEnforcementTest extends TestCase
             'name' => ['en' => 'Starter'],
             'description' => ['en' => 'Starter plan'],
             'tier' => 'starter',
+            'tier_rank' => 1,
             'is_public' => true,
             'is_active' => true,
             'trial_days' => 14,
@@ -80,10 +87,35 @@ class SubscriptionEnforcementTest extends TestCase
 
         // Link user to store
         $this->user->update(['last_active_store_id' => $this->store->id]);
-        $this->user->stores()->attach($this->store->id);
+        $this->user->stores()->attach($this->store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
+
+        $this->grantStoreAdminPermissions();
 
         // Authenticate user
         Sanctum::actingAs($this->user);
+    }
+
+    private function grantStoreAdminPermissions(): void
+    {
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        $permissions = [
+            PermissionEnum::PRODUCT_VIEW,
+            PermissionEnum::PRODUCT_CREATE,
+            PermissionEnum::PRODUCT_UPDATE,
+            PermissionEnum::PRODUCT_DELETE,
+            PermissionEnum::CATEGORY_VIEW,
+            PermissionEnum::CATEGORY_CREATE,
+            PermissionEnum::ORDER_VIEW,
+            PermissionEnum::ORDER_UPDATE_STATUS,
+            PermissionEnum::SUBSCRIPTION_VIEW,
+        ];
+
+        foreach ($permissions as $permission) {
+            Permission::findOrCreate($permission, 'web');
+        }
+
+        Role::findOrCreate(StoreRoleEnum::STORE_ADMIN->value, 'web')->syncPermissions($permissions);
     }
 
     /** @test */
@@ -92,18 +124,22 @@ class SubscriptionEnforcementTest extends TestCase
         $this->createExpiredSubscription();
 
         $response = $this->postJson("/api/v1/merchant/stores/{$this->store->id}/products", [
-            'name' => ['en' => 'Test Product'],
-            'slug' => 'test-product',
-            'description' => ['en' => 'Test description'],
-            'price_cents' => 1000,
-            'currency' => 'USD',
             'status' => 'active',
+            'translations' => [
+                ['locale' => 'en', 'name' => 'Test Product', 'slug' => 'test-product', 'description' => 'Test description'],
+            ],
+            'options' => [
+                ['name' => 'Color', 'position' => 1, 'values' => ['Red']],
+            ],
+            'variants' => [
+                ['price' => 10.00, 'quantity' => 5, 'is_active' => true, 'options' => ['Color' => 'Red']],
+            ],
         ]);
 
         $response->assertStatus(402)
             ->assertJson([
                 'status' => false,
-                'error_code' => 'SUBSCRIPTION_REQUIRED',
+                'error_code' => ErrorCode::SUB_002->value,
                 'meta' => [
                     'subscription_required' => true,
                 ],
@@ -128,8 +164,6 @@ class SubscriptionEnforcementTest extends TestCase
         
         $product = \App\Models\Product::factory()->create([
             'store_id' => $this->store->id,
-            'name' => ['en' => 'Original Name'],
-            'slug' => 'original-slug',
         ]);
 
         // Expire subscription
@@ -148,8 +182,10 @@ class SubscriptionEnforcementTest extends TestCase
         $this->createExpiredSubscription();
 
         $response = $this->postJson("/api/v1/merchant/stores/{$this->store->id}/categories", [
-            'name' => ['en' => 'Test Category'],
             'slug' => 'test-category',
+            'translations' => [
+                ['locale' => 'en', 'name' => 'Test Category', 'slug' => 'test-category'],
+            ],
         ]);
 
         $response->assertStatus(402);
@@ -214,22 +250,31 @@ class SubscriptionEnforcementTest extends TestCase
     {
         $this->createActiveSubscription();
 
+        $category = \App\Models\Category::factory()->create(['store_id' => $this->store->id]);
+
         // Test product creation
         $response = $this->postJson("/api/v1/merchant/stores/{$this->store->id}/products", [
-            'name' => ['en' => 'Test Product'],
-            'slug' => 'test-product',
-            'description' => ['en' => 'Test description'],
-            'price_cents' => 1000,
-            'currency' => 'USD',
             'status' => 'active',
+            'category_id' => $category->id,
+            'translations' => [
+                ['locale' => 'en', 'name' => 'Test Product', 'slug' => 'test-product', 'description' => 'Test description'],
+            ],
+            'options' => [
+                ['name' => 'Color', 'position' => 1, 'values' => ['Red']],
+            ],
+            'variants' => [
+                ['price' => 10.00, 'quantity' => 5, 'is_active' => true, 'options' => ['Color' => 'Red']],
+            ],
         ]);
 
-        $response->assertStatus(201);
+        $response->assertStatus(200);
 
         // Test category creation
         $response = $this->postJson("/api/v1/merchant/stores/{$this->store->id}/categories", [
-            'name' => ['en' => 'Test Category'],
             'slug' => 'test-category',
+            'translations' => [
+                ['locale' => 'en', 'name' => 'Test Category', 'slug' => 'test-category'],
+            ],
         ]);
 
         $response->assertStatus(201);
@@ -240,16 +285,23 @@ class SubscriptionEnforcementTest extends TestCase
     {
         $this->createTrialingSubscription();
 
+        $category = \App\Models\Category::factory()->create(['store_id' => $this->store->id]);
+
         $response = $this->postJson("/api/v1/merchant/stores/{$this->store->id}/products", [
-            'name' => ['en' => 'Test Product'],
-            'slug' => 'test-product',
-            'description' => ['en' => 'Test description'],
-            'price_cents' => 1000,
-            'currency' => 'USD',
             'status' => 'active',
+            'category_id' => $category->id,
+            'translations' => [
+                ['locale' => 'en', 'name' => 'Test Product', 'slug' => 'test-product', 'description' => 'Test description'],
+            ],
+            'options' => [
+                ['name' => 'Color', 'position' => 1, 'values' => ['Red']],
+            ],
+            'variants' => [
+                ['price' => 10.00, 'quantity' => 5, 'is_active' => true, 'options' => ['Color' => 'Red']],
+            ],
         ]);
 
-        $response->assertStatus(201);
+        $response->assertStatus(200);
     }
 
     /** @test */
@@ -258,12 +310,16 @@ class SubscriptionEnforcementTest extends TestCase
         $this->createPastDueSubscription();
 
         $response = $this->postJson("/api/v1/merchant/stores/{$this->store->id}/products", [
-            'name' => ['en' => 'Test Product'],
-            'slug' => 'test-product',
-            'description' => ['en' => 'Test description'],
-            'price_cents' => 1000,
-            'currency' => 'USD',
             'status' => 'active',
+            'translations' => [
+                ['locale' => 'en', 'name' => 'Test Product', 'slug' => 'test-product', 'description' => 'Test description'],
+            ],
+            'options' => [
+                ['name' => 'Color', 'position' => 1, 'values' => ['Red']],
+            ],
+            'variants' => [
+                ['price' => 10.00, 'quantity' => 5, 'is_active' => true, 'options' => ['Color' => 'Red']],
+            ],
         ]);
 
         $response->assertStatus(402);

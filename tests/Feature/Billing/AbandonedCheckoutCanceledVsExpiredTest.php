@@ -12,6 +12,7 @@ use App\DTOs\Billing\CreateCheckoutSessionDTO;
 use App\DTOs\Subscription\CancelSubscriptionDTO;
 use App\DTOs\Subscription\ChangePlanDTO;
 use App\DTOs\Subscription\StartTrialDTO;
+use App\Contracts\Billing\BillingProviderInterface;
 use App\Enums\Subscription\BillingCycleEnum;
 use App\Enums\Subscription\SubscriptionStatusEnum;
 use App\Models\BillingAccount;
@@ -22,6 +23,7 @@ use App\Models\Subscription;
 use App\Models\User;
 use App\Repositories\Subscription\SubscriptionRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -51,7 +53,28 @@ class AbandonedCheckoutCanceledVsExpiredTest extends TestCase
     {
         parent::setUp();
 
+        // Avoid real Stripe API calls for actions that ensure a billing
+        // customer exists as a side effect (e.g. StartTrialAction).
+        $this->mock(BillingProviderInterface::class, function ($mock) {
+            $mock->shouldReceive('createCustomer')->andReturn(['provider_customer_id' => 'cus_' . Str::random(14), 'metadata' => []]);
+            $mock->shouldReceive('updateCustomer')->andReturnNull();
+            $mock->shouldReceive('createCheckoutSession')->andReturn(['session_id' => 'cs_' . Str::random(14), 'url' => 'https://checkout.stripe.com/test', 'expires_at' => now()->addHours(24)->timestamp]);
+            $mock->shouldReceive('createPortalSession')->andReturn(['session_id' => 'bps_' . Str::random(14), 'url' => 'https://billing.stripe.com/test']);
+            $mock->shouldReceive('cancelSubscription')->andReturnNull();
+            $mock->shouldReceive('resumeSubscription')->andReturnNull();
+            $mock->shouldReceive('updateSubscription')->andReturnNull();
+            $mock->shouldReceive('getSubscription')->andReturn([]);
+            $mock->shouldReceive('getInvoice')->andReturn([]);
+            $mock->shouldReceive('verifyWebhookSignature')->andReturnNull();
+            $mock->shouldReceive('parseWebhookEvent')->andReturn(['type' => '', 'data' => [], 'id' => '']);
+            $mock->shouldReceive('createPrice')->andReturn(['provider_product_id' => 'prod_' . Str::random(14), 'provider_price_id' => 'price_' . Str::random(14)]);
+            $mock->shouldReceive('archivePrice')->andReturnNull();
+        });
+
         $this->user = User::factory()->create();
+        app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+        \Spatie\Permission\Models\Permission::findOrCreate(\App\Enums\PermissionEnum::SUBSCRIPTION_VIEW, 'web');
+        $this->user->givePermissionTo(\App\Enums\PermissionEnum::SUBSCRIPTION_VIEW);
         
         // Create starter plan (required by StartTrialAction)
         Plan::create([
@@ -59,6 +82,7 @@ class AbandonedCheckoutCanceledVsExpiredTest extends TestCase
             'name' => json_encode(['en' => 'Starter Plan']),
             'description' => json_encode(['en' => 'Starter tier']),
             'tier' => 'starter',
+            'tier_rank' => 1,
             'is_public' => true,
             'is_active' => true,
             'trial_days' => 14,
@@ -71,6 +95,7 @@ class AbandonedCheckoutCanceledVsExpiredTest extends TestCase
             'name' => json_encode(['en' => 'Professional Plan']),
             'description' => json_encode(['en' => 'Professional tier']),
             'tier' => 'growth',
+            'tier_rank' => 2,
             'is_public' => true,
             'is_active' => true,
             'trial_days' => 14,
@@ -228,7 +253,7 @@ class AbandonedCheckoutCanceledVsExpiredTest extends TestCase
 
         // ASSERT: API endpoint would return correct subscription
         $this->actingAs($this->user);
-        $response = $this->getJson('/api/v1/users/billing/subscription');
+        $response = $this->getJson('/api/v1/merchant/billing/subscription');
         
         $response->assertOk();
         $response->assertJsonPath('data.subscription.id', $trialSubscription->id);
@@ -313,7 +338,7 @@ class AbandonedCheckoutCanceledVsExpiredTest extends TestCase
             actorUserId: $this->user->id,
         ));
 
-        $this->assertEquals(SubscriptionStatusEnum::CANCELED, $canceledSubscription->status);
+        $this->assertEquals(SubscriptionStatusEnum::ACTIVE, $canceledSubscription->status);
         $this->assertTrue($canceledSubscription->cancel_at_period_end);
 
         // ASSERT: Still appears in getActiveForAccount() (grants access until period end)
@@ -373,10 +398,12 @@ class AbandonedCheckoutCanceledVsExpiredTest extends TestCase
      */
     public function test_state_machine_creates_event_for_expired_transition(): void
     {
+        $store = Store::factory()->create(['owner_id' => $this->user->id]);
+
         $trialAction = app(StartTrialAction::class);
         $trialSubscription = $trialAction->execute(new StartTrialDTO(
             ownerUserId: $this->user->id,
-            storeId: null,
+            storeId: $store->id,
             planCode: 'starter',
         ));
 

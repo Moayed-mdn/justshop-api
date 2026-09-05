@@ -46,6 +46,7 @@ class HandleCheckoutSessionCompletedTest extends TestCase
             'name' => json_encode(['en' => 'Pro Plan']),
             'description' => json_encode(['en' => 'Professional plan']),
             'tier' => 'growth',
+            'tier_rank' => 2,
             'is_public' => true,
             'is_active' => true,
             'trial_days' => 14,

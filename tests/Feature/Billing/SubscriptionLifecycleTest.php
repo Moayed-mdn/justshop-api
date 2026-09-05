@@ -64,7 +64,6 @@ class SubscriptionLifecycleTest extends TestCase
 
         // Disable Store observer to avoid SQLite GREATEST function issue in tests
         // (same workaround used by StripeConnectSplitPaymentTest / PlatformOrderSecurityTest).
-        Store::unsetEventDispatcher();
 
         // Avoid any real Stripe API calls from CancelSubscriptionAction.
         $this->app->bind(BillingProviderInterface::class, TestBillingProvider::class);

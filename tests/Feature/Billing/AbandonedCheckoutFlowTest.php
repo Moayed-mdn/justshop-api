@@ -31,6 +31,27 @@ class AbandonedCheckoutFlowTest extends TestCase
     {
         parent::setUp();
 
+        // Default permissive mock so webhook/CLI-driven tests below (which
+        // don't set up their own strict createMock expectation) never hit
+        // the real Stripe API. Tests that need to assert specific provider
+        // calls still create their own mock and rebind the interface,
+        // which simply overrides this default for that test.
+        $this->mock(BillingProviderInterface::class, function ($mock) {
+            $mock->shouldReceive('createCustomer')->andReturn(['provider_customer_id' => 'cus_' . \Illuminate\Support\Str::random(14), 'metadata' => []]);
+            $mock->shouldReceive('updateCustomer')->andReturnNull();
+            $mock->shouldReceive('createCheckoutSession')->andReturn(['session_id' => 'cs_' . \Illuminate\Support\Str::random(14), 'url' => 'https://checkout.stripe.com/test', 'expires_at' => now()->addHours(24)->timestamp]);
+            $mock->shouldReceive('createPortalSession')->andReturn(['session_id' => 'bps_' . \Illuminate\Support\Str::random(14), 'url' => 'https://billing.stripe.com/test']);
+            $mock->shouldReceive('cancelSubscription')->andReturnNull();
+            $mock->shouldReceive('resumeSubscription')->andReturnNull();
+            $mock->shouldReceive('updateSubscription')->andReturnNull();
+            $mock->shouldReceive('getSubscription')->andReturn([]);
+            $mock->shouldReceive('getInvoice')->andReturn([]);
+            $mock->shouldReceive('verifyWebhookSignature')->andReturnNull();
+            $mock->shouldReceive('parseWebhookEvent')->andReturn(['type' => '', 'data' => [], 'id' => '']);
+            $mock->shouldReceive('createPrice')->andReturn(['provider_product_id' => 'prod_' . \Illuminate\Support\Str::random(14), 'provider_price_id' => 'price_' . \Illuminate\Support\Str::random(14)]);
+            $mock->shouldReceive('archivePrice')->andReturnNull();
+        });
+
         $user = User::factory()->create();
 
         $this->billingAccount = BillingAccount::create([
