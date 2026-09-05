@@ -26,7 +26,8 @@ class UserFactory extends Factory
     public function superAdmin()
     {
         return $this->afterCreating(function ($user) {
-            $user->assignRole(RoleEnum::SUPER_ADMIN->value);
+            $role = \Spatie\Permission\Models\Role::findOrCreate(RoleEnum::SUPER_ADMIN->value, 'web');
+            $user->assignRole($role);
         });
     }
 
