@@ -95,12 +95,20 @@ class AuthorityNormalizationTest extends TestCase
         // 2. Merchant (No platform authority) -> 403
         /** @var User $merchant */
         $merchant = User::factory()->merchant()->create();
-        $this->actingAs($merchant)->getJson(route('platform.leads.index'))->assertStatus(403);
+        $this->actingAs($merchant, 'merchant')->getJson(route('platform.leads.index'))->assertStatus(403);
+
+        // Sequential actingAs() calls for different users within one test
+        // method is an artificial scenario a real request lifecycle never
+        // hits (each real request is independent) -- Sanctum's guard caches
+        // its resolved user once per instance, so without this reset the
+        // merchant identity above would leak into the super admin request
+        // below.
+        \Illuminate\Support\Facades\Auth::forgetGuards();
 
         // 3. Super Admin -> 200
         /** @var User $admin */
         $admin = User::factory()->superAdmin()->create();
-        $this->actingAs($admin)->getJson(route('platform.leads.index'))->assertStatus(200);
+        $this->actingAs($admin, 'merchant')->getJson(route('platform.leads.index'))->assertStatus(200);
     }
 
     /**
@@ -132,6 +140,8 @@ class AuthorityNormalizationTest extends TestCase
         $impersonation = $manager->request($admin, $target, 'Testing');
 
         $this->actingAs($admin);
+        $this->startSession();
+        request()->setLaravelSession($this->app['session']->driver());
         $oldSessionId = session()->getId();
 
         $manager->activate(request(), $impersonation);

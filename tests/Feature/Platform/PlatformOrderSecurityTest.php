@@ -32,10 +32,6 @@ class PlatformOrderSecurityTest extends TestCase
     {
         parent::setUp();
 
-        // Disable observers
-        Store::unsetEventDispatcher();
-        Order::unsetEventDispatcher();
-
         // Seed permissions
         $this->artisan('db:seed', ['--class' => 'PermissionSeeder']);
 
@@ -214,7 +210,7 @@ class PlatformOrderSecurityTest extends TestCase
         $response->assertStatus(200);
 
         // Should see both orders
-        $orderIds = collect($response->json('data.data'))->pluck('id')->toArray();
+        $orderIds = collect($response->json('data'))->pluck('id')->toArray();
         $this->assertContains($this->order->id, $orderIds);
         $this->assertContains($order2->id, $orderIds);
 

@@ -38,10 +38,6 @@ class PlatformOrderAuthorizationTest extends TestCase
     {
         parent::setUp();
 
-        // Disable Store observer to avoid SQLite GREATEST function issue
-        Store::unsetEventDispatcher();
-        Order::unsetEventDispatcher();
-
         // Seed permissions
         $this->artisan('db:seed', ['--class' => 'PermissionSeeder']);
 
