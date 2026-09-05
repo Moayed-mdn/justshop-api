@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Policies;
 
+use App\Enums\PermissionEnum;
 use App\Enums\Store\StoreRoleEnum;
 use App\Enums\Theme\TemplateTypeEnum;
 use App\Models\Store;
@@ -12,6 +13,9 @@ use App\Models\Theme\ThemeTemplate;
 use App\Models\User;
 use App\Policies\Theme\SystemTemplatePolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class SystemTemplatePolicyTest extends TestCase
@@ -24,6 +28,19 @@ class SystemTemplatePolicyTest extends TestCase
     {
         parent::setUp();
         $this->policy = app(SystemTemplatePolicy::class);
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+        $permissions = [
+            PermissionEnum::THEME_VIEW,
+            PermissionEnum::THEME_CREATE,
+            PermissionEnum::THEME_UPDATE,
+            PermissionEnum::THEME_DELETE,
+        ];
+        foreach ($permissions as $permission) {
+            Permission::findOrCreate($permission, 'web');
+        }
+        Role::findOrCreate(StoreRoleEnum::STORE_ADMIN->value, 'web')->syncPermissions($permissions);
+        Role::findOrCreate(StoreRoleEnum::STAFF->value, 'web');
     }
 
     public function test_merchant_member_can_view_any(): void
@@ -31,6 +48,7 @@ class SystemTemplatePolicyTest extends TestCase
         $user = User::factory()->merchant()->create();
         $store = Store::factory()->for($user, 'owner')->create();
         $user->stores()->attach($store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
+        $user->assignRole(StoreRoleEnum::STORE_ADMIN->value);
 
         $this->assertTrue($this->policy->viewAny($user, $store));
     }
@@ -56,6 +74,7 @@ class SystemTemplatePolicyTest extends TestCase
         $user = User::factory()->merchant()->create();
         $store = Store::factory()->for($user, 'owner')->create();
         $user->stores()->attach($store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
+        $user->assignRole(StoreRoleEnum::STORE_ADMIN->value);
 
         $this->assertTrue($this->policy->create($user, $store));
     }
@@ -66,6 +85,7 @@ class SystemTemplatePolicyTest extends TestCase
         $owner = User::factory()->merchant()->create();
         $store = Store::factory()->for($owner, 'owner')->create();
         $user->stores()->attach($store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
+        $user->assignRole(StoreRoleEnum::STORE_ADMIN->value);
         $theme = Theme::create(['store_id' => $store->id, 'name' => 'Test Theme']);
         $template = ThemeTemplate::create([
             'theme_id' => $theme->id,
@@ -83,6 +103,7 @@ class SystemTemplatePolicyTest extends TestCase
         $owner = User::factory()->merchant()->create();
         $store = Store::factory()->for($owner, 'owner')->create();
         $user->stores()->attach($store->id, ['role' => StoreRoleEnum::STAFF->value]);
+        $user->assignRole(StoreRoleEnum::STAFF->value);
         $theme = Theme::create(['store_id' => $store->id, 'name' => 'Test Theme']);
         $template = ThemeTemplate::create([
             'theme_id' => $theme->id,
@@ -91,7 +112,8 @@ class SystemTemplatePolicyTest extends TestCase
             'handle' => 'test-template',
         ]);
 
-        $this->assertFalse($this->policy->update($user, $template));
+        $this->expectException(\App\Exceptions\Authorization\PermissionDeniedException::class);
+        $this->policy->update($user, $template);
     }
 
     public function test_merchant_admin_can_delete(): void
@@ -100,6 +122,7 @@ class SystemTemplatePolicyTest extends TestCase
         $owner = User::factory()->merchant()->create();
         $store = Store::factory()->for($owner, 'owner')->create();
         $user->stores()->attach($store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
+        $user->assignRole(StoreRoleEnum::STORE_ADMIN->value);
         $theme = Theme::create(['store_id' => $store->id, 'name' => 'Test Theme']);
         $template = ThemeTemplate::create([
             'theme_id' => $theme->id,

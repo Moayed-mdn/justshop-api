@@ -34,13 +34,17 @@ class NavigationPolicyTest extends TestCase
         Role::findOrCreate(RoleEnum::STAFF->value);
     }
 
-    public function test_super_admin_can_view(): void
+    public function test_super_admin_without_impersonation_cannot_view(): void
     {
+        // SUPER_ADMIN grants no implicit bypass of tenant isolation. Without
+        // an active, governed impersonation session (and without being a
+        // genuine store member), access must be denied exactly like any
+        // other non-member.
         $user = User::factory()->create();
         $user->assignRole(RoleEnum::SUPER_ADMIN->value);
         $store = Store::factory()->create();
 
-        $this->assertTrue($this->policy->view($user, $store));
+        $this->assertFalse($this->policy->view($user, $store));
     }
 
     public function test_store_admin_with_permission_can_view(): void
@@ -65,9 +69,10 @@ class NavigationPolicyTest extends TestCase
     public function test_staff_role_can_view_with_permission(): void
     {
         $user = User::factory()->merchant()->create();
+        $store = Store::factory()->create();
+        $user->stores()->attach($store->id, ['role' => StoreRoleEnum::STAFF->value]);
         $user->assignRole(RoleEnum::STAFF->value);
         $user->givePermissionTo(PermissionEnum::NAVIGATION_VIEW);
-        $store = Store::factory()->create();
 
         $this->assertTrue($this->policy->view($user, $store));
     }
