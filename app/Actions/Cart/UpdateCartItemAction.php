@@ -19,8 +19,8 @@ class UpdateCartItemAction
     {
         DB::transaction(function () use ($dto) {
             $item = $this->cartItemRepository->findById($dto->itemId);
-            
-            if ($item->cart->store_id !== $dto->storeId) {
+
+            if ($item->cart->store_id !== $dto->storeId || $item->cart->user_id !== $dto->userId) {
                 throw new \App\Exceptions\Store\UnauthorizedStoreAccessException();
             }
             
