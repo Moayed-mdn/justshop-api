@@ -51,13 +51,9 @@ class AdminTagRepository extends BaseRepository
         bool    $includeGlobal = true,
         int     $perPage = 15,
     ): LengthAwarePaginator {
-        $query = $this->scopedQuery()
-            ->with($this->editorRelations());
-
-        if ($includeGlobal) {
-            // Step 5 Hardening: Explicitly allow global tags if requested
-            $query->orWhereNull('store_id');
-        }
+        $query = $includeGlobal
+            ? $this->storeOrGlobalQuery($storeId)->with($this->editorRelations())
+            : $this->scopedQuery()->with($this->editorRelations());
 
         if ($search) {
             $query->whereHas('translations', function ($q) use ($search) {
@@ -87,10 +83,9 @@ class AdminTagRepository extends BaseRepository
      */
     public function findInStore(int $tagId, int $storeId): Tag
     {
-        $tag = $this->scopedQuery()
+        $tag = $this->storeOrGlobalQuery($storeId)
             ->with($this->editorRelations())
             ->where('id', $tagId)
-            ->orWhereNull('store_id')
             ->first();
 
         if ($tag === null) {
@@ -98,6 +93,23 @@ class AdminTagRepository extends BaseRepository
         }
 
         return $tag;
+    }
+
+    /**
+     * Base query for "accessible to this store": owned by the store, or
+     * global (store_id is null). The store-or-global condition is grouped
+     * in a single nested closure so it composes safely with any additional
+     * where() clauses callers chain afterward -- a bare orWhereNull() call
+     * on the top-level query breaks out of the surrounding AND grouping due
+     * to SQL operator precedence, which previously let an unrelated global
+     * row satisfy queries meant to be scoped to a specific id.
+     */
+    private function storeOrGlobalQuery(int $storeId): \Illuminate\Database\Eloquent\Builder
+    {
+        return Tag::query()->where(function ($query) use ($storeId) {
+            $query->where('store_id', $storeId)
+                ->orWhereNull('store_id');
+        });
     }
 
     /**
@@ -136,9 +148,8 @@ class AdminTagRepository extends BaseRepository
             return [];
         }
 
-        $accessibleIds = $this->scopedQuery()
+        $accessibleIds = $this->storeOrGlobalQuery($storeId)
             ->whereIn('id', $tagIds)
-            ->orWhereNull('store_id')
             ->pluck('id')
             ->toArray();
 
