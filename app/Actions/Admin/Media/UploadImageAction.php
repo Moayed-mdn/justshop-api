@@ -27,11 +27,10 @@ class UploadImageAction
             // Get storage directory for context
             $directory = $dto->context->getStoragePath();
 
-            // Store file in public disk
+            // Store file in default disk
             $path = $dto->file->storeAs(
                 $directory,
-                $filename,
-                'public'
+                $filename
             );
 
             if (!$path) {
@@ -41,8 +40,8 @@ class UploadImageAction
             }
 
             // Generate URLs
-            $url = Storage::disk('public')->url($path);
-            $fullUrl = config('app.url') . '/storage/' . $path;
+            $url = Storage::url($path);
+            $fullUrl = $url;
 
             return [
                 'path' => $path,

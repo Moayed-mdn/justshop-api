@@ -27,8 +27,8 @@ class DeleteImageAction
         }
 
         // Check if file exists and delete
-        if (Storage::disk('public')->exists($dto->path)) {
-            Storage::disk('public')->delete($dto->path);
+        if (Storage::exists($dto->path)) {
+            Storage::delete($dto->path);
         }
     }
 }

@@ -248,10 +248,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return $this->avatar;
         }
 
-        /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
-        $disk = Storage::disk('public');
-
-        return $disk->url($this->avatar);
+        return Storage::url($this->avatar);
     }
 
     public function stores(): \Illuminate\Database\Eloquent\Relations\BelongsToMany

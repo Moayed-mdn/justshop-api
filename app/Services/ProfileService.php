@@ -39,14 +39,14 @@ class ProfileService
     public function updateAvatar(User $user, UploadedFile $file): string
     {
         if ($user->avatar && !str_starts_with($user->avatar, 'http')) {
-            Storage::disk('public')->delete($user->avatar);
+            Storage::delete($user->avatar);
         }
 
-        $path = $file->store('avatars', 'public');
+        $path = $file->store('avatars');
 
         $user->update(['avatar' => $path]);
 
-        return Storage::disk('public')->url($path);
+        return Storage::url($path);
     }
 
     /**

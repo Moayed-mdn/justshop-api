@@ -1,11 +1,15 @@
 services:
   app:
-    image: ghcr.io/moayed-mdn/justshop-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: justshop-backend-api
     container_name: justshop-api-app
     restart: unless-stopped
     working_dir: /var/www
     volumes:
       - storefront-uploads:/var/www/storage/app/public
+      - /etc/nginx/ssl/storage.justshop.test.pem:/etc/ssl/certs/storage.justshop.test.pem:ro
     env_file:
       - .env
     networks:
@@ -15,7 +19,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-
+    extra_hosts:
+      - "storage.justshop.test:host-gateway"
   nginx:
     image: nginx:alpine
     container_name: justshop-api-nginx
@@ -33,8 +38,6 @@ services:
 
   db:
     image: mysql:8.0
-    ports: 
-      -  "3306:3306"
     container_name: justshop-api-db
     restart: unless-stopped
     environment:
@@ -54,8 +57,6 @@ services:
 
   redis:
     image: redis:alpine
-    ports:
-      -  "6379:6379"
     container_name: justshop-api-redis
     restart: unless-stopped
     volumes:
@@ -79,6 +80,22 @@ services:
     networks:
       - justshop-network
 
+  minio:
+    image: minio/minio
+    container_name: minio-server
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+    networks:
+      - justshop-network
+    restart: unless-stopped
+
 networks:
   justshop-network:
     driver: bridge
@@ -87,3 +104,4 @@ volumes:
   db-data:
   redis-data:
   storefront-uploads:
+  minio_data:

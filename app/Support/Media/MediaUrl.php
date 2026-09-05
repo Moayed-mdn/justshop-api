@@ -30,7 +30,7 @@ final class MediaUrl
             return $normalized;
         }
 
-        return Storage::disk('public')->url($normalized);
+        return Storage::url($normalized);
     }
 
     public static function normalizeStorablePath(?string $value): ?string

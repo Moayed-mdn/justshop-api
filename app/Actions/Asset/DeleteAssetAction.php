@@ -16,8 +16,8 @@ class DeleteAssetAction
     public function execute(StoreAsset $asset): bool
     {
         // Delete file from storage
-        if (Storage::disk('public')->exists($asset->file_path)) {
-            Storage::disk('public')->delete($asset->file_path);
+        if (Storage::exists($asset->file_path)) {
+            Storage::delete($asset->file_path);
         }
 
         return $this->assetRepository->delete($asset);

@@ -31,8 +31,8 @@ class UploadAssetAction
         }
 
         // Store file
-        $path = $file->store("stores/{$storeId}/assets/{$type->value}", 'public');
-        $url = Storage::disk('public')->url($path);
+        $path = $file->store("stores/{$storeId}/assets/{$type->value}");
+        $url = Storage::url($path);
 
         // Get image dimensions if it's an image
         $width = null;
