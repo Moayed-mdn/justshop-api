@@ -18,6 +18,13 @@ class RuntimeSupportTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // SQLite (used for tests) lacks the GREATEST() function that
+    }
+
     public function test_cache_descriptor_uses_phase_two_runtime_cache_standard(): void
     {
         $store = Store::factory()->create([
@@ -71,7 +78,7 @@ class RuntimeSupportTest extends TestCase
             preview: false,
         );
 
-        $this->assertSame('store_' . $store->id, $context['tenantId']);
+        $this->assertSame('store_'.$store->id, $context['tenantId']);
         $this->assertSame('justshop-demo', $context['tenantKey']);
         $this->assertSame('en', $context['locale']);
         $this->assertSame('/about-us', $context['path']);
