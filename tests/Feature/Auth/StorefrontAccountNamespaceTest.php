@@ -24,7 +24,7 @@ class StorefrontAccountNamespaceTest extends TestCase
 
     public function test_customer_can_register_in_customer_namespace_without_merchant_onboarding(): void
     {
-        $response = $this->postJson('/api/v1/customer/auth/register', [
+        $response = $this->withHeaders(['Referer' => 'http://localhost'])->postJson('/api/v1/customer/auth/register', [
             'name' => 'Storefront Customer',
             'email' => 'storefront-customer@example.test',
             'password' => 'password123',
@@ -90,7 +90,8 @@ class StorefrontAccountNamespaceTest extends TestCase
 
         /** @var User $customer */
         $customer = User::factory()->customer()->verified()->create();
-        $response = $this->actingAs($customer, 'customer')->getJson('/api/v1/merchant/stores/999/dashboard/stats');
+        $store = Store::factory()->create();
+        $response = $this->actingAs($customer, 'customer')->getJson("/api/v1/merchant/stores/{$store->id}/dashboard/stats");
 
         $response->assertForbidden()
             ->assertJson([

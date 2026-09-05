@@ -64,8 +64,12 @@ class SafeDomainPolicyNormalizationTest extends TestCase
         $this->assertFalse(app(DashboardPolicy::class)->viewStats($memberWithoutPermissions, $accessibleStore));
     }
 
-    public function test_super_admin_bypass_remains_correct_for_normalized_safe_domains(): void
+    public function test_super_admin_has_no_implicit_bypass_for_normalized_safe_domains(): void
     {
+        // SUPER_ADMIN grants no implicit authorization bypass. Without store
+        // membership or an active, governed impersonation session, access to
+        // these tenant-owned resources must be denied exactly like any other
+        // non-member -- including for previously "safe domain" abilities.
         $role = Role::findOrCreate(RoleEnum::SUPER_ADMIN->value, 'web');
 
         $superAdmin = User::factory()->merchant()->create();
@@ -73,10 +77,10 @@ class SafeDomainPolicyNormalizationTest extends TestCase
         $superAdmin = $superAdmin->fresh();
         $store = Store::factory()->create();
 
-        $this->assertTrue(Gate::forUser($superAdmin)->check('create', [\App\Models\Brand::class, $store]));
-        $this->assertTrue(Gate::forUser($superAdmin)->check('restore', [\App\Models\Category::class, $store]));
-        $this->assertTrue(Gate::forUser($superAdmin)->check('delete', [\App\Models\Tag::class, $store]));
-        $this->assertTrue(Gate::forUser($superAdmin)->check('viewTopProducts', [\App\Support\Auth\DashboardAuthorization::class, $store]));
+        $this->assertFalse(Gate::forUser($superAdmin)->check('create', [\App\Models\Brand::class, $store]));
+        $this->assertFalse(Gate::forUser($superAdmin)->check('restore', [\App\Models\Category::class, $store]));
+        $this->assertFalse(Gate::forUser($superAdmin)->check('delete', [\App\Models\Tag::class, $store]));
+        $this->assertFalse(Gate::forUser($superAdmin)->check('viewTopProducts', [\App\Support\Auth\DashboardAuthorization::class, $store]));
     }
 
     public function test_membership_admin_route_uses_user_model_policy_owner_for_store_scoped_access(): void

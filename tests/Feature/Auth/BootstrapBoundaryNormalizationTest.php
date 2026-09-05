@@ -12,6 +12,7 @@ use App\Support\FeatureFlags\FeatureFlag;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Mockery;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -49,9 +50,19 @@ class BootstrapBoundaryNormalizationTest extends TestCase
             ->assertJsonPath('data.active_store.id', $store->id)
             ->assertJsonPath('data.permissions', ['product.update', 'product.view']);
 
-        // Log::shouldHaveReceived('info')->with('bootstrap.parity.checked', ...) 
-        // is failing in some environments due to middleware/session interaction.
-        // We will skip this specific assertion for now and focus on the contract snapshot.
+        // Confirms BootstrapShadowParityService::compare() actually runs and reports
+        // for this actor/path when shadow_read is on. We intentionally do not assert
+        // drift_count === 0 here: whether the legacy and decomposed resolvers are
+        // byte-identical for every payload shape is a real open question this suite
+        // cannot verify without executing the suite (see final report) — asserting
+        // a specific drift value would either mask real drift or be flaky for reasons
+        // unrelated to the behavior this test is meant to guard.
+        Log::shouldHaveReceived('info')->with(
+            'bootstrap.parity.checked',
+            Mockery::on(fn (array $context): bool => ($context['actor_id'] ?? null) === $user->id
+                && ($context['shadow_path'] ?? null) === 'decomposed'
+                && is_int($context['drift_count'] ?? null)),
+        )->atLeast()->once();
     }
 
     /**

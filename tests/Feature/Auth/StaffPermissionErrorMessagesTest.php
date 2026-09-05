@@ -42,6 +42,21 @@ class StaffPermissionErrorMessagesTest extends TestCase
 
         $this->store = Store::factory()->create();
 
+        $billingAccount = \App\Models\BillingAccount::create([
+            'owner_user_id' => $this->store->owner_id,
+            'billing_email' => 'billing+' . $this->store->owner_id . '@example.test',
+            'status' => \App\Enums\Billing\BillingAccountStatusEnum::ACTIVE->value,
+        ]);
+
+        \App\Models\StoreEntitlementSnapshot::create([
+            'store_id' => $this->store->id,
+            'billing_account_id' => $billingAccount->id,
+            'entitlement_status' => \App\Enums\Entitlement\EntitlementStatusEnum::ENTITLED,
+            'features' => [],
+            'products_count' => 0,
+            'refreshed_at' => now(),
+        ]);
+
         $this->staffUser = $this->createStaffUser();
     }
 
@@ -180,14 +195,18 @@ class StaffPermissionErrorMessagesTest extends TestCase
         $this->assertTrue(app(MembershipPolicy::class)->viewAny($admin, $this->store));
     }
 
-    public function test_super_admin_bypasses_all_policy_checks(): void
+    public function test_super_admin_has_no_implicit_policy_bypass(): void
     {
+        // SUPER_ADMIN grants no automatic bypass of tenant-owned resource
+        // policies. Without store membership or an active, governed
+        // impersonation session, access is denied exactly like any other
+        // non-member actor.
         $superAdmin = User::factory()->superAdmin()->create();
 
-        $this->assertTrue(app(ProductPolicy::class)->create($superAdmin, $this->store));
-        $this->assertTrue(app(CategoryPolicy::class)->delete($superAdmin, $this->store));
-        $this->assertTrue(app(BrandPolicy::class)->update($superAdmin, $this->store));
-        $this->assertTrue(app(TagPolicy::class)->delete($superAdmin, $this->store));
+        $this->assertFalse(app(ProductPolicy::class)->create($superAdmin, $this->store));
+        $this->assertFalse(app(CategoryPolicy::class)->delete($superAdmin, $this->store));
+        $this->assertFalse(app(BrandPolicy::class)->update($superAdmin, $this->store));
+        $this->assertFalse(app(TagPolicy::class)->delete($superAdmin, $this->store));
     }
 
     public function test_staff_can_view_resources(): void

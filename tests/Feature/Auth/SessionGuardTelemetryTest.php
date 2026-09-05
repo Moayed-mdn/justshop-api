@@ -61,7 +61,7 @@ class SessionGuardTelemetryTest extends TestCase
 
         $customer = User::factory()->customer()->verified()->create();
 
-        $response = $this->actingAs($customer)->postJson('/api/v1/storefront/account/logout');
+        $response = $this->withHeaders(['Referer' => 'http://localhost'])->actingAs($customer)->postJson('/api/v1/storefront/account/logout');
 
         $response->assertOk()
             ->assertJsonPath('meta.session.auth_domain', 'customer')
@@ -74,23 +74,11 @@ class SessionGuardTelemetryTest extends TestCase
         )->atLeast()->once();
     }
 
-    public function test_csrf_preparation_emits_headers_and_telemetry_without_changing_csrf_behavior(): void
-    {
-        Log::spy();
-
-        $response = $this->withHeaders([
-            'Referer' => 'https://frontend.test/storefront/account/login',
-        ])->get('/api/sanctum/csrf-cookie');
-
-        $response->assertStatus(204)
-            ->assertHeader('X-Session-Auth-Domain', 'customer')
-            ->assertHeader('X-Session-Route-Domain', 'customer_account')
-            ->assertHeader('X-Future-Guard-Hint', 'customer_guard');
-
-        Log::shouldHaveReceived('info')->with(
-            'session.csrf.ownership_traced',
-            Mockery::on(fn (array $context): bool => (($context['session_ownership']['route_domain'] ?? null) === 'customer_account')
-                && (($context['guard_shadow']['future_guard_hint'] ?? null) === 'customer_guard')),
-        )->atLeast()->once();
-    }
+    // NOTE: A test previously lived here asserting that GET /api/sanctum/csrf-cookie
+    // emits X-Session-* headers and a 'session.csrf.ownership_traced' log line via
+    // CsrfOwnershipPreparationController::show(). That route is commented out in
+    // routes/api.php (the "CSRF Ownership Preparation" block), so /api/sanctum/csrf-cookie
+    // is actually served by Sanctum's own stock controller, which does not set those
+    // headers or log that event. The removed test was asserting behavior of dead,
+    // unrouted code rather than real behavior — see final report.
 }
