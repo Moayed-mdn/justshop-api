@@ -23,15 +23,6 @@ class EmailVerificationController extends Controller
 
         $dto = $this->getEmailVerificationStatusAction->execute($user);
 
-        if (!$dto->emailVerified) {
-            return $this->error(
-                __('auth.email_not_yet_verified'),
-                422,
-                null,
-                'AUTH_003',
-            );
-        }
-
         return $this->success(new EmailVerificationStatusResource($dto));
     }
 }
