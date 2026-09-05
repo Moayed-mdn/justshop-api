@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Theme;
 
+use App\Enums\RoleEnum;
+use App\Enums\Store\StoreRoleEnum;
 use App\Models\Store;
 use App\Models\Theme\Theme;
 use App\Models\Theme\ThemeBlock;
@@ -11,7 +13,9 @@ use App\Models\Theme\ThemeBlockInstance;
 use App\Models\Theme\ThemeSection;
 use App\Models\Theme\ThemeSectionGroup;
 use App\Models\User;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class ThemeSlugRouteBindingTest extends TestCase
@@ -19,16 +23,28 @@ class ThemeSlugRouteBindingTest extends TestCase
     use RefreshDatabase;
 
     private Store $store;
+
     private Theme $theme;
+
     private User $merchant;
 
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->seed(PermissionSeeder::class);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        // SQLite (used for tests) lacks the GREATEST() function that
+
         $this->merchant = User::factory()->merchant()->verified()->create();
+        // ThemePolicy requires both the store-membership pivot "admin" role AND
+        // the Spatie THEME_* permissions (via RoleEnum::STORE_ADMIN); an admin
+        // without the Spatie role is still denied by canView/canManage.
+        $this->merchant->assignRole(RoleEnum::STORE_ADMIN->value);
         $this->store = Store::factory()->create(['owner_id' => $this->merchant->id]);
-        $this->merchant->stores()->attach($this->store->id, ['role' => 'store_admin']);
+        $this->merchant->stores()->attach($this->store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
+        $this->merchant = $this->merchant->fresh();
 
         $this->theme = Theme::create([
             'store_id' => $this->store->id,

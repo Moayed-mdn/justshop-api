@@ -4,15 +4,23 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Theme;
 
+use App\Enums\Billing\BillingAccountStatusEnum;
+use App\Enums\Entitlement\EntitlementStatusEnum;
+use App\Enums\RoleEnum;
+use App\Enums\Store\StoreRoleEnum;
 use App\Enums\Theme\TemplateTypeEnum;
+use App\Models\BillingAccount;
 use App\Models\Store;
+use App\Models\StoreEntitlementSnapshot;
 use App\Models\Theme\Theme;
 use App\Models\Theme\ThemeSection;
 use App\Models\Theme\ThemeTemplate;
-use App\Services\Storefront\Runtime\RuntimeCacheService;
 use App\Models\User;
+use App\Services\Storefront\Runtime\RuntimeCacheService;
+use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class SystemTemplateControllerTest extends TestCase
@@ -20,16 +28,33 @@ class SystemTemplateControllerTest extends TestCase
     use RefreshDatabase;
 
     private Store $store;
+
     private Theme $theme;
+
     private User $merchant;
 
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->seed(PermissionSeeder::class);
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        // SQLite (used for tests) lacks the GREATEST() function that
+
         $this->merchant = User::factory()->merchant()->verified()->create();
+        // SystemTemplatePolicy requires both the store-membership pivot "admin"
+        // role AND the Spatie THEME_* permissions (via RoleEnum::STORE_ADMIN);
+        // an admin without the Spatie role is still denied by canView/canManage.
+        $this->merchant->assignRole(RoleEnum::STORE_ADMIN->value);
         $this->store = Store::factory()->create(['owner_id' => $this->merchant->id]);
-        $this->merchant->stores()->attach($this->store->id, ['role' => 'store_admin']);
+        $this->merchant->stores()->attach($this->store->id, ['role' => StoreRoleEnum::STORE_ADMIN->value]);
+        $this->merchant = $this->merchant->fresh();
+
+        // Template write endpoints are gated by the `subscription.active`
+        // middleware (EnsureActiveSubscription -> FeatureGateService), which
+        // requires a StoreEntitlementSnapshot granting write access.
+        $this->grantActiveEntitlement($this->store);
 
         $this->theme = Theme::create([
             'store_id' => $this->store->id,
@@ -46,12 +71,42 @@ class SystemTemplateControllerTest extends TestCase
         $this->actingAs($this->merchant);
     }
 
+    /**
+     * Give a store an entitlement snapshot that satisfies the
+     * `subscription.active` middleware used on template write endpoints.
+     */
+    private function grantActiveEntitlement(Store $store): StoreEntitlementSnapshot
+    {
+        $billingAccount = BillingAccount::create([
+            'owner_user_id' => $store->owner_id,
+            'billing_email' => 'billing+'.$store->owner_id.'@example.test',
+            'legal_name' => 'Test Billing Account',
+            'country_code' => 'US',
+            'default_currency' => 'USD',
+            'status' => BillingAccountStatusEnum::ACTIVE,
+            'trial_used' => false,
+            'stores_count' => 1,
+            'stores_max' => null,
+            'metadata' => [],
+        ]);
+
+        return StoreEntitlementSnapshot::create([
+            'store_id' => $store->id,
+            'billing_account_id' => $billingAccount->id,
+            'entitlement_status' => EntitlementStatusEnum::ENTITLED,
+            'features' => [],
+            'products_count' => 0,
+            'refreshed_at' => now(),
+        ]);
+    }
+
     private function templatePath(?int $templateId = null): string
     {
         $path = "/api/v1/merchant/stores/{$this->store->slug}/themes/{$this->theme->slug}/system-templates";
         if ($templateId !== null) {
             $path .= "/{$templateId}";
         }
+
         return $path;
     }
 
@@ -340,7 +395,7 @@ class SystemTemplateControllerTest extends TestCase
         /** @var RuntimeCacheService $runtimeCache */
         $runtimeCache = app(RuntimeCacheService::class);
         $pageCacheKey = $runtimeCache->key($this->store, 'en', 'page', '/');
-        $registryKey = 'storefront_runtime_registry:tenant:' . $this->store->slug;
+        $registryKey = 'storefront_runtime_registry:tenant:'.$this->store->slug;
 
         Cache::put($pageCacheKey, ['page' => ['id' => 'cached']], now()->addHour());
         Cache::forever($registryKey, [
